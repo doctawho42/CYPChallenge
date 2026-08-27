@@ -9,11 +9,8 @@ from cyppaths import D, RES, tutorial
 tutorial()
 import numpy as np, pandas as pd, sys, time, json
 from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_error as strae
-from rdkit import Chem, RDLogger, DataStructs
-from rdkit.Chem import rdFingerprintGenerator
-from rdkit.ML.Cluster import Butina
 from sklearn.ensemble import HistGradientBoostingRegressor
-RDLogger.DisableLog('rdApp.*')
+from cypsplit import butina_folds
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 
 z = np.load(D + "feats.npz")
@@ -23,17 +20,8 @@ tr = pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
 tr = tr.set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index()
 assert len(tr) == len(FP)
 
-gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
-bits = [gen.GetFingerprint(Chem.MolFromSmiles(s)) for s in rows.SMILES]
-dists = []
-for i in range(1, len(bits)):
-    dists.extend([1 - x for x in DataStructs.BulkTanimotoSimilarity(bits[i], bits[:i])])
-cl = Butina.ClusterData(dists, len(bits), 0.35, isDistData=True)
-cid = np.zeros(len(bits), int)
-for k, c in enumerate(cl):
-    for i in c: cid[i] = k
-fold = np.random.default_rng(0).integers(0, 5, len(cl))[cid]
-print("clusters:", len(cl), "| fold sizes:", np.bincount(fold), flush=True)
+fold, n_clusters = butina_folds(list(rows.SMILES))
+print("clusters:", n_clusters, "| fold sizes:", np.bincount(fold), flush=True)
 
 SETS = {
     "FP":            FP,
@@ -61,4 +49,22 @@ for name, X in SETS.items():
         out[f"{name}|{c}"] = pred.tolist()
     print(f"{name:16s} done in {time.time()-t0:.0f}s", flush=True)
 json.dump(out, open(RES + "preds/oof.json", "w"))
+
+# Provenance, so that four people on four machines can tell whose oof.json this is and
+# whether it is still the one the document quotes. oof.json itself is a single 750 KB
+# line and cannot be merged or eyeballed; this file can.
+import subprocess, sklearn, platform
+from cypsplit import fold_digest
+def _git(*a):
+    try: return subprocess.run(("git",)+a, capture_output=True, text=True).stdout.strip()
+    except Exception: return "?"
+json.dump({
+    "split_digest": fold_digest(fold),
+    "n_clusters": int(n_clusters),
+    "sklearn": sklearn.__version__,
+    "numpy": np.__version__,
+    "python": platform.python_version(),
+    "git_commit": _git("rev-parse", "--short", "HEAD"),
+    "git_dirty": bool(_git("status", "--porcelain")),
+}, open(RES + "preds/oof.meta.json", "w"), indent=1)
 print("saved")

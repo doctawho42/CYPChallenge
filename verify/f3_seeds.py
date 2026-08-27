@@ -8,27 +8,17 @@ import numpy as np, pandas as pd, sys, time, json
 from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_error as strae
 from sklearn.ensemble import HistGradientBoostingRegressor
 from scipy.stats import spearmanr
-from rdkit import Chem, RDLogger, DataStructs
-from rdkit.Chem import rdFingerprintGenerator
-from rdkit.ML.Cluster import Butina
-RDLogger.DisableLog('rdApp.*')
+from cypsplit import cluster_ids
 CYPS=["CYP1A2","CYP2C9","CYP2D6","CYP3A4"]
 z=np.load(D+"feats.npz"); FP,DESC,MECH=z["FP"],z["DESC"],z["MECH"]
 rows=pd.read_csv(D+"rows.csv")
 tr=pd.read_csv(D+"cyp-challenge-TRAIN_inhibition.csv").set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index()
-gen=rdFingerprintGenerator.GetMorganGenerator(radius=2,fpSize=2048)
-bits=[gen.GetFingerprint(Chem.MolFromSmiles(s)) for s in rows.SMILES]
-dists=[]
-for i in range(1,len(bits)): dists.extend([1-x for x in DataStructs.BulkTanimotoSimilarity(bits[i],bits[:i])])
-cl=Butina.ClusterData(dists,len(bits),0.35,isDistData=True)
-cid=np.zeros(len(bits),int)
-for k,c in enumerate(cl):
-    for i in c: cid[i]=k
-print("кластеров:",len(cl),flush=True)
+cid,n_clusters=cluster_ids(list(rows.SMILES))
+print("кластеров:",n_clusters,flush=True)
 SETS={"FP+DESC":np.hstack([FP,DESC]),"FP+DESC+MECH":np.hstack([FP,DESC,MECH])}
 res=[]; oofall={}
 for seed in [1,2,3]:
-    fold=np.random.default_rng(seed).integers(0,5,len(cl))[cid]
+    fold=np.random.default_rng(seed).integers(0,5,n_clusters)[cid]
     print(f"сид {seed}: размеры фолдов {np.bincount(fold)}",flush=True)
     for name,X in SETS.items():
         t0=time.time(); r={"seed":seed,"features":name}

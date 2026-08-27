@@ -4,9 +4,9 @@ from cyppaths import D, RES, tutorial
 tutorial()
 import pandas as pd, numpy as np, sys
 from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_error as strae
-from rdkit import Chem, RDLogger, DataStructs
+from rdkit import Chem, RDLogger
 from rdkit.Chem import rdFingerprintGenerator, Descriptors, Crippen
-from rdkit.ML.Cluster import Butina
+from cypsplit import butina_folds
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.isotonic import IsotonicRegression
 from scipy.stats import spearmanr
@@ -23,13 +23,8 @@ ph=np.array([[len(m.GetSubstructMatches(bN)),len(m.GetSubstructMatches(ac)),Crip
               Descriptors.MolWt(m),Descriptors.NumAromaticRings(m),Descriptors.TPSA(m),
               Descriptors.FractionCSP3(m),Descriptors.NumHDonors(m)] for m in mols],dtype=np.float32)
 X=np.hstack([FP,ph])
-bits=[gen.GetFingerprint(m) for m in mols]; dists=[]
-for i in range(1,len(bits)): dists.extend([1-x for x in DataStructs.BulkTanimotoSimilarity(bits[i],bits[:i])])
-cl=Butina.ClusterData(dists,len(bits),0.35,isDistData=True)
-cid=np.zeros(len(bits),int)
-for k,c in enumerate(cl):
-    for i in c: cid[i]=k
-rng=np.random.default_rng(0); fold=rng.integers(0,5,len(cl))[cid]
+# fpSize=1024, как в mech2/mech3: фолды не те же, что в абляции (см. cypsplit)
+fold,_=butina_folds(list(tr.SMILES),fp_size=1024)
 piv=sc.pivot_table(index="Molecule_Name",columns="enzyme",values="log2fc_estimate")
 tr=tr.join(piv,on="Molecule_Name")
 def gbm(): return HistGradientBoostingRegressor(max_iter=250,learning_rate=0.06,random_state=0)

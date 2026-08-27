@@ -10,10 +10,7 @@ from cyppaths import D, RES
 import numpy as np, pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 from scipy.stats import spearmanr
-from rdkit import Chem, RDLogger, DataStructs
-from rdkit.Chem import rdFingerprintGenerator
-from rdkit.ML.Cluster import Butina
-RDLogger.DisableLog('rdApp.*')
+from cypsplit import butina_folds
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 z = np.load(D + "feats.npz"); X = np.hstack([z["FP"], z["DESC"], z["MECH"]])
 rows = pd.read_csv(D + "rows.csv")
@@ -21,15 +18,7 @@ tr = pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv").set_index("Molecule_N
 sc = pd.read_csv(D + "cyp-challenge-single-concentration-TRAIN.csv")
 piv = sc.pivot_table(index="Molecule_Name", columns="enzyme", values="log2fc_estimate")
 tr = tr.join(piv, on="Molecule_Name")
-gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
-bits = [gen.GetFingerprint(Chem.MolFromSmiles(s)) for s in rows.SMILES]
-dists = []
-for i in range(1, len(bits)): dists.extend([1 - x for x in DataStructs.BulkTanimotoSimilarity(bits[i], bits[:i])])
-cl = Butina.ClusterData(dists, len(bits), 0.35, isDistData=True)
-cid = np.zeros(len(bits), int)
-for k, c in enumerate(cl):
-    for i in c: cid[i] = k
-fold = np.random.default_rng(0).integers(0, 5, len(cl))[cid]
+fold, _ = butina_folds(list(rows.SMILES))
 res = []
 for c in CYPS:
     r = {"cyp": c}

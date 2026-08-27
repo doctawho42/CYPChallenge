@@ -4,9 +4,9 @@ from cyppaths import D, RES, tutorial
 tutorial()
 import pandas as pd, numpy as np, sys
 from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_error as strae
-from rdkit import Chem, RDLogger, DataStructs
+from rdkit import Chem, RDLogger
 from rdkit.Chem import rdFingerprintGenerator, Descriptors, Crippen
-from rdkit.ML.Cluster import Butina
+from cypsplit import cluster_ids
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.isotonic import IsotonicRegression
 from scipy.stats import spearmanr
@@ -23,13 +23,11 @@ ph=np.array([[len(m.GetSubstructMatches(bN)),len(m.GetSubstructMatches(ac)),Crip
               Descriptors.MolWt(m),Descriptors.NumAromaticRings(m),Descriptors.TPSA(m),
               Descriptors.FractionCSP3(m),Descriptors.NumHDonors(m)] for m in mols],dtype=np.float32)
 X=np.hstack([FP,ph])
-bits=[gen.GetFingerprint(m) for m in mols]; dists=[]
-for i in range(1,len(bits)): dists.extend([1-x for x in DataStructs.BulkTanimotoSimilarity(bits[i],bits[:i])])
-cl=Butina.ClusterData(dists,len(bits),0.35,isDistData=True)
-cid=np.zeros(len(bits),int)
-for k,c in enumerate(cl):
-    for i in c: cid[i]=k
-rng=np.random.default_rng(0); fold=rng.integers(0,5,len(cl))[cid]
+# fpSize=1024, как в mech2/mech4: фолды не те же, что в абляции (см. cypsplit).
+# Здесь берём cluster_ids, а не butina_folds: тот же rng ниже (строка с inner)
+# доигрывается дальше, и его состояние обязано остаться прежним.
+cid,n_clusters=cluster_ids(list(tr.SMILES),fp_size=1024)
+rng=np.random.default_rng(0); fold=rng.integers(0,5,n_clusters)[cid]
 piv=sc.pivot_table(index="Molecule_Name",columns="enzyme",values="log2fc_estimate")
 tr=tr.join(piv,on="Molecule_Name")
 def gbm(**k): return HistGradientBoostingRegressor(max_iter=200,learning_rate=0.06,random_state=0,**k)
@@ -45,7 +43,7 @@ for c in CYPS:
         # nested OOF aux: for rows in fold!=k, aux comes from inner-fold models; for fold==k, from full outer model
         aux=np.full(len(tr),np.nan,dtype=np.float32)
         outer=gbm().fit(X[b],tr.loc[b,c]); aux[te]=outer.predict(X[te])
-        inner=rng.integers(0,4,len(cl))[cid]
+        inner=rng.integers(0,4,n_clusters)[cid]
         for j in range(4):
             bi=b&(inner!=j); tgt=b&(inner==j)
             if tgt.sum()==0 or bi.sum()<50: continue

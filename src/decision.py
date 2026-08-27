@@ -20,19 +20,8 @@ tr=pd.read_csv(D+"cyp-challenge-TRAIN_inhibition.csv").set_index("Molecule_Name"
 oof=json.load(open(RES+"preds/oof.json"))
 
 # те же фолды, что в абляции
-from rdkit import Chem, RDLogger, DataStructs
-from rdkit.Chem import rdFingerprintGenerator
-from rdkit.ML.Cluster import Butina
-RDLogger.DisableLog('rdApp.*')
-gen=rdFingerprintGenerator.GetMorganGenerator(radius=2,fpSize=2048)
-bits=[gen.GetFingerprint(Chem.MolFromSmiles(s)) for s in rows.SMILES]
-dists=[]
-for i in range(1,len(bits)): dists.extend([1-x for x in DataStructs.BulkTanimotoSimilarity(bits[i],bits[:i])])
-cl=Butina.ClusterData(dists,len(bits),0.35,isDistData=True)
-cid=np.zeros(len(bits),int)
-for k,c in enumerate(cl):
-    for i in c: cid[i]=k
-fold=np.random.default_rng(0).integers(0,5,len(cl))[cid]
+from cypsplit import butina_folds
+fold,_=butina_folds(list(rows.SMILES))
 
 rng=np.random.default_rng(0); S=400
 res=[]

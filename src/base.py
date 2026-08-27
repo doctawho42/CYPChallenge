@@ -4,9 +4,9 @@ from cyppaths import D, RES, tutorial
 tutorial()
 import pandas as pd, numpy as np, sys
 from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_error as strae
-from rdkit import Chem, RDLogger, DataStructs
+from rdkit import Chem, RDLogger
 from rdkit.Chem import rdFingerprintGenerator, Descriptors
-from rdkit.ML.Cluster import Butina
+from cypsplit import butina_folds
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, r2_score
 from scipy.stats import spearmanr
@@ -21,16 +21,8 @@ dl=Descriptors.CalcMolDescriptors
 desc=pd.DataFrame([dl(m) for m in mols]).replace([np.inf,-np.inf],np.nan)
 desc=desc.loc[:,desc.isna().mean()<0.05].fillna(0).to_numpy(np.float32)
 X=np.hstack([FP,desc]); print("X",X.shape)
-bits=[gen.GetFingerprint(m) for m in mols]
-dists=[]
-for i in range(1,len(bits)):
-    s=DataStructs.BulkTanimotoSimilarity(bits[i],bits[:i]); dists.extend([1-x for x in s])
-cl=Butina.ClusterData(dists,len(bits),0.35,isDistData=True)
-cid=np.zeros(len(bits),int)
-for k,c in enumerate(cl):
-    for i in c: cid[i]=k
-print("clusters:",len(cl))
-rng=np.random.default_rng(0); folds=rng.integers(0,5,len(cl))[cid]
+folds,n_clusters=butina_folds(list(tr.SMILES))
+print("clusters:",n_clusters)
 res=[]
 for c in CYPS:
     col=f"{c}_pIC50_direct_inhibition"; msk=tr[col].notna().to_numpy()
