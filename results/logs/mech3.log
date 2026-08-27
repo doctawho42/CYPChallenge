@@ -1,0 +1,6 @@
+   cyp  rho_DRC  rho_OOFstack  STRAE_DRC  STRAE_OOFstack  STRAE_isotonic_log2fc_only
+CYP1A2    0.451         0.463     0.9194          0.9056                      0.3074
+CYP2C9    0.613         0.613     0.6816          0.7008                      0.3163
+CYP2D6    0.399         0.407     1.0083          0.9910                      0.5974
+CYP3A4    0.749         0.753     0.5442          0.5561                      0.2155
+ MACRO    0.553         0.559     0.7884          0.7884                      0.3592

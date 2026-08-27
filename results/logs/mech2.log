@@ -1,0 +1,8 @@
+Matched Butina-cluster 5-fold split for BOTH models
+
+   cyp  rho_DRConly  rho_log2fc_only  rho_stacked  STRAE_DRConly  STRAE_stacked
+CYP1A2       0.4660            0.490        0.480         0.9083         1.1992
+CYP2C9       0.6000            0.634        0.624         0.6927         0.7237
+CYP2D6       0.4130            0.392        0.402         0.9854         1.2289
+CYP3A4       0.7480            0.748        0.758         0.5449         0.5307
+ MACRO       0.5568            0.566        0.566         0.7828         0.9206

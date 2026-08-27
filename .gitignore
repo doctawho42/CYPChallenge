@@ -4,11 +4,14 @@ data/*.npz
 data/raw/
 *.npz
 
+# логи прогонов нужны, они часть результатов
+!results/logs/
+
 # сборка LaTeX
-*.aux
-*.log
-*.out
-*.toc
+docs/tex/*.aux
+docs/tex/*.log
+docs/tex/*.out
+docs/tex/*.toc
 *.synctex.gz
 docs/tex/main.pdf
 
