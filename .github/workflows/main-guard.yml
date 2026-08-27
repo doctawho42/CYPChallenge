@@ -1,0 +1,69 @@
+name: main guard
+
+# A tripwire, not a guard rail: by the time this runs the push has been accepted
+# and main has already moved. Its job is to make a direct push, or a merge over a
+# red split-guard, visible within a minute instead of a week.
+#
+# Deliberately a separate workflow rather than a step inside ci.yml: split-guard
+# fetches the data, builds a 4905x2048 feature matrix and runs pytest (~100 s),
+# and this check must answer fast and independently of whether that succeeded.
+
+on:
+  push:
+    branches: [main]
+
+# pull-requests: read is load-bearing. /commits/{sha}/pulls lives under that
+# permission, not under contents; without it the call 403s and every legitimate
+# merge would be reported as a direct push. Naming any permission zeroes the rest.
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+
+concurrency:
+  group: main-guard
+  cancel-in-progress: false
+
+jobs:
+  provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Commit arrived through a PR whose split-guard was green
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          # The commit-to-PR association is populated asynchronously; allow it
+          # ~75 s, or a legitimate merge occasionally reads as a direct push.
+          head_sha=""
+          for attempt in 1 2 3 4 5; do
+            head_sha="$(gh api "repos/$REPO/commits/$SHA/pulls" \
+                        --jq 'map(select(.merged_at != null))
+                              | sort_by(.merged_at) | last | .head.sha // empty')"
+            [ -n "$head_sha" ] && break
+            echo "attempt $attempt: no merged PR associated yet, waiting 15 s"
+            sleep 15
+          done
+
+          if [ -z "$head_sha" ]; then
+            echo "::error title=Direct push to main::Commit $SHA was not introduced by any merged pull request. main is updated through a PR - see CONTRIBUTING.md."
+            exit 1
+          fi
+
+          echo "PR head: $head_sha"
+
+          # Check split-guard on the PR HEAD, not on github.sha: with squash or
+          # rebase merges the PR head never lands on main, and its check runs
+          # hang off that commit alone.
+          conclusion="$(gh api "repos/$REPO/commits/$head_sha/check-runs?check_name=split-guard" \
+                        --jq '.check_runs | sort_by(.started_at) | last | .conclusion // empty')"
+
+          if [ "$conclusion" != "success" ]; then
+            echo "::error title=Merged over a non-green split-guard::On the PR head ($head_sha) split-guard was ${conclusion:-not run}, not success."
+            exit 1
+          fi
+
+          echo "ok: $SHA came through a PR and split-guard on $head_sha was green"

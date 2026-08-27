@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Refuse any push whose DESTINATION is refs/heads/main.
+#
+# git feeds one line per updated ref on stdin:
+#     <local ref> <local sha> <remote ref> <remote sha>
+# Testing remote_ref catches every form: `git push origin main`,
+# `HEAD:main`, `--all`, a force (`+main:main`) and a delete (`:main`).
+# Pushing some other branch while standing on main is not affected -
+# what matters is where it lands, not where you are.
+#
+# This is a convention, not protection. GitHub cannot refuse the push for a
+# private repo on a free plan, so this is the only layer that acts BEFORE the
+# objects leave the machine. --no-verify defeats it, and a fresh clone does not
+# have it until `make hooks` runs.
+set -u
+
+blocked=0
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+    [ -z "${remote_ref:-}" ] && continue
+    case "$remote_ref" in
+        refs/heads/main) blocked=1 ;;
+    esac
+done
+
+if [ "$blocked" -eq 1 ]; then
+    cat >&2 <<'MSG'
+
+pre-push refused: main is updated through a pull request.
+
+    git switch -c <branch>
+    git push -u origin <branch>
+    gh pr create --fill
+    gh pr checks --watch        # wait for split-guard to go green
+    gh pr merge --squash
+
+This is a local convention, not a server-side rule. See CONTRIBUTING.md.
+
+MSG
+    exit 1
+fi
+
+exit 0

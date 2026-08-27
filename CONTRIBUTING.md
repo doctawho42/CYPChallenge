@@ -61,6 +61,29 @@ produced the current file, so you can always tell what you are holding.
 Keep a branch scoped to one question — "does X help?" — because that is the unit the
 paired bootstrap answers, and it is the unit a reviewer can check.
 
+**`main` is not protected, and cannot be.** GitHub gates branch protection and rulesets
+behind a paid plan for private repositories; both endpoints return 403 on this repo. So
+nothing on the server refuses a `git push origin main`, and nothing disables the Merge
+button while `split-guard` is red. What exists instead is one speed bump and one
+tripwire:
+
+- **`.githooks/pre-push`** refuses, on your machine, any push that lands on `main` — in
+  any refspec form, including `HEAD:main`, `--all`, a force and a delete. Arm it with
+  `make hooks`; `make setup` does it for you. `--no-verify` walks straight past it, and a
+  fresh clone has no hook until that target runs.
+- **`.github/workflows/main-guard.yml`** checks, after every push to `main`, that the
+  commit was introduced by a merged PR whose head had a green `split-guard`. It cannot
+  stop anything; it turns `main` red and mails you within about a minute.
+
+Known holes, so nobody mistakes this for a guarantee: `[skip ci]` in a commit message
+suppresses both workflows, a commit that edits `main-guard.yml` runs the version in that
+same commit, and anyone with admin rights defeats all of it deliberately in seconds. This
+is a control against muscle memory, not against intent.
+
+Real server-side refusal needs either GitHub Pro on the owning account, or making the
+repository public — which would publish the approach during a blind challenge, so it is
+an option for after 3 November 2026, not before.
+
 ## Reporting a result
 
 The repository's own rule, from `README.md`, applies to conversation too: a difference
