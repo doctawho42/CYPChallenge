@@ -1,0 +1,85 @@
+name: CI
+
+# The split guard is the point of this workflow. Every number in the document depends on
+# the fold assignment, and numbers from different scripts are comparable only while their
+# folds agree — so a silent change to the split is the single most expensive thing that
+# can happen to this repository. tests/test_split.py pins it to a golden digest.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  split-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install the locked environment
+        run: uv sync --locked
+
+      - name: Fetch challenge data
+        run: bash data/fetch.sh
+
+      - name: Build features
+        run: uv run python src/feats.py
+
+      - name: Feature block shapes are unchanged
+        run: |
+          uv run python - <<'PY'
+          import numpy as np
+          z = np.load("data/feats.npz")
+          shapes = {k: z[k].shape for k in ("FP", "DESC", "MECH")}
+          print(shapes)
+          assert shapes["FP"] == (4905, 2048), shapes
+          assert shapes["DESC"] == (4905, 217), shapes
+          assert shapes["MECH"] == (4905, 30), shapes
+          PY
+
+      - name: Split guard
+        run: uv run pytest -v
+
+      - name: Saved predictions still score as documented
+        run: |
+          uv run python - <<'PY'
+          import json, sys
+          import numpy as np, pandas as pd
+          sys.path.insert(0, ".")
+          from cyppaths import D, RES, tutorial
+          tutorial()
+          from evaluation.custom_scoring_functions import (
+              rae_soft_threshold_absolute_error as strae)
+
+          CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
+          oof = json.load(open(RES + "preds/oof.json"))
+          rows = pd.read_csv(D + "rows.csv")
+          tr = (pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
+                  .set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index())
+          for name, want in [("FP+DESC", 0.7729), ("FP+DESC+MECH", 0.7673)]:
+              vals = []
+              for c in CYPS:
+                  col = f"{c}_pIC50_direct_inhibition"
+                  m = tr[col].notna().to_numpy()
+                  vals.append(strae(tr.loc[m, col].to_numpy(),
+                                    np.array(oof[f"{name}|{c}"]),
+                                    y_true_upper=tr.loc[m, col + "_conf_high"].to_numpy(),
+                                    y_true_lower=tr.loc[m, col + "_conf_low"].to_numpy()))
+              got = round(float(np.mean(vals)), 4)
+              print(f"{name:14s} macro ST-RAE {got}  (documented {want})")
+              assert got == want, f"{name}: {got} != {want}"
+          PY
+
+      - name: Every script at least imports
+        run: |
+          for f in src/*.py verify/*.py eda/*.py; do
+            uv run python -c "
+          import ast,sys; ast.parse(open('$f').read())" || exit 1
+          done
+          echo "all scripts parse"

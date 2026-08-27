@@ -1,43 +1,58 @@
-# Проверки
+# Verification
 
-Двадцать три скрипта. Прогон `f*` был сплошной ревизией всего, что было посчитано и написано
-к тому моменту; `g*` — ответы на четыре вопроса по документу. Зависимостей между скриптами нет,
-порядок произвольный. Все ожидают данные в `data/` и код метрики оргкомитета
-(`git clone https://github.com/OpenADMET/CYP-Challenge-Tutorial`).
+Fourteen scripts. The `f*` run was a sweep over everything that had been computed and
+written by that point; `g*` answers four questions raised against the document. There are
+no dependencies between scripts, so the order is free. All of them expect the data in
+`data/` and the organisers' metric code (`git submodule update --init`).
 
-| Скрипт | Что проверяет | Время |
+| Script | What it checks | Time |
 |---|---|---|
-| `f1_formulas.py` | 44 численные проверки всех формул документа против независимой реализации | ~40 с |
-| `f2_splitnorm.py` | точность правила `sigma=(граница−mu)/1.96` для расщеплённой нормали | ~30 с |
-| `f3_seeds.py` | ST-RAE при зёрнах разбиения 1, 2, 3 (зерно 0 уже посчитано) | ~60 мин |
-| `f4_macro.py` | парный бутстрап на макро-уровне, 3000 ресэмплов | ~3 мин |
-| `f5_rho.py` | парный бутстрап Спирмена по ферментам | ~4 мин |
-| `f6_data.py` | сверка 21 числа из документа с исходными таблицами | ~20 с |
-| `f7_testset.py` | структура тестового набора и перцентили якорей | ~5 мин |
-| `f8_mnar.py` | симуляция перехода MNAR → MAR, 40 повторов | ~20 с |
-| `f9_mccthr.py` | цена подстановочного порога против подобранного | ~30 с |
-| `f10_calib.py` | чинит ли калибровка подстановочный порог | ~30 с |
-| `f11_pka.py` | распространённость мотива, на котором ошибается правило pKa | ~2 мин |
-| `f12_cvhard.py` | трудность нашей кросс-валидации против настоящего теста | ~10 мин |
-| `g1_calib.py` | калибровка прибора: подгонка E и h на фермент, планшетный дрейф | ~1 мин |
-| `g2_factor.py` | раскладывается ли совместное распределение на три маргинала | ~1 мин |
+| `f1_formulas.py` | 44 numerical checks of every formula in the document against an independent implementation | ~40 s |
+| `f2_splitnorm.py` | accuracy of the rule `sigma=(bound-mu)/1.96` for a split normal | ~30 s |
+| `f3_seeds.py` | ST-RAE at split seeds 1, 2, 3 (seed 0 is already computed) | ~60 min |
+| `f4_macro.py` | paired bootstrap at the macro level, 3000 resamples | ~3 min |
+| `f5_rho.py` | paired bootstrap of Spearman per enzyme | ~4 min |
+| `f6_data.py` | 21 numbers from the document reconciled against the source tables | ~20 s |
+| `f7_testset.py` | structure of the test set and the percentiles of its anchors | ~5 min |
+| `f8_mnar.py` | simulation of the MNAR to MAR transition, 40 repeats | ~20 s |
+| `f9_mccthr.py` | cost of a plug-in threshold against a fitted one | ~30 s |
+| `f10_calib.py` | whether calibration repairs the plug-in threshold | ~30 s |
+| `f11_pka.py` | prevalence of the motif the pKa rule gets wrong | ~2 min |
+| `f12_cvhard.py` | difficulty of our cross-validation against the real test set | ~10 min |
+| `g1_calib.py` | instrument calibration: fitting E and h per enzyme, plate drift | ~1 min |
+| `g2_factor.py` | whether the joint distribution factors into three marginals | ~1 min |
 
-## Что нашлось
+## What it found
 
-Восемь расхождений между документом и данными, все исправлены:
+Eight discrepancies between the document and the data, all corrected:
 
-1. «75 серий по 10» в тестовом наборе — кластеризация даёт 194 группы с медианным размером два.
-2. Перцентили якорей 92.5 / 98.1 / 97.2 / 68.9 не воспроизводятся; верные 93.0 / 97.5 / 98.2 / 62.8.
-3. 0.236 названо «типичной погрешностью» — это среднеквадратичная, медианная 0.069.
-4. «92 % ранжирующей способности полной модели» — от полной модели выходит 80 %.
-5. Доля положительных TDI 21.3 % относится не к той популяции, на которой считался MCC.
-6. Подстановочный порог по ожидаемому MCC требует калибровки, о которой не было сказано.
-7. Смена зерна разбиения двигает макро ST-RAE сильнее, чем весь измеряемый эффект.
-8. Таблица про скрининг собрана из трёх прогонов с разными базовыми линиями.
+1. "75 series of 10" in the test set — clustering gives 194 groups with a median size of two.
+2. Anchor percentiles 92.5 / 98.1 / 97.2 / 68.9 do not reproduce; the correct ones are 93.0 / 97.5 / 98.2 / 62.8.
+3. 0.236 was called the "typical error" — that is the root mean square; the median is 0.069.
+4. "92 % of the ranking ability of the full model" — the full model yields 80 %.
+5. The 21.3 % positive TDI rate refers to a different population than the one MCC was computed on.
+6. The plug-in threshold by expected MCC requires a calibration that was not mentioned.
+7. Changing the split seed moves macro ST-RAE by more than the entire effect being measured.
+8. The screening table was assembled from three runs with different baselines.
 
-Четыре утверждения доказаны впервые: переход MNAR → MAR подтверждён симуляцией; прирост Спирмена
-от механистического блока подтверждён бутстрапом; байесовский оптимум под ST-RAE проверен численно;
-измерено, что наша кросс-валидация труднее теста на 0.153.
+Four claims were established for the first time: the MNAR to MAR transition was confirmed
+by simulation; the Spearman gain from the mechanistic block was confirmed by bootstrap;
+the Bayes optimum under ST-RAE was verified numerically; and our cross-validation was
+measured to be 0.153 harder than the test set.
 
-Утечек в пайплайне не найдено. Загрязнения между обучением и тестом нет: пересечение по имени,
-по каноническому SMILES и по SMILES со снятой стереохимией — ноль во всех трёх обучающих файлах.
+No leakage was found in the pipeline. There is no contamination between training and test:
+the overlap by name, by canonical SMILES and by SMILES with stereochemistry stripped is
+zero across all three training files.
+
+## Three more, found while setting up the environment
+
+These are documentation errors rather than analysis errors — the code was right and the
+prose was wrong — and they are corrected in the English documentation but **not yet in
+the PDF**:
+
+9. The mechanistic block has **30** features, not 28. `data/mech_names.csv`, written by
+   `feats.py`, has always listed 30 and matches the copy committed in `results/`.
+10. There are **fourteen** verification scripts, not twenty-three, in both this file and
+    the top-level README.
+11. `f12_cvhard.py` could never have run to completion as committed: line 34 referenced an
+    undefined `fRES`. Fixed, and the script now reproduces the documented -0.153.
