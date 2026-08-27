@@ -7,13 +7,18 @@
 UV := uv run
 
 .DEFAULT_GOAL := help
-.PHONY: help setup features baseline ablate score verify test doc clean-cache
+.PHONY: help setup hooks features baseline ablate score verify test doc clean-cache
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
 	 awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-setup:  ## environment, submodule and data — run once per machine
+hooks:  ## arm the local pre-push guard on main (once per clone)
+	@test -x .githooks/pre-push || { echo "no executable .githooks/pre-push"; exit 1; }
+	git config core.hooksPath .githooks
+	@echo "core.hooksPath = $$(git config --get core.hooksPath)"
+
+setup: hooks  ## environment, submodule and data — run once per machine
 	uv sync
 	git submodule update --init
 	bash data/fetch.sh
