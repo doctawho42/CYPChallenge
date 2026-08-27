@@ -58,6 +58,10 @@ from cypsplit import fold_digest
 def _git(*a):
     try: return subprocess.run(("git",)+a, capture_output=True, text=True).stdout.strip()
     except Exception: return "?"
+# Dirtiness of the CODE, excluding results/preds/ -- this script has just rewritten
+# oof.json, so a plain `git status` would report dirty on every single run.
+_dirty = [ln for ln in _git("status", "--porcelain").splitlines()
+          if "results/preds/" not in ln]
 json.dump({
     "split_digest": fold_digest(fold),
     "n_clusters": int(n_clusters),
@@ -65,6 +69,6 @@ json.dump({
     "numpy": np.__version__,
     "python": platform.python_version(),
     "git_commit": _git("rev-parse", "--short", "HEAD"),
-    "git_dirty": bool(_git("status", "--porcelain")),
+    "code_dirty": bool(_dirty),
 }, open(RES + "preds/oof.meta.json", "w"), indent=1)
 print("saved")
