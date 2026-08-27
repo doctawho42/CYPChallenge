@@ -1,0 +1,8 @@
+numpy>=1.26
+pandas>=2.0
+scipy>=1.11
+scikit-learn>=1.3
+rdkit>=2023.9
+matplotlib>=3.8
+seaborn>=0.13
+dimorphite-dl>=1.3

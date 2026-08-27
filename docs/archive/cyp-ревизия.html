@@ -1,0 +1,517 @@
+<title>Ревизия расчётов CYP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+:root{
+  --ground:#F6F8F7; --surface:#FFFFFF; --surface-2:#EFF3F2; --line:#D8E0DE; --line-soft:#E8EDEC;
+  --ink:#14201E; --ink-2:#42514E; --ink-3:#6C7B78;
+  --struct:#26384F; --ok:#14624C; --ok-bg:#E4F0EC; --bad:#95382A; --bad-bg:#F6E7E3;
+  --warn:#7E6114; --warn-bg:#F3ECDC; --new:#3D4A7A; --new-bg:#E7EAF4;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#0E1315; --surface:#151B1E; --surface-2:#1B2327; --line:#2B3639; --line-soft:#222B2E;
+  --ink:#E6EBE9; --ink-2:#AFBCB9; --ink-3:#7E8D8A;
+  --struct:#9FB4CE; --ok:#5FBFA1; --ok-bg:#12312A; --bad:#DE8A76; --bad-bg:#361F1A;
+  --warn:#D7B05A; --warn-bg:#332B15; --new:#9AA8DA; --new-bg:#1D2138;
+}}
+:root[data-theme="dark"]{
+  --ground:#0E1315; --surface:#151B1E; --surface-2:#1B2327; --line:#2B3639; --line-soft:#222B2E;
+  --ink:#E6EBE9; --ink-2:#AFBCB9; --ink-3:#7E8D8A;
+  --struct:#9FB4CE; --ok:#5FBFA1; --ok-bg:#12312A; --bad:#DE8A76; --bad-bg:#361F1A;
+  --warn:#D7B05A; --warn-bg:#332B15; --new:#9AA8DA; --new-bg:#1D2138;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  font-size:16.5px;line-height:1.62;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px 96px}
+.col{max-width:70ch}
+h1,h2,h3{font-family:"IBM Plex Serif",Georgia,serif;text-wrap:balance;margin:0}
+h1{font-size:2.45rem;line-height:1.16;font-weight:600;letter-spacing:-.015em}
+h2{font-size:1.42rem;font-weight:600;margin:0 0 6px}
+h3{font-size:1.05rem;font-weight:600;margin:0}
+p{margin:0 0 15px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;font-size:.93em}
+
+header{border-bottom:1px solid var(--line);background:var(--surface);margin-bottom:44px}
+header .wrap{padding-top:56px;padding-bottom:34px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.71rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:16px}
+.lede{font-size:1.12rem;color:var(--ink-2);margin-top:20px;max-width:66ch}
+
+.tally{display:flex;flex-wrap:wrap;gap:0;margin-top:34px;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.tally div{flex:1 1 150px;padding:15px 18px;background:var(--surface);border-right:1px solid var(--line-soft)}
+.tally div:last-child{border-right:0}
+.tally b{display:block;font-family:"IBM Plex Mono",monospace;font-size:1.85rem;font-weight:600;line-height:1.1}
+.tally span{font-size:.79rem;color:var(--ink-3);display:block;margin-top:4px}
+
+section{margin:0 0 56px}
+.sechead{display:flex;align-items:baseline;gap:14px;padding-bottom:10px;
+  border-bottom:2px solid var(--struct);margin-bottom:26px}
+.sechead .k{font-family:"IBM Plex Mono",monospace;font-size:.75rem;color:var(--ink-3);letter-spacing:.1em}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:3px;
+  padding:22px 24px;margin-bottom:16px}
+.card.bad{border-left:3px solid var(--bad)}
+.card.ok{border-left:3px solid var(--ok)}
+.card.warn{border-left:3px solid var(--warn)}
+.card.new{border-left:3px solid var(--new)}
+.cardtop{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;
+  padding:3px 8px;border-radius:2px;white-space:nowrap;font-weight:500;flex-shrink:0;margin-top:3px}
+.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
+.chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.new{background:var(--new-bg);color:var(--new)}
+.card p{max-width:72ch}
+.card p:last-child{margin-bottom:0}
+.was{border-left:2px solid var(--line);padding:2px 0 2px 14px;margin:14px 0;color:var(--ink-2);font-size:.95rem}
+.was b{color:var(--ink);font-weight:500}
+.fix{background:var(--surface-2);border-radius:3px;padding:12px 15px;margin-top:14px;font-size:.94rem}
+.fix strong{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:5px;font-weight:500}
+
+.scroll{overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:3px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{padding:8px 13px;text-align:right;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal;min-width:200px}
+thead th{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--line);background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:0}
+td.n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+tr.tot td{font-weight:600;border-top:1px solid var(--line);background:var(--surface-2)}
+.g{color:var(--ok);font-weight:500}.r{color:var(--bad);font-weight:500}
+caption{caption-side:bottom;text-align:left;font-size:.83rem;color:var(--ink-3);padding:10px 13px;line-height:1.5}
+
+.ledger{width:100%;border-collapse:collapse;font-size:.91rem}
+.ledger td,.ledger th{padding:9px 12px;border-bottom:1px solid var(--line-soft);text-align:left;white-space:normal}
+.ledger td:first-child{width:64px;white-space:nowrap}
+.ledger td:last-child{width:132px;white-space:nowrap;text-align:right}
+.tag{font-family:"IBM Plex Mono",monospace;font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 7px;border-radius:2px}
+.tag.bad{background:var(--bad-bg);color:var(--bad)}.tag.ok{background:var(--ok-bg);color:var(--ok)}
+.tag.warn{background:var(--warn-bg);color:var(--warn)}.tag.new{background:var(--new-bg);color:var(--new)}
+.id{font-family:"IBM Plex Mono",monospace;color:var(--ink-3);font-size:.85rem}
+ul{margin:0 0 15px;padding-left:20px;max-width:72ch}li{margin-bottom:7px}
+code{font-family:"IBM Plex Mono",monospace;font-size:.87em;background:var(--surface-2);
+  padding:1px 5px;border-radius:2px}
+.foot{border-top:1px solid var(--line);margin-top:60px;padding-top:22px;color:var(--ink-3);font-size:.87rem;max-width:72ch}
+a{color:var(--struct)}
+@media (max-width:640px){body{font-size:15.5px}h1{font-size:1.9rem}.wrap{padding:0 18px 64px}}
+</style>
+
+<header><div class="wrap">
+<div class="eyebrow">OpenADMET CYP · внутренняя ревизия · 26 августа 2026</div>
+<h1>Ревизия расчётов</h1>
+<p class="lede">Сплошная перепроверка всего, что было посчитано и написано по челленджу: формулы пересчитаны
+независимой реализацией, каждое число в документах восстановлено из исходных таблиц, скрипты прочитаны
+на утечки, ключевые выводы прогнаны на другом разбиении. Ниже — что не сошлось, что подтвердилось, и что
+осталось непроверяемым.</p>
+<div class="tally">
+  <div><b class="r">8</b><span>не подтвердилось</span></div>
+  <div><b class="g">4</b><span>доказано впервые</span></div>
+  <div><b>44</b><span>формульных проверки</span></div>
+  <div><b>21</b><span>число сверено с данными</span></div>
+  <div><b class="g">0</b><span>утечек найдено</span></div>
+</div>
+</div></header>
+
+<div class="wrap">
+
+<section>
+<div class="sechead"><h2>Сводка</h2><span class="k">одной таблицей</span></div>
+<div class="scroll"><table class="ledger">
+<tr><td><span class="id">Р1</span></td><td>«75 серий по 10» в тестовом наборе — кластеризация этого не даёт</td><td><span class="tag bad">исправлено</span></td></tr>
+<tr><td><span class="id">Р2</span></td><td>Перцентили якорей 92.5 / 98.1 / 97.2 / 68.9 не воспроизводятся</td><td><span class="tag bad">исправлено</span></td></tr>
+<tr><td><span class="id">Р3</span></td><td>0.236 названо «типичной погрешностью» — это среднеквадратичная, медиана 0.069</td><td><span class="tag bad">исправлено</span></td></tr>
+<tr><td><span class="id">Р4</span></td><td>«92 % ранжирующей способности полной модели» — знаменатель другой, честно 80 %</td><td><span class="tag bad">исправлено</span></td></tr>
+<tr><td><span class="id">Р5</span></td><td>Доля положительных TDI 21.3 % относится не к той популяции, на которой считался MCC</td><td><span class="tag bad">исправлено</span></td></tr>
+<tr><td><span class="id">Р6</span></td><td>Порог по ожидаемому MCC проигрывает подобранному, потому что вероятности не откалиброваны</td><td><span class="tag bad">новое</span></td></tr>
+<tr><td><span class="id">Р7</span></td><td>Смена сида разбиения двигает макро-ST-RAE сильнее, чем весь измеряемый эффект</td><td><span class="tag bad">новое</span></td></tr>
+<tr><td><span class="id">Р8</span></td><td>Таблица про скрининг собрана из трёх прогонов с разными базовыми линиями</td><td><span class="tag bad">исправлено</span></td></tr>
+<tr><td><span class="id">Д1</span></td><td>Переход MNAR → MAR через наблюдаемый скрининг — подтверждён симуляцией</td><td><span class="tag ok">доказано</span></td></tr>
+<tr><td><span class="id">Д2</span></td><td>Прирост Спирмена от механистического блока на 2D6 — бутстрап подтверждает</td><td><span class="tag ok">доказано</span></td></tr>
+<tr><td><span class="id">Д3</span></td><td>Байесовский оптимум под ST-RAE — медиана пула, проверено численно</td><td><span class="tag ok">доказано</span></td></tr>
+<tr><td><span class="id">Д4</span></td><td>Наша кросс-валидация труднее настоящего теста на 0.153 по сходству</td><td><span class="tag ok">измерено</span></td></tr>
+</table></div>
+</section>
+
+<section>
+<div class="sechead"><h2>Не подтвердилось</h2><span class="k">семь позиций</span></div>
+
+<div class="card bad">
+<div class="cardtop"><span class="chip bad">Р1</span><h3>Тестовый набор: «75 серий по 10» кластеризацией не воспроизводится</h3></div>
+<div class="was"><b>Было:</b> «Картина сходится с описанием: 75 серий по 10 аналогов, построенных вокруг лучших
+ингибиторов 1A2, 2C9 и 3A4.»</div>
+<p>Пересчёт по сохранённому разбиению (усреднённая связь, порог 0.5) даёт <b>194 группы</b> на 750 соединений.
+Медианный размер группы — два. Одиночек 72. Серий ровно по десять членов — шестнадцать. Групп по пять и
+более членов 55, и в них лежат 490 из 750 соединений.</p>
+<p>Серийная структура в наборе есть — половина соединений действительно сидит в крупных группах аналогов.
+Но число 75 получается делением 750 на 10 и является пересказом описания организаторов, а не результатом
+измерения. Документ подавал его как проверенное.</p>
+<div class="fix"><strong>Исправлено</strong> В <code>ch4.tex</code> и <code>c12.tex</code> формулировка заменена
+на измеренное распределение размеров групп; отдельно оговорено, что 75 — из описания, а не из данных.</div>
+</div>
+
+<div class="card bad">
+<div class="cardtop"><span class="chip bad">Р2</span><h3>Перцентили якорей не воспроизводятся</h3></div>
+<div class="was"><b>Было:</b> «Восстановленные якоря стоят на 92.5, 98.1 и 97.2 перцентиле обучающей выборки
+по этим трём ферментам и только на 68.9 по 2D6.»</div>
+<p>Ни один способ счёта из перепробованных не даёт этих чисел. Перебраны все четыре режима
+<code>percentileofscore</code>, счёт по всем сериям и по уникальным якорям, медиана и среднее. Наибольшее
+расхождение — на 2D6: шесть пунктов.</p>
+<div class="scroll"><table>
+<thead><tr><th>Фермент</th><th>в документе</th><th>медиана, все 194 серии</th><th>медиана, 55 крупных</th><th>среднее</th></tr></thead>
+<tbody>
+<tr><td>CYP1A2</td><td class="n">92.5</td><td class="n">93.0</td><td class="n">92.9</td><td class="n">79.0</td></tr>
+<tr><td>CYP2C9</td><td class="n">98.1</td><td class="n">97.5</td><td class="n">98.4</td><td class="n">88.7</td></tr>
+<tr><td>CYP3A4</td><td class="n">97.2</td><td class="n">98.2</td><td class="n">96.8</td><td class="n">87.2</td></tr>
+<tr><td>CYP2D6</td><td class="n r">68.9</td><td class="n">62.8</td><td class="n">76.6</td><td class="n">60.3</td></tr>
+</tbody>
+<caption>Перцентиль активности якорной молекулы в обучающем распределении соответствующего фермента.</caption>
+</table></div>
+<p>Вывод, ради которого числа приводились, устоял при любом способе счёта: якоря трёх ферментов отбора сидят
+в верхних процентах распределения, якоря 2D6 — в середине. Разрыв в тридцать с лишним пунктов не зависит
+от того, как считать. Но сами числа в документах были не те.</p>
+<div class="fix"><strong>Исправлено</strong> Проставлены 93.0 / 97.5 / 98.2 / 62.8 с указанием способа счёта
+и второго набора чисел по крупным сериям.</div>
+</div>
+
+<div class="card bad">
+<div class="cardtop"><span class="chip bad">Р3</span><h3>«Типичная погрешность 0.236» — это не типичная погрешность</h3></div>
+<div class="was"><b>Было:</b> «Для CYP2D6 стандартное отклонение меток равно 0.916, типичная погрешность
+одного измерения — 0.236.»</div>
+<p>Арифметика верна: 0.916² = 0.839, 0.236² = 0.056, надёжность 0.934. И в разложение дисперсии идёт именно
+среднеквадратичная погрешность — код так и считает. Но слово «типичная» описывает не то число.</p>
+<div class="scroll"><table>
+<thead><tr><th>Фермент</th><th>медиана σ</th><th>75 %</th><th>90 %</th><th>95 %</th><th>СКО σ</th><th>доля шума от верхних 5 %</th></tr></thead>
+<tbody>
+<tr><td>CYP1A2</td><td class="n">0.084</td><td class="n">0.148</td><td class="n">0.389</td><td class="n">0.655</td><td class="n">0.235</td><td class="n">48 %</td></tr>
+<tr><td>CYP2C9</td><td class="n">0.137</td><td class="n">0.223</td><td class="n">0.338</td><td class="n">0.598</td><td class="n">0.241</td><td class="n">44 %</td></tr>
+<tr><td>CYP2D6</td><td class="n">0.069</td><td class="n">0.093</td><td class="n">0.323</td><td class="n">0.682</td><td class="n">0.236</td><td class="n r">60 %</td></tr>
+<tr><td>CYP3A4</td><td class="n">0.095</td><td class="n">0.426</td><td class="n">0.692</td><td class="n">0.736</td><td class="n">0.350</td><td class="n">23 %</td></tr>
+</tbody>
+<caption>Распределение стандартной ошибки подгонки кривой. Для CYP2D6 медиана и СКО отличаются в 3.4 раза.</caption>
+</table></div>
+<p>У CYP2D6 медианное соединение измерено с точностью 0.069, а всю шумовую дисперсию делают полсотни
+соединений с развалившейся подгонкой. Это не мелочь стиля: читатель, который сверит 0.236 с гистограммой,
+решит, что документ врёт. И это же прямо подсказывает архитектуру — шум резко гетероскедастичен, значит
+взвешивание по σ важнее, чем кажется по среднему.</p>
+<div class="fix"><strong>Исправлено</strong> «Типичная» заменена на «среднеквадратичная», добавлены медиана
+и доля шума, приходящаяся на хвост.</div>
+</div>
+
+<div class="card bad">
+<div class="cardtop"><span class="chip bad">Р4</span><h3>«92 процента ранжирующей способности полной модели»</h3></div>
+<p>Модель на одних 28 механистических числах даёт на CYP2D6 ρ = 0.324. Дальше всё зависит от знаменателя:
+модель на фингерпринте с дескрипторами даёт 0.351, полная модель со всеми тремя блоками — 0.403.
+92 процента получается от первого, от полной модели выходит 80.</p>
+<div class="scroll"><table>
+<thead><tr><th>Фермент</th><th>только MECH</th><th>FP+DESC</th><th>доля</th><th>FP+DESC+MECH</th><th>доля</th></tr></thead>
+<tbody>
+<tr><td>CYP1A2</td><td class="n">0.263</td><td class="n">0.497</td><td class="n">53 %</td><td class="n">0.496</td><td class="n">53 %</td></tr>
+<tr><td>CYP2C9</td><td class="n">0.257</td><td class="n">0.583</td><td class="n">44 %</td><td class="n">0.597</td><td class="n">43 %</td></tr>
+<tr><td>CYP2D6</td><td class="n">0.324</td><td class="n">0.351</td><td class="n g">92 %</td><td class="n">0.403</td><td class="n g">80 %</td></tr>
+<tr><td>CYP3A4</td><td class="n">0.377</td><td class="n">0.764</td><td class="n">49 %</td><td class="n">0.765</td><td class="n">49 %</td></tr>
+</tbody>
+<caption>Спирмен по кластерным фолдам. Контраст 2D6 против остальных держится при обоих знаменателях.</caption>
+</table></div>
+<p>Вывод не меняется — низкоразмерность сигнала 2D6 видна и по 80 процентам. Но 92 было выбрано из двух
+возможных чисел без оговорки, и это ровно тот сорт неточности, который в статье назовут подгонкой.</p>
+<div class="fix"><strong>Исправлено</strong> В тексте теперь оба числа с явными знаменателями.</div>
+</div>
+
+<div class="card bad">
+<div class="cardtop"><span class="chip bad">Р5</span><h3>Доля положительных TDI относится не к той популяции</h3></div>
+<p>В документах стоит 21.3 % положительных по CYP3A4 из 3584 размеченных. Это верно по файлу. Но модели
+учились и MCC считался на 2346 соединениях — тех, у кого есть и признаки, и метка. Там доля 32.6 %.
+Разница не случайная:</p>
+<div class="scroll"><table>
+<thead><tr><th>CYP3A4_is_TDI</th><th>соединений</th><th>положительных</th></tr></thead>
+<tbody>
+<tr><td>весь файл TDI</td><td class="n">3584</td><td class="n">21.3 %</td></tr>
+<tr><td>есть запись в файле кривых</td><td class="n">2346</td><td class="n">32.6 %</td></tr>
+<tr><td>записи в файле кривых нет</td><td class="n">1238</td><td class="n r">0.0 %</td></tr>
+</tbody>
+<caption>Ни одного положительного среди 1238. По CYP2D6 такого нет: вне файла кривых всего два соединения.</caption>
+</table></div>
+<p>Ноль — не «мало». Соединение объявляют time-dependent ингибитором по сдвигу IC<sub>50</sub> после
+преинкубации, а сдвигать нечего, если прямого ингибирования нет. Отсутствие кривой автоматически даёт
+отрицательную метку.</p>
+<p>Отсюда ловушка, которую стоит увидеть заранее. Признак «есть ли запись в файле кривых» на обучении
+безошибочно отсекает треть кандидатов в отрицательные. В тестовом файле — только имя и SMILES, ничего
+подобного там нет и быть не может. Модель, которая наткнётся на этот признак через прокси, получит
+прекрасную кросс-валидацию и развалится на лидерборде.</p>
+<div class="fix"><strong>Исправлено</strong> В <code>ch4.tex</code> добавлен абзац со структурой меток
+и явное предупреждение; в подписи к таблице MCC указаны популяции 2346 и 1495.</div>
+</div>
+
+<div class="card bad">
+<div class="cardtop"><span class="chip bad">Р6</span><h3>Порог по ожидаемому MCC проигрывает — вероятности не откалиброваны</h3></div>
+<p>Документы предлагают выбирать порог, максимизируя ожидаемый MCC по формуле
+<span class="mono">E[TP] = Σ<sub>i: p<sub>i</sub>&gt;t</sub> p<sub>i</sub></span>. Правило верное — на
+симуляции с честными вероятностями оно попадает в оптимум. На наших сохранённых вероятностях оно
+промахивается, и промах стоит больше половины всего выигрыша от подбора порога.</p>
+<div class="scroll"><table>
+<thead><tr><th>CYP3A4, n=2346</th><th>E[p]</th><th>Брайер</th><th>порог plug-in</th><th>MCC там</th><th>лучший MCC</th><th>потеря</th></tr></thead>
+<tbody>
+<tr><td>сырые вероятности</td><td class="n">0.256</td><td class="n">0.2075</td><td class="n">0.375</td><td class="n">0.3247</td><td class="n">0.3576</td><td class="n r">−0.033</td></tr>
+<tr><td>после изотонической</td><td class="n">0.325</td><td class="n">0.1864</td><td class="n">0.338</td><td class="n">0.3440</td><td class="n">0.3510</td><td class="n">−0.007</td></tr>
+<tr><td>после Платта</td><td class="n">0.326</td><td class="n">0.1853</td><td class="n">0.352</td><td class="n g">0.3525</td><td class="n">0.3554</td><td class="n g">−0.003</td></tr>
+</tbody>
+<caption>Доля положительных 0.326. Калибровка вложенная: изотоническая и Платта обучены на четырёх пятых, применены к пятой.</caption>
+</table></div>
+<div class="scroll"><table>
+<thead><tr><th>CYP2D6, n=1495</th><th>E[p]</th><th>Брайер</th><th>порог plug-in</th><th>MCC там</th><th>лучший MCC</th><th>потеря</th></tr></thead>
+<tbody>
+<tr><td>сырые вероятности</td><td class="n r">0.079</td><td class="n">0.1990</td><td class="n">0.300</td><td class="n">0.1151</td><td class="n">0.1272</td><td class="n">−0.012</td></tr>
+<tr><td>после изотонической</td><td class="n">0.217</td><td class="n">0.1690</td><td class="n">0.300</td><td class="n">0.1084</td><td class="n">0.1084</td><td class="n">0.000</td></tr>
+<tr><td>после Платта</td><td class="n">0.217</td><td class="n">0.1674</td><td class="n">0.226</td><td class="n r">0.0920</td><td class="n">0.1222</td><td class="n r">−0.030</td></tr>
+</tbody>
+<caption>Доля положительных 0.217, а средняя предсказанная вероятность 0.079 — промах в 2.7 раза.</caption>
+</table></div>
+<p>На 3A4 всё лечится: калибровка Платта приводит среднюю вероятность к 0.326, Брайер падает с 0.2075 до
+0.1853, и plug-in начинает попадать почти точно (потеря 0.003 вместо 0.033). Чистый выигрыш калибровки
++0.028 MCC — больше, чем даёт любая перестановка признаков в наших абляциях.</p>
+<p>На 2D6 не лечится. Калибровка чинит калибровку (E[p] 0.079 → 0.217, Брайер 0.199 → 0.169), а MCC
+не растёт: изотоническая сжимает достижимый максимум с 0.127 до 0.108, Платт уводит порог не туда.
+При MCC порядка 0.12 и 260 положительных на обучение калибратора его собственный шум съедает пользу.</p>
+<div class="fix"><strong>В архитектуру</strong> Plug-in по ожидаемому MCC остаётся, но с обязательной
+вложенной калибровкой перед ним — и с абляцией на каждом эндпоинте отдельно, потому что на слабом
+эндпоинте связка не окупается. Заявлять правило как самодостаточное было ошибкой.</div>
+</div>
+
+<div class="card bad" id="seeds">
+<div class="cardtop"><span class="chip bad">Р7</span><h3>Разбиение на фолды двигает результат сильнее измеряемого эффекта</h3></div>
+<p>Все числа регрессионного трека до сих пор стояли на одном разбиении — <code>default_rng(0)</code>
+по кластерам Бутины. Бутстрап покрывал пересэмплинг соединений, но не случайность самого разбиения.
+Прогон на других сидах меняет только то, как кластеры раскидываются по пяти фолдам; кластеризация,
+признаки, гиперпараметры те же.</p>
+<p>Все числа регрессионного трека до сих пор стояли на одном разбиении — кластеры Бутины при пороге 0.35,
+раскиданные по фолдам генератором с зерном ноль. Парный бутстрап покрывал случайность выборки соединений,
+но не случайность самого разбиения. Это было честно записано в главе о слабых местах и теперь закрыто
+прямым прогоном.</p>
+<div class="scroll"><table>
+<thead><tr><th>Разбиение</th><th>1A2</th><th>2C9</th><th>2D6</th><th>3A4</th><th>Макро</th><th>Δ от блока</th></tr></thead>
+<tbody>
+<tr><td>Зерно 0 · без блока</td><td class="n">0.8797</td><td class="n">0.7015</td><td class="n">0.9927</td><td class="n">0.5178</td><td class="n">0.7729</td><td></td></tr>
+<tr><td><span style='padding-left:14px'>с механистическим блоком</span></td><td class="n">0.8786</td><td class="n">0.6908</td><td class="n">0.9803</td><td class="n">0.5194</td><td class="n">0.7673</td><td class="n g">-0.0056</td></tr>
+<tr><td>Зерно 1 · без блока</td><td class="n">0.8712</td><td class="n">0.7194</td><td class="n">1.0097</td><td class="n">0.5319</td><td class="n">0.7830</td><td></td></tr>
+<tr><td><span style='padding-left:14px'>с механистическим блоком</span></td><td class="n">0.8625</td><td class="n">0.7050</td><td class="n">0.9813</td><td class="n">0.5273</td><td class="n">0.7690</td><td class="n g">-0.0140</td></tr>
+<tr><td>Зерно 2 · без блока</td><td class="n">0.8479</td><td class="n">0.7210</td><td class="n">0.9778</td><td class="n">0.5220</td><td class="n">0.7672</td><td></td></tr>
+<tr><td><span style='padding-left:14px'>с механистическим блоком</span></td><td class="n">0.8526</td><td class="n">0.7065</td><td class="n">0.9780</td><td class="n">0.5270</td><td class="n">0.7660</td><td class="n g">-0.0012</td></tr>
+<tr><td>Зерно 3 · без блока</td><td class="n">0.8619</td><td class="n">0.7226</td><td class="n">0.9897</td><td class="n">0.5284</td><td class="n">0.7757</td><td></td></tr>
+<tr><td><span style='padding-left:14px'>с механистическим блоком</span></td><td class="n">0.8605</td><td class="n">0.6943</td><td class="n">0.9698</td><td class="n">0.5332</td><td class="n">0.7645</td><td class="n g">-0.0112</td></tr>
+<tr class="tot"><td>Среднее · без блока</td><td colspan="4"></td><td class="n">0.7747</td><td></td></tr>
+<tr class="tot"><td>Среднее · с блоком</td><td colspan="4"></td><td class="n">0.7667</td><td class="n g">-0.0080</td></tr>
+<tr class="tot"><td>Ско по зёрнам · без блока</td><td colspan="4"></td><td class="n r">0.0066</td><td></td></tr>
+<tr class="tot"><td>Ско по зёрнам · с блоком</td><td colspan="4"></td><td class="n g">0.0019</td><td></td></tr>
+</tbody>
+<caption>ST-RAE по кластерным фолдам при четырёх зёрнах. Меняется только то, как кластеры раскидываются
+по пяти фолдам: кластеризация, признаки, гиперпараметры и код одни и те же.</caption>
+</table></div>
+<p><b>Абсолютный уровень плавает.</b> Макро-ST-RAE набора без механистического блока по четырём зёрнам:
+0.7729, 0.7830, 0.7672, 0.7757. Стандартное отклонение 0.0066, размах
+0.0158 — <b>больше, чем весь эффект, ради измерения которого строилась абляционная сетка</b>.
+Любое число вида «макро 0.767» без указания разбиения имеет точность до первого знака после запятой,
+не до третьего.</p>
+<p><b>Направление держится.</b> Разность отрицательна на всех четырёх зёрнах: -0.0056,
+-0.0140, -0.0012, -0.0112. Спирмен по треку растёт тоже на всех четырёх,
+в среднем на +0.015, а на 2D6 — от
++0.033 до +0.052.
+Бутстрап на одном разбиении накрывал ноль; четыре разбиения показывают, что знак устойчив, хотя величина
+гуляет в десять раз.</p>
+<div class="fix"><strong>И главное в этой таблице — не средние, а разбросы</strong>
+Набор без механистического блока имеет по зёрнам разброс 0.0066, с блоком — 0.0019,
+то есть в <b>3.4 раза меньше</b>. По ферментам эффект сосредоточен ровно там,
+где и должен: на 2D6 разброс падает с 0.0132 до 0.0052, размах — с 0.032 до 0.012, а на 3A4 не меняется
+почти совсем (0.0063 против 0.0057).
+<p style="margin:10px 0 0">Двадцать восемь механистических чисел дают модели опору, не зависящую от того,
+какие именно аналоги попали в обучающие фолды. Фингерпринт такой опоры не даёт: он узнаёт соединение
+по соседям, и когда соседи уезжают в отложенный фолд, узнавание рассыпается. Похоже, это и есть главная
+польза блока — не прирост среднего, а снижение зависимости от разбиения. Прежняя формулировка «выигрыш
+неотличим от нуля» была верна по букве и упускала суть.</p></div>
+<div class="fix"><strong>В протокол</strong> Любое сравнение вариантов архитектуры дальше идёт на фиксированном
+наборе из нескольких разбиений и отчитывается разностью на каждом плюс разбросом. Одно разбиение годится
+для отладки и не годится для решения, что отправлять.</div>
+</div>
+</section>
+
+<section>
+<div class="sechead"><h2>Доказано впервые</h2><span class="k">то, что раньше было заявлено</span></div>
+
+<div class="card ok">
+<div class="cardtop"><span class="chip ok">Д1</span><h3>Переход MNAR → MAR: центральный аргумент архитектуры проверен</h3></div>
+<p>На этом утверждении держится вся конструкция совместного правдоподобия. Формально:
+<span class="mono">p(y<sub>drc</sub>, y<sub>scr</sub>, R | θ) = p(y<sub>drc</sub>|θ)·p(y<sub>scr</sub>|θ)·p(R|y<sub>scr</sub>)</span>,
+и третий множитель не зависит от θ, поэтому выпадает из градиента. До сих пор это стояло в документах
+как выкладка. Теперь проверено симуляцией, где истина известна.</p>
+<div class="scroll"><table>
+<thead><tr><th>Способ подгонки</th><th>смещение коэффициентов, норма</th><th>наклон калибровки</th></tr></thead>
+<tbody>
+<tr><td>только отобранные DRC-метки (как сейчас)</td><td class="n r">0.433</td><td class="n r">0.731</td></tr>
+<tr><td>совместное правдоподобие, отбор по скринингу</td><td class="n g">0.019</td><td class="n g">1.012</td></tr>
+<tr><td>только скрининг, все строки (контроль сверху)</td><td class="n">0.002</td><td class="n">1.000</td></tr>
+<tr><td>отбор по скрытой истине, скрининг у неотобранных не виден</td><td class="n r">0.512</td><td class="n r">0.681</td></tr>
+</tbody>
+<caption>40 повторов, 6000 соединений, в подробное измерение попадает 28 %. Истинные коэффициенты известны по построению.</caption>
+</table></div>
+<p>Подгонка по одним отобранным меткам сжимает коэффициенты до 0.73 от истины — ровно то ограничение
+диапазона, которое мы видим на CYP2D6. Совместное правдоподобие возвращает 1.01, то есть работает.</p>
+<p>Четвёртая строка важнее первых трёх. Если сломать условие — сделать отбор зависящим от скрытой истины
+и убрать скрининг у неотобранных, — совместная схема ломается так же, как наивная. Значит аргумент держится
+не на общей идее «использовать больше данных», а конкретно на том, что первая ступень отбора наблюдаема.
+В наших данных она наблюдаема: скрининг при 49.5 мкМ снят для 4376 соединений, включая те, для которых
+кривую снимать не стали.</p>
+</div>
+
+<div class="card ok">
+<div class="cardtop"><span class="chip ok">Д2</span><h3>Прирост ранжирования от механистического блока — бутстрап держит</h3></div>
+<p>Документы говорили: по ST-RAE выигрыша нет, по Спирмену есть и избирательный. Первая половина была
+подтверждена бутстрапом, вторая — заявлена по точечным оценкам. Теперь измерены обе.</p>
+<div class="scroll"><table>
+<thead><tr><th>Фермент</th><th>FP+DESC</th><th>+MECH</th><th>Δρ</th><th>95 % ДИ</th><th>P(прироста нет)</th></tr></thead>
+<tbody>
+<tr><td>CYP2D6</td><td class="n">0.351</td><td class="n">0.403</td><td class="n g">+0.052</td><td class="n">[+0.022, +0.082]</td><td class="n g">0.001</td></tr>
+<tr><td>CYP2C9</td><td class="n">0.583</td><td class="n">0.597</td><td class="n">+0.014</td><td class="n">[−0.002, +0.029]</td><td class="n">0.044</td></tr>
+<tr><td>CYP3A4</td><td class="n">0.764</td><td class="n">0.765</td><td class="n">+0.001</td><td class="n">[−0.005, +0.006]</td><td class="n">0.379</td></tr>
+<tr><td>CYP1A2</td><td class="n">0.497</td><td class="n">0.496</td><td class="n">−0.001</td><td class="n">[−0.014, +0.011]</td><td class="n">0.577</td></tr>
+</tbody>
+<caption>Парный бутстрап по соединениям, 3000 ресэмплов.</caption>
+</table></div>
+<p>Заодно закрыт пробел с другой стороны. Раньше был только парный бутстрап по отдельным ферментам,
+а лидерборд сортирует по макро. Макро-бутстрап (ресэмплим соединения, для каждого фермента берём те из
+них, у кого есть метка — так сохраняется корреляция) даёт по ST-RAE разность <b>−0.0056</b> с интервалом
+от −0.0155 до +0.0041 и вероятностью вреда 0.14.</p>
+<p>Итоговая формулировка, которая теперь подкреплена целиком: механистический блок улучшает порядок
+на том единственном ферменте, где узнавание завязано на заряд, и не улучшает шкалу ни на одном —
+ни поштучно, ни в среднем по треку.</p>
+</div>
+
+<div class="card ok">
+<div class="cardtop"><span class="chip ok">Д3</span><h3>Формулы: 44 численные проверки, одно уточнение</h3></div>
+<p>Каждая формула из обоих документов пересчитана независимой реализацией и проверена на числах.
+ST-RAE сверена построчно с <code>rae_soft_threshold_absolute_error</code> из кода оргкомитета: совпадение
+до 10<sup>−12</sup> на пяти случайных наборах, вырожденный случай сводится к обычному RAE, предсказание
+среднего даёт ровно 1.000.</p>
+<ul>
+<li><b>Уравнение Хилла</b> — знак показателя, исправленный в прошлый раз, держится: I растёт с концентрацией,
+на числах 0.941 / 0.500 / 0.137 при IC<sub>50</sub> = 6.3 мкМ.</li>
+<li><b>Производная и информация Фишера</b> — аналитическая формула совпадает с конечной разностью до 10<sup>−6</sup>
+в четырёх точках; множитель <span class="mono">x/(1+x)²</span> максимален ровно при x = 1 со значением 1/4,
+на декаду от IC<sub>50</sub> падает в 3.02 раза.</li>
+<li><b>Байесовский оптимум под ST-RAE</b> — численная минимизация риска на 400 000 сэмплов с заведомо
+асимметричной полосой даёт 4.8800 против медианы пула 4.8769; условие F<sub>L</sub>+F<sub>H</sub>=1
+выполняется, риск выпуклый, при нулевой полосе оптимум сходится к обычной медиане.</li>
+<li><b>Коррегионализация</b> — B = LLᵀ + diag(κ) положительно определена, ранг слагаемого совпадает с рангом,
+W = chol(B)ᵀ воспроизводит B с невязкой 10<sup>−16</sup>.</li>
+<li><b>Хендерсон—Хассельбальх, надёжность, расщеплённая нормаль</b> — сошлись.</li>
+</ul>
+<p>Единственное уточнение — по расщеплённой нормали. Правило
+<span class="mono">σ<sup>−</sup> = (μ−l)/1.96</span>, <span class="mono">σ<sup>+</sup> = (h−μ)/1.96</span>
+точно только при симметричной полосе. При σ<sup>−</sup>=0.30 и σ<sup>+</sup>=0.55 оно даёт 95-процентный
+интервал [4.120, 5.323] вместо заявленного [4.10, 5.30]: у расщеплённой нормали слева лежит масса
+σ<sup>−</sup>/(σ<sup>−</sup>+σ<sup>+</sup>), а не половина, поэтому квантиль стоит не в 1.96σ.
+На наших данных это не играет: полосы почти симметричны, и фактическая ширина интервала отличается
+от заявленной на 0.03—0.13 процента, а границы — на 0.0004 единицы pIC<sub>50</sub>. Правило годится,
+но по причине, которую надо назвать, а не по общей верности.</p>
+</div>
+
+<div class="card ok">
+<div class="cardtop"><span class="chip ok">Д4</span><h3>Наша проверка труднее настоящего теста</h3></div>
+<p>Кластерная кросс-валидация задумана так, чтобы не переоценить модель. Вопрос, который до сих пор
+не задавался: а насколько она вообще похожа на тест по трудности? Мера простая — сходство соединения
+с ближайшим к нему обучающим.</p>
+<div class="scroll"><table>
+<thead><tr><th>Сходство с ближайшим обучающим</th><th>медиана</th><th>75 %</th><th>90 %</th><th>95 %</th><th>доля &gt; 0.7</th></tr></thead>
+<tbody>
+<tr><td>отложенный фолд против обучающих (сид 0)</td><td class="n">0.435</td><td class="n">0.500</td><td class="n">0.569</td><td class="n">0.607</td><td class="n">0.5 %</td></tr>
+<tr><td>отложенный фолд против обучающих (сид 1)</td><td class="n">0.435</td><td class="n">0.500</td><td class="n">0.567</td><td class="n">0.603</td><td class="n">0.3 %</td></tr>
+<tr><td>настоящий тест против всего обучения</td><td class="n g">0.587</td><td class="n">0.639</td><td class="n">0.702</td><td class="n">0.741</td><td class="n g">10.1 %</td></tr>
+</tbody>
+<caption>Танимото по Моргану r=2, 2048 бит. Разрыв медиан 0.153.</caption>
+</table></div>
+<p>Разрыв идёт в неожиданную сторону: наша проверка <b>труднее</b> теста. В тесте каждое десятое соединение
+имеет обучающего родственника со сходством выше 0.7, у нас таких полпроцента. Два следствия.</p>
+<p>Первое, приятное: 0.767 — оценка снизу, на лидерборде должно быть лучше. Второе, неприятное:
+мы отбираем модели по способности экстраполировать на чужую химию, а тест награждает за интерполяцию
+внутри серии аналогов. Это разные умения, и лучшая по нашей сетке модель не обязана быть лучшей там.
+Ровно эту дыру закрывает валидация, воспроизводящая конструкцию теста, — она была в плане пунктом
+«хорошо бы», теперь у неё есть цена в 0.153 по сходству.</p>
+</div>
+</section>
+
+<section>
+<div class="sechead"><h2>Проверено и сошлось</h2><span class="k">без изменений</span></div>
+<div class="card">
+<p><b>Утечек не найдено.</b> Прочитаны построчно <code>ablate.py</code>, <code>base.py</code>,
+<code>range.py</code>, <code>rangectl.py</code>, <code>decision.py</code>, <code>score.py</code>.
+Фолды назначаются по кластерам, обучение строго на <code>fold ≠ f</code>, предсказание на <code>fold = f</code>.
+Признаки считаются помолекулярно и метку не видят. В <code>decision.py</code> полуширины полосы и предиктивная
+сигма обучены только на обучающих фолдах. Кластеризация Бутины идёт по всей выборке, но только по SMILES,
+целевой переменной не касается.</p>
+<p><b>Загрязнения между обучением и тестом нет.</b> Пересечение по имени — ноль во всех трёх обучающих
+файлах. По каноническому SMILES — ноль. Со снятой стереохимией — тоже ноль. Дубликатов внутри обучения
+и внутри теста нет.</p>
+<p><b>Разница гиперпараметров базовой линии оказалась несущественной.</b> Базовые 0.774 считались при
+<code>max_iter=400</code>, абляция — при 300. Прямое сравнение внутри одной абляции даёт FP+DESC 0.7729
+против FP+DESC+MECH 0.7673, то есть разница настроек стоит около 0.001 и заголовочное сравнение
+не портит.</p>
+<p><b>Таблица «три способа подключить скрининг» досверена и переделана.</b> Перезапуск дал 1.0058 и 0.8033
+по ST-RAE и 0.5605 и 0.587 по Спирмену — совпадение до третьего знака. Но выяснилось, что четыре строки
+таблицы пришли из <b>трёх разных прогонов</b> с базовыми линиями 0.783, 0.788 и 0.794, а подавались как
+сравнение с одной. Разброс базовых линий 0.011 — того же порядка, что разброс от смены разбиения (Р7).
+Таблица переписана на разности от собственной базы каждой строки: утечка +0.138, вложенная схема ровно 0.000,
+два этапа +0.212, смесь пополам <b>+0.009</b> при выигрыше +0.036 Спирмена. Последняя оценка при этом
+улучшилась: раньше смесь читалась как −0.015 к базе, теперь −0.009, и обмен ST-RAE на ранг выглядит выгоднее,
+чем считалось.</p>
+<p><b>Правило разметки TDI воспроизводит метки без единой ошибки.</b> Метка вычисляется из двух измеренных
+pIC<sub>50</sub> — обычного и после преинкубации — по составному правилу
+<span class="mono">(π &gt; 4 и Δ &gt; log₁₀2)</span> или <span class="mono">(π ≤ 4 и π+Δ &gt; 4.301)</span>,
+где 4.301 = 4 + log₁₀2. Совпадение <b>2334 из 2334</b> для 3A4 и <b>1493 из 1493</b> для 2D6. Проверено
+и покомпонентно: без второго слагаемого правило теряет 84 положительных на 3A4 и 51 на 2D6, а каждое
+слагаемое по отдельности даёт сотни ложных срабатываний. Значит классификационный трек — не классификация,
+а детерминированная функция двух регрессий, которые мы и так предсказываем; интегрирование правила
+по совместному предсказательному распределению остаётся правильным ходом.</p>
+<p><b>Сходятся с исходными таблицами:</b> размеры всех пяти файлов; 1412 / 1285 / 1493 / 2335 меток
+по ферментам и сумма 6525; межквартильные размахи 1.00 / 0.92 / 0.83 / 1.50; разметка TDI 3584 и 1497;
+максимум асимметрии полосы 0.13; MAE оценщика pKa 0.60 и 20 из 20 по бинарному вопросу; все шесть строк
+таблицы TDI-базовых линий; решающий слой 0.767 → 0.785 и оракульные 0.752; изотоника по измеренному
+скринингу 0.359 макро; конфигурация оценки (<code>ST-RAE</code>, <code>MCC</code>, 1000 бутстрап-выборок,
+макро-эндпоинт <code>MA</code>, 750 строк).</p>
+</div>
+</section>
+
+<section>
+<div class="sechead"><h2>Осталось непроверенным</h2><span class="k">честный список</span></div>
+<div class="card warn">
+<ul>
+<li><b>Сама совместная модель правдоподобия не запускалась ни разу.</b> Проверен её теоретический фундамент
+(Д1) и все компоненты по отдельности. Строка абляции, где стоит она сама, пуста. Это главный незакрытый риск:
+всё остальное — про то, почему конструкция должна работать, а не про то, что она работает.</li>
+<li><b>Вероятностное правило TDI</b> — интегрирование правила разметки по совместному предсказательному
+распределению плеч — не запускалось. Все шесть измеренных вариантов правила детерминированные.</li>
+<li><b>Оценщик pKa проверен на 20 соединениях, которые я сам и выбрал.</b> MAE 0.60 при медианной ошибке 0.2:
+среднее делают четыре промаха, худший — кофеин, 4.5 единицы (правило относит его азот к имидазолам с базовым
+7.0 и недоштрафовывает соседние карбонилы). Бинарный вопрос «заряжено при 7.4» на кофеине всё равно решается
+верно, поэтому 20 из 20 держится. Мотив «ароматический азот через атом от карбонила» встречается у 3 %
+обучающей выборки — зона, где правило может систематически завышать.</li>
+<li><b>Учит ли графовая сеть протонирование сама</b> — не проверялось. Если учит, часть вывода про
+механистический блок надо будет переписать.</li>
+<li><b>Знаменатель ST-RAE считается по среднему оценочного набора.</b> У нас это среднее по обучающей
+подвыборке фермента, на лидерборде — по 750 тестовым. Числа между нашей таблицей и лидербордом
+несопоставимы напрямую, и это не оговорено ни в одном документе.</li>
+</ul>
+</div>
+</section>
+
+<div class="foot">
+<p>Все числа получены прогонами в этой сессии. Скрипты проверки лежат в <code>/tmp/verify/</code>
+(<code>f1</code> — формулы, <code>f2</code> — расщеплённая нормаль, <code>f3</code> — сиды,
+<code>f4</code> — макро-бутстрап, <code>f5</code> — Спирмен, <code>f6</code> — сверка чисел,
+<code>f7</code> — тестовый набор, <code>f8</code> — MNAR, <code>f9</code>—<code>f10</code> — пороги и калибровка,
+<code>f11</code>—<code>f12</code> — pKa и трудность проверки).</p>
+</div>
+</div>

@@ -1,0 +1,51 @@
+"""Калибровка прибора: как показание скрининга при одной концентрации связано с pIC50.
+Модель: доля подавленной активности I = E/(1+10^{h(pC0-pi)}), показание log2fc = log2(1-I).
+Подгоняем E и h на фермент по соединениям, у которых есть и то и другое."""
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
+from cyppaths import D, RES, tutorial
+tutorial()
+import numpy as np, pandas as pd
+from scipy.optimize import least_squares
+from scipy.stats import spearmanr
+C=["CYP1A2","CYP2C9","CYP2D6","CYP3A4"]
+pC0=-np.log10(4.95049505e-05)
+inh=pd.read_csv(D+"cyp-challenge-TRAIN_inhibition.csv")
+sc=pd.read_csv(D+"cyp-challenge-single-concentration-TRAIN.csv")
+piv=sc.pivot_table(index="Molecule_Name",columns="enzyme",values="log2fc_estimate")
+m=inh.set_index("Molecule_Name").join(piv)
+print(f"концентрация скрина 49.5 мкМ -> pC0 = {pC0:.3f}\n")
+print(f"{'фермент':8s} {'n':>5s} {'E':>7s} {'h':>7s} {'ско остатка':>12s} {'ско от изотоники':>17s} {'rho':>7s}")
+FIT={}
+for c in C:
+    col=f"{c}_pIC50_direct_inhibition"; k=m[col].notna()&m[c].notna()
+    pi=m.loc[k,col].to_numpy(); y=m.loc[k,c].to_numpy()
+    def resid(t):
+        E,h=t
+        I=E/(1+10**(h*(pC0-pi)))
+        return np.log2(np.clip(1-I,1e-3,None))-y
+    r=least_squares(resid,[1.0,1.0],bounds=([0.2,0.2],[1.2,4.0]))
+    E,h=r.x; res=resid(r.x)
+    from sklearn.isotonic import IsotonicRegression
+    iso=IsotonicRegression(increasing=False,out_of_bounds="clip").fit(pi,y)
+    ri=y-iso.predict(pi)
+    FIT[c]=(E,h,res.std(),ri.std())
+    print(f"{c:8s} {k.sum():5d} {E:7.3f} {h:7.3f} {res.std():12.3f} {ri.std():17.3f} {spearmanr(pi,y).statistic:+7.3f}")
+print("""
+E и h здесь -- параметры КАЛИБРОВКИ, а не химии соединения: одна пара на фермент,
+описывающая, как латентная кривая превращается в показание прибора.
+Столбец «ско от изотоники» -- предел того, что вообще может дать любая монотонная
+калибровка. Разрыв между двумя ско показывает, теряет ли хилловская форма что-то
+против свободной монотонной.""")
+
+print("\n=== планшетный разброс: сколько показания гуляют между планшетами ===")
+for c in C:
+    d=sc[sc.enzyme==c]
+    g=d.groupby("plate_id")["log2fc_estimate"]
+    med=g.median(); n=g.size()
+    big=med[n>=30]
+    print(f"  {c}: планшетов {d.plate_id.nunique():4d} | из них >=30 соединений: {len(big):3d} | "
+          f"ско медиан по планшетам {big.std():.3f} | размах {big.max()-big.min():.3f} | общее ско показаний {d.log2fc_estimate.std():.3f}")
+print("""
+Если ско медиан по планшетам заметно меньше общего ско показаний, планшетный эффект
+мал по сравнению с химическим разбросом и отдельного слагаемого не требует.""")

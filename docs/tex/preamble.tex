@@ -1,0 +1,44 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{russian}
+\setotherlanguage{english}
+\setmainfont{PT Serif}[Ligatures=TeX]
+\setsansfont{PT Sans}[Ligatures=TeX]
+\setmonofont{PT Mono}[Scale=0.92]
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage[table]{xcolor}
+\usepackage[margin=27mm,top=25mm,bottom=27mm]{geometry}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{microtype}
+
+\captionsetup{font=small,labelfont=bf,labelsep=period,justification=justified}
+\captionsetup[table]{skip=4pt}
+\setlist{itemsep=2pt,parsep=0pt,topsep=4pt}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=black,citecolor=black,
+            pdftitle={Модель предсказания ингибирования цитохромов P450},
+            pdfauthor={команда CYP}}
+
+\emergencystretch=2.2em
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{1.2em}
+\linespread{1.06}
+\renewcommand{\arraystretch}{1.12}
+
+\newcommand{\pic}{\mathrm{pIC}_{50}}
+\newcommand{\pC}{\mathrm{p}C}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\E}{\mathbb{E}}
+
+\title{\vspace{-14mm}\textbf{\Large Модель предсказания ингибирования цитохромов P450}\\[3mm]
+\normalsize Устройство решения для OpenADMET CYP Blind Challenge: что в данных,\\
+что мы измерили, как устроена модель и почему именно так}
+\author{}
+\date{\normalsize 27 августа 2026}

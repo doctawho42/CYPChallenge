@@ -1,0 +1,26 @@
+# данные соревнования и производные от них
+data/*.csv
+data/*.npz
+data/raw/
+*.npz
+
+# сборка LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+docs/tex/main.pdf
+
+# python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# система
+.DS_Store
+
+# временное, можно удалить вручную
+_to_delete/
