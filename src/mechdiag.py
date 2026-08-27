@@ -1,8 +1,7 @@
 """Where exactly does the mechanistic block act? Per-isoform diagnostics."""
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
-from cyppaths import D, RES, tutorial
-tutorial()
+from cyppaths import D, RES
 import numpy as np, pandas as pd, json
 CYPS=["CYP1A2","CYP2C9","CYP2D6","CYP3A4"]
 oof=json.load(open(RES+"preds/oof.json")); rows=pd.read_csv(D+"rows.csv")

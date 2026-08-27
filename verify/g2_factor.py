@@ -5,8 +5,7 @@
 (B) неверно, когда у соединения есть собственный латентный остаток. Смотрим, что именно ломается."""
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
-from cyppaths import D, RES, tutorial
-tutorial()
+from cyppaths import D, RES
 import numpy as np
 rng=np.random.default_rng(7)
 P=5; N=4000; REP=300

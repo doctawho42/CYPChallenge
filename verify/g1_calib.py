@@ -3,8 +3,7 @@
 Подгоняем E и h на фермент по соединениям, у которых есть и то и другое."""
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
-from cyppaths import D, RES, tutorial
-tutorial()
+from cyppaths import D, RES
 import numpy as np, pandas as pd
 from scipy.optimize import least_squares
 from scipy.stats import spearmanr

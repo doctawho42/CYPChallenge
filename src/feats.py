@@ -1,8 +1,7 @@
 """Mechanistic feature block for CYP2D6 + generic feature builders. Caches to npz."""
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
-from cyppaths import D, RES, tutorial
-tutorial()
+from cyppaths import D, RES
 import re, os, time, numpy as np, pandas as pd
 from rdkit import Chem, RDLogger
 from rdkit.Chem import rdFingerprintGenerator, Descriptors, Crippen, rdMolDescriptors

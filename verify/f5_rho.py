@@ -2,8 +2,7 @@
 механистический блок «заметен», особенно на 2D6."""
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
-from cyppaths import D, RES, tutorial
-tutorial()
+from cyppaths import D, RES
 import numpy as np, pandas as pd, json, sys
 from scipy.stats import spearmanr
 CYPS=["CYP1A2","CYP2C9","CYP2D6","CYP3A4"]

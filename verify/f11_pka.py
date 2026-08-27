@@ -2,8 +2,7 @@
 правило pKa провалилось на кофеине (амид-фланкированный имидазол/пиридин)."""
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
-from cyppaths import D, RES, tutorial
-tutorial()
+from cyppaths import D, RES
 import numpy as np, pandas as pd, sys
 sys.path.insert(0,'" + D + "')
 from rdkit import Chem, RDLogger

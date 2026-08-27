@@ -6,8 +6,7 @@ pH 7.4, and how strongly. Validated against literature pKa for known drugs below
 """
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
-from cyppaths import D, RES, tutorial
-tutorial()
+from cyppaths import D, RES
 import numpy as np
 from rdkit import Chem, RDLogger
 RDLogger.DisableLog('rdApp.*')

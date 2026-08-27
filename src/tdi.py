@@ -1,7 +1,6 @@
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
-from cyppaths import D, RES, tutorial
-tutorial()
+from cyppaths import D, RES
 import pandas as pd, numpy as np
 from sklearn.metrics import matthews_corrcoef
 t=pd.read_csv(D+"cyp-challenge-TRAIN_TDI.csv")
