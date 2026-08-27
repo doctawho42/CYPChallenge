@@ -7,9 +7,12 @@ from rdkit import Chem, RDLogger
 from rdkit.Chem import rdFingerprintGenerator, Descriptors, Crippen, rdMolDescriptors
 RDLogger.DisableLog('rdApp.*')
 
-import sys; sys.path.insert(0,"" + D + "")
 from pka import most_basic_pka, frac_protonated
-SM = "/usr/local/lib/python3.11/dist-packages/dimorphite_dl/smarts/site_substructures.smarts"
+# Ship-along SMARTS table of dimorphite's protonation sites. Taken from the installed
+# package rather than a hard-coded site-packages path, which only existed in the
+# original Linux image.
+import dimorphite_dl
+SM = str(_pl.Path(dimorphite_dl.__file__).parent / "smarts" / "site_substructures.smarts")
 
 def load_pka_table():
     """name -> (mol, [pka_mean,...]) for every protonation site dimorphite knows."""

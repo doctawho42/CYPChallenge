@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """Графики для общего документа. Один стиль на все, никаких украшений."""
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2]))
+from cyppaths import D, RES, TEXFIG
 import numpy as np, pandas as pd, json, sys, warnings
 warnings.filterwarnings("ignore")
 import matplotlib
@@ -10,7 +13,8 @@ from scipy.stats import spearmanr
 from scipy.optimize import least_squares
 from sklearn.isotonic import IsotonicRegression
 
-D="/tmp/cyp/"; F="/tmp/doc/fig/"
+F=str(TEXFIG)+"/"          # .tex подключает картинки как fig/<имя>
+P=RES+"preds/"             # сохранённые предсказания
 CYPS=["CYP1A2","CYP2C9","CYP2D6","CYP3A4"]
 # фиксированный порядок цветов: цвет закреплён за ферментом во всех графиках
 COL={"CYP1A2":"#3260C4","CYP2C9":"#C0432A","CYP2D6":"#118A6C","CYP3A4":"#B98A10"}
@@ -36,7 +40,7 @@ inh=pd.read_csv(D+"cyp-challenge-TRAIN_inhibition.csv")
 sc=pd.read_csv(D+"cyp-challenge-single-concentration-TRAIN.csv")
 piv=sc.pivot_table(index="Molecule_Name",columns="enzyme",values="log2fc_estimate")
 mj=inh.set_index("Molecule_Name").join(piv)
-oof=json.load(open(D+"oof.json")); rows=pd.read_csv(D+"rows.csv")
+oof=json.load(open(P+"oof.json")); rows=pd.read_csv(D+"rows.csv")
 tr=inh.set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index()
 pC0=-np.log10(4.95049505e-05)
 
@@ -167,7 +171,7 @@ save(fig,"range")
 # ------------------------------------------------------------------ 6. сиды
 print("6 сиды")
 from matplotlib.patches import Patch
-S=pd.read_csv("/tmp/verify/seeds_all.csv")
+S=pd.read_csv(RES+"seeds_all.csv")
 fig,axes=plt.subplots(1,2,figsize=(6.10,2.65),gridspec_kw={"width_ratios":[1,1.15],"wspace":.30})
 ax=axes[0]
 P=S.pivot(index="seed",columns="features",values="MACRO")
@@ -201,7 +205,10 @@ save(fig,"seeds")
 
 # ------------------------------------------------------------------ 7. трудность проверки
 print("7 трудность")
-nn=np.load("/tmp/verify/nn_seed0.npy"); te=pd.read_csv(D+"test_with_nn.csv") if False else None
+_nnp=_pl.Path(RES+"nn_seed0.npy")
+if not _nnp.exists():
+    raise SystemExit(f"нет {_nnp}: сначала запустите  python verify/f12_cvhard.py  (~10 мин)")
+nn=np.load(_nnp)
 from rdkit import Chem, RDLogger, DataStructs
 from rdkit.Chem import rdFingerprintGenerator
 RDLogger.DisableLog("rdApp.*")
@@ -274,7 +281,7 @@ print("9 порог")
 from sklearn.metrics import matthews_corrcoef
 from sklearn.linear_model import LogisticRegression
 from matplotlib.lines import Line2D
-Pp=json.load(open(D+"tdi_probs.json"))
+Pp=json.load(open(P+"tdi_probs.json"))
 def mccc(tp,tn,fp,fn):
     d=np.sqrt((tp+fp)*(tp+fn)*(tn+fp)*(tn+fn)); return 0. if d<=0 else (tp*tn-fp*fn)/d
 ts=np.linspace(.03,.9,180)
