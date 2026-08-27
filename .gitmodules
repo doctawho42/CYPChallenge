@@ -1,0 +1,4 @@
+[submodule "CYP-Challenge-Tutorial"]
+	path = CYP-Challenge-Tutorial
+	url = https://github.com/OpenADMET/CYP-Challenge-Tutorial.git
+	branch = main

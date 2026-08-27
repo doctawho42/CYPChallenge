@@ -1,0 +1,13 @@
+# Saved predictions are single-line JSON blobs of ~750 KB that take an hour to
+# regenerate. Git cannot merge them and neither can a human: mark them binary so a
+# concurrent change is a clean "both modified" conflict instead of a corrupted file.
+# See CONTRIBUTING.md for who regenerates them.
+results/preds/*.json binary
+results/*.npy        binary
+*.npz                binary
+
+# Build artefacts. Rebuild from docs/tex/ rather than merging.
+*.pdf                binary
+
+# The lock file is generated; keep it out of diffs but always commit it.
+uv.lock              -diff linguist-generated=true

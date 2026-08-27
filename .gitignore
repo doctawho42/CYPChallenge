@@ -1,13 +1,21 @@
-# данные соревнования и производные от них
+# Challenge data and everything derived from it: fetched by data/fetch.sh, rebuilt by
+# src/feats.py. Not committed, see data/README.md.
 data/*.csv
-data/*.npz
 data/raw/
 *.npz
 
-# логи прогонов нужны, они часть результатов
+# Clustering cache written by cypsplit.py. The filename hashes the input and every
+# parameter, so it rebuilds itself; safe to delete at any time.
+data/clusters_*.npz
+data/folds_*.np[yz]
+
+# Produced by verify/f12_cvhard.py (~10 min), consumed by docs/tex/figs.py.
+results/nn_seed*.npy
+
+# Run logs ARE results here and stay in git (commit 8481c22).
 !results/logs/
 
-# сборка LaTeX
+# LaTeX build products. The finished PDF in docs/ is committed; main.pdf is not.
 docs/tex/*.aux
 docs/tex/*.log
 docs/tex/*.out
@@ -15,15 +23,12 @@ docs/tex/*.toc
 *.synctex.gz
 docs/tex/main.pdf
 
-# python
+# Python
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .venv/
 venv/
 
-# система
+# OS
 .DS_Store
-
-# временное, можно удалить вручную
-_to_delete/
