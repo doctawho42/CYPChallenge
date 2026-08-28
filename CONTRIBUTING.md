@@ -1,7 +1,11 @@
 # Working on this together
 
-Four people, four machines, one set of numbers that has to keep meaning the same thing.
+Three people, three machines, one set of numbers that has to keep meaning the same thing.
 This file is about the second part.
+
+If git and GitHub are new to you, read [ONBOARDING.md](ONBOARDING.md) first. It is in
+Russian, starts from installing git, and walks through the traps this repository has laid.
+Come back here once the first pull request is merged; this file assumes that much.
 
 The repository was written by one person for one machine, and several of its habits only
 worked under that assumption. They have been fixed, but the reasoning is worth knowing,
@@ -11,7 +15,7 @@ numbers just stop being comparable.
 ## Setup, once per machine
 
 ```bash
-git clone git@github.com:doctawho42/CYPChallenge.git
+git clone https://github.com/doctawho42/CYPChallenge.git
 cd CYPChallenge
 git submodule update --init     # the organisers' repo, pinned to a commit
 uv sync                         # exact versions from uv.lock
@@ -20,7 +24,7 @@ uv run python src/feats.py      # ~45 s, builds data/feats.npz and data/rows.csv
 uv run pytest                   # should be 6 passed
 ```
 
-Run everything through `uv run`, never a bare `python`. That is what guarantees all four
+Run everything through `uv run`, never a bare `python`. That is what guarantees all three
 of us are on the same interpreter and the same library versions.
 
 ## The three things that break comparability
@@ -98,16 +102,19 @@ week on the same idea.
 
 ## Splitting the work
 
-The pipeline forks cleanly after `feats.py`, so the natural division is by track rather
-than by file:
+The pipeline forks cleanly after `feats.py`, so the three of us can work at once. The
+division follows what each of us can actually judge:
 
-- the regression track and decision layer (`ablate`, `score`, `decision*`);
-- CYP2D6 and the range-restriction question (`range`, `rangectl`, `mech*`);
-- the TDI classification track (`tdibase`, `tdiprob`, `f9`, `f10`);
-- the document and the verification sweep (`docs/`, `verify/`).
+- **the trunk and the submission path** — `ablate`, `score`, `submit`, and the joint
+  likelihood when it exists. Also `docs/` and the verification sweep;
+- **the structural lane** — 3D descriptors and a pretrained encoder, feeding
+  `src/feats.py`. CYP2D6's pharmacophore is currently a binary flag, which is where
+  geometry would go;
+- **the chemical lane** — the TDI track (`tdibase`, `tdiprob`, `f9`, `f10`), the 30
+  mechanistic SMARTS and the pKa rule in `src/pka.py`, none of which a chemist has read.
 
 Whoever touches `cypsplit.py`, `cyppaths.py` or `pyproject.toml` is changing something all
-four tracks stand on — that is a pull request others read, not a quick push.
+three lanes stand on — that is a pull request others read, not a quick push.
 
 ## Things that are still rough
 
@@ -116,6 +123,7 @@ four tracks stand on — that is a pull request others read, not a quick push.
   `docs/build.sh` checks for it and tells you.
 - The PDF is committed and is a build artefact, so it conflicts like one. Rebuild it from
   `docs/tex/` rather than merging it.
-- Three numbers in the PDF are known to be wrong: the mechanistic block has 30 features
-  and not 28, and there are fourteen verification scripts and not twenty-three. See the
-  bottom of `verify/README.md`.
+- The document has been through a correction pass: twenty-one discrepancies between its
+  numbers and the code, listed in `verify/README.md`. Five scripts turned out never to
+  have run at all. If a number looks odd, recompute it — that is the normal reaction here,
+  and it has paid off every time so far.
