@@ -64,12 +64,14 @@ def paired_macro_boot(y, lo, hi, pa, pb, rng):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--inp", default=RES + "preds/trunk.json")
+    ap.add_argument("--inp", default=RES + "preds/trunk_twohead.json")
     a = ap.parse_args()
 
     blob = json.load(open(a.inp))
     tab = pd.DataFrame(blob["table"])
-    preds = {k: np.asarray(v, float) for k, v in blob["preds"].items()}
+    # ключ теперь {режим}|{зерно}|{lambda}; режим один на файл, поэтому срезаем его
+    preds = {"|".join(k.split("|")[1:]): np.asarray(v, float)
+             for k, v in blob["preds"].items()}
     y, lo, hi = truth()
 
     seeds = sorted(tab.seed.unique())

@@ -233,7 +233,7 @@ def main():
     ap.add_argument("--lams", default="0,1.0", help="lambda_scr values, comma separated")
     ap.add_argument("--seeds", default="0", help="split seeds, comma separated")
     ap.add_argument("--device", default="mps" if torch.backends.mps.is_available() else "cpu")
-    ap.add_argument("--out", default=RES + "preds/trunk.json")
+    ap.add_argument("--out", default=None, help="по умолчанию preds/trunk_<mode>.json")
     ap.add_argument("--hidden", type=int, default=HIDDEN)
     ap.add_argument("--depth", type=int, default=DEPTH)
     ap.add_argument("--dropout", type=float, default=DROPOUT)
@@ -246,6 +246,8 @@ def main():
 
     HIDDEN, DEPTH, DROPOUT = a.hidden, a.depth, a.dropout
     EPOCHS, WEIGHT_DECAY = a.epochs, a.wd
+    if a.out is None:
+        a.out = RES + f"preds/trunk_{a.mode}.json"
     lams = [float(v) for v in a.lams.split(",")]
     seeds = [int(v) for v in a.seeds.split(",")]
     X, y, lo, hi, scr, smiles = load(a.blocks)
@@ -265,7 +267,7 @@ def main():
             r = evaluate(y, lo, hi, pred)
             r["seed"], r["lambda"], r["mode"] = seed, lam, a.mode
             table.append(r)
-            saved[f"{seed}|{lam}"] = np.where(np.isnan(y), np.nan, pred).tolist()
+            saved[f"{a.mode}|{seed}|{lam}"] = np.where(np.isnan(y), np.nan, pred).tolist()
             print(f"  [{a.mode}] сид {seed} lambda {lam:<4} макро {r['MACRO']:.4f} "
                   f"rho {r['MACRO_rho']:.3f}  ({time.time()-t0:.0f} с)", flush=True)
 
@@ -273,7 +275,12 @@ def main():
                               *[f"rho_{c}" for c in CYPS], "MACRO_rho"]]
     print()
     print(df.to_string(index=False))
-    json.dump({"table": table, "preds": saved}, open(a.out, "w"))
+    meta = {"mode": a.mode, "blocks": a.blocks, "hidden": a.hidden, "depth": a.depth,
+            "dropout": a.dropout, "epochs": a.epochs, "wd": a.wd, "lr": LR, "batch": BATCH,
+            "seeds": seeds, "lams": lams, "device": a.device,
+            "pc0": PC0, "cal_e": CAL_E.tolist(), "cal_h": CAL_H.tolist(),
+            "torch": torch.__version__, "numpy": np.__version__}
+    json.dump({"table": table, "preds": saved, "meta": meta}, open(a.out, "w"))
     print(f"\nсохранено: {a.out}")
 
 

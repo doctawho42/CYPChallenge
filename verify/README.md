@@ -275,3 +275,83 @@ enzymes. It is one bit of evidence and the script says so. The within-enzyme ver
 degrade the screening channel with noise in steps and watch whether the effect moves
 monotonically — turns it into a dose-response curve on each enzyme separately, and has not
 been run.
+
+**29. The blind fraction was computed on the wrong derivative.** The joint-likelihood
+section quoted 0.32 / 0.09 / 0.21 / 0.44 as the share of compounds where the fixed
+calibration is uninformative about pi. Those are computed on |dI/dpi|, the derivative of the
+inhibited fraction I = E/(1 + 10^(h(pC0 - pi))). What the loss actually compares against the
+screen is g(pi) = log2(1 - I), so the informativeness that matters is |dg/dpi|, and the
+fractions are 0.218 / 0.068 / 0.137 / 0.397. The ordering is identical under either
+derivative, which is why the substitution never surfaced: the argument survives, the numbers
+did not. A second slip travelled with it - |dg/dpi| is NOT maximised at pC0 but 0.19 to 0.35
+units above it (4.529 / 4.494 / 4.657 / 4.600); only |dI/dpi| peaks exactly at pC0.
+
+**30. The discriminator between saturation and bias absorption collapses.** The two stories
+for why the single-latent arm is damaged were supposed to be separable by the per-enzyme
+ordering, because the spread of E ranks 2D6 (0.091) above 3A4 (0.067) while the blind
+fraction ranks them the other way. But 0.091 and 0.067 are q95 - q5 of the measured
+per-compound `{CYP}_EmaxVsPosCtrl_direct_inhibition` column in
+`data/cyp-challenge-TRAIN_Emax.csv` - a different quantity, in a different file, on a
+different sign convention (measured Emax sits near -1; the calibration E is positive and
+bounded in [0.2, 1.2]), over a different population (3A4: n = 2335 against n = 1805 in the
+fit). `verify/g1_calib.py` computes no spread of E at all; it cannot be the source. The
+fitted E's own spread is 30 to 60 times smaller: bootstrap sd 0.0026 / 0.0053 / 0.0031 /
+0.0033 at B = 500, ordering 2C9 > 3A4 > 2D6 > 1A2, which is the opposite of the claim on the
+decisive pair.
+
+The quantity that does measure misfit of a single fixed (E, h) is the Hill residual sd that
+g1_calib already prints: 0.231 / 0.185 / 0.497 / 0.612. It correlates with the measured-Emax
+spread at Spearman -1.000 - the two candidate "misfit" proxies order the enzymes exactly
+oppositely - and it puts 3A4 first, the same place saturation puts it. Under the right
+proxy both stories predict the same ordering, so the per-enzyme breakdown does not separate
+them and the noise-injection dose curve of item 28 is the replacement, not an extra.
+
+Corroborating: inverting g per compound to get an implied E gives CYP3A4 an interquartile
+range of 1.865 against 0.093 to 0.211 elsewhere, with 56.5 % of its compounds implying an E
+outside the fit's own [0.2, 1.2] bounds against 9.6 to 12.9 % elsewhere. On that reading 3A4
+is the worst-described enzyme, not the best.
+
+**31. Out-of-fold isotonic does not preserve rank the way the argument needs - but the
+distortion is common-mode.** Within one fold's map isotonic is exactly monotone: zero strict
+inversions across all 20 enzyme x fold applications. "Ties aside" is not a small aside,
+though - each fold's 242 to 496 compounds map onto 24 to 59 distinct values, and 95.9 to
+97.0 % of compounds land in a collapsed tie. On the glued out-of-fold vector five different
+maps are in play and rank genuinely moves: Kendall tau_b between raw and recalibrated is
+0.917 to 0.959, 1.86 to 3.71 % of all pairs strictly reverse, and the worst compound shifts
+143 to 223 positions even after breaking every isotonic tie in its favour. Spearman against
+the LABELS - the thing the instrument is supposed to leave alone - falls on all four
+enzymes, by 0.007 to 0.015. ST-RAE under isotonic also changes sign by enzyme: -0.0156 /
++0.0075 / -0.0504 / +0.0100, macro -0.0122.
+
+What saves the two-arm comparison is that the distortion is nearly common-mode: +0.0132 /
++0.0135 / +0.0149 / +0.0070 on FP+DESC+MECH against +0.0139 / +0.0163 / +0.0141 / +0.0064
+on FP+DESC, so the arm DIFFERENCE moves an order of magnitude less than either arm does.
+Comparing two arms after out-of-fold isotonic stands; the sentence "it preserves rank" does
+not.
+
+**32. The affine pair's advantage is a delta = 0 advantage and reverses under tilt.**
+Fitting (off, lambda) jointly out of fold beats the fixed +0.40 slice at delta = 0, 0.7150
+against 0.7227. Under the label tilt the margin evaporates and turns over: 0.7910 against
+0.7908 at delta = 0.3, and 0.9119 against 0.9061 at delta = 0.6. This is what a purely
+SCALE advantage does when the mean moves, and the joint fit's is one. The family is not at
+fault: refitting the pair UNDER the tilt gives 0.7579 at delta = 0.3 and 0.7892 at delta =
+0.6, better than either delta-agnostic variant at every delta. The live question is
+therefore not "affine pair or fixed offset" but "at which delta to fit it", and nothing
+before the intermediate leaderboard answers that. `src/submit.py` fits at delta = 0, which
+is not the best choice but is the only one that does not require guessing delta.
+
+Related, on reading the reweight table: 0.7227 and 0.7831 do not come from the same column.
+0.7227 is the fixed +0.40 variant at delta = 0, and it coincides with the oracle-offset
+column there only because the oracle happens to pick +0.4 at delta = 0. 0.7831 is the oracle
+column at delta = 0.3; the fixed +0.40 variant reads 0.7908 there. Quoting the pair as one
+variant's movement understates it - the deployable movement, post-processing fitted at
+delta = 0 because delta is unknown, is +0.0681 for the fixed slice and +0.0760 for the joint
+fit against the oracle's +0.0604.
+
+**33. `src/trunk.py` was silently overwriting one arm with the other.** Predictions were
+saved under the key `{seed}|{lambda}` with no mode in it, and `--out` defaulted to the same
+`results/preds/trunk.json` for both `--mode twohead` and `--mode calibrated`, so the second
+run clobbered the first and nothing about the comparison survived on disk. Fixed: the key is
+now `{mode}|{seed}|{lambda}`, the default path is `trunk_{mode}.json`, and a meta block
+records the configuration and library versions the way `oof.meta.json` does. Every number
+from the two arms is being recomputed; `src/trunkdose.py` consumes the result.
