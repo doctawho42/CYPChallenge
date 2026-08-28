@@ -35,3 +35,6 @@ venv/
 
 # Local Claude Code guidance, kept out of the repository.
 CLAUDE.md
+
+# figs.py пишет и png рядом с pdf; .tex подключает только pdf.
+docs/tex/fig/*.png
