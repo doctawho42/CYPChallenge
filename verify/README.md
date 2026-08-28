@@ -1,9 +1,14 @@
 # Verification
 
-Fourteen scripts. The `f*` run was a sweep over everything that had been computed and
-written by that point; `g*` answers four questions raised against the document. There are
-no dependencies between scripts, so the order is free. All of them expect the data in
-`data/` and the organisers' metric code (`git submodule update --init`).
+Twenty-two scripts in four groups. `f*` was a sweep over everything that had been computed
+and written by that point; `g*` answers four questions raised against the document; `h*`
+tests two claims the document made about geometry and about reactivity; `k*` is about
+post-hoc rescaling of the predictions and about how far the test set sits from the training
+distribution. All of them expect the data in `data/` and the organisers' metric code
+(`git submodule update --init`).
+
+The only dependency between scripts is that `k6_shift1d.py` reads `data/test_pred.npz`,
+which `k5_shift.py` writes. Everything else runs in any order.
 
 | Script | What it checks | Time |
 |---|---|---|
@@ -21,6 +26,14 @@ no dependencies between scripts, so the order is free. All of them expect the da
 | `f12_cvhard.py` | difficulty of our cross-validation against the real test set | ~10 min |
 | `g1_calib.py` | instrument calibration: fitting E and h per enzyme, plate drift | ~1 min |
 | `g2_factor.py` | whether the joint distribution factors into three marginals | ~1 min |
+| `h1_geometry.py` | where the test set sits on the random-split / cluster-split axis | ~3 min |
+| `h2_tdi_alerts.py` | structural reactivity alerts against the TDI label | ~20 s |
+| `h3_alerts_delta.py` | the same alerts against the shift Delta rather than the label | ~20 s |
+| `k1_shrink.py` | shrinkage to the mean: real effect or an artefact of the metric | ~2 min |
+| `k3_center.py` | what the shrinkage centre actually is and where its gain comes from | ~4 min |
+| `k4_enrich.py` | is the test set activity-enriched — nearest-neighbour-label proxy | ~2 min |
+| `k5_shift.py` | covariate shift measured in the model's own prediction space | ~5 min |
+| `k6_shift1d.py` | the same reweighting done along one axis, where it does not degenerate | ~1 min |
 
 ## What it found
 

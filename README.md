@@ -38,7 +38,7 @@ written in Russian, assumes nothing, and covers the traps specific to this repos
 | `docs/` | the document and its sources (`tex/`, built with XeLaTeX), archive of earlier versions |
 | `src/` | the pipeline: features, baselines, ablations, TDI, decision layer |
 | `eda/` | data exploration and the figures for the document |
-| `verify/` | fourteen verification scripts, see `verify/README.md` |
+| `verify/` | twenty-two verification scripts, see `verify/README.md` |
 | `results/` | run logs and saved out-of-fold predictions |
 | `data/` | challenge data, not stored in git, see `data/README.md` |
 | `tests/` | the golden-value guard on the cross-validation split |

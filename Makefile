@@ -7,7 +7,7 @@
 UV := uv run
 
 .DEFAULT_GOAL := help
-.PHONY: help setup hooks features baseline ablate score submit verify test doc clean-cache
+.PHONY: help setup hooks features baseline ablate score submit reweight verify test doc clean-cache
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
@@ -42,6 +42,9 @@ score: data/feats.npz  ## metrics and paired bootstrap over the saved prediction
 
 submit: data/feats.npz  ## build both submission files and run the organisers' validators
 	$(UV) python src/submit.py
+
+reweight: data/feats.npz  ## score under a test-like label marginal (~3 min)
+	$(UV) python src/reweight.py
 
 test:  ## golden-value guard on the cross-validation split
 	$(UV) pytest
