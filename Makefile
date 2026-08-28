@@ -46,6 +46,21 @@ submit: data/feats.npz  ## build both submission files and run the organisers' v
 reweight: data/feats.npz  ## score under a test-like label marginal (~3 min)
 	$(UV) python src/reweight.py
 
+trunk: data/feats.npz  ## both arms of the joint likelihood — SLOW (~1 h), writes results/preds/trunk_*.json
+	uv run python src/trunk.py --mode twohead    --seeds 0,1,2,3 --lams 0,0.3,1.0,3.0
+	uv run python src/trunk.py --mode calibrated --seeds 0,1,2,3 --lams 0,0.3,1.0,3.0
+
+trunk-noise: data/feats.npz  ## the noise ladder on the screening channel — SLOW (~1 h)
+	for e in 0.5 1 2 4; do \
+	  uv run python src/trunk.py --mode twohead    --seeds 0,1,2,3 --lams 3.0 --noise $$e; \
+	  uv run python src/trunk.py --mode calibrated --seeds 0,1,2,3 --lams 3.0 --noise $$e; \
+	done
+
+trunk-score: data/feats.npz  ## read the saved trunk predictions: lambda response, dose curve, noise curve (~5 min)
+	uv run python src/trunkscore.py
+	uv run python src/trunkdose.py
+	uv run python src/trunknoise.py
+
 test:  ## golden-value guard on the cross-validation split
 	$(UV) pytest
 

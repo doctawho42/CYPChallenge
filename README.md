@@ -63,6 +63,29 @@ Each step depends on the one before it:
 7. `src/tdibase.py`, `src/tdiprob.py` — baselines for the classification track.
 8. `src/decision.py`, `src/decision2.py` — the decision layer for ST-RAE and its oracle ceiling.
 
+Row 5 of the ablation grid — the joint likelihood — has its own chain, because its
+predictions live in their own files and take about half an hour per arm to make:
+
+9. `src/trunk.py` — shared trunk, two heads, `lambda_scr` as the switch on the screening
+   loss term. `--mode twohead` gives the screen a free head; `--mode calibrated` routes it
+   through the fixed instrument calibration instead, with no new parameters. One output
+   file per mode, `results/preds/trunk_{mode}.json`; `--noise` adds an eta suffix. Both are
+   committed, so everything below runs in minutes.
+10. `src/trunkscore.py` — the lambda response with a paired bootstrap against lambda = 0.
+11. `src/trunkdose.py` — the dose curve in lambda: whether the control is exact, what the
+    damage is made of per enzyme, and how the arms compare with the boosting under a tilted
+    label marginal.
+12. `src/trunknoise.py` — the dose curve in *noise*. Degrades the screening channel in
+    known steps so the four-enzyme ordering becomes four separate curves; needs the
+    `--noise` runs of `src/trunk.py` first.
+
+Two more that stand outside the grid:
+
+13. `src/submit.py` — builds both submission files and refuses to write anything the
+    organisers' validators reject.
+14. `src/reweight.py` — scores under a test-like label marginal, since the test's own
+    geometry cannot be reproduced by any re-split of the training data.
+
 ## Key numbers
 
 Five-fold cross-validation over Butina clusters, threshold 0.35, seed 0.
