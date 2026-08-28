@@ -44,14 +44,27 @@ from cypsplit import butina_folds
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 
-# Not tuned. Picked once, before seeing any result, and held fixed across every arm so
-# that the comparison is between loss terms and not between hyperparameters.
+# Chosen on the lambda_scr = 0 arm alone, never looking at an arm with the screening
+# term on, so the choice cannot favour the experiment. It moves the absolute level; it
+# cannot move the comparison, which is between two arms sharing these settings exactly.
+#
+# The criterion was stated before searching: get the trunk into the same league as the
+# gradient boosting the rest of the repository uses, because a null result on a trunk
+# that is far weaker would say nothing about the channel. It reaches macro ST-RAE 0.7672
+# against the boosting's 0.7673.
+#
+# The one non-obvious choice is BLOCKS. On the full FP+DESC+MECH matrix the best this
+# trunk managed was 0.7949 - 2048 fingerprint bits against roughly 1400 labelled rows per
+# enzyme is more width than an MLP can use, and regularising harder made it worse, not
+# better (weight decay 1e-3 gave 0.8264). Dropping the fingerprint and keeping the 247
+# descriptor and mechanistic columns recovered the whole gap at once.
+BLOCKS = "DESC+MECH"
 HIDDEN = 512
 DEPTH = 2
-DROPOUT = 0.2
+DROPOUT = 0.5
 LR = 1e-3
-WEIGHT_DECAY = 1e-5
-EPOCHS = 150
+WEIGHT_DECAY = 1e-4
+EPOCHS = 200
 BATCH = 256
 
 
@@ -195,7 +208,7 @@ def main():
     ap.add_argument("--dropout", type=float, default=DROPOUT)
     ap.add_argument("--epochs", type=int, default=EPOCHS)
     ap.add_argument("--wd", type=float, default=WEIGHT_DECAY)
-    ap.add_argument("--blocks", default="FP+DESC+MECH")
+    ap.add_argument("--blocks", default=BLOCKS)
     a = ap.parse_args()
 
     HIDDEN, DEPTH, DROPOUT = a.hidden, a.depth, a.dropout

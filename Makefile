@@ -7,7 +7,7 @@
 UV := uv run
 
 .DEFAULT_GOAL := help
-.PHONY: help setup hooks features baseline ablate score verify test doc clean-cache
+.PHONY: help setup hooks features baseline ablate score submit verify test doc clean-cache
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
@@ -39,6 +39,9 @@ ablate: data/feats.npz  ## regenerate results/preds/oof.json — SLOW (~1 h), se
 
 score: data/feats.npz  ## metrics and paired bootstrap over the saved predictions (~2 min)
 	$(UV) python src/score.py
+
+submit: data/feats.npz  ## build both submission files and run the organisers' validators
+	$(UV) python src/submit.py
 
 test:  ## golden-value guard on the cross-validation split
 	$(UV) pytest

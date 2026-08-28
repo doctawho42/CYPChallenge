@@ -123,19 +123,42 @@ def dimorphite_charge(smiles_list, ph=7.4):
         net.append(sum(chs)); npos.append(sum(1 for c in chs if c > 0)); nneg.append(sum(1 for c in chs if c < 0))
     return pd.DataFrame({"ph74_net_charge": net, "ph74_n_cation": npos, "ph74_n_anion": nneg})
 
-if __name__ == "__main__":
-    
-    tr = pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
-    mols = [Chem.MolFromSmiles(s) for s in tr.SMILES]
+def build(smiles, desc_names=None, mech_names=None):
+    """FP, DESC and MECH for an arbitrary SMILES list, plus the kept molecule indices.
+
+    Pass desc_names / mech_names to reindex the descriptor and mechanistic blocks onto a
+    fixed column set. That is what the test set needs: the training build selects
+    descriptor columns by `isna().mean() < 0.05`, a filter fitted on the training
+    molecules, and recomputing it on 750 test molecules would silently produce a
+    different column set. Checking the column *count* would not catch a permutation
+    either, so the selection has to be by name.
+    """
+    mols = [Chem.MolFromSmiles(s) for s in smiles]
     ok = [i for i, m in enumerate(mols) if m is not None]
-    tr = tr.loc[ok].reset_index(drop=True); mols = [mols[i] for i in ok]
-    t = time.time(); M = mech_block(mols); print("mech block", M.shape, round(time.time()-t, 1), "s")
-    t = time.time(); C = dimorphite_charge(list(tr.SMILES)); print("dimorphite", round(time.time()-t, 1), "s, nan:", C.isna().sum().sum())
-    M = pd.concat([M, C], axis=1).fillna(0.0)
+    mols = [mols[i] for i in ok]
+    kept = [smiles[i] for i in ok]
+
+    M = pd.concat([mech_block(mols), dimorphite_charge(kept)], axis=1).fillna(0.0)
     gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
     FP = np.array([gen.GetCountFingerprintAsNumPy(m) for m in mols], dtype=np.float32)
     dsc = pd.DataFrame([Descriptors.CalcMolDescriptors(m) for m in mols]).replace([np.inf, -np.inf], np.nan)
-    dsc = dsc.loc[:, dsc.isna().mean() < 0.05].fillna(0.0)
+
+    if desc_names is None:
+        dsc = dsc.loc[:, dsc.isna().mean() < 0.05]
+    else:
+        dsc = dsc.reindex(columns=list(desc_names))
+    if mech_names is not None:
+        M = M.reindex(columns=list(mech_names))
+    return FP, dsc.fillna(0.0), M.fillna(0.0), ok
+
+
+if __name__ == "__main__":
+
+    tr = pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
+    t = time.time()
+    FP, dsc, M, ok = build(list(tr.SMILES))
+    tr = tr.loc[ok].reset_index(drop=True)
+    print("features", round(time.time() - t, 1), "s")
     np.savez_compressed(D + "feats.npz", FP=FP, DESC=dsc.to_numpy(np.float32), MECH=M.to_numpy(np.float32))
     pd.Series(list(dsc.columns)).to_csv(D + "desc_names.csv", index=False, header=False)
     pd.Series(list(M.columns)).to_csv(D + "mech_names.csv", index=False, header=False)

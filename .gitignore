@@ -38,3 +38,6 @@ CLAUDE.md
 
 # figs.py пишет и png рядом с pdf; .tex подключает только pdf.
 docs/tex/fig/*.png
+
+# Файлы отправки пересобираются скриптом; в git не нужны.
+results/submission/
