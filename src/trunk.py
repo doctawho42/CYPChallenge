@@ -134,7 +134,14 @@ def g_of_pi(pi, e_, h_):
     "shared latent curve" in the document actually means, as opposed to two free heads
     that are under no obligation to agree about anything.
     """
-    inh = e_ / (1.0 + torch.pow(10.0, h_ * (PC0 - pi)))
+    # The exponent has to be bounded. Unbounded, 10^(h(pC0 - pi)) overflows to inf as soon
+    # as the predicted potency wanders far below pC0, and although the forward value stays
+    # finite (e/(1+inf) = 0), the gradient through the overflow is nan and the run dies.
+    # This is not hypothetical: the noise ladder lost the calibrated arm on split seed 0 at
+    # eta = 0.5 and eta = 1 to exactly this. Clamping at +-30 changes nothing that was
+    # already finite - 10^30 and inf give the same inhibited fraction to float precision -
+    # and only replaces nan gradients with finite ones.
+    inh = e_ / (1.0 + torch.pow(10.0, torch.clamp(h_ * (PC0 - pi), min=-30.0, max=30.0)))
     return torch.log2(torch.clamp(1.0 - inh, min=1e-3))
 
 

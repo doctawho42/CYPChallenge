@@ -119,6 +119,15 @@ def main():
                                        for s in seeds]
     if missing:
         print(f"  не найдены прогоны: {missing}\n")
+    # Сорванный прогон - это результат, а не помеха: одноголовая рука разошлась численно
+    # на отдельных ячейках. Считаем их и называем, а не усредняем молча по остатку.
+    dead = [(m, c, e, i) for (m, c, e), v in eff.items()
+            for i, x in enumerate(v) if not np.isfinite(x)]
+    if dead:
+        print(f"  РАЗОШЛИСЬ И ДАЛИ NaN: {len(dead)} прогонов из {len(eff) * len(seeds)}")
+        for m, c, e, i in dead:
+            print(f"    {m:11s} {c} eta={e:g} сид={seeds[i]}")
+        print("  Ниже они исключены из средних; там, где исключать пришлось, стоит звёздочка.\n")
 
     att = {e: 1.0 / np.sqrt(1.0 + e * e) for e in ETAS}
     for mode in MODES:
@@ -133,9 +142,10 @@ def main():
             for e in ETAS:
                 v = eff.get((mode, c, e))
                 if v is None:
-                    row += f"  {'--':>7s}"; vals.append(np.nan)
+                    row += f"  {'--':>7s} "; vals.append(np.nan)
                 else:
-                    row += f"  {np.mean(v):+7.3f}"; vals.append(float(np.mean(v)))
+                    mv = float(np.nanmean(v)); star = "*" if not np.all(np.isfinite(v)) else " "
+                    row += f" {mv:+7.3f}{star}"; vals.append(mv)
             ok = ~np.isnan(vals)
             mv = vals[int(np.where(ok)[0][-1])] - vals[0] if ok.sum() > 1 else np.nan
             rr = (spearmanr(np.array(ETAS)[ok], np.array(vals)[ok]).statistic
@@ -158,9 +168,10 @@ def main():
             if a is None or b is None:
                 continue
             d = [x - y for x, y in zip(b, a)]
-            same = len(set(np.sign(d))) == 1
-            print(f"{c:8s} " + " ".join(f"{x:+9.3f}" for x in d)
-                  + f" {np.mean(d):+9.3f} {str(same):>9s}")
+            fin = [x for x in d if np.isfinite(x)]
+            same = len(set(np.sign(fin))) == 1 if fin else False
+            print(f"{c:8s} " + " ".join((f"{x:+9.3f}" if np.isfinite(x) else f"{'—':>9s}") for x in d)
+                  + f" {np.nanmean(d):+9.3f} {str(same):>9s}")
         print()
 
     print("=" * 96)
@@ -174,11 +185,11 @@ def main():
             a, b = eff.get((mode, c, 0.0)), eff.get((mode, c, top))
             if a is None or b is None:
                 continue
-            mv.append(np.mean(b) - np.mean(a)); rho.append(RHO_SCR[c])
+            mv.append(np.nanmean(b) - np.nanmean(a)); rho.append(RHO_SCR[c])
         if len(mv) == 4:
             r = spearmanr(rho, mv).statistic
             order = " > ".join(c[3:] for c in sorted(
-                CYPS, key=lambda c: -(np.mean(eff[(mode, c, top)]) - np.mean(eff[(mode, c, 0.0)]))))
+                CYPS, key=lambda c: -(np.nanmean(eff[(mode, c, top)]) - np.nanmean(eff[(mode, c, 0.0)]))))
             print(f"  {mode:12s} Спирмен(|rho|, сдвиг) = {r:+.3f}   порядок сдвига: {order}")
     print("\n  n = 4 снова, но теперь каждая точка сама опирается на кривую, а не на одно")
     print("  измерение, так что случайное совпадение порядка стоит дороже.")
@@ -196,7 +207,10 @@ def main():
                 v = eff.get((mode, c, e))
                 if v is None:
                     continue
-                xs.append(RHO_SCR[c] * att[e]); ys.append(float(np.mean(v))); tag.append(c)
+                y_ = float(np.nanmean(v))
+                if not np.isfinite(y_):
+                    continue
+                xs.append(RHO_SCR[c] * att[e]); ys.append(y_); tag.append(c)
         if len(xs) < 8:
             continue
         xs, ys = np.asarray(xs), np.asarray(ys)
