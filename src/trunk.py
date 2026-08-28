@@ -44,6 +44,14 @@ from cypsplit import butina_folds
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 
+# Instrument calibration fitted per enzyme by verify/g1_calib.py. The document's claim is
+# that the screen constrains pi *through* this map, not through a free second head: it is
+# a fixed monotone saturating function, and knowing where the curve saturates is what
+# turns rank into scale. Zero new parameters.
+PC0 = 4.305
+CAL_E = np.array([0.728, 0.621, 0.867, 0.931], dtype=np.float32)
+CAL_H = np.array([1.261, 1.112, 1.243, 1.968], dtype=np.float32)
+
 # Chosen on the lambda_scr = 0 arm alone, never looking at an arm with the screening
 # term on, so the choice cannot favour the experiment. It moves the absolute level; it
 # cannot move the comparison, which is between two arms sharing these settings exactly.
@@ -118,6 +126,18 @@ class Net(nn.Module):
         return self.head_pic(h), self.head_scr(h)
 
 
+def g_of_pi(pi, e_, h_):
+    """log2fc predicted from pIC50 through the fitted instrument calibration.
+
+    g(pi) = log2(1 - E / (1 + 10^{h (pC0 - pi)})). Differentiable in pi, so the screening
+    residual sends gradient back into the same latent the pIC50 head reads - which is what
+    "shared latent curve" in the document actually means, as opposed to two free heads
+    that are under no obligation to agree about anything.
+    """
+    inh = e_ / (1.0 + torch.pow(10.0, h_ * (PC0 - pi)))
+    return torch.log2(torch.clamp(1.0 - inh, min=1e-3))
+
+
 def masked_mse(pred, target, mask):
     """Mean squared error over observed cells only; zero if nothing is observed.
 
@@ -130,7 +150,7 @@ def masked_mse(pred, target, mask):
     return (d * d).mean()
 
 
-def run_fold(X, y, scr, fold, f, lam, seed, device):
+def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead"):
     """Train one fold and return held-out pIC50 predictions in original units."""
     te = fold == f
     trn = ~te
@@ -159,6 +179,9 @@ def run_fold(X, y, scr, fold, f, lam, seed, device):
     t = lambda a: torch.as_tensor(a, device=device)
     Xt, yt, st = t(Xn), t(yn), t(sn)
     myt, mst = t(my), t(ms)
+    ymt, yst = t(ym), t(ys)
+    smt, sst = t(sm), t(ss)
+    cal_e, cal_h = t(CAL_E), t(CAL_H)
 
     # Seeded on (seed, fold) and NOT on lam, so both arms start from the same weights.
     torch.manual_seed(hash((seed, f)) % (2 ** 31))
@@ -174,7 +197,15 @@ def run_fold(X, y, scr, fold, f, lam, seed, device):
             p, s = net(Xt[bt])
             loss = masked_mse(p, yt[bt], myt[bt])
             if lam > 0:
-                loss = loss + lam * masked_mse(s, st[bt], mst[bt])
+                if mode == "twohead":
+                    loss = loss + lam * masked_mse(s, st[bt], mst[bt])
+                else:
+                    # One latent: the screening prediction is g(pi_hat), not a free head.
+                    # Standardised on the same statistics as the observed screen so that
+                    # lambda keeps the same meaning across modes.
+                    pi = p * yst + ymt
+                    loss = loss + lam * masked_mse(
+                        (g_of_pi(pi, cal_e, cal_h) - smt) / sst, st[bt], mst[bt])
             opt.zero_grad(); loss.backward(); opt.step()
 
     net.eval()
@@ -209,6 +240,8 @@ def main():
     ap.add_argument("--epochs", type=int, default=EPOCHS)
     ap.add_argument("--wd", type=float, default=WEIGHT_DECAY)
     ap.add_argument("--blocks", default=BLOCKS)
+    ap.add_argument("--mode", default="twohead", choices=["twohead", "calibrated"],
+                    help="twohead: free second head. calibrated: screen via g(pi), one latent")
     a = ap.parse_args()
 
     HIDDEN, DEPTH, DROPOUT = a.hidden, a.depth, a.dropout
@@ -228,12 +261,12 @@ def main():
                 te = fold == f
                 if te.sum() == 0:
                     continue
-                pred[te] = run_fold(X, y, scr, fold, f, lam, seed, a.device)
+                pred[te] = run_fold(X, y, scr, fold, f, lam, seed, a.device, a.mode)
             r = evaluate(y, lo, hi, pred)
-            r["seed"], r["lambda"] = seed, lam
+            r["seed"], r["lambda"], r["mode"] = seed, lam, a.mode
             table.append(r)
             saved[f"{seed}|{lam}"] = np.where(np.isnan(y), np.nan, pred).tolist()
-            print(f"  сид {seed} lambda {lam:<4} макро {r['MACRO']:.4f} "
+            print(f"  [{a.mode}] сид {seed} lambda {lam:<4} макро {r['MACRO']:.4f} "
                   f"rho {r['MACRO_rho']:.3f}  ({time.time()-t0:.0f} с)", flush=True)
 
     df = pd.DataFrame(table)[["seed", "lambda", *CYPS, "MACRO",
