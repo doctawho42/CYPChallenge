@@ -150,7 +150,7 @@ def masked_mse(pred, target, mask):
     return (d * d).mean()
 
 
-def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead"):
+def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta=0.0):
     """Train one fold and return held-out pIC50 predictions in original units."""
     te = fold == f
     trn = ~te
@@ -175,6 +175,15 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead"):
             sm[e], ss[e] = scr[b, e].mean(), max(scr[b, e].std(), 1e-6)
     yn = (np.nan_to_num(y) - ym) / ys
     sn = (np.nan_to_num(scr) - sm) / ss
+
+    # Degrading the screening channel by a known amount. The division by sqrt(1 + eta^2)
+    # is the whole point: without it the noise inflates the target's sd and lambda would
+    # silently change meaning, so "less information" would be confounded with "more
+    # weight". With it the standardised target keeps sd 1 and only its correlation with
+    # pIC50 falls, by exactly 1 / sqrt(1 + eta^2). The noise draw is shared across lambda
+    # and across modes, so arms compared at one eta see the same corrupted channel.
+    if eta > 0 and zn is not None:
+        sn = (sn + eta * zn) / np.sqrt(1.0 + eta * eta)
 
     t = lambda a: torch.as_tensor(a, device=device)
     Xt, yt, st = t(Xn), t(yn), t(sn)
@@ -240,6 +249,9 @@ def main():
     ap.add_argument("--epochs", type=int, default=EPOCHS)
     ap.add_argument("--wd", type=float, default=WEIGHT_DECAY)
     ap.add_argument("--blocks", default=BLOCKS)
+    ap.add_argument("--noise", type=float, default=0.0,
+                    help="eta: порча скринингового канала в его же ско, ранг падает в "
+                         "sqrt(1+eta^2) раз, масштаб сохраняется")
     ap.add_argument("--mode", default="twohead", choices=["twohead", "calibrated"],
                     help="twohead: free second head. calibrated: screen via g(pi), one latent")
     a = ap.parse_args()
@@ -247,7 +259,8 @@ def main():
     HIDDEN, DEPTH, DROPOUT = a.hidden, a.depth, a.dropout
     EPOCHS, WEIGHT_DECAY = a.epochs, a.wd
     if a.out is None:
-        a.out = RES + f"preds/trunk_{a.mode}.json"
+        tag = "" if a.noise == 0 else f"_noise{a.noise:g}"
+        a.out = RES + f"preds/trunk_{a.mode}{tag}.json"
     lams = [float(v) for v in a.lams.split(",")]
     seeds = [int(v) for v in a.seeds.split(",")]
     X, y, lo, hi, scr, smiles = load(a.blocks)
@@ -256,6 +269,9 @@ def main():
     saved, table = {}, []
     for seed in seeds:
         fold, n_cl = butina_folds(smiles, seed=seed)
+        # One draw per split seed, reused at every eta and in both modes: the ladder is
+        # nested rather than independent, which takes the noise draw out of the comparison.
+        zn = np.random.default_rng(90000 + seed).standard_normal(scr.shape).astype(np.float32)
         for lam in lams:
             t0 = time.time()
             pred = np.full_like(y, np.nan)
@@ -263,9 +279,10 @@ def main():
                 te = fold == f
                 if te.sum() == 0:
                     continue
-                pred[te] = run_fold(X, y, scr, fold, f, lam, seed, a.device, a.mode)
+                pred[te] = run_fold(X, y, scr, fold, f, lam, seed, a.device, a.mode,
+                                    zn=zn, eta=a.noise)
             r = evaluate(y, lo, hi, pred)
-            r["seed"], r["lambda"], r["mode"] = seed, lam, a.mode
+            r["seed"], r["lambda"], r["mode"], r["noise"] = seed, lam, a.mode, a.noise
             table.append(r)
             saved[f"{a.mode}|{seed}|{lam}"] = np.where(np.isnan(y), np.nan, pred).tolist()
             print(f"  [{a.mode}] сид {seed} lambda {lam:<4} макро {r['MACRO']:.4f} "
@@ -277,7 +294,7 @@ def main():
     print(df.to_string(index=False))
     meta = {"mode": a.mode, "blocks": a.blocks, "hidden": a.hidden, "depth": a.depth,
             "dropout": a.dropout, "epochs": a.epochs, "wd": a.wd, "lr": LR, "batch": BATCH,
-            "seeds": seeds, "lams": lams, "device": a.device,
+            "seeds": seeds, "lams": lams, "noise": a.noise, "device": a.device,
             "pc0": PC0, "cal_e": CAL_E.tolist(), "cal_h": CAL_H.tolist(),
             "torch": torch.__version__, "numpy": np.__version__}
     json.dump({"table": table, "preds": saved, "meta": meta}, open(a.out, "w"))
