@@ -27,6 +27,7 @@ dependencies = [
     # 2.x is the only line still on PyPI and the only one exposing protonate_smiles(),
     # which src/feats.py calls.
     "dimorphite-dl>=2.0.2",
+    "torch>=2.2",
 ]
 
 [dependency-groups]
