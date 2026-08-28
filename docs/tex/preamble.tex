@@ -8,6 +8,14 @@
 \setsansfont{PT Sans}[Ligatures=TeX]
 \setmonofont{PT Mono}[Scale=0.92]
 
+% macOS ставит ParaType как .ttc, и fontconfig не рапортует покрытие кириллицы;
+% polyglossia верит fontconfig и отказывается принимать основной шрифт, хотя
+% кириллица в нём есть (проверено отдельной сборкой). Объявляем семейства явно ---
+% это штатный обход, рекомендованный самим polyglossia, и на Linux он безвреден.
+\newfontfamily\cyrillicfont{PT Serif}[Ligatures=TeX]
+\newfontfamily\cyrillicfontsf{PT Sans}[Ligatures=TeX]
+\newfontfamily\cyrillicfonttt{PT Mono}[Scale=0.92]
+
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
