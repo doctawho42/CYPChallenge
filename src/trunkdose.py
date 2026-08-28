@@ -298,6 +298,14 @@ def main():
                                 ("calibrated", 3.0, "ствол калибр. l=3 + изо")):
             p = P[f"{mode}|0|{lam}"][m, e]
             arms.setdefault(name, {})[c] = iso_oof(p, y[m, e], f0[m])
+        # Like for like. Above, the boosting gets the affine pair and the trunk gets
+        # isotonic - two different post-processings, so the comparison confounds model with
+        # post-processing. These two rows give the trunk exactly what the boosting got.
+        for mode, lam, name in (("twohead", 3.0, "ствол двухгол. l=3 + пара"),
+                                ("calibrated", 3.0, "ствол калибр. l=3 + пара")):
+            p = P[f"{mode}|0|{lam}"][m, e]
+            arms.setdefault(name, {})[c] = fit_affine_oof(
+                p, y[m, e], lo[m, e], hi[m, e], f0[m])
     deltas = np.round(np.arange(0.0, 0.61, 0.1), 1)
     print(f"{'вариант':26s} " + " ".join(f"{('d=' + str(d)):>8s}" for d in deltas))
     tabs = {}

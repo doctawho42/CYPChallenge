@@ -355,3 +355,45 @@ run clobbered the first and nothing about the comparison survived on disk. Fixed
 now `{mode}|{seed}|{lambda}`, the default path is `trunk_{mode}.json`, and a meta block
 records the configuration and library versions the way `oof.meta.json` does. Every number
 from the two arms is being recomputed; `src/trunkdose.py` consumes the result.
+
+**34. Both mechanisms proposed for the single-latent arm's damage are refuted, and the
+control is exact.** Both arms recomputed, four seeds, lambda in {0, 0.3, 1, 3}
+(`src/trunkdose.py`). At lambda = 0 the two arms agree to a maximum absolute prediction
+difference of exactly 0.0 on all four seeds - identity by construction, since the mode
+branch sits inside `if lam > 0` and the weight seed is `hash((seed, fold))` with neither
+lambda nor mode in it.
+
+Per-enzyme loss at lambda = 3 against lambda = 0, mean over four seeds, calibrated arm:
+1A2 +0.235, 2C9 +0.007, 2D6 +0.629, 3A4 +0.006. Saturation predicts the damage should
+follow the blind fraction (0.22 / 0.07 / 0.14 / 0.40) and so be worst on 3A4; 3A4 is the
+LEAST damaged and Spearman is -0.400, the wrong sign. The lambda slope agrees
+independently: saturation wants the steepest response on 3A4 and the flattest on 2C9, and
+the measurement is +0.178 on 2D6 against +0.006 on 3A4 and +0.005 on 2C9. Bias absorption
+fares no better - Hill residual sd (0.231 / 0.185 / 0.497 / 0.612) gives Spearman -0.200,
+also the wrong sign.
+
+What does fit, at Spearman -1.000, is the screen's rank correlation with pIC50 (0.936 /
+0.896 / 0.862 / 0.828) - the same factor that orders the two-head arm's effect. The fixed
+calibration appears not to have a failure mode of its own: it multiplies the existing one
+about fivefold on 1A2 and 2D6, and cancels the gain the two-head arm makes on 2C9 and 3A4
+(-0.025 and -0.027 there, against +0.007 and +0.006 for the calibrated arm). n = 4 still,
+so this is one bit in favour - but the two refutations are refutations, and a reversed sign
+is evidence against rather than weak evidence for.
+
+**35. The 0.006 gap is a small stable effect, not noise.** Out-of-fold isotonic on both
+arms at lambda = 3: calibrated minus two-head is +0.0026 / +0.0042 / +0.0069 / +0.0097 by
+seed, mean +0.0059, sign holding 4 of 4. Against the raw across-seed sd (0.021 at lambda =
+0) it looks like a quarter of the noise; against the sd that survives recalibration
+(two-head after isotonic, sd 0.0029, range 0.0068) it is 2.02 sd and 0.86 of the range.
+Both arms are recalibrated by the time the gap is taken, so the second ruler is the right
+one. The wording that follows is "the form of the coupling costs 0.006 of rank
+information - small, but measurable", not "within noise".
+
+**36. Trunk against boosting under the tilt: no reversal, but the gap narrows.** With the
+same post-processing on both sides (the affine pair), boosting leads by 0.089 at delta = 0
+and by 0.035 at delta = 0.6 - the direction expected if boosting's advantage is one of
+scale and the trunk's is one of rank, but not enough to turn over inside the plausible
+delta range. Note the trunk prefers a different repair: isotonic gives it 0.7506 at delta =
+0 where the affine pair gives 0.8037, while for boosting the affine pair is much the better
+of the two. Computed on split seed 0 only, and seed 0 is where the calibrated arm behaves
+worst; this needs four seeds before it carries weight in a submission decision.
