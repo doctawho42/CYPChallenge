@@ -69,7 +69,7 @@ def main():
 
     blob = json.load(open(a.inp))
     tab = pd.DataFrame(blob["table"])
-    # ключ теперь {режим}|{зерно}|{lambda}; режим один на файл, поэтому срезаем его
+    # ключ теперь {режим}|{сид}|{lambda}; режим один на файл, поэтому срезаем его
     preds = {"|".join(k.split("|")[1:]): np.asarray(v, float)
              for k, v in blob["preds"].items()}
     y, lo, hi = truth()
@@ -78,12 +78,12 @@ def main():
     lams = sorted(tab["lambda"].unique())
     base = min(lams)
 
-    print("=== макро ST-RAE по зёрнам и lambda (ниже - лучше) ===")
+    print("=== макро ST-RAE по сидам и lambda (ниже - лучше) ===")
     piv = tab.pivot(index="seed", columns="lambda", values="MACRO")
     print(piv.to_string())
-    print(f"\nдля сравнения: бустинг на FP+DESC+MECH даёт 0.7673 на зерне 0")
+    print(f"\nдля сравнения: бустинг на FP+DESC+MECH даёт 0.7673 на сиде 0")
 
-    print(f"\n=== отклик: разность к lambda={base} на том же зерне ===")
+    print(f"\n=== отклик: разность к lambda={base} на том же сиде ===")
     print("(отрицательное = канал скрининга помогает)")
     rows = []
     for lam in lams:
@@ -95,7 +95,7 @@ def main():
                      "знак одинаков": bool(np.all(np.sign(d) == np.sign(d[0])))})
     print(pd.DataFrame(rows).to_string(index=False))
 
-    print(f"\n=== парный бутстрап по соединениям, {B} ресэмплов, зерно разбиения 0 ===")
+    print(f"\n=== парный бутстрап по соединениям, {B} ресэмплов, сид разбиения 0 ===")
     rng = np.random.default_rng(7)
     pa = preds[f"0|{base}"]
     for lam in lams:
@@ -106,7 +106,7 @@ def main():
               f"[{np.percentile(d, 2.5):+.4f}, {np.percentile(d, 97.5):+.4f}]  "
               f"P(хуже) {float(np.mean(d > 0)):.3f}")
 
-    print("\n=== по ферментам, среднее по зёрнам ===")
+    print("\n=== по ферментам, среднее по сидам ===")
     out = []
     for lam in lams:
         r = {"lambda": lam}
@@ -121,7 +121,7 @@ def main():
 
     print("""
 Как это читать. Настоящий эффект меняется с lambda гладко и имеет максимум; шум даёт
-плоскую или рваную кривую. Знак, одинаковый на четырёх зёрнах, и интервал бутстрапа,
+плоскую или рваную кривую. Знак, одинаковый на четырёх сидах, и интервал бутстрапа,
 не накрывающий ноль, - минимум, при котором разность в этом репозитории считается
 результатом. Ноль здесь - тоже результат, и записывать его надо так же.""")
 

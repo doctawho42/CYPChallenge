@@ -91,7 +91,7 @@ def main():
             b = np.asarray(p2[f"twohead|{s}|0.0"], float)
             m = ~np.isnan(a) & ~np.isnan(b)
             worst = max(worst, float(np.max(np.abs(a[m] - b[m]))))
-        print(f"  eta = 2 против eta = 0 при lambda = 0, макс |разность| по четырём зёрнам: "
+        print(f"  eta = 2 против eta = 0 при lambda = 0, макс |разность| по четырём сидам: "
               f"{worst:.3e}")
         print("  " + ("совпало побитово, как и должно" if worst == 0
                       else "РАСХОЖДЕНИЕ: шум течёт туда, куда не должен"))
@@ -100,12 +100,12 @@ def main():
 
     print()
     print("=" * 96)
-    print(f"1. Лестница: эффект канала при lambda = {LAM} против lambda = 0, среднее по зёрнам")
+    print(f"1. Лестница: эффект канала при lambda = {LAM} против lambda = 0, среднее по сидам")
     print("=" * 96)
     print("   (отрицательное = канал помогает; eta - порча в ско канала, ранг падает в")
     print("    1/sqrt(1+eta^2) раз)\n")
 
-    eff = {}       # (mode, enzyme, eta) -> list по зёрнам
+    eff = {}       # (mode, enzyme, eta) -> list по сидам
     missing = []
     for mode in MODES:
         tb, _ = base[mode]
@@ -145,13 +145,13 @@ def main():
         print()
 
     print("=" * 96)
-    print("2. Держится ли знак сдвига на каждом зерне по отдельности")
+    print("2. Держится ли знак сдвига на каждом сиде по отдельности")
     print("=" * 96)
     top = max(e for e in ETAS if any((m, CYPS[0], e) in eff for m in MODES))
-    print(f"   сдвиг = эффект при eta = {top:g} минус эффект при eta = 0, по зёрнам\n")
+    print(f"   сдвиг = эффект при eta = {top:g} минус эффект при eta = 0, по сидам\n")
     for mode in MODES:
         print(f"--- {mode} ---")
-        print(f"{'фермент':8s} " + " ".join(f"{('зерно ' + str(s)):>9s}" for s in seeds)
+        print(f"{'фермент':8s} " + " ".join(f"{('сид ' + str(s)):>9s}" for s in seeds)
               + f" {'среднее':>9s} {'знак 4/4':>9s}")
         for c in CYPS:
             a, b = eff.get((mode, c, 0.0)), eff.get((mode, c, top))

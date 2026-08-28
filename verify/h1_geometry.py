@@ -37,12 +37,12 @@ print(f"{'потолок: против всей обучающей выборк�
       f"{np.percentile(ceil,75):7.3f} {np.mean(ceil>0.7):9.3f}")
 for seed in range(4):
     v = med_nn(np.random.default_rng(seed).integers(0, 5, n))
-    print(f"{'случайное 5-кратное, зерно ' + str(seed):44s} {np.median(v):8.3f} "
+    print(f"{'случайное 5-кратное, сид ' + str(seed):44s} {np.median(v):8.3f} "
           f"{np.percentile(v,75):7.3f} {np.mean(v>0.7):9.3f}")
 cid, n_clusters = cluster_ids(list(rows.SMILES))
 fold = np.random.default_rng(0).integers(0, 5, n_clusters)[cid]
 v = med_nn(fold)
-print(f"{'кластерное 0.35, зерно 0':44s} {np.median(v):8.3f} {np.percentile(v,75):7.3f} "
+print(f"{'кластерное 0.35, сид 0':44s} {np.median(v):8.3f} {np.percentile(v,75):7.3f} "
       f"{np.mean(v>0.7):9.3f}")
 nte = np.array([max(DataStructs.BulkTanimotoSimilarity(f, btr)) for f in bte])
 print(f"{'ТЕСТ против всего обучения':44s} {np.median(nte):8.3f} {np.percentile(nte,75):7.3f} "

@@ -172,7 +172,7 @@ def main():
     print("=" * 92)
     print("1. Точен ли контроль: совпадают ли руки при lambda = 0")
     print("=" * 92)
-    print("Ветка режима стоит внутри `if lam > 0`, а зерно весов - hash((seed, fold)) без")
+    print("Ветка режима стоит внутри `if lam > 0`, а сид весов - hash((seed, fold)) без")
     print("lambda и без режима. Значит при lambda = 0 руки обязаны совпасть побитово.\n")
     worst = 0.0
     for s in seeds:
@@ -180,14 +180,14 @@ def main():
         m = ~np.isnan(a) & ~np.isnan(b)
         d = float(np.max(np.abs(a[m] - b[m])))
         worst = max(worst, d)
-        print(f"  зерно {s}: макс |разность| = {d:.3e}   "
+        print(f"  сид {s}: макс |разность| = {d:.3e}   "
               f"{'побитово' if d == 0 else 'РАСХОЖДЕНИЕ'}")
     print("\n" + ("Контроль точен по построению, а не по совпадению." if worst == 0
                    else "ВНИМАНИЕ: руки при lambda=0 разошлись, сравнение не контролируемо."))
 
     print()
     print("=" * 92)
-    print("2. Дозовая кривая: макро ST-RAE, среднее по зёрнам (ниже - лучше)")
+    print("2. Дозовая кривая: макро ST-RAE, среднее по сидам (ниже - лучше)")
     print("=" * 92)
     curve = {}
     for mode in ("twohead", "calibrated"):
@@ -258,7 +258,7 @@ def main():
                     m = ~np.isnan(y[:, e]) & ~np.isnan(p[:, e])
                     q[m, e] = iso_oof(p[m, e], y[m, e], folds[s][m])
                 iso[(mode, lam, s)] = float(np.mean(per_enzyme(y, lo, hi, q)))
-    print(f"{'рука':28s} " + " ".join(f"{('зерно ' + str(s)):>9s}" for s in seeds)
+    print(f"{'рука':28s} " + " ".join(f"{('сид ' + str(s)):>9s}" for s in seeds)
           + f" {'среднее':>9s} {'sd':>7s} {'размах':>7s}")
     lab = {("twohead", 0.0): "двухголовая l=0 + изо",
            ("twohead", 3.0): "двухголовая l=3 + изо",
@@ -271,9 +271,9 @@ def main():
     sd_post = float(np.std([iso[("twohead", 3.0, s)] for s in seeds], ddof=1))
     rng_post = float(np.ptp([iso[("twohead", 3.0, s)] for s in seeds]))
     sd_raw = curve["twohead"][3.0][1]
-    print(f"\nразрыв калиброванная - двухголовая при l=3, по зёрнам: "
+    print(f"\nразрыв калиброванная - двухголовая при l=3, по сидам: "
           + " ".join(f"{g:+.4f}" for g in gap))
-    print(f"знак одинаков на всех {len(seeds)} зёрнах: "
+    print(f"знак одинаков на всех {len(seeds)} сидах: "
           f"{bool(np.all(np.sign(gap) == np.sign(gap[0])))}, среднее {np.mean(gap):+.4f}")
     print(f"против СЫРОГО разброса   sd {sd_raw:.4f}: {abs(np.mean(gap))/sd_raw:.2f} sd")
     print(f"против разброса ПОСЛЕ изо sd {sd_post:.4f}, размах {rng_post:.4f}: "
