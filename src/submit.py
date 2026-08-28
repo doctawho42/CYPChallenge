@@ -19,9 +19,9 @@ cross-validation, but it is off by default here, and the reason is measured: on 
 quartile by activity it makes every enzyme worse, and the test set is built around
 anchors at the 93rd to 98th percentile of the training distribution, so it is exactly
 that kind of subsample. Shrinking toward a mean that is below the test's own mean drags
-the active predictions down. --shrink turns it on, --shrink-shift moves the centre; the
-out-of-fold optimum on the training marginal is about +0.40, and on the test it should be
-larger, not smaller.
+the active predictions down. --shrink turns it on; the offset and lambda are now fitted
+jointly out of fold rather than the offset being fixed, which reaches macro 0.7150 against
+0.7227 for the +0.40 slice. On the test the offset should be larger, not smaller.
 
 How much larger has since been measured twice, from opposite ends, and the answers bracket
 rather than agree. src/reweight.py tilts the label marginal and gives the centre as a
@@ -38,10 +38,10 @@ raw anchor percentiles is an upper bound, because the anchors' neighbours were c
 similarity and regress toward the mean. Everything between about +0.1 and +0.6 is live,
 and the centre that goes with it is between +0.4 and +0.8.
 
-Two further cautions on --shrink-shift. It is in centre units: the predictions move by
-(1 - lambda) times it, so at lambda around 0.8 a shift of +0.40 is +0.08 in pIC50
-(verify/k3_center.py). And both reweightings assume p(y | yhat) is the same on the test set,
-which is the thing recalibration exists to check.
+Two further cautions. The offset is in centre units: predictions move by (1 - lambda)
+times it, so the +0.40 once quoted was never +0.40 in pIC50 - at the fitted lambdas the
+real shifts are +0.13 / +0.10 / +0.03 / +0.17. And both reweightings assume p(y | yhat) is
+the same on the test set, which is the thing recalibration exists to check.
 """
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
@@ -87,9 +87,24 @@ def test_features(desc_names, mech_names):
     return te, np.hstack([FP, dsc.to_numpy(np.float32), M.to_numpy(np.float32)])
 
 
-def fit_shrinkage(X, y, mask, fold, shift):
-    """lambda per enzyme, chosen out-of-fold on the training data only."""
-    lams = []
+OFFGRID = np.linspace(-0.2, 1.6, 37)
+
+
+def fit_shrinkage(X, y, mask, fold):
+    """Offset and lambda per enzyme, both chosen out-of-fold on the training data.
+
+    Fitting the two jointly rather than fixing the offset and searching lambda: the
+    family {c + L(p - c)} is identically the affine family {a + b p} with b = L and
+    a = c(1 - L), so a fixed offset is an arbitrary slice through it. Jointly it reaches
+    macro 0.7150 against 0.7227 for the +0.40 slice and 0.7333 for the offset at the
+    training mean.
+
+    Worth noting what the offset is not. The predictions move by (1 - L) times it, not by
+    it, so the +0.40 quoted earlier was never a 0.40 shift in pIC50 - at the fitted
+    lambdas the actual shifts are +0.13 / +0.10 / +0.03 / +0.17. And at L -> 1 the
+    centre is not identified at all, which is a second reason to fit the affine pair.
+    """
+    out = []
     for e, c in enumerate(CYPS):
         m = mask[:, e]
         yy = y[m, e]
@@ -101,20 +116,21 @@ def fit_shrinkage(X, y, mask, fold, shift):
             if b.sum() == 0:
                 continue
             p[b] = gbm_reg().fit(Xi[a], yy[a]).predict(Xi[b])
-        mu = p.mean() + shift
         lo = LO[m, e]; hi = HI[m, e]
-        best = min(GRID, key=lambda L: strae(yy, mu + L * (p - mu),
-                                             y_true_upper=hi, y_true_lower=lo))
-        lams.append((best, mu))
-        print(f"    {c}: lambda {best:.2f}, центр {mu:.3f}", flush=True)
-    return lams
+        mu = p.mean()
+        off, L = min(((o, l) for o in OFFGRID for l in GRID),
+                     key=lambda t: strae(yy, (mu + t[0]) + t[1] * (p - (mu + t[0])),
+                                         y_true_upper=hi, y_true_lower=lo))
+        out.append((L, mu + off))
+        print(f"    {c}: lambda {L:.2f}, смещение {off:+.2f}, "
+              f"сдвиг предсказаний {(1-L)*off:+.3f}", flush=True)
+    return out
 
 
 def main():
     global LO, HI
     ap = argparse.ArgumentParser()
     ap.add_argument("--shrink", action="store_true", help="применить усадку (см. docstring)")
-    ap.add_argument("--shrink-shift", type=float, default=0.40)
     ap.add_argument("--outdir", default=RES + "submission/")
     a = ap.parse_args()
 
@@ -143,7 +159,7 @@ def main():
     if a.shrink:
         print("подбираю усадку вне выборки на обучающих данных", flush=True)
         fold, _ = butina_folds(list(rows.SMILES))
-        lams = fit_shrinkage(X, y, mask, fold, a.shrink_shift)
+        lams = fit_shrinkage(X, y, mask, fold)
 
     print("обучаю на всей выборке и предсказываю тест", flush=True)
     act = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})
