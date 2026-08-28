@@ -14,34 +14,46 @@ would produce a different column set, and a check on the column *count* would no
 a permutation either. feats.build() therefore reindexes by name against the committed
 data/desc_names.csv and data/mech_names.csv.
 
-Shrinkage. Post-hoc shrinkage toward the training mean is worth -0.034 macro in
-cross-validation, but it is off by default here, and the reason is measured: on the top
-quartile by activity it makes every enzyme worse, and the test set is built around
-anchors at the 93rd to 98th percentile of the training distribution, so it is exactly
-that kind of subsample. Shrinking toward a mean that is below the test's own mean drags
-the active predictions down. --shrink turns it on; the offset and lambda are now fitted
-jointly out of fold rather than the offset being fixed, which reaches macro 0.7150 against
-0.7227 for the +0.40 slice. On the test the offset should be larger, not smaller.
+Shrinkage, and why the default is the open question rather than a settled one.
+--shrink is OFF, and the justification it used to carry has since been falsified. That
+justification was: on the top quartile by activity, shrinking toward the training mean
+makes every enzyme worse; the test is built around anchors at the 93rd to 98th percentile;
+therefore the test is that kind of subsample and shrinkage would hurt.
 
-How much larger has since been measured twice, from opposite ends, and the answers bracket
-rather than agree. src/reweight.py tilts the label marginal and gives the centre as a
-function of the shift delta: +0.4 at delta = 0, +0.8 at delta = 0.3, +0.9 at delta = 0.5,
-with delta itself estimated at +0.3 to +0.6 from where the anchors sit. verify/k5_shift.py
-measures the shift the other way, by running this model over both sets and comparing its
-own output distributions: +0.014 / +0.147 / -0.190 / +0.437, which divided by the
-attenuation b = 0.789 / 0.898 / 0.743 / 0.999 implies delta near +0.09 macro, and
-verify/k6_shift1d.py confirms that at that shift the optimal centre does not move at all.
+The middle step does not survive measurement. verify/k5_shift.py runs one model over both
+sets and compares its own output distributions - the mapping is identical, so the
+difference in outputs is a difference in inputs. The shift is +0.014 / +0.147 / -0.190 /
++0.437 by enzyme, mild, and negative on 2D6, which is the internal control since 2D6 took
+no part in anchor selection. The stress test that flipped the sign moved ybar by +1.1 to
++1.3 - three times stronger than the shift that is actually there.
 
-Neither number is wrong. +0.09 is a lower bound, because a model that mostly interpolates
-propagates only part of an out-of-distribution shift into its predictions; +1.05 from the
-raw anchor percentiles is an upper bound, because the anchors' neighbours were chosen by
-similarity and regress toward the mean. Everything between about +0.1 and +0.6 is live,
-and the centre that goes with it is between +0.4 and +0.8.
+verify/k6_shift1d.py then reweights the training set to the test-like marginal of the
+predictions (1-D density ratio, effective n 796 to 1444) and finds the optimum barely
+moves: (+0.30, 0.58) against (+0.30, 0.58) on 1A2, (+1.10, 0.84) against (+0.95, 0.82) on
+3A4 at worst. Our own fitted parameters score 0.6781 under those weights against 0.6773
+for parameters fitted under them - a gap of 0.0008 macro. Shrinkage does not flip sign
+there; it wins, 0.7407 raw against 0.6781.
 
-Two further cautions. The offset is in centre units: predictions move by (1 - lambda)
-times it, so the +0.40 once quoted was never +0.40 in pIC50 - at the fitted lambdas the
-real shifts are +0.13 / +0.10 / +0.03 / +0.17. And both reweightings assume p(y | yhat) is
-the same on the test set, which is the thing recalibration exists to check.
+So the evidence now points the other way, and the default has deliberately NOT been
+flipped on that basis alone, because two things the reweighting cannot reach are exactly
+the two that would break it. It corrects the marginal of yhat while assuming p(y | yhat)
+is unchanged on the test - the assumption recalibration exists to test. And it does not
+touch the similarity geometry at all: the test sits at median nearest-neighbour 0.587 and
+no re-split of the training data gets above 0.450. Flipping this default changes what gets
+submitted, and the 25 September reveal is one-shot, so it is a decision to take
+deliberately rather than as a side effect of a docstring.
+
+If it is turned on, the offset and lambda are fitted jointly out of fold rather than the
+offset being fixed, reaching macro 0.7150 against 0.7227 for the +0.40 slice. Note the
+offset is in centre units: predictions move by (1 - lambda) times it, so the +0.40 once
+quoted was never +0.40 in pIC50 - the real shifts are +0.13 / +0.10 / +0.03 / +0.17.
+
+The size of the shift is bracketed rather than pinned. src/reweight.py tilts the label
+marginal and puts the centre at +0.4 for delta = 0 and +0.9 for delta = 0.5; the anchor
+percentiles put delta at +1.05, an upper bound, since the anchors' neighbours were chosen
+by similarity and regress toward the mean. The prediction-shift route puts it near +0.09,
+a lower bound, since a model that mostly interpolates propagates only part of an input
+shift into its outputs. Everything between about +0.1 and +0.6 is live.
 """
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
