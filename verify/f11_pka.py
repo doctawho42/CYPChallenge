@@ -4,18 +4,22 @@ import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
 from cyppaths import D, RES
 import numpy as np, pandas as pd, sys
-sys.path.insert(0,'" + D + "')
+# pka.py лежит в src/, а скрипт запускается из verify/ -- без этой строки import ниже падает
+sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))
 from rdkit import Chem, RDLogger
 RDLogger.DisableLog('rdApp.*')
 import pka as PK
-tr=pd.read_csv('" + D + "cyp-challenge-TRAIN_inhibition.csv')
+tr=pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
 mols=[Chem.MolFromSmiles(s) for s in tr.SMILES]
 ok=[m for m in mols if m]
 print(f"молекул: {len(ok)}")
 cls=[]; val=[]
 for m in ok:
+    # most_basic_pka -> (pKa, индекс атома, имя класса); раньше здесь бралось r[1],
+    # то есть индекс атома вместо класса, и распределение классов было бессмысленным
     r=PK.most_basic_pka(m)
-    if isinstance(r,tuple): v,c=r[0],r[1]
+    if isinstance(r,tuple) and len(r)>=3: v,c=r[0],r[2]
+    elif isinstance(r,tuple): v,c=r[0],"?"
     else: v,c=r,"?"
     cls.append(c); val.append(v)
 cls=pd.Series(cls); val=np.array(val,float)

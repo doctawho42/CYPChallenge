@@ -14,7 +14,7 @@ from scipy.optimize import least_squares
 from sklearn.isotonic import IsotonicRegression
 
 F=str(TEXFIG)+"/"          # .tex подключает картинки как fig/<имя>
-P=RES+"preds/"             # сохранённые предсказания
+PREDS=RES+"preds/"         # сохранённые предсказания (имя P ниже занято)
 CYPS=["CYP1A2","CYP2C9","CYP2D6","CYP3A4"]
 # фиксированный порядок цветов: цвет закреплён за ферментом во всех графиках
 COL={"CYP1A2":"#3260C4","CYP2C9":"#C0432A","CYP2D6":"#118A6C","CYP3A4":"#B98A10"}
@@ -40,7 +40,7 @@ inh=pd.read_csv(D+"cyp-challenge-TRAIN_inhibition.csv")
 sc=pd.read_csv(D+"cyp-challenge-single-concentration-TRAIN.csv")
 piv=sc.pivot_table(index="Molecule_Name",columns="enzyme",values="log2fc_estimate")
 mj=inh.set_index("Molecule_Name").join(piv)
-oof=json.load(open(P+"oof.json")); rows=pd.read_csv(D+"rows.csv")
+oof=json.load(open(PREDS+"oof.json")); rows=pd.read_csv(D+"rows.csv")
 tr=inh.set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index()
 pC0=-np.log10(4.95049505e-05)
 
@@ -281,7 +281,7 @@ print("9 порог")
 from sklearn.metrics import matthews_corrcoef
 from sklearn.linear_model import LogisticRegression
 from matplotlib.lines import Line2D
-Pp=json.load(open(P+"tdi_probs.json"))
+Pp=json.load(open(PREDS+"tdi_probs.json"))
 def mccc(tp,tn,fp,fn):
     d=np.sqrt((tp+fp)*(tp+fn)*(tn+fp)*(tn+fn)); return 0. if d<=0 else (tp*tn-fp*fn)/d
 ts=np.linspace(.03,.9,180)

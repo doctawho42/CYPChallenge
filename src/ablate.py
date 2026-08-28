@@ -58,10 +58,12 @@ from cypsplit import fold_digest
 def _git(*a):
     try: return subprocess.run(("git",)+a, capture_output=True, text=True).stdout.strip()
     except Exception: return "?"
-# Dirtiness of the CODE, excluding results/preds/ -- this script has just rewritten
-# oof.json, so a plain `git status` would report dirty on every single run.
+# Dirtiness of the code that could have changed these predictions. results/preds/ is
+# excluded because this script has just rewritten oof.json, so a plain `git status`
+# would report dirty on every single run; docs/ is excluded because prose cannot move
+# a number.
 _dirty = [ln for ln in _git("status", "--porcelain").splitlines()
-          if "results/preds/" not in ln]
+          if "results/preds/" not in ln and "docs/" not in ln]
 json.dump({
     "split_digest": fold_digest(fold),
     "n_clusters": int(n_clusters),

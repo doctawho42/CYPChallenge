@@ -35,6 +35,11 @@ Eight discrepancies between the document and the data, all corrected:
 7. Changing the split seed moves macro ST-RAE by more than the entire effect being measured.
 8. The screening table was assembled from three runs with different baselines.
 
+Items 1 and 2 have since been superseded by item 12 below and are kept for the record
+rather than as current findings: the "194 groups with a median size of two" holds at a
+Butina threshold of about 0.48 and not at the 0.35 this repository works at, and of the
+four replacement percentiles the CYP3A4 one, 98.2, does not reproduce at any threshold.
+
 Four claims were established for the first time: the MNAR to MAR transition was confirmed
 by simulation; the Spearman gain from the mechanistic block was confirmed by bootstrap;
 the Bayes optimum under ST-RAE was verified numerically; and our cross-validation was
@@ -44,11 +49,10 @@ No leakage was found in the pipeline. There is no contamination between training
 the overlap by name, by canonical SMILES and by SMILES with stereochemistry stripped is
 zero across all three training files.
 
-## Three more, found while setting up the environment
+## Thirteen more, found while setting up the environment
 
-These are documentation errors rather than analysis errors — the code was right and the
-prose was wrong — and they are corrected in the English documentation but **not yet in
-the PDF**:
+Mostly documentation errors — the code was right and the prose was wrong. Where a script
+was at fault it is said so explicitly.
 
 9. The mechanistic block has **30** features, not 28. `data/mech_names.csv`, written by
    `feats.py`, has always listed 30 and matches the copy committed in `results/`.
@@ -56,3 +60,81 @@ the PDF**:
     the top-level README.
 11. `f12_cvhard.py` could never have run to completion as committed: line 34 referenced an
     undefined `fRES`. Fixed, and the script now reproduces the documented -0.153.
+12. The test-set clustering figures in §2 (194 groups, median size two, 55 groups of five
+    or more) come from a Butina threshold of about 0.48. The repository works at 0.35,
+    where the same computation gives 477 groups, median size one and 21 groups of five or
+    more. `f7_testset.py` now sweeps the threshold so the dependence is visible: the
+    anchor percentiles turn out to be stable across it (1A2 92–94, 2C9 97.5–99, 2D6 58–66)
+    and only the 3A4 figure moves, 82–95 against the 98.2 the document quoted. The number
+    of anchors carrying a label is nine to thirty-seven per enzyme, which the text did not
+    say and which is what actually limits the claim.
+13. §4's plate numbers had no source in the repository. `g1_calib.py` printed only the raw
+    spread; the residual analysis the section quotes was computed nowhere. It now is, and
+    the answer differs: plate explains 0.9–8 % of residual variance, not 1–3 %, with
+    CYP2C9 at 8.1 % — nine times CYP3A4's 0.9 %. Subtracting with a free monotone
+    calibration instead of the Hill form gives 0.9–6.7 %, so this is a property of the
+    data rather than of the calibration. The raw spread was also understated: 0.293 and
+    0.922 against the quoted 0.24 and 0.78.
+
+    This weakens, without overturning, the one risk row §14 records as retired. Plate
+    drift still needs no term in the model — even on 2C9 the plate component is about
+    0.05 in log2fc units, well inside a single reading's own error — but the claim now
+    rests on a measurement of the residual rather than of the raw spread.
+
+14. §10 justified the dead ST-RAE decision layer by saying actives determine the metric
+    while inactives contribute almost nothing. The first half holds. Decomposed by
+    activity zone, inactives carry 22 / 16 / 12 / 19 % of the numerator and 34 / 30 / 20 /
+    25 % of the denominator, their bands are visibly asymmetric (median a 0.997 against b
+    0.702 on CYP1A2), and on CYP3A4 the intermediate zone carries more of the numerator
+    (43 %) than the actives (38 %). The conclusion rests on the measurement, which is
+    unaffected; the mechanism connecting it to a cause is now an admitted gap.
+15. §12 claimed random five-fold is about twice as optimistic as the cluster split in R².
+    It is not: 0.314 against 0.320 on average, and stricter on three enzymes of four. At
+    threshold 0.35 there are 4703 clusters for 4905 compounds, so the cluster split is
+    almost all singletons. Its effect is in the tail, not the median — the share of
+    held-out compounds keeping a close relative in training falls from 0.033 to 0.005.
+16. §12's third level of split strictness, the pseudo-test fold, cannot exist as a split.
+    Leave-one-out — the most generous partition there is — gives median nearest-neighbour
+    similarity 0.450, and the test sits at 0.587, above that ceiling. As a *stratum* it is
+    constructible (328 compounds, median 0.643) but lands 267 of them on CYP3A4 against
+    38 / 36 / 32 elsewhere, so it is a real check on 3A4 and not a check at all on the
+    other three.
+17. §14's summary table was captioned "all of it is five-fold Butina cross-validation".
+    Six of its twelve rows are not: label counts and interquartile range are column
+    statistics, reliability is a variance decomposition, and calibration E, h and the
+    screening rank correlation are fits over the whole sample.
+18. §14's tripwire for the series prior named pseudo-test folds, which §12 had just shown
+    cannot be built; and its yardstick for "local estimate disagrees with the leaderboard"
+    was the gap between random and cluster splits, now measured at essentially nil, so it
+    would have fired on anything. Both replaced with measured thresholds.
+19. `f11_pka.py` had never run either: two path substitutions were left as the literal
+    string `'" + D + "'`, `src/` was missing from `sys.path`, and it read the atom index
+    where it wanted the class name, which printed two of its four numbers as 0.0 %.
+    Repaired, it reports that the most basic centre is an aromatic nitrogen in 55.8 % of
+    the training set and that the caffeine configuration covers 2.2 %.
+20. §13's "the rank always improves" is true of the macro only. Two-stage inversion drops
+    Spearman on CYP2D6 from 0.398 to 0.362 and on CYP3A4 from 0.749 to 0.747; only the
+    blend lifts all four.
+21. §11's median |Δ pIC50| over pairs at Tanimoto 0.6–0.85 is 0.33–0.68, not 0.24–0.55,
+    and three of the four medians rest on 15 to 30 pairs.
+
+Smaller ones, all corrected in the same pass: the TDI fill rate is 21–58 % and not 24–58;
+the "curves were run on whatever the screen flagged" rule holds for three enzymes, since
+all 530 curve compounds without a screening reading carry a CYP3A4 label and nothing else;
+CYP2D6 sits 0.007 below the trivial line, not two hundredths; CYP3A4's E spread is 0.067
+and CYP2D6's 0.091; `f8_mnar` selects the top 28 % and not thirty; "understates its own
+error by 17–21 percent" was the ratio 1.18–1.21 read as a percentage; the TDI rule was
+checked on 2334 of CYP3A4's 3584 labels, the other 1250 having no direct arm and all being
+negative; "hundreds of false positives" is zero with the guard and 56 on CYP2D6 without it;
+the MCC figure caption and body gave 0.356 and 0.358 for the same quantity, a threshold-grid
+artefact whose exact value is 0.3574; +0.028 MCC is the top of a +0.018–0.029 range over
+calibration seeds and is not commensurable with the ST-RAE feature ablations; and the 0.015
+decision-layer ceiling subtracts two rows computed with different Monte-Carlo settings.
+
+## Scripts that had never run
+
+Five, all broken by the migration off the original machine rather than by anything in the
+analysis: `feats.py` (hard-coded dimorphite path), `f12_cvhard.py` (`fRES`), `f11_pka.py`
+(three separate faults), `docs/tex/figs.py` (`/tmp` paths, then a name collision with a
+pivot table), and `g1_calib.py`, which worked only because an import inside a loop body
+happened to leak. All five run now, and the numbers they produce are in the document.

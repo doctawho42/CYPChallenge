@@ -41,3 +41,31 @@ for c in CYPS:
     v=tr.loc[idx,col].dropna().to_numpy()
     pct=np.mean(full[None,:]<=v[:,None],axis=1)*100
     print(f"  {c}: якорей с меткой {len(v):3d}, медианный перцентиль {np.median(pct):5.1f}, средний {pct.mean():5.1f}")
+
+# Порог кластеризации выбран, а не выведен, поэтому вывод должен быть от него устойчив.
+# Числа документа соответствуют порогу около 0.48, а весь остальной репозиторий работает
+# на 0.35 -- развёртка показывает, что от этого меняется, а что нет.
+print("\n=== устойчивость к порогу кластеризации ===")
+print(f"{'порог':>6} {'групп':>6} {'мед.':>5} {'>=5':>4} {'в них':>6} " +
+      " ".join(f"{c[3:]:>12s}" for c in CYPS))
+for cut2 in [0.35, 0.40, 0.45, 0.48, 0.50]:
+    cl2 = Butina.ClusterData(d, len(bte), cut2, isDistData=True)
+    sz2 = np.array([len(x) for x in cl2]); big2 = [x for x in cl2 if len(x) >= 5]
+    idx2 = []
+    for grp in big2:
+        best = (-1, None)
+        for i in grp:
+            s = DataStructs.BulkTanimotoSimilarity(bte[i], btr); j = int(np.argmax(s))
+            if s[j] > best[0]: best = (s[j], oktr[j])
+        idx2.append(best[1])
+    cells = []
+    for c in CYPS:
+        col = f"{c}_pIC50_direct_inhibition"; full = tr[col].dropna().to_numpy()
+        v = tr.loc[idx2, col].dropna().to_numpy()
+        if len(v) == 0: cells.append("     -      "); continue
+        pct = np.mean(full[None, :] <= v[:, None], axis=1) * 100
+        cells.append(f"{np.median(pct):5.1f} ({len(v):2d})")
+    print(f"{cut2:6.2f} {len(cl2):6d} {np.median(sz2):5.0f} {len(big2):4d} "
+          f"{sum(len(g) for g in big2):6d} " + " ".join(f"{x:>12s}" for x in cells))
+print("в скобках -- сколько якорей несут метку по этому ферменту; медиана по такой")
+print("горстке имеет широкий интервал, и это ограничение вывода, а не опечатка.")

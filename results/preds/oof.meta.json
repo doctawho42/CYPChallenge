@@ -1,0 +1,9 @@
+{
+ "split_digest": "2d93c19815e14261",
+ "n_clusters": 4703,
+ "sklearn": "1.3.2",
+ "numpy": "1.26.4",
+ "python": "3.12.5",
+ "git_commit": "fa92f3d",
+ "code_dirty": false
+}
