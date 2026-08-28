@@ -44,11 +44,10 @@ No leakage was found in the pipeline. There is no contamination between training
 the overlap by name, by canonical SMILES and by SMILES with stereochemistry stripped is
 zero across all three training files.
 
-## Three more, found while setting up the environment
+## Five more, found while setting up the environment
 
 These are documentation errors rather than analysis errors — the code was right and the
-prose was wrong — and they are corrected in the English documentation but **not yet in
-the PDF**:
+prose was wrong:
 
 9. The mechanistic block has **30** features, not 28. `data/mech_names.csv`, written by
    `feats.py`, has always listed 30 and matches the copy committed in `results/`.
@@ -56,3 +55,23 @@ the PDF**:
     the top-level README.
 11. `f12_cvhard.py` could never have run to completion as committed: line 34 referenced an
     undefined `fRES`. Fixed, and the script now reproduces the documented -0.153.
+12. The test-set clustering figures in §2 (194 groups, median size two, 55 groups of five
+    or more) come from a Butina threshold of about 0.48. The repository works at 0.35,
+    where the same computation gives 477 groups, median size one and 21 groups of five or
+    more. `f7_testset.py` now sweeps the threshold so the dependence is visible: the
+    anchor percentiles turn out to be stable across it (1A2 92–94, 2C9 97.5–99, 2D6 58–66)
+    and only the 3A4 figure moves, 82–95 against the 98.2 the document quoted. The number
+    of anchors carrying a label is nine to thirty-seven per enzyme, which the text did not
+    say and which is what actually limits the claim.
+13. §4's plate numbers had no source in the repository. `g1_calib.py` printed only the raw
+    spread; the residual analysis the section quotes was computed nowhere. It now is, and
+    the answer differs: plate explains 0.9–8 % of residual variance, not 1–3 %, with
+    CYP2C9 at 8.1 % — nine times CYP3A4's 0.9 %. Subtracting with a free monotone
+    calibration instead of the Hill form gives 0.9–6.7 %, so this is a property of the
+    data rather than of the calibration. The raw spread was also understated: 0.293 and
+    0.922 against the quoted 0.24 and 0.78.
+
+    This weakens, without overturning, the one risk row §14 records as retired. Plate
+    drift still needs no term in the model — even on 2C9 the plate component is about
+    0.05 in log2fc units, well inside a single reading's own error — but the claim now
+    rests on a measurement of the residual rather than of the raw spread.
