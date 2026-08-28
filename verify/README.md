@@ -397,3 +397,61 @@ delta range. Note the trunk prefers a different repair: isotonic gives it 0.7506
 0 where the affine pair gives 0.8037, while for boosting the affine pair is much the better
 of the two. Computed on split seed 0 only, and seed 0 is where the calibrated arm behaves
 worst; this needs four seeds before it carries weight in a submission decision.
+
+**37. The noise ladder: what it bought, and what it took away.** The screening channel was
+degraded in five steps (eta = 0 / 0.5 / 1 / 2 / 4, rank attenuation 1.000 / 0.894 / 0.707 /
+0.447 / 0.243), both arms, four seeds, lambda = 3. Noise is added to the standardised target
+and the sum divided by sqrt(1 + eta^2), so only the correlation with pIC50 falls and the
+target's spread does not - otherwise "less information" would be confounded with "more
+weight". Control: at lambda = 0 the screening term is absent from the loss, and predictions at
+eta = 2 reproduce those at eta = 0 to a maximum absolute difference of exactly 0.0 on all four
+seeds.
+
+What it bought: within-enzyme causality. Inside one enzyme nothing varies but how much the
+channel knows, so a reproducible response there cannot be attributed to label count, band
+width or Hill fit quality. Seven of eight curves hold their sign across all four seeds.
+
+What it took away, and this is the larger result: **the single-latent arm's damage is not
+informational.** Destroy 95-97 % of the channel's information and the damage does not vanish -
+it grows, by +0.15 / +0.25 / +0.20 on 1A2, 2C9 and 3A4. The surviving few percent cannot do
+more work than all of it did. The document's previous explanation - "the fixed calibration has
+no disease of its own, it multiplies the existing one about fivefold" - is refuted by
+measurement, and the sign is the refutation. Separately, and negatively: the two-head arm shows
+no per-enzyme structure at all (mean deviations from a single curve at most 0.009 against a
+spread of 0.033, indistinguishable from a permutation null). All of the per-enzyme structure
+sits in the rigid coupling, not in the channel.
+
+The reading that survives is single-mechanism: the channel pulls predicted potency toward a
+pseudo-label derived from the screen; noise sets the label's QUALITY, which gives the
+within-enzyme response, while the instrument sets the SCALE of the pull in pIC50 units, which
+is fixed for the rigid arm and absent for the free head.
+
+**38. The four-enzyme ordering is not identified, and one competitor has been eliminated.**
+Three quantities order the four enzymes identically, pairwise Spearman exactly +-1: the screen's
+rank correlation with pIC50; the mean confidence-band width, which is what the metric computes
+error from; and the gain of the calibration curve, i.e. how many pIC50 units of spurious pull
+one standard deviation of screening residual produces. No test in the joint-likelihood section
+separates them, and noise cannot: it moves informativeness and moves neither the band nor the
+instrument map.
+
+Band width is now eliminated, cheaply. Recomputing ST-RAE from the same saved predictions with
+the band equalised across enzymes, and again with no band at all (plain RAE), leaves the
+per-enzyme structure essentially intact - 2D6 worst by a wide margin, 1A2 second, 2C9 and 3A4
+near zero. Spearman moves from -1.000 to -0.800, and the pair that swaps is exactly 2C9/3A4,
+which separate by 0.002 and were never distinguishable. So the effect lives in the predictions,
+not in how the metric reads them.
+
+The discriminating intervention is named and not run: swap (E, h) between CYP2D6 and CYP3A4 and
+rerun the single-latent arm on the same four seeds. Data, labels, bands, split, initialisation
+and the screen's informativeness all stay literally the same; only the instrument map moves.
+
+**39. Three claims in section 14 were overstated and are now weakened.** The permutation
+probability of a perfect ordering at n = 4 was quoted as "about one in twenty"; it is 1/12
+two-sided. The two-head arm's perfect ordering at eta = 0 rests on a single run - per seed the
+CYP2D6 effect is +0.609 / -0.040 / -0.121 / +0.034, and dropping seed 0 turns Spearman -1.000
+into +0.400 - while the 2C9/3A4 pair differs by 0.002 against a standard error four times
+larger; exactly one comparison in that arm is measured, 1A2 against the pair. And "two checks
+out of two, the hypothesis fails" claimed too much from correlations of -0.400 and -0.200 at
+n = 4, which sit in the middle of the permutation null: the honest statement is that the
+predicted ordering is not observed. The single-latent arm's ordering, by contrast, is stable -
+it holds under the median and without seed 0.
