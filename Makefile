@@ -7,7 +7,7 @@
 UV := uv run
 
 .DEFAULT_GOAL := help
-.PHONY: help setup hooks features baseline ablate score submit reweight verify test doc clean-cache
+.PHONY: help setup hooks features baseline ablate score submit reweight verify verify-extra test doc clean-cache
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
@@ -55,6 +55,14 @@ verify: data/feats.npz  ## the quick verification scripts (skips f3, f12: ~70 mi
 	          verify/g1_calib.py verify/g2_factor.py; do \
 	  echo "=== $$f ==="; $(UV) python $$f || exit 1; \
 	done
+
+verify-extra: data/feats.npz  ## the h* and k* verification scripts (~17 min), logs into results/logs/
+	@mkdir -p results/logs
+	@for f in h1_geometry h2_tdi_alerts h3_alerts_delta k1_shrink k3_center k4_enrich \
+	          k5_shift k6_shift1d; do \
+	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
+	done
+	@echo "logs in results/logs/"
 
 doc:  ## rebuild docs/CYP — модель и данные.pdf (needs XeLaTeX + ParaType)
 	bash docs/build.sh

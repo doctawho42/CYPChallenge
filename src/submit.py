@@ -21,7 +21,27 @@ anchors at the 93rd to 98th percentile of the training distribution, so it is ex
 that kind of subsample. Shrinking toward a mean that is below the test's own mean drags
 the active predictions down. --shrink turns it on, --shrink-shift moves the centre; the
 out-of-fold optimum on the training marginal is about +0.40, and on the test it should be
-larger, not smaller. Nobody has measured how much larger.
+larger, not smaller.
+
+How much larger has since been measured twice, from opposite ends, and the answers bracket
+rather than agree. src/reweight.py tilts the label marginal and gives the centre as a
+function of the shift delta: +0.4 at delta = 0, +0.8 at delta = 0.3, +0.9 at delta = 0.5,
+with delta itself estimated at +0.3 to +0.6 from where the anchors sit. verify/k5_shift.py
+measures the shift the other way, by running this model over both sets and comparing its
+own output distributions: +0.014 / +0.147 / -0.190 / +0.437, which divided by the
+attenuation b = 0.789 / 0.898 / 0.743 / 0.999 implies delta near +0.09 macro, and
+verify/k6_shift1d.py confirms that at that shift the optimal centre does not move at all.
+
+Neither number is wrong. +0.09 is a lower bound, because a model that mostly interpolates
+propagates only part of an out-of-distribution shift into its predictions; +1.05 from the
+raw anchor percentiles is an upper bound, because the anchors' neighbours were chosen by
+similarity and regress toward the mean. Everything between about +0.1 and +0.6 is live,
+and the centre that goes with it is between +0.4 and +0.8.
+
+Two further cautions on --shrink-shift. It is in centre units: the predictions move by
+(1 - lambda) times it, so at lambda around 0.8 a shift of +0.40 is +0.08 in pIC50
+(verify/k3_center.py). And both reweightings assume p(y | yhat) is the same on the test set,
+which is the thing recalibration exists to check.
 """
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))

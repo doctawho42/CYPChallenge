@@ -70,7 +70,8 @@ was at fault it is said so explicitly.
 9. The mechanistic block has **30** features, not 28. `data/mech_names.csv`, written by
    `feats.py`, has always listed 30 and matches the copy committed in `results/`.
 10. There are **fourteen** verification scripts, not twenty-three, in both this file and
-    the top-level README.
+    the top-level README. (Eight more were added later, in the `h*` and `k*` groups; the
+    current count is twenty-two and both files say so.)
 11. `f12_cvhard.py` could never have run to completion as committed: line 34 referenced an
     undefined `fRES`. Fixed, and the script now reproduces the documented -0.153.
 12. The test-set clustering figures in §2 (194 groups, median size two, 55 groups of five
@@ -151,3 +152,126 @@ analysis: `feats.py` (hard-coded dimorphite path), `f12_cvhard.py` (`fRES`), `f1
 (three separate faults), `docs/tex/figs.py` (`/tmp` paths, then a name collision with a
 pivot table), and `g1_calib.py`, which worked only because an import inside a loop body
 happened to leak. All five run now, and the numbers they produce are in the document.
+
+
+## The `h*` and `k*` groups
+
+Written after the `f*`/`g*` sweep, against two questions the document had left open — how
+far the test set really is from our cross-validation, and whether post-hoc rescaling of the
+predictions is worth doing — plus one idea from a chemist about reactivity. The numbers
+below were produced under scikit-learn 1.8.0 and pandas 3.0.2, the first inside the range
+`pyproject.toml` documents as bit-for-bit reproducing and the second outside the `<3` pin,
+so they want one confirming run under the lock: `make verify-extra`.
+
+**22. The third level of split strictness cannot be built, and the reason is not that our
+split is too easy.** `h1_geometry.py`: leave-one-out — every compound against the entire
+rest of the training set, the most generous partition there is — gives median
+nearest-neighbour similarity 0.450; random five-fold gives 0.437 to 0.438 over four seeds;
+the cluster split gives 0.435; and the test set sits at 0.587. The test is closer to the
+training set than the training set is to itself, so no re-slicing reaches it. The cluster
+split earns its keep in the tail rather than the median: the share of held-out compounds
+keeping a close relative (>0.7) in training is 0.005 against 0.033 for random and 0.101 for
+the test. This is the measurement behind item 16.
+
+**23. Structural reactivity alerts say nothing about the TDI label and a great deal about
+the shift behind it.** `h2_tdi_alerts.py` scores fourteen classical mechanism-based
+inactivation motifs against `is_TDI` and finds nothing — the largest absolute MCC on CYP3A4
+is about 0.013, which is noise. `h3_alerts_delta.py` scores the same motifs against
+Delta = pIC50(TDI) - pIC50(direct), conditioned on the compound being potent at all
+(pi > 4), and finds a strong signal: on CYP3A4 cyclopropylamine gives a median Delta of
+0.574 against 0.289 without it (p = 0.0007) and any-alert 0.369 against 0.277
+(p < 0.0001); on CYP2D6 methylenedioxyphenyl gives 0.432 against 0.139 (p < 0.0001).
+
+The two results are consistent, and their difference is the point: the label is
+"potent AND shifted", the alerts are about the second half only, and the threshold on the
+second half is a knife edge. The median Delta over CYP3A4 actives is +0.294 against a
+cutoff of log10(2) = 0.301. Half the actives sit within a hundredth of the line, so a
+predictor of Delta can be good while a predictor of the label looks worthless.
+
+**24. Shrinkage toward the mean is a real effect measured by the wrong instrument.**
+`k1_shrink.py`. Out-of-fold least squares independently recovers the attenuation —
+`a = (1-b)*mu` to three decimals, with b = 0.789 / 0.898 / 0.743 / 0.999 — so the model
+really is over-dispersed. But the gain is almost entirely ST-RAE's: MAE on CYP3A4 gets
+*worse* (0.5348 to 0.5409) and R^2 does not move. On the top quartile by activity shrinkage
+worsens every enzyme. It is off by default in `src/submit.py`.
+
+**25. The "shrinkage centre" is not a shift of the predictions, and the gain does not come
+from where it looked like it came from.** `k3_center.py`. Since
+`c + l*(p - c) = [mu + l*(p - mu)] + (1-l)*off`, the predictions move by `(1-l)*off`, which
+is +0.136 / +0.102 / +0.024 / +0.173 for the fitted optima — the centre offset of about
++0.40 quoted elsewhere is the same thing inflated about fivefold by the parameterisation.
+The family also degenerates: `(c, l)` maps onto `a + b*p` with `a = c*(1-l)`, so `c` is
+unidentifiable at l = 1 and unstable near it.
+
+The obvious mechanism — the offset buys a free lunch inside the wide bands of censored
+inactives — is wrong. The share of predictions falling inside the band *drops* when the
+offset is applied (CYP3A4: 37.8 % to 34.5 %). Decomposed by activity zone, the numerator
+change on CYP3A4 is -62.3 in the intermediate zone and -11.8 on the actives against +35.8
+on the inactives; the same signs hold on all four enzymes. The offset corrects the
+intercept in the middle of the range and pays for it with the inactives.
+
+Macro out of fold: raw 0.7673, shrink to mu 0.7330, shrink to mu + off 0.7149. On an
+activity-enriched evaluation the *oracle* affine map — fitted on that very subset — only
+reaches 0.90 to 1.00, which is the constant-mean baseline. Within the active range our
+predictions carry almost no ST-RAE-visible skill.
+
+**26. The test set is shifted, and by much less than the stress test assumed.**
+`k4_enrich.py` takes the label of each compound's nearest training neighbour as a proxy and
+reports a large enrichment (+0.45 / +0.83 / -0.02 / +1.16). The proxy is confounded and the
+script says so: test compounds have higher nearest-neighbour similarity than training
+compounds have to each other, so their neighbours are not comparable draws. Only the
+direction survives that objection — noise pulls a neighbour's label toward the mean, not
+away from it.
+
+`k5_shift.py` does it properly, applying one model to both sets and comparing the
+distributions of its own output. The shift is +0.014 / +0.147 / -0.190 / +0.437, the
+standard deviation rises on all four, the share of predictions above 5.5 rises on three
+(CYP3A4 2.1 % to 14.5 %), and every KS p-value is at most 7e-3. CYP2D6 goes the other way,
+as it has in every other diagnostic in this repository.
+
+**27. Correcting for the shift I measured changes nothing — but I measured the wrong
+marginal, and `src/reweight.py` disagrees for a good reason.** `k6_shift1d.py` reweights
+the training set by the density ratio along the *prediction* axis (effective sample size
+796 to 1444). The optimal `(off, l)` barely move — +0.95 to +1.10 and 0.82 to 0.84 on
+CYP3A4 — and the ordering of strategies does not move at all. Read on its own that retires
+the "shrinkage does not transfer" claim, since `k1`'s top-quartile stress test moves the
+evaluation mean by +1.1 to +1.3 while the shift measured here is far smaller.
+
+Read against `src/reweight.py` it does not, and the disagreement is the useful part. That
+script tilts the *label* marginal by delta and finds the optimal centre tracking delta
+closely: +0.4 at delta = 0, +0.8 at delta = 0.3, +0.9 at delta = 0.5, with shrinkage at the
+training mean ceasing to help around delta = 0.5. Two reweightings, opposite conclusions,
+and the reconciliation is attenuation. The model is over-dispersed by b = 0.789 / 0.898 /
+0.743 / 0.999 (item 24), so a label shift of delta shows up in prediction space as about
+b * delta. Inverting the measured prediction shifts gives an implied delta of +0.018 /
++0.164 / -0.256 / +0.437, macro +0.09 — the very bottom of the range `reweight.py` scans,
+where its own table also says the optimum has not moved yet.
+
+So the two agree on the mechanism and differ on where the test sits, and neither pins it
+down. b measured in-distribution is itself an upper bound on how much an out-of-distribution
+shift propagates into the predictions — a model that mostly interpolates would show almost
+none of it — so +0.09 is a lower bound on delta, and `reweight.py`'s anchor-percentile
+argument gives +1.05 as an upper bound and +0.3 to +0.6 as defensible. The honest statement
+is that delta is bracketed between roughly +0.1 and +0.6, that the centre should be near
++0.4 at the bottom of that bracket and near +0.8 at the top, and that nothing available
+before the intermediate leaderboard narrows it further.
+
+Both corrections share one assumption neither can check: that p(y | yhat) is unchanged on
+the test set. That is exactly what recalibration is supposed to test, so this is not a free
+lunch either way.
+
+**28. Two independent orderings of the enzymes coincide.** The strength with which the
+screening channel tracks pIC50 (0.936 / 0.896 / 0.862 / 0.828) ranks the enzymes exactly as
+the shift measured on the blinded test set does (+0.437 / +0.147 / +0.014 / -0.190), and
+inversely as the effect of the joint likelihood at lambda = 3 does (-0.027 / -0.025 /
++0.047 / +0.120). Spearman +1.000 and -1.000. A reading that fits: the 750 compounds were
+selected by the screen, so the enzymes whose screen is informative are the ones whose
+actives got enriched — which would mean the coupling is partly learning the selection rule,
+the middle factor of the factorisation in the model section.
+
+This is four points. The permutation p-value for a perfect rank correlation at n = 4 is
+1/24, and the screening correlation covaries with everything else that differs between
+enzymes. It is one bit of evidence and the script says so. The within-enzyme version —
+degrade the screening channel with noise in steps and watch whether the effect moves
+monotonically — turns it into a dose-response curve on each enzyme separately, and has not
+been run.
