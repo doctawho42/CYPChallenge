@@ -7,7 +7,7 @@
 UV := uv run
 
 .DEFAULT_GOAL := help
-.PHONY: help setup hooks features baseline ablate score verify test doc clean-cache
+.PHONY: help setup hooks features baseline ablate score submit reweight verify verify-extra test doc clean-cache
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
@@ -40,6 +40,27 @@ ablate: data/feats.npz  ## regenerate results/preds/oof.json — SLOW (~1 h), se
 score: data/feats.npz  ## metrics and paired bootstrap over the saved predictions (~2 min)
 	$(UV) python src/score.py
 
+submit: data/feats.npz  ## build both submission files and run the organisers' validators
+	$(UV) python src/submit.py
+
+reweight: data/feats.npz  ## score under a test-like label marginal (~3 min)
+	$(UV) python src/reweight.py
+
+trunk: data/feats.npz  ## both arms of the joint likelihood — SLOW (~1 h), writes results/preds/trunk_*.json
+	uv run python src/trunk.py --mode twohead    --seeds 0,1,2,3 --lams 0,0.3,1.0,3.0
+	uv run python src/trunk.py --mode calibrated --seeds 0,1,2,3 --lams 0,0.3,1.0,3.0
+
+trunk-noise: data/feats.npz  ## the noise ladder on the screening channel — SLOW (~1 h)
+	for e in 0.5 1 2 4; do \
+	  uv run python src/trunk.py --mode twohead    --seeds 0,1,2,3 --lams 3.0 --noise $$e; \
+	  uv run python src/trunk.py --mode calibrated --seeds 0,1,2,3 --lams 3.0 --noise $$e; \
+	done
+
+trunk-score: data/feats.npz  ## read the saved trunk predictions: lambda response, dose curve, noise curve (~5 min)
+	uv run python src/trunkscore.py
+	uv run python src/trunkdose.py
+	uv run python src/trunknoise.py
+
 test:  ## golden-value guard on the cross-validation split
 	$(UV) pytest
 
@@ -49,6 +70,14 @@ verify: data/feats.npz  ## the quick verification scripts (skips f3, f12: ~70 mi
 	          verify/g1_calib.py verify/g2_factor.py; do \
 	  echo "=== $$f ==="; $(UV) python $$f || exit 1; \
 	done
+
+verify-extra: data/feats.npz  ## the h* and k* verification scripts (~17 min), logs into results/logs/
+	@mkdir -p results/logs
+	@for f in h1_geometry h2_tdi_alerts h3_alerts_delta k1_shrink k3_center k4_enrich \
+	          k5_shift k6_shift1d; do \
+	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
+	done
+	@echo "logs in results/logs/"
 
 doc:  ## rebuild docs/CYP — модель и данные.pdf (needs XeLaTeX + ParaType)
 	bash docs/build.sh

@@ -185,7 +185,7 @@ ax.annotate("с блоком",xy=(0.06,P["FP+DESC+MECH"].iloc[0]-.0022),fontsize
 ax.annotate(f"ско {P['FP+DESC'].std(ddof=1):.4f}",xy=(3.14,P["FP+DESC"].iloc[3]),fontsize=8.2,color="#6b6b6b",va="center")
 ax.annotate(f"ско {P['FP+DESC+MECH'].std(ddof=1):.4f}",xy=(3.14,P["FP+DESC+MECH"].iloc[3]),fontsize=8.2,color="#118A6C",va="center")
 ax.set_xticks(xs); ax.set_xticklabels([str(i) for i in range(4)])
-ax.set_xlabel("зерно разбиения")
+ax.set_xlabel("сид разбиения")
 ax.set_ylabel("макро ST-RAE"); ax.grid(axis="y")
 ax.set_xlim(-.25,4.75); ax.set_ylim(.7630,.7860)
 ax=axes[1]
@@ -197,7 +197,7 @@ for j,c in enumerate(CYPS):
     ax.annotate(f"{a.std(ddof=1)/b.std(ddof=1):.1f}×",xy=(j,max(a.std(ddof=1),b.std(ddof=1))+.0018),
                 ha="center",fontsize=8.6,color=INK,fontweight="bold")
 ax.set_xticks(range(4)); ax.set_xticklabels(CYPS)
-ax.set_ylabel("ско ST-RAE по зёрнам"); ax.grid(axis="y"); ax.set_ylim(0,.0205)
+ax.set_ylabel("ско ST-RAE по сидам"); ax.grid(axis="y"); ax.set_ylim(0,.0205)
 ax.legend(handles=[Patch(facecolor="#c9c9c9",label="без блока"),
                    Patch(facecolor="#8a8a8a",label="с блоком, цвет фермента")],
           loc="upper right",fontsize=8.1,bbox_to_anchor=(1.02,1.03))

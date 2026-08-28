@@ -58,6 +58,14 @@ hit a conflict on it, do not try to resolve it — take one side (`git checkout 
 `results/preds/oof.meta.json` records which split, which library versions and which commit
 produced the current file, so you can always tell what you are holding.
 
+`results/preds/trunk_twohead.json` and `trunk_calibrated.json` are the same kind of thing for
+the neural trunk: about 3 MB each, roughly half an hour per arm, one file per `--mode`. Same
+rule applies. They carry their configuration inside, under `meta` — blocks, width, depth,
+dropout, epochs, weight decay, the seeds and lambdas the file covers, and the torch and numpy
+versions — so a file whose numbers you cannot place is self-describing. The key inside is
+`{mode}|{seed}|{lambda}`; it used to be `{seed}|{lambda}`, which meant the two arms shared a
+default path and the second run silently overwrote the first.
+
 ## Branches
 
 `main` is what the document quotes. Work on a branch, open a pull request, let CI run.
