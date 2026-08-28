@@ -18,10 +18,13 @@ hooks:  ## arm the local pre-push guard on main (once per clone)
 	git config core.hooksPath .githooks
 	@echo "core.hooksPath = $$(git config --get core.hooksPath)"
 
-setup: hooks  ## environment, submodule and data — run once per machine
+setup: hooks  ## environment, submodule, data and features — run once per machine
 	uv sync
 	git submodule update --init
 	bash data/fetch.sh
+	$(UV) python src/feats.py
+	@echo
+	@echo "Готово. Проверь установку:  uv run pytest   (должно быть 6 passed)"
 
 data/feats.npz: src/feats.py
 	$(UV) python src/feats.py

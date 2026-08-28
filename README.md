@@ -5,7 +5,7 @@ CYP1A2, CYP2C9, CYP2D6 and CYP3A4 from molecular structure. Submission closes
 3 November 2026.
 
 The primary artefact is the document [`docs/CYP — модель и данные.pdf`](docs/) (in
-Russian, and staying that way — it is the team's working document). Thirty pages: the
+Russian, and staying that way — it is the team's working document). Thirty-five pages: the
 biochemistry of the task, what is in the data and what we measured from it, the model
 with a justification for each part, the verification protocol, and a list of what has
 already been tried and does not work. Everything else in this repository is the code
@@ -27,6 +27,9 @@ itself, so nothing else needs installing. `make help` lists the pipeline targets
 
 Working on this with others? Read [CONTRIBUTING.md](CONTRIBUTING.md) first — it covers
 who regenerates the expensive artefacts and how not to invalidate each other's numbers.
+
+**Never used git or GitHub?** Start with [ONBOARDING.md](ONBOARDING.md) instead — it is
+written in Russian, assumes nothing, and covers the traps specific to this repository.
 
 ## Layout
 
@@ -87,6 +90,7 @@ the document.
 - Our cross-validation is 0.153 harder than the real test set, by median similarity to the
   nearest training compound. Local numbers are a lower bound, but they also select for a
   different skill than the leaderboard pays for.
-- Negative results are recorded and stay in the repository. There are four so far.
+- Negative results are recorded and stay in the repository. There are four so far, and
+  they are some of the most useful content here.
 - The environment is pinned for a reason: scikit-learn 1.3.2 through 1.8.0 reproduce
   `results/preds/oof.json` bit for bit, 1.9.0 does not. See the comment in `pyproject.toml`.

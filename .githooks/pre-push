@@ -27,13 +27,20 @@ if [ "$blocked" -eq 1 ]; then
 
 pre-push refused: main is updated through a pull request.
 
-    git switch -c <branch>
-    git push -u origin <branch>
-    gh pr create --fill
-    gh pr checks --watch        # wait for split-guard to go green
-    gh pr merge --squash
+Your commits are safe. Move them onto a branch and send that instead:
 
-This is a local convention, not a server-side rule. See CONTRIBUTING.md.
+    git switch -c my-branch
+    git push -u origin my-branch
+
+git will print a link; open it and press "Compare & pull request".
+Wait for the split-guard check to go green, then "Squash and merge".
+
+With the gh CLI the same thing is:
+
+    gh pr create --fill && gh pr checks --watch && gh pr merge --squash
+
+New to git? Read ONBOARDING.md. Conventions live in CONTRIBUTING.md.
+This is a local convention, not a server-side rule.
 
 MSG
     exit 1
