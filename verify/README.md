@@ -479,7 +479,8 @@ screen's informativeness or something else in that enzyme's own data that has no
 The experiment establishes where the mechanism is not.
 
 **41. Split seed 0 has now produced three separate false conclusions in the single-latent
-arm.** In the swap above its CYP2D6 movement is +0.61 against +0.00 on the other three, and
+arm.** *(Superseded by item 42: the cause is one compound, not the split. Kept because the
+detection was right even though the diagnosis was wrong.)* In the swap above its CYP2D6 movement is +0.61 against +0.00 on the other three, and
 the mean over four seeds reads +0.155 - fifteen times the control noise and apparently
 decisive - while the median and the three-seed mean read zero. The same seed alone produced
 the perfect four-point ordering of item 39, where dropping it turns Spearman -1.000 into
@@ -488,3 +489,41 @@ Three conclusions in one section have leaned on one split. The four-seed rule in
 we work" exists for this, and it has now paid for itself three times; any per-enzyme claim in
 the joint-likelihood work should be read per seed before it is believed. Why that split is
 different has not been investigated.
+
+**42. It was never the seed. It was one compound, and it overturns one of the two headline
+orderings.** Item 41 blamed split seed 0 for three separate false conclusions. The detection
+was right and the diagnosis was wrong. Seed 0's split is unremarkable: fold sizes, mean
+CYP2D6 activity, spread, active fraction and the metric's own denominator all match the other
+three seeds to two decimals.
+
+What is remarkable is a single molecule. In the two-head arm at lambda = 3, `OCNT-2328942`
+(true CYP2D6 pIC50 2.53) is predicted at -360 on seed 0 and -22 on seed 2, and behaves
+normally on the other two. Its screening reading is ordinary (z = -0.58), so this is an
+optimisation blow-up that lands on it, not an outlier in the data. ST-RAE is a sum of absolute
+deviations, so one prediction at -360 contributes about 362 to a numerator whose denominator
+is around 120: one molecule out of 1493 triples the enzyme's score.
+
+Clipping predictions to the enzyme's label range plus or minus two units - a bound that
+touches no compounds at all on three enzymes and half a compound on CYP2D6 - settles it:
+
+  two-head 2D6, raw      +0.609 / -0.040 / -0.121 / +0.034   sign 2 of 4
+  two-head 2D6, clipped  +0.035 / +0.027 / +0.027 / +0.034   sign 4 of 4
+  single-latent, raw     +0.941 / +0.536 / +0.425 / +0.613   sign 4 of 4
+  single-latent, clipped +0.575 / +0.574 / +0.587 / +0.596   sign 4 of 4
+
+The two arms come apart. **The two-head arm's ordering does not survive**: its CYP2D6 damage
+is +0.031 rather than +0.120, CYP2D6 stops being the worst enzyme (CYP1A2 takes it at +0.047),
+and the Spearman against screening informativeness falls from -1.000 to -0.800. The claim that
+the channel hurts most on the enzyme the whole document is built around rested, in that arm,
+on one molecule appearing on two seeds of four.
+
+**The single-latent arm's ordering survives and gets stronger.** CYP2D6 stays worst by a
+factor of two and a half over CYP1A2, the ordering is unchanged, the Spearman stays -1.000 -
+and clipping *stabilises* it, dropping the across-seed spread from 0.516 to 0.022, a factor of
+twenty-three. Everything the section says about the rigid coupling now rests on numbers that
+do not depend on which seed you take.
+
+Not a submission risk today: the submitted model is the boosting, which does not extrapolate
+past its label range, and all 750 predictions in `results/submission/` sit inside it.
+`src/submit.py` has no clip, though, so nothing in the pipeline would stop a -360 if the trunk
+were ever the model shipped.
