@@ -923,3 +923,79 @@ no expected return. Zero there is not caution, it is the better move.
 
 Note this is neither of the two qualitative predictions on offer. It is not "per-enzyme on
 CYP2D6 and CYP3A4, zero elsewhere", and it is not per-enzyme everywhere.
+
+**59. The offset grid was clipping the fit at both ends, and one adopted number was wrong
+because of it.** `OFFGRID` ran from -0.2 to +1.6. At assumed shifts below -0.3 the fitted
+offset hit the lower edge and stopped moving, which made the objective look flat from -0.3 to
+-0.6 when it was not; at +0.7 on CYP3A4 it sat on the upper edge. A fitted parameter resting
+on a grid boundary is not a fitted parameter, and flatness beside one is an artefact. Widened
+to +-3 in `src/submit.py` and `src/shrinkchoice.py`, and `submit.py` now prints a warning if
+an optimum lands on an edge. The search is vectorised at the same time - the whole grid in one
+broadcast - because the wider grid made the Python loop too slow to finish.
+
+The correction changes one adopted number: CYP2D6's mean-criterion pick moves from -0.3 to
+**-0.5**, improving that cell from 0.8335 to 0.8241. The other three are unchanged. Adopted
+vector: **0, +0.3, -0.5, +0.7**, and `src/submit.py --delta` now defaults to it.
+
+**60. Break-even is the better question, and it sharpens the warning rather than settling it.**
+The posterior integrates sampling noise and contains nothing about systematic error - which is
+exactly what a failure of kernel invariance would be. So the question to ask of a rule is not
+"how likely is it to lose" but "how far can the estimate be wrong before this cell loses to
+doing nothing":
+
+  enzyme   pick   E[delta]   break-even   margin
+  CYP1A2   +0.1     +0.037      +0.05      0.01
+  CYP2C9   +0.3     +0.361      +0.16      0.20
+  CYP2D6   -0.5     -0.518      -0.24      0.28
+  CYP3A4   +0.7     +0.733      +0.40      0.33
+
+CYP1A2's margin is 0.01, which is independent confirmation that zero is right there - any
+non-zero pick sits on a knife edge.
+
+The uncomfortable one is CYP2D6. **Stratifying the kernel moved its estimate by 0.41, and the
+margin remaining is 0.28.** A correction we have already applied is larger than the room left
+before the cell turns. That is not an argument for hedging - a partial shift of -0.2 instead
+of -0.5 costs 0.007 expected and buys only 0.03 of margin, a bad trade - it is an argument for
+finding out whether a second composition axis of comparable weight exists. The first was found
+by chemistry in an evening; whether it is the only one has not been asked.
+
+**61. The representation was never the bottleneck, but the data was.** Every row of the
+ablation grid is Morgan counts plus RDKit descriptors plus the mechanistic block, so the
+conclusion that model choice is worth 0.005 against 0.051 for post-processing was drawn inside
+one representation and written as though general. Two experiments that had never been run,
+both cheap, both with the control recomputed rather than read from `oof.json`.
+
+**Encoder: negative.** The organisers published sixteen chemprop pretraining checkpoints;
+`rdkit2d` was chosen because it is pretrained on the very descriptors our DESC block contains,
+which is the encoder's best case. Same learner, same folds, same metric. The control
+reproduces exactly - 0.7673 against 0.7673, difference zero - so the rows are comparable.
+Embedding alone 0.7784, embedding plus mechanistic block 0.7765, against 0.7673 for
+FP+DESC+MECH. The pretrained representation loses by 0.009. `src/embed.py` runs the encoder in
+a separate environment and leaves an array, so chemprop's forty-one dependencies never touch
+this repository's measured pins.
+
+**External data: positive, and the correction made it worse.** The same organisation shipped
+the baseline's training set - 8068 compounds with pIC50 on our four enzymes, curated from
+ChEMBL, Apache-2.0. Overlap with the blinded test is **zero of 750**; overlap with our
+training set is 64 and those are dropped.
+
+  change against control, negative is better    1A2      2C9      2D6      3A4    macro
+  external as they are                       -0.026   +0.022   -0.036   -0.011   -0.013
+  shifted by the paired offset                -0.019   +0.028   -0.041   +0.003   -0.007
+  shifted by the marginal offset               -0.009   +0.082   -0.043   +0.116   +0.037
+
+The two label sets differ in scale - external values run +0.22 / +0.35 / +0.60 / +0.56 higher
+on shared compounds, and up to +1.36 by marginal - and correcting for it makes things worse,
+the crudest correction worst of all. The apparent gap is mostly real enrichment rather than
+miscalibration: ChEMBL publishes what worked, and shifting those labels down corrupts values
+that were right.
+
+The gain lands where this document predicted it would. **CYP2D6 improves most**, and CYP2D6 is
+the enzyme with the worst R^2 of the four, the one the document argued is short of information
+rather than short of calibration. No post-processing repairs an R^2 of 0.17; half again as
+many labels does. CYP2C9 is the only enzyme harmed, under every correction, and it also has
+the fewest shared compounds - six - so its offset is the least known of the four.
+
+**One split seed.** This repository's rule is four, and until then 0.013 is an indication
+rather than a result. It is nonetheless twice everything the choice between boosting and the
+neural trunk is worth, from a source untouched for two months.
