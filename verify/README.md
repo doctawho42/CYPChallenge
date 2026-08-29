@@ -887,3 +887,39 @@ basic fraction times the activity contrast, computed a second way. And the resid
 uncertainty on CYP2D6 is set by conditioning rather than by which correction was applied: the
 kernel slope there is 0.224 against 0.593 on CYP3A4, and 0.119 within the basic stratum, so
 inversion amplifies error by 8.4 times where CYP3A4 amplifies it by 1.7.
+
+**57. More than half the per-enzyme gain was the criterion, not the estimates.** Every rule
+comparison so far picked by the WORST case inside each enzyme's range, which is insurance
+against a bad leaderboard rather than a bid for the best expected score. The criterion was
+inherited, never chosen. With 1500 posterior draws of delta per enzyme (`k10` now saves them
+to `results/preds/delta_draws.json`) the same search can be run under the MEAN instead:
+
+  per-enzyme gain over fitting at zero:   worst case +0.107   mean +0.045
+
+The two criteria differ in the sign of their derivative with respect to range width - a wide
+range pulls the averaging rule toward a single global number and pushes the worst-case rule
+away from one - so this is not a detail. It is also a question about the goal, and it should
+be answered out loud before 3 November rather than after.
+
+**58. Our own rule carried the defect we rejected the global rule for.** A single delta = 0.3
+was rejected because on CYP2D6 it is worse than doing nothing. Held to the same standard, the
+worst-case per-enzyme rule picks +0.4 on CYP1A2 and is worse than doing nothing in **81 %** of
+the posterior draws, average loss 0.061 where it loses. The defect had simply moved to another
+cell, and it was harder to see there because it was in our favour.
+
+  fraction of draws where the rule loses to doing nothing
+                          1A2     2C9     2D6     3A4
+  P(delta >= 0)          0.59    0.99    0.05    1.00
+  worst-case pick        +0.4    +0.5    -0.1    +1.0
+    loses to nothing     0.81    0.28    0.07    0.13
+  mean pick              +0.1    +0.3    -0.3    +0.7
+    loses to nothing     0.51    0.09    0.11    0.01
+
+The defensible rule that survives both checks: **fit per-enzyme on CYP2C9, CYP2D6 and CYP3A4,
+and leave CYP1A2 alone.** On CYP1A2 the sign of the shift is not determined at all - P(delta
+>= 0) = 0.59 - so any non-zero choice there is a coin flip against doing nothing. The mean
+criterion picks +0.1, gains 0.0001 by it, and loses half the time: that is added variance for
+no expected return. Zero there is not caution, it is the better move.
+
+Note this is neither of the two qualitative predictions on offer. It is not "per-enzyme on
+CYP2D6 and CYP3A4, zero elsewhere", and it is not per-enzyme everywhere.
