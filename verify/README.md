@@ -1066,6 +1066,12 @@ zero**. Both arms of the trunk experiment lose it equally, so the channel's cont
 quantity that experiment exists to measure — is unaffected; what it changes is the account of the
 bookkeeping term, from "the normalisation moved" to "one feature was deleted".
 
+The asymmetry is worth naming rather than assuming harmless. The trunk with external rows ran on
+2294 live columns and every boosting arm on 2295, and the trunk's own published baseline keeps all
+2295 because our training set tops out at 5.1·10¹⁴ and the sum of squares stays inside float32.
+The lost column is a degenerate one and its loss sits entirely inside the bookkeeping term, but a
+comparison between two families should not carry an unremarked difference in what they were given.
+
 The submission path was checked and is clean: the blinded test's largest `Ipc` is 4.1·10⁸, nine
 orders below overflow. No change was made — guarding the descriptor in `feats.py` would move
 published numbers for no gain.
@@ -1234,3 +1240,26 @@ So 0.007 is this pipeline's chaotic sensitivity at a fixed seed and fixed folds,
 it are not interpretable even before seed variation is considered. This is a smaller number than the
 0.016 that item 7 measures for a change of split seed, and a larger one than several comparisons
 recorded earlier in this log were resting on.
+
+**71. The three-channel proposal passes its size gate by two orders of magnitude, and fails a
+different one.** `k13_channels.py`. A mechanistic proposal separates two latents the single pIC50
+target confounds — affinity, and turnover into something reactive — using direct inhibition,
+time-dependent inhibition and Emax as three views. The objection raised against it was that the
+compounds carrying all three might number in the dozens, which would end it before any modelling.
+
+That objection was a guess, and it was wrong by a factor of a hundred. The channels are essentially
+co-extensive: every compound with a direct pIC50 also has a TDI curve and an Emax, giving 1412 /
+1285 / 1493 / 2334 triples, **6524 compound-enzyme observations**, the whole labelled set. On
+CYP2D6 and CYP3A4 the binary `is_TDI` covers them too, so there are four channels rather than
+three; on CYP1A2 and CYP2C9 that label does not exist at all.
+
+The constraint is elsewhere and it is real. Direct and TDI pIC50 are the same molecule under two
+incubation protocols, and they correlate at 0.906 to 0.990. Everything the second channel says
+about turnover lives in the residual between them, whose spread is 0.17 / 0.28 / 0.45 / 0.33 of the
+signal's own. On CYP1A2 a turnover latent would have to be estimated from a sixth of the variance.
+Emax is a genuinely separate axis, |r| about 0.4 against affinity, so a third dimension does exist.
+
+One anomaly to explain before building rather than after: on CYP2D6 the sign of the Emax
+relationship is **reversed**, +0.770 against −0.394 / −0.407 / −0.462 elsewhere, and the same flip
+appears in the TDI arm. It is the same enzyme that is anomalous in the salt bridge, in the sign of
+its shift, and in how well external data transfers to it.
