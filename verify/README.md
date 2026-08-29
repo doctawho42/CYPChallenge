@@ -1308,3 +1308,35 @@ two candidates here make different predictions about what happens if more or bet
 labels are added on CYP2C9 — a transfer deficit predicts improvement, an identifiability deficit
 predicts none, because the indicator column has already extracted what there was. Those are two
 runs, not two correlations.
+
+**74. Pre-registration: three orderings for where the L1 gain should land.** Switching the learner's
+loss from squared to absolute error is worth **−0.0455** of macro on seed 0, 0.7218 against 0.7673.
+That is larger than the external data with its best correction (0.031) and nine times the whole
+budget of the model-choice question (0.005). The number is not in doubt; the mechanism is, and three
+candidates make different predictions about which enzyme gains most. This is written before the
+per-enzyme table exists.
+
+*Outliers.* Squared error chases extreme residuals and absolute error does not. Measured: the worst
+one percent of compounds carries 5.1 to 8.2 percent of ST-RAE, five to eight times uniform, and the
+largest absolute error is 3.9. The −360 prediction cited earlier for this belongs to the neural
+trunk, not the boosting, which cannot leave the range of its leaf values. Predicts the maximum on
+**CYP2D6**, where the anomalies have lived.
+
+*The inactive mass.* A large share of compounds sits low, 23.7 / 42.6 / 32.1 / 58.4 percent below
+4.5, so for a typical compound the conditional distribution is one-sided and mean and median part
+company. Note this is not censoring in the strict sense — the minimum label is 1.91 to 2.10, values
+continue down to it, and only 0.1 percent sit exactly at the floor. Predicts **3A4 > 2C9 > 2D6 >
+1A2**.
+
+*The mean-minus-median gap.* Measured directly on the residuals: −0.049 / −0.027 / −0.009 / −0.010.
+Predicts **1A2 > 2C9 > 3A4 > 2D6** — nearly the reverse of the previous one, with CYP1A2 first
+rather than last.
+
+None of the three currently accounts for the size. The mean-median gap is 0.05 of pIC50 at most
+against band half-widths of 0.13 to 0.28, so it sits inside the region the metric does not penalise
+at all; the outlier concentration is real but moderate. A fourth possibility is not about the
+estimand but about training: with absolute error the gradient is a sign, so hard compounds cannot
+buy a disproportionate share of the splits, and ST-RAE additionally makes error inside the band free,
+so squared error spends capacity on differences that are not scored. That one predicts no particular
+enzyme and is not separable with the losses this scikit-learn offers — there is no Huber in
+`HistGradientBoostingRegressor`.
