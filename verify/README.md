@@ -650,3 +650,51 @@ to +1.6, CYP3A4's worst-case curve descends to +0.8 and rises after it (0.663, 0
 `src/submit.py --delta` now takes either one number or four comma-separated, defaulting to
 zero so nothing changes by itself. Changing the default changes what gets submitted and is the
 team's decision.
+
+**47. The attempt to narrow the delta ranges mostly failed, and found two of our own errors on
+the way.** The plan was to measure the propagation factor - what fraction of a label shift
+reaches the model's predictions - and so turn the direct measurement from a bound into a point
+estimate. Three subsampling designs gave 0.23-0.63 (random Butina clusters), 0.9-1.05 (sliding
+windows along continuous descriptors) and 0.935 (fixed basic-amine fraction on CYP2D6). The
+conclusion drawn was that propagation is essentially complete and the bracket collapses to the
+bootstrap. That conclusion does not survive.
+
+**The cluster design is `b` rediscovered, not a second lever.** For a random subsample the
+forward slope is Cov/Var(y) and the reverse slope is Cov/Var(yhat), which is exactly the
+attenuation b, and their product is R^2. Check: R^2/slope = 0.795 / 0.918 / 0.778 / 0.972
+against b = 0.789 / 0.898 / 0.743 / 0.999. The two "independent" handles are algebraically one.
+
+**Dividing by b was wrong, but not for the reason the document gave.** b is the share of the
+OUTPUT deviation that is real - regression dilution, which section 11 already names. The share
+of an INPUT shift reaching the output is the other slope, R^2/b = 0.29 / 0.41 / 0.22 / 0.59.
+Dividing by b produces neither, so +0.018 / +0.164 / -0.256 / +0.437 are withdrawn, and the
+claim they were a lower bound on |delta| was unfounded.
+
+**Propagation is not a scalar.** Ten of twenty-eight window cells fall outside [0.9, 1.05], and
+values of 1.22 and 1.55 are impossible for a "fraction that reaches the output" - the window is
+a Wald ratio with the descriptor as instrument, and the model sees that descriptor directly, so
+the exclusion restriction fails by construction. Disagreement across seven instruments is the
+standard sign they are invalid. The tidy "0.9 to 1.05" summary was obtained by dropping the two
+axes on which item 45 built the actual mechanism.
+
+**The intervals should be wider, not narrower.** The test is anchors plus analogues, not 750
+independent compounds: clustered at 0.50 it is 172 groups. A cluster bootstrap gives a design
+effect on the variance of 4.4 to 6.7, so intervals are two to three times wider than the naive
+ones: 1A2 [-0.111, +0.124], 2C9 [+0.025, +0.257], 2D6 [-0.281, -0.093], 3A4 [+0.295, +0.576].
+
+Net effect on the ranges: they move rather than shrink. CYP2C9 is the only genuine narrowing.
+CYP1A2 widens and now contains zero. CYP3A4 moves down about 0.1. **CYP2D6 is the one real
+gain: zero leaves its range**, and it is the only enzyme whose interval excludes zero under
+either bootstrap. Refitting the per-enzyme rule on the honest ranges: per-enzyme is worth 0.037
+over the best global rule and 0.028 over today's behaviour, and a single global delta = 0.3 is
+now worse than doing nothing even on macro (0.817 against 0.808), because the harm it does to
+CYP2D6 outweighs the gain on the other three.
+
+**48. A mask bug in `verify/k7_2d6shift.py` understated its own finding fourfold.** The basic
+fraction was taken over all 4905 rows (0.175) while the activity contrast was measured inside
+each enzyme's label mask. The masks differ enormously in composition, because dose-response
+curves were run on the basis of the screen: the CYP2D6 mask is 0.355 basic against 0.114-0.122
+for the other three. The test is fully labelled at 0.104. So the correct difference for 2D6 is
+-0.251, not -0.071, the expected shift is -0.138 against -0.190 measured, and the salt-bridge
+mechanism explains about **three quarters** of the observed shift rather than "about a fifth".
+The reported figure for the other three enzymes stays at a few percent. Fixed.

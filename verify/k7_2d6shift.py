@@ -44,10 +44,14 @@ import numpy as np
 import pandas as pd
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
-# Attenuation of the affine recalibration, from src/reweight.py: a model that interpolates
-# passes only part of an input shift into its output, so dividing by it turns a shift in
-# predictions into a lower bound on the shift in labels.
-ATT = {"CYP1A2": 0.789, "CYP2C9": 0.898, "CYP2D6": 0.743, "CYP3A4": 0.999}
+# WITHDRAWN. b = 0.789 / 0.898 / 0.743 / 0.999 is the slope of y on yhat - the share of the
+# OUTPUT deviation that is real, which is regression dilution. The share of an INPUT shift
+# that reaches the output is the other slope, Cov/Var(y) = R^2/b = 0.29 / 0.41 / 0.22 / 0.59.
+# Dividing by b gives neither, so the numbers it produced (+0.018 / +0.164 / -0.256 / +0.437)
+# had no reading under which they were right, and the claim that they were a lower bound on
+# |delta| was unfounded. The raw shift is printed below without any division; converting it
+# to a label shift needs a propagation factor that is not one number, because it depends on
+# which axis the composition moved along.
 # The 2D6-relevant chemistry, in the order a chemist would ask about it.
 KEYS = ["pharm_2d6", "is_base_74", "n_basicN_ali", "ph74_n_cation",
         "n_amine_tert", "n_piperidine", "pka_max_basic"]
@@ -73,7 +77,7 @@ def main():
     rng = np.random.default_rng(0)
     shift = {}
     print(f"{'фермент':8s} {'сред OOF':>9s} {'сред тест':>10s} {'сдвиг':>8s} "
-          f"{'95% интервал':>19s} {'/ затухание':>12s}")
+          f"{'95% интервал (по молекулам)':>28s}")
     for c in CYPS:
         p = np.asarray(oof[f"FP+DESC+MECH|{c}"], float)
         pt = PT[c]
@@ -84,7 +88,15 @@ def main():
         lo, hi = np.percentile(bs, [2.5, 97.5])
         note = "" if lo * hi > 0 else "   ноль внутри"
         print(f"{c:8s} {p.mean():9.3f} {pt.mean():10.3f} {d:+8.3f} "
-              f"[{lo:+6.3f},{hi:+6.3f}] {d / ATT[c]:+12.3f}{note}")
+              f"{'[' + f'{lo:+.3f}' + ',' + f'{hi:+.3f}' + ']':>28s}{note}")
+
+    print("\n  Интервал выше --- по молекулам, и он занижен: тест состоит из якорей с\n"
+          "  аналогами, а не из независимых соединений. При кластеризации теста порогом 0.50\n"
+          "  выходит 172 группы на 750 соединений, и кластерный бутстрап даёт design effect\n"
+          "  по дисперсии от 4.4 до 6.7, то есть ошибку вдвое-втрое шире:\n"
+          "    1A2 [-0.111,+0.124]   2C9 [+0.025,+0.257]   2D6 [-0.281,-0.093]   "
+          "3A4 [+0.295,+0.576]\n"
+          "  На 2D6 ноль не накрывается и там, и это единственный фермент, где так.")
 
     print()
     print("=" * 92)
@@ -105,21 +117,27 @@ def main():
     print("=" * 92)
     i = mn.index("is_base_74")
     b, bt = M[:, i] > 0.5, MT[:, i] > 0.5
-    ftr, fte = float(b.mean()), float(bt.mean())
-    print(f"доля оснований при pH 7.4: обучение {ftr:.3f}, тест {fte:.3f}, "
-          f"разница {fte - ftr:+.3f}\n")
-    print(f"{'фермент':8s} {'основания':>10s} {'прочие':>9s} {'разрыв':>8s} "
-          f"{'ожидаемо':>10s} {'измерено':>10s} {'знак':>6s}")
+    fte = float(bt.mean())
+    # Доля оснований берётся ВНУТРИ МАСКИ ФЕРМЕНТА, а не по всем 4905 строкам. Это не
+    # придирка: маски сильно различаются по составу, потому что кривые доза-эффект снимали
+    # по результатам скрининга, и в маске CYP2D6 оснований 0.355 против 0.11-0.12 у трёх
+    # остальных. Считать разность долей от общей доли 0.175 значит сравнивать тест не с той
+    # выборкой, на которой измерен контраст активности. Первая версия этого скрипта так и
+    # делала и занизила объяснённую долю сдвига 2D6 вчетверо.
+    print(f"доля оснований при pH 7.4 на тесте: {fte:.3f}\n")
+    print(f"{'фермент':8s} {'в маске':>8s} {'основания':>10s} {'прочие':>9s} {'разрыв':>8s} "
+          f"{'ожидаемо':>10s} {'измерено':>10s} {'доля':>6s}")
     for c in CYPS:
         col = f"{c}_pIC50_direct_inhibition"
         m = tr[col].notna().to_numpy()
         y = tr.loc[m, col].to_numpy()
         bb = b[m]
+        ftr = float(bb.mean())
         gap = float(y[bb].mean() - y[~bb].mean())
         exp = (fte - ftr) * gap
-        ok = "сходится" if np.sign(exp) == np.sign(shift[c]) else "РАЗНЫЙ"
-        print(f"{c:8s} {y[bb].mean():10.3f} {y[~bb].mean():9.3f} {gap:+8.3f} "
-              f"{exp:+10.3f} {shift[c]:+10.3f} {ok:>6s}")
+        frac = exp / shift[c] * 100 if shift[c] else float("nan")
+        print(f"{c:8s} {ftr:8.3f} {y[bb].mean():10.3f} {y[~bb].mean():9.3f} {gap:+8.3f} "
+              f"{exp:+10.3f} {shift[c]:+10.3f} {frac:5.0f}%")
 
     print("""
 Что из этого следует.
@@ -130,10 +148,15 @@ CYP2D6 --- единственный фермент, у которого осно
 плоскостность или анион. Тест обеднён основаниями примерно вдвое, и поэтому один и тот же
 сдвиг состава опускает активность на 2D6 и слегка поднимает её на остальных.
 
-Знак совпадает на всех четырёх ферментах. Величина --- нет: один бинарный признак объясняет
-около пятой части сдвига на 2D6 и малую долю на 2C9 и 3A4, где основную часть даёт
-обогащение активными, ради которого набор и собирали. Это оценка направления, а не модель
-сдвига, и выдавать её за вторую нельзя.
+Знак совпадает на всех четырёх ферментах, а на 2D6 сходится и величина: один бинарный
+признак объясняет около трёх четвертей сдвига. На трёх остальных он объясняет единицы
+процентов, и там основную часть даёт обогащение активными, ради которого набор и собирали.
+
+Разница между ферментами тут не случайна и стоит того, чтобы её назвать. В маске CYP2D6
+оснований 0.355, а в масках остальных трёх --- от 0.114 до 0.122. Кривые доза-эффект снимали
+по результатам скрининга, поэтому у 2D6 в размеченной части сидят преимущественно те
+соединения, которые он и узнаёт. Тест же размечен целиком, и доля оснований в нём 0.104.
+Отсюда и разрыв в четверть: тест разбавлен именно тем, чем маска 2D6 обогащена.
 
 Практический вывод один и он существенный: сдвиг маргинали НЕ ОДИН на все ферменты. Вилка
 от +0.1 до +0.6 выведена из трёх ферментов, по которым отбирали якоря, и к CYP2D6 не
