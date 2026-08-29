@@ -1146,3 +1146,91 @@ An earlier reading of two seeds put the channel at −0.008 and concluded that a
 column beat the whole shared latent. On four seeds it does not: −0.0176 against the indicator's
 −0.0168. The comparison is still not settled, because every boosting arm here has one seed and
 this has four.
+
+**67. Item 63's hypothesis was never distinguishable from its rival, and the caveat named the
+wrong risk.** Item 63 found that the external data's per-enzyme effect is ordered exactly by how
+well the external labels transfer, and guarded the finding with "four points, a perfect ordering
+arises by chance with probability 1/24". An outside reading proposed a different explanation for
+the same ordering — not transfer but **identifiability of the source offset**, since the number of
+compounds shared between the two label sets is 15 / 6 / 41 / 9 and CYP2C9 has the fewest.
+
+Both explanations were checked against the same four numbers, and they are **rank-identical**.
+Transfer ratio 0.71 / 0.66 / 0.84 / 0.70 has ranks [3, 1, 4, 2]; pair count 15 / 6 / 41 / 9 has
+ranks [3, 1, 4, 2]. Both give ρ = −1.00 against the effect of appending rows. On this data no
+measurement can prefer one, and the guard should have asked how many hypotheses produce the same
+ordering rather than how often chance produces an ordering at all.
+
+Worse for both: **neither explains the indicator column's own contribution**, which is what
+actually flipped CYP2C9. Against the column's per-enzyme gain both give ρ = +0.20. And the
+mechanism named in item 63 is not the mechanism that operated — an indicator column does not raise
+transfer, it lets the model express a source correction — so the prediction "raise the transfer and
+the sign flips" was satisfied by something else. Affirming the consequent, and it was written as a
+confirmation.
+
+**68. The pretrained encoder does add information; item 61's headline was wrong.** That item
+concluded the representation was never the bottleneck, from a table in which the embedding only ever
+**replaced** our features. The missing row is concatenation, and the reason it is the row that
+decides is specific to this checkpoint: `rdkit2d` was pretrained to predict the very RDKit
+descriptors our DESC block contains, which makes it the honest choice for the substitution question
+and the **least** favourable one for the complementarity question. An encoder trained to reproduce
+what we already have is the one least able to add to it.
+
+    FP+DESC+MECH (control)   0.7673
+    EMB (substitution)       0.7784
+    EMB+MECH                 0.7765
+    FP+DESC+MECH+EMB         0.7589
+
+Concatenated it is worth **−0.0084** while as a replacement it loses 0.011. It helps CYP1A2 (−0.022)
+and CYP2D6 (−0.039) and harms CYP2C9 (+0.009) and CYP3A4 (+0.019) — the same per-enzyme pattern the
+external data shows. One seed.
+
+**69. The scale gap is selection on two enzymes, quantity on a third, and neither on the fourth.**
+`src/ablsrc.py`. If the gap between the two label sets is selection — ChEMBL holds what people chose
+to publish — then the correction belongs on the WEIGHT, not the label: reweighting moves the label
+distribution without altering a single label, where subtracting an offset corrupts every one of
+them. Exponential tilting is the minimum-relative-entropy way to do it and was already written in
+`src/reweight.py` for the delta work.
+
+Two targets, because they answer different questions. Tilting to our own mean removes the whole
+marginal gap, which is the quantity that as a subtraction was catastrophic. Tilting to the **paired**
+offset removes only the source effect measured at fixed chemistry, leaving the enrichment in actives
+intact as information.
+
+    no external rows          0.7673
+    external as they are      0.7545
+    source indicator          0.7505
+    tilt to our mean          0.7452
+    tilt to the paired offset 0.7363
+
+**Tilting to the paired offset is the best result this repository has produced**, −0.0310 against the
+control, twice the indicator and six times the entire budget of the model-choice question.
+
+The obvious alternative explanation is that tilting simply uses less external data — effective sample
+size falls from 4773 to 106 on CYP3A4 under the marginal target. The control is to permute the same
+weights across rows, which preserves effective sample size exactly and destroys the correlation with
+the label. It separates the two cleanly:
+
+    change from the raw arm      shape      quantity
+    CYP1A2                      +0.0013      -0.0143
+    CYP2C9                      -0.0363      +0.0028
+    CYP2D6                      -0.0449      +0.0170
+    CYP3A4                      +0.0268      +0.0103
+    macro                       -0.0133      +0.0039
+
+The two mechanisms are nearly orthogonal and distributed differently across enzymes. On CYP1A2 the
+whole gain is **quantity** and the shape does nothing. On CYP2C9 and CYP2D6 the **shape** does
+everything and reducing the data actively hurts. On CYP3A4 the marginal tilt is worse than random
+down-weighting of the same strength, which is what the paired target then repairs — effective sample
+goes from 106 to 3010 and the enzyme moves from 0.5458 to 0.5020. In the macro the two mechanisms
+partly cancel, and without the permutation control the whole gain would have been credited to one.
+
+**70. The noise floor at fixed seed is 0.007, and it was never measured before.** A falsifiable
+prediction accompanied item 69: the paired and marginal targets coincide on CYP2D6 (−0.60 against
+−0.59), so the two arms should differ there by nothing. They differ by 0.0071 — from a change of 0.01
+in the tilt target, propagated through different split choices. On CYP2C9 the targets differ by 0.38
+and the arms differ by 0.0053, less than that.
+
+So 0.007 is this pipeline's chaotic sensitivity at a fixed seed and fixed folds, and differences below
+it are not interpretable even before seed variation is considered. This is a smaller number than the
+0.016 that item 7 measures for a change of split seed, and a larger one than several comparisons
+recorded earlier in this log were resting on.
