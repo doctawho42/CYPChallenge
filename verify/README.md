@@ -1445,6 +1445,24 @@ posterior over δ the same reversal holds, L1 with its own δ scoring 0.7764 aga
 one — but that cannot be checked without test labels, and assuming it in our favour is the error
 this log exists to catch.
 
+*Four seeds, on the largest arm.* The single-seed objection was the obvious one, so the loss arm
+was run on all four.
+
+    seed    L2 raw   L2 affine    L1 raw   L1 affine    gain raw   gain after
+       0    0.7673      0.7150    0.7218      0.7131     -0.0455      -0.0019
+       1    0.7690      0.7183    0.7242      0.7156     -0.0449      -0.0027
+       2    0.7661      0.7164    0.7199      0.7118     -0.0462      -0.0046
+       3    0.7644      0.7124    0.7234      0.7139     -0.0410      +0.0014
+    mean    0.7667      0.7155    0.7223      0.7136     -0.0444      -0.0019
+
+The raw gain holds its sign on all four seeds and spans 0.041 to 0.046, so by this repository's own
+standard it is a result. After the affine pair it is 0.0019 and the sign **breaks on seed 3**, so by
+the same standard it is not one. The rule that has governed every comparison here for two months
+answers this question by itself.
+
+Incidentally the affine pair is worth 0.0512 on the L2 baseline averaged over four seeds, which is
+the figure the document published by another route.
+
 Practical consequence: **nothing in `submit.py` changes**, on any of today's findings.
 
 **78. The two corrections do not add, and the full square shows why.** The question was whether the
