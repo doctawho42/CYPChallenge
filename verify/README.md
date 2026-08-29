@@ -1340,3 +1340,63 @@ buy a disproportionate share of the splits, and ST-RAE additionally makes error 
 so squared error spends capacity on differences that are not scored. That one predicts no particular
 enzyme and is not separable with the losses this scikit-learn offers — there is no Huber in
 `HistGradientBoostingRegressor`.
+
+**75. The loss function is worth 0.046, and all three pre-registered mechanisms failed.**
+`src/abloss.py`.
+
+    seed 0             1A2      2C9      2D6      3A4    macro
+    L2 on the label  0.8786   0.6908   0.9803   0.5194   0.7673
+    L1 on the label  0.8104   0.6802   0.8872   0.5095   0.7218
+    L1 on the bounds 0.8098   0.6813   0.9015   0.4906   0.7208
+
+The control reproduces. Switching to absolute error is worth **−0.0455**, larger than the external
+data with its best correction and nine times the model-choice budget, from one keyword.
+
+The band-target arm confirms a prediction made in item 74 from the measured band asymmetry: pooling
+`lo` and `hi` and fitting the median is worth **0.0010** against fitting L1 on the point label, six
+times below the noise floor. Section 10's action is right and minimising it directly buys nothing,
+because the bands are nearly symmetric so the pooled median sits on the point label. The whole gain
+is L1 against L2. Without that middle arm the result would have been credited to the theorem.
+
+The per-enzyme ordering is 2D6 0.0931 > 1A2 0.0682 > 2C9 0.0106 > 3A4 0.0099, and it refutes all
+three candidates of item 74. The inactive-mass account predicted 3A4 first and 1A2 last and gets
+ρ = −0.8, close to exactly inverted. The mean-minus-median account predicted 1A2 first, ρ = −0.2.
+The outlier account predicted the maximum on CYP2D6 and got it — but the quantity it rests on, the
+share of ST-RAE in the worst one percent, orders the enzymes 2C9 > 3A4 > 1A2 > 2D6 with **CYP2D6
+last**, so the prediction was satisfied against its own evidence.
+
+What does order the gain is how badly the model was doing: baseline ST-RAE 0.9803 / 0.8786 / 0.6908
+/ 0.5194 against gains 0.0931 / 0.0682 / 0.0106 / 0.0099, a perfect match. By item 73's own rule
+that selects nothing — it is rank agreement on four points, the weakest evidence there is — so it
+is recorded as a description and not a mechanism. The mechanism is open.
+
+**76. Monotonic constraints do nothing, and the way they do nothing is the finding.**
+`src/ablmono.py`. Four features whose sign biochemistry knows, one to two per enzyme, constrained
+per enzyme.
+
+    seed 0             1A2      2C9      2D6      3A4    macro    tails
+    free             0.8786   0.6908   0.9803   0.5194   0.7673   0.7007
+    correct signs    0.8735   0.6942   0.9803   0.5155   0.7659   0.7026
+    flipped signs    0.8765   0.6941   0.9803   0.5391   0.7725   0.7049
+
+Correct signs gain 0.0014 and flipped signs lose 0.0052, both under the 0.007 noise floor. The
+tails, where the whole extrapolation argument lives, get monotonically worse rather than better.
+There is no effect to interpret at the macro level.
+
+One enzyme is different and it is the wrong one. On **CYP2D6 the predictions are bit-identical
+across all three arms** — maximum absolute difference exactly 0.00e+00 in both directions — while
+the other three move by 0.29 to 1.09. The constrained feature there is `frac_prot_74`, the
+protonated fraction, which is the feature this document's entire CYP2D6 story rests on: the salt
+bridge, the stratified kernel, the composition half of the shift. The boosting never splits on it.
+
+The dull explanation is ruled out: on CYP2D6 that feature is the most variable of the four, sd 0.434
+against 0.29 to 0.30, with 551 distinct values, and no single fingerprint bit correlates above
+0.405. The remaining explanation is joint redundancy — a ridge on the fingerprint block alone
+reproduces it with R² = 0.653 out of fold, the highest of the four enzymes — so the tree can reach
+the same chemistry through the bits and never needs the aggregate. That is partial: 0.653 against
+0.50 to 0.62 elsewhere is not sharp enough to explain an exactly zero difference where the others
+are nonzero. Recorded as explained in part.
+
+Nothing here contradicts the document. Stratifying by a feature and splitting on it are different
+uses, and the shift analysis needs the first. But the feature that carries the chemistry in our
+analysis carries nothing in our model, and that is worth knowing before any more weight is put on it.
