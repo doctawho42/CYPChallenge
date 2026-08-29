@@ -527,3 +527,32 @@ Not a submission risk today: the submitted model is the boosting, which does not
 past its label range, and all 750 predictions in `results/submission/` sit inside it.
 `src/submit.py` has no clip, though, so nothing in the pipeline would stop a -360 if the trunk
 were ever the model shipped.
+
+**43. Trunk against boosting, on four seeds instead of one: the gap is a tenth of what the
+post-processing is worth.** Block 6 of `src/trunkdose.py` is the only place the neural model
+and the boosting are compared under a tilted label marginal, and it is the only number in the
+joint-likelihood work that bears on what gets submitted. It ran on split seed 0 alone - the
+seed the runaway compound of item 42 lands on. Recomputed on four seeds, with trunk
+predictions clipped to the label range plus or minus two units, and the same post-processing
+(the affine pair) on both sides. The boosting side exists for all four seeds: seed 0 in
+`oof.json`, seeds 1-3 in `oof_seeds.json` from `verify/f3_seeds.py`.
+
+The previous conclusion was "boosting leads, and the gap narrows by about half under the
+tilt". Neither half survives. The gap is not 0.089 but 0.000 to 0.005, two orders of magnitude
+smaller, and it does not narrow - it grows: the models are indistinguishable at delta = 0 and
+the boosting is 0.005 ahead by delta = 0.6. The direction is the opposite of what was expected
+from "boosting's edge is scale, the trunk's is rank".
+
+Not all of it is measured. Below delta = 0.3 the sign of the difference does not hold across
+four seeds, so the two models are simply indistinguishable there. From 0.3 to 0.6 the sign
+holds and the boosting is ahead, by 0.0034 to 0.0051.
+
+The number worth carrying: the whole difference between the two model families never exceeds
+0.0051, while the post-processing is worth 0.0512 - **ten times more**. In this range the
+choice of architecture decides almost nothing and the choice of what to do with the
+predictions afterwards decides almost everything. That is where the remaining effort belongs.
+
+`fit_affine_oof` was vectorised to make four seeds cheap: the ST-RAE denominator does not
+depend on (off, lambda), so minimising the metric is minimising its numerator, and the
+numerator over the whole grid is one broadcast. About four times faster, and verified to pick
+the same (c, L) and produce identical predictions on every fold.
