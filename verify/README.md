@@ -1,6 +1,6 @@
 # Verification
 
-Twenty-two scripts in four groups. `f*` was a sweep over everything that had been computed
+Twenty-five scripts in four groups. `f*` was a sweep over everything that had been computed
 and written by that point; `g*` answers four questions raised against the document; `h*`
 tests two claims the document made about geometry and about reactivity; `k*` is about
 post-hoc rescaling of the predictions and about how far the test set sits from the training
@@ -34,6 +34,9 @@ which `k5_shift.py` writes. Everything else runs in any order.
 | `k4_enrich.py` | is the test set activity-enriched — nearest-neighbour-label proxy | ~2 min |
 | `k5_shift.py` | covariate shift measured in the model's own prediction space | ~5 min |
 | `k6_shift1d.py` | the same reweighting done along one axis, where it does not degenerate | ~1 min |
+| `k7_2d6shift.py` | the CYP2D6 shift against basic-amine composition, and the raw shifts | ~2 min |
+| `k8_kernel.py` | delta by inverting the kernel E[yhat\|y] — no instrument, no scalar propagation | ~5 min |
+| `k9_shape.py` | the test is shifted *and* widened, and what that does to ST-RAE | ~2 min |
 
 ## What it found
 
@@ -71,7 +74,7 @@ was at fault it is said so explicitly.
    `feats.py`, has always listed 30 and matches the copy committed in `results/`.
 10. There are **fourteen** verification scripts, not twenty-three, in both this file and
     the top-level README. (Eight more were added later, in the `h*` and `k*` groups; the
-    current count is twenty-two and both files say so.)
+    current count is twenty-five and both files say so.)
 11. `f12_cvhard.py` could never have run to completion as committed: line 34 referenced an
     undefined `fRES`. Fixed, and the script now reproduces the documented -0.153.
 12. The test-set clustering figures in §2 (194 groups, median size two, 55 groups of five
@@ -455,3 +458,392 @@ out of two, the hypothesis fails" claimed too much from correlations of -0.400 a
 n = 4, which sit in the middle of the permutation null: the honest statement is that the
 predicted ordering is not observed. The single-latent arm's ordering, by contrast, is stable -
 it holds under the median and without seed 0.
+
+**40. Swapping the instrument calibration between two enzymes: the map does not order them.**
+Three quantities order the four enzymes identically (item 38); the band was eliminated by
+rescoring, leaving the screen's informativeness and the calibration gain. Noise cannot
+separate those two, because it moves informativeness and leaves the map untouched. Swapping
+(E, h) between CYP2D6 and CYP3A4 is the one intervention that does the reverse: the compounds,
+labels, bands, split, initial weights, batch order and screening readout all stay literally
+identical, and only the instrument map moves. `src/trunk.py --swap-cal CYP2D6,CYP3A4`, single
+latent arm, lambda 0 and 3, four seeds, about fifteen minutes.
+
+Two controls, both passed. At lambda = 0 the screening term is absent from the loss, so
+g_of_pi is never called and the swap cannot reach the predictions: bit-identical on all four
+seeds. And CYP1A2 and CYP2C9 keep their own calibrations throughout, so their movement
+measures what a rerun costs: 0.019 and 0.009.
+
+The prediction was that CYP2D6, handed CYP3A4's steeper map, should be hurt far less than its
+usual +0.63, and CYP3A4, handed CYP2D6's shallower one, should go from near zero to tenths.
+Neither happened. Excluding seed 0, CYP2D6 moved +0.003 and CYP3A4 moved +0.016 - both smaller
+than the untouched CYP1A2 control. The damage stayed with the enzyme. The calibration gain is
+therefore out, eliminated by intervention rather than by correlation, and what remains is the
+screen's informativeness or something else in that enzyme's own data that has not been named.
+The experiment establishes where the mechanism is not.
+
+**41. Split seed 0 has now produced three separate false conclusions in the single-latent
+arm.** *(Superseded by item 42: the cause is one compound, not the split. Kept because the
+detection was right even though the diagnosis was wrong.)* In the swap above its CYP2D6 movement is +0.61 against +0.00 on the other three, and
+the mean over four seeds reads +0.155 - fifteen times the control noise and apparently
+decisive - while the median and the three-seed mean read zero. The same seed alone produced
+the perfect four-point ordering of item 39, where dropping it turns Spearman -1.000 into
++0.400. And it is the seed on which the arm diverged to NaN at two noise rungs (item 37).
+Three conclusions in one section have leaned on one split. The four-seed rule in README's "How
+we work" exists for this, and it has now paid for itself three times; any per-enzyme claim in
+the joint-likelihood work should be read per seed before it is believed. Why that split is
+different has not been investigated.
+
+**42. It was never the seed. It was one compound, and it overturns one of the two headline
+orderings.** Item 41 blamed split seed 0 for three separate false conclusions. The detection
+was right and the diagnosis was wrong. Seed 0's split is unremarkable: fold sizes, mean
+CYP2D6 activity, spread, active fraction and the metric's own denominator all match the other
+three seeds to two decimals.
+
+What is remarkable is a single molecule. In the two-head arm at lambda = 3, `OCNT-2328942`
+(true CYP2D6 pIC50 2.53) is predicted at -360 on seed 0 and -22 on seed 2, and behaves
+normally on the other two. Its screening reading is ordinary (z = -0.58), so this is an
+optimisation blow-up that lands on it, not an outlier in the data. ST-RAE is a sum of absolute
+deviations, so one prediction at -360 contributes about 362 to a numerator whose denominator
+is around 120: one molecule out of 1493 triples the enzyme's score.
+
+Clipping predictions to the enzyme's label range plus or minus two units - a bound that
+touches no compounds at all on three enzymes and half a compound on CYP2D6 - settles it:
+
+  two-head 2D6, raw      +0.609 / -0.040 / -0.121 / +0.034   sign 2 of 4
+  two-head 2D6, clipped  +0.035 / +0.027 / +0.027 / +0.034   sign 4 of 4
+  single-latent, raw     +0.941 / +0.536 / +0.425 / +0.613   sign 4 of 4
+  single-latent, clipped +0.575 / +0.574 / +0.587 / +0.596   sign 4 of 4
+
+The two arms come apart. **The two-head arm's ordering does not survive**: its CYP2D6 damage
+is +0.031 rather than +0.120, CYP2D6 stops being the worst enzyme (CYP1A2 takes it at +0.047),
+and the Spearman against screening informativeness falls from -1.000 to -0.800. The claim that
+the channel hurts most on the enzyme the whole document is built around rested, in that arm,
+on one molecule appearing on two seeds of four.
+
+**The single-latent arm's ordering survives and gets stronger.** CYP2D6 stays worst by a
+factor of two and a half over CYP1A2, the ordering is unchanged, the Spearman stays -1.000 -
+and clipping *stabilises* it, dropping the across-seed spread from 0.516 to 0.022, a factor of
+twenty-three. Everything the section says about the rigid coupling now rests on numbers that
+do not depend on which seed you take.
+
+Not a submission risk today: the submitted model is the boosting, which does not extrapolate
+past its label range, and all 750 predictions in `results/submission/` sit inside it.
+`src/submit.py` has no clip, though, so nothing in the pipeline would stop a -360 if the trunk
+were ever the model shipped.
+
+**43. Trunk against boosting, on four seeds instead of one: the gap is a tenth of what the
+post-processing is worth.** Block 6 of `src/trunkdose.py` is the only place the neural model
+and the boosting are compared under a tilted label marginal, and it is the only number in the
+joint-likelihood work that bears on what gets submitted. It ran on split seed 0 alone - the
+seed the runaway compound of item 42 lands on. Recomputed on four seeds, with trunk
+predictions clipped to the label range plus or minus two units, and the same post-processing
+(the affine pair) on both sides. The boosting side exists for all four seeds: seed 0 in
+`oof.json`, seeds 1-3 in `oof_seeds.json` from `verify/f3_seeds.py`.
+
+The previous conclusion was "boosting leads, and the gap narrows by about half under the
+tilt". Neither half survives. The gap is not 0.089 but 0.000 to 0.005, two orders of magnitude
+smaller, and it does not narrow - it grows: the models are indistinguishable at delta = 0 and
+the boosting is 0.005 ahead by delta = 0.6. The direction is the opposite of what was expected
+from "boosting's edge is scale, the trunk's is rank".
+
+Not all of it is measured. Below delta = 0.3 the sign of the difference does not hold across
+four seeds, so the two models are simply indistinguishable there. From 0.3 to 0.6 the sign
+holds and the boosting is ahead, by 0.0034 to 0.0051.
+
+The number worth carrying: the whole difference between the two model families never exceeds
+0.0051, while the post-processing is worth 0.0512 - **ten times more**. In this range the
+choice of architecture decides almost nothing and the choice of what to do with the
+predictions afterwards decides almost everything. That is where the remaining effort belongs.
+
+`fit_affine_oof` was vectorised to make four seeds cheap: the ST-RAE denominator does not
+depend on (off, lambda), so minimising the metric is minimising its numerator, and the
+numerator over the whole grid is one broadcast. About four times faster, and verified to pick
+the same (c, L) and produce identical predictions on every fold.
+
+**44. Where to fit the affine pair, given that delta is only bracketed - and it matters twenty
+times more than the model choice.** Item 43 left the post-processing worth 0.051 against 0.005
+for the whole boosting-versus-trunk question. That post-processing has a free parameter we
+cannot observe: the pair is fitted on our own label marginal, at delta = 0, while the test's
+marginal sits somewhere in +0.1 to +0.6.
+
+The object that answers it is a matrix, not a number: fit under an ASSUMED delta, score under
+a TRUE delta, out of fold throughout, four seeds (`src/shrinkchoice.py`). Its diagonal is the
+oracle; its top row is what `src/submit.py` does today. Over the bracket:
+
+  fit at 0 (today)        worst 0.913   mean 0.816   at 0.1  0.734   at 0.6  0.913
+  fit at the mid-bracket  worst 0.826   mean 0.776   at 0.1  0.747   at 0.6  0.826
+  minimax over bracket    worst 0.800   mean 0.786   at 0.1  0.800   at 0.6  0.796
+  oracle (unreachable)    worst 0.792   mean 0.764   at 0.1  0.731   at 0.6  0.792
+
+Fitting at zero is the worst of the three by both criteria - 0.087 worse in the worst case,
+0.040 worse on average - and its sign holds on all four seeds for every test delta at 0.2 and
+above. It wins in exactly one place, the bottom edge of the bracket, by 0.013. So "fit at
+zero" is not the choice that avoids an assumption; it is the choice that assumes the test
+looks like the training set, which the same document spends a section showing it does not.
+
+Per-enzyme the shifts differ, and on CYP2D6 the estimate is *negative*. Fitting each enzyme at
+its own estimate would be worth up to 0.022 more than one global delta - but that number is
+the per-enzyme oracle conditional on `verify/k5_shift.py` being exactly right, and it is an
+upper bound, not a gain. Note also that the k5 estimate for 2D6 contradicts the +0.1 to +0.6
+bracket outright: one of the two measurements is wrong there.
+
+`src/submit.py` gains `--delta`, defaulting to 0 so nothing changes by itself. Verified the
+default path is untouched: at delta = 0 the weights are all ones, the ST-RAE denominator does
+not depend on the parameters, so the weighted-numerator objective picks the identical (off,
+lambda) on all four enzymes - checked, not argued. Which delta to actually ship is a decision
+for the team, not a side effect of an edit.
+
+**45. The CYP2D6 contradiction was never a contradiction: the two numbers measure different
+things, and the negative shift is real chemistry.** Item 44 left the anchor argument giving
++0.19 for CYP2D6 and `verify/k5_shift.py` giving -0.19, with one of them presumably wrong.
+Neither is. `src/reweight.py` hard-codes anchor percentiles 93 / 98 / 62 / 90, and its own
+prose says why 2D6 is 62: **that enzyme took no part in anchor selection**. Its number is the
+internal control - an enzyme not used to pick anchors should show no enrichment, and it shows
+none. It was never an estimate of 2D6's shift, and the +0.1 to +0.6 bracket comes from the
+three enzymes that were used. Carrying that bracket over to 2D6 was our error, not a
+disagreement between measurements.
+
+The measurement then stands on its own, and it is tight: the prediction shift is -0.190 with a
+bootstrap interval of [-0.234, -0.145] over the 750 test compounds. A model can move its own
+output without the labels moving, though, so it needs a mechanism, and there is one that can
+be checked without a single test label.
+
+CYP2D6 binds through a salt bridge from an active-site aspartate and glutamate to a
+protonated basic nitrogen; the other three bind by lipophilicity, planarity or an anion. The
+test set is depleted in exactly that chemistry, by about half: the 2D6 pharmacophore feature
+falls 0.148 to 0.083, the fraction basic at pH 7.4 falls 0.175 to 0.104, tertiary amines and
+piperidines roughly halve, cation count falls 0.610 to 0.400. Every one of ten such features
+moves down, all at |z| > 4.8.
+
+And on our own labels, **CYP2D6 is the only enzyme where basic compounds are more active** -
+by +0.55, against -0.24, -0.44 and -0.45 on the other three. So one composition shift lowers
+2D6 and slightly raises the rest, which is what the measurement shows: the sign agrees on all
+four enzymes. The magnitude does not - a single binary feature accounts for about a fifth of
+2D6's shift and less elsewhere, where most of it comes from the activity enrichment the set
+was built for. It is an estimate of direction, not a model of the shift, and `k7` says so.
+
+The consequence for the submission is concrete: **the marginal shift is not one number for all
+four enzymes.** Fitting the post-processing to a single global delta fits CYP2D6 in the wrong
+direction outright. `verify/k7_2d6shift.py`.
+
+**46. Per-enzyme fitting, and the global rule actively harms CYP2D6.** Item 45 established
+that the marginal shift is not one number for four enzymes. The consequence is measurable
+(`src/shrinkchoice.py`, block 5). Each enzyme gets its own plausible range for the true shift,
+built from what was measured: the direct estimate is one edge, since it is a lower bound in
+magnitude, and a margin in the direction of its sign is the other; for CYP2D6 the second edge
+is zero, because the anchor control says there is no enrichment there. Rules are compared by
+their WORST case inside each range rather than at a point - choosing a rule to match an
+estimate and then scoring it at that same estimate would be one action, not two.
+
+  worst case in own range   1A2     2C9     2D6     3A4    macro
+  fit at zero (today)     0.911   0.878   0.913   0.762   0.866
+  one global delta = 0.3  0.878   0.790   1.035   0.710   0.853
+  per-enzyme              0.878   0.777   0.906   0.666   0.807
+  chosen shift             +0.3    +0.4    -0.1    +0.8
+
+Per-enzyme fitting is worth 0.046 over the best global rule and 0.059 over current behaviour.
+The macro is not the interesting part. **The best global rule makes CYP2D6 worse than doing
+nothing at all** - 1.035 against 0.913. A single positive delta does not merely underperform
+on 2D6; it actively damages it, because the real shift there has the opposite sign.
+
+The minima are interior, not artefacts of where the grid stops: rechecked on a grid extended
+to +1.6, CYP3A4's worst-case curve descends to +0.8 and rises after it (0.663, 0.666, 0.674,
+0.690), and CYP1A2's turns at +0.3 with both neighbours higher.
+
+`src/submit.py --delta` now takes either one number or four comma-separated, defaulting to
+zero so nothing changes by itself. Changing the default changes what gets submitted and is the
+team's decision.
+
+**47. The attempt to narrow the delta ranges mostly failed, and found two of our own errors on
+the way.** The plan was to measure the propagation factor - what fraction of a label shift
+reaches the model's predictions - and so turn the direct measurement from a bound into a point
+estimate. Three subsampling designs gave 0.23-0.63 (random Butina clusters), 0.9-1.05 (sliding
+windows along continuous descriptors) and 0.935 (fixed basic-amine fraction on CYP2D6). The
+conclusion drawn was that propagation is essentially complete and the bracket collapses to the
+bootstrap. That conclusion does not survive.
+
+**The cluster design is `b` rediscovered, not a second lever.** For a random subsample the
+forward slope is Cov/Var(y) and the reverse slope is Cov/Var(yhat), which is exactly the
+attenuation b, and their product is R^2. Check: R^2/slope = 0.795 / 0.918 / 0.778 / 0.972
+against b = 0.789 / 0.898 / 0.743 / 0.999. The two "independent" handles are algebraically one.
+
+**Dividing by b was wrong, but not for the reason the document gave.** b is the share of the
+OUTPUT deviation that is real - regression dilution, which section 11 already names. The share
+of an INPUT shift reaching the output is the other slope, R^2/b = 0.29 / 0.41 / 0.22 / 0.59.
+Dividing by b produces neither, so +0.018 / +0.164 / -0.256 / +0.437 are withdrawn, and the
+claim they were a lower bound on |delta| was unfounded.
+
+**Propagation is not a scalar.** Ten of twenty-eight window cells fall outside [0.9, 1.05], and
+values of 1.22 and 1.55 are impossible for a "fraction that reaches the output" - the window is
+a Wald ratio with the descriptor as instrument, and the model sees that descriptor directly, so
+the exclusion restriction fails by construction. Disagreement across seven instruments is the
+standard sign they are invalid. The tidy "0.9 to 1.05" summary was obtained by dropping the two
+axes on which item 45 built the actual mechanism.
+
+**The intervals should be wider, not narrower.** The test is anchors plus analogues, not 750
+independent compounds: clustered at 0.50 it is 172 groups. A cluster bootstrap gives a design
+effect on the variance of 4.4 to 6.7, so intervals are two to three times wider than the naive
+ones: 1A2 [-0.111, +0.124], 2C9 [+0.025, +0.257], 2D6 [-0.281, -0.093], 3A4 [+0.295, +0.576].
+
+Net effect on the ranges: they move rather than shrink. CYP2C9 is the only genuine narrowing.
+CYP1A2 widens and now contains zero. CYP3A4 moves down about 0.1. **CYP2D6 is the one real
+gain: zero leaves its range**, and it is the only enzyme whose interval excludes zero under
+either bootstrap. Refitting the per-enzyme rule on the honest ranges: per-enzyme is worth 0.037
+over the best global rule and 0.028 over today's behaviour, and a single global delta = 0.3 is
+now worse than doing nothing even on macro (0.817 against 0.808), because the harm it does to
+CYP2D6 outweighs the gain on the other three.
+
+**48. A mask bug in `verify/k7_2d6shift.py` understated its own finding fourfold.** The basic
+fraction was taken over all 4905 rows (0.175) while the activity contrast was measured inside
+each enzyme's label mask. The masks differ enormously in composition, because dose-response
+curves were run on the basis of the screen: the CYP2D6 mask is 0.355 basic against 0.114-0.122
+for the other three. The test is fully labelled at 0.104. So the correct difference for 2D6 is
+-0.251, not -0.071, the expected shift is -0.138 against -0.190 measured, and the salt-bridge
+mechanism explains about **three quarters** of the observed shift rather than "about a fifth".
+The reported figure for the other three enzymes stays at a few percent. Fixed.
+
+
+**49. The propagation factor does not have to be estimated at all.** `k8_kernel.py`. Item 47
+closed three designs for it and was right about all three, but every one of them was an attempt
+to estimate a multiplier. The multiplier can be bypassed. The identity
+
+    E_test[yhat] = INT E[yhat|y] * p_test(y) dy
+
+holds exactly whenever the kernel E[yhat|y] is the same on both sets. It needs the *reverse*
+regression — whose slope in the linear case is the R^2/b that item 47 identified as the correct
+one — and here that kernel is estimated by isotonic regression, so linearity is not assumed
+either. The training label marginal is then tilted until the implied prediction mean matches the
+observed test mean. No instrument, so no exclusion restriction to violate; the reverse
+regression, so no algebraic collapse onto `b`; and propagation never has to be a scalar, because
+the direction is fixed by the tilt itself. The window cells at 1.22 and 1.55 are not evidence
+against this — along a descriptor the model reads directly, propagation really is near one; that
+is simply a different direction from the one the question is about.
+
+| enzyme | d(yhat) | b | R^2 | R^2/b | *b/R^2 linear | isotonic kernel | 95 % clustered |
+|---|---|---|---|---|---|---|---|
+| CYP1A2 | +0.014 | 0.789 | 0.215 | 0.273 | +0.050 | **+0.045** | −0.059 … +0.156 |
+| CYP2C9 | +0.147 | 0.898 | 0.364 | 0.405 | +0.364 | **+0.362** | +0.288 … +0.434 |
+| CYP2D6 | −0.190 | 0.743 | 0.146 | 0.196 | −0.968 | **−0.917** | −1.151 … −0.715 |
+| CYP3A4 | +0.437 | 0.999 | 0.592 | 0.593 | +0.737 | **+0.740** | +0.663 … +0.810 |
+
+A null worth having: isotonic and linear agree to 0.05, so kernel nonlinearity contributes
+nothing and the whole correction is the b -> R^2/b substitution.
+
+Against the shifts item 46 chose by worst-case reasoning — +0.3 / +0.4 / −0.1 / +0.8 — this
+agrees closely on the two enzymes that carry the decision (CYP3A4 +0.740 against +0.8, CYP2C9
++0.362 against +0.4, both by a completely different route) and disagrees sharply on CYP2D6
+(−0.917 against −0.1) and mildly on CYP1A2 (+0.045 against +0.3, and its interval contains zero
+exactly as item 47 says).
+
+The disagreement is not a tie to be split, and CYP2D6 is where this estimate should be trusted
+least rather than most. Its one assumption is kernel invariance, and item 45 is precisely a
+finding that the test's composition changed in a chemically specific way — the basic-amine
+depletion — on the enzyme where bases are the active class. If the test's low-activity compounds
+are low for a different structural reason than the training set's, E[yhat|y] is not the same
+function and the inversion is biased there. The fix follows from item 45 rather than contradicting
+it: estimate the kernel separately inside and outside the basic stratum and mix the two at the
+test's measured composition, which replaces the invariance assumption with a measured mixing
+weight on the one axis known to have moved. Not yet run.
+
+**50. Under an asymmetric cost the action is a quantile, not a midpoint.** With underestimation
+costing 0.087 and overestimation 0.013 on CYP3A4, a piecewise-linear loss is minimised at the
+quantile of level 0.087/(0.087+0.013) = **0.87** of the posterior for delta, not at its centre.
+On item 47's range that is +0.539 rather than +0.435; on this file's bootstrap, +0.782 rather
+than +0.741. This is the same Bayes-point argument the document already makes in section 10 for
+the point prediction under ST-RAE, applied one level up, and it means the range does not have to
+be narrowed before it can be acted on. The caveat is the shape of the loss: 0.87 is exact if
+0.087 and 0.013 are slopes at comparable distances, and if instead they are costs at the ends of
+the range with curvature in between, the expectation should be minimised over the measured curve
+— the answer moves but stays well above the midpoint.
+
+**51. One delta is not enough: the test is shifted *and* widened, and that partly pays the shift
+back.** `k9_shape.py`. Exponential tilting matches the test's prediction mean by construction and
+misses its spread: 0.625 / 0.504 / 0.517 / 0.718 against the test's 0.708 / 0.740 / 0.526 / 0.928,
+with KS rejecting on three enzymes of four. Tilting can move a mean; it cannot add variance. Every
+scheme in this repository that is parameterised by a single delta — `reweight.py` and
+`shrinkchoice.py` included — is therefore incompletely specified.
+
+This reverses one premise. "A sample narrower in activity has a smaller denominator, so ST-RAE
+rises anyway" assumes narrowing; the test is **wider**, by 1.13 / 1.40 / 1.05 / 1.10 in the
+standard deviation of the predictions, and at least that much in label space provided the kernel
+noise is no larger on the test — which the similarity geometry supports, since the test sits
+closer to the training set (0.587) than the training set does to itself (0.435).
+
+Fitting both moments degenerates on CYP2C9 exactly as the weights in `k5_shift.py` did —
+effective sample size 20 of 1285 — and those numbers are discarded rather than reported. The
+conservative version widens the label distribution only as far as the predictions widened, a
+lower bound, and keeps an effective size of 492 to 1355. Scored on the full ST-RAE, numerator
+included:
+
+| enzyme | delta = 0 | shift only | shift + widening |
+|---|---|---|---|
+| CYP1A2 | 0.8786 | 0.9028 | 0.8491 |
+| CYP2C9 | 0.6908 | 0.8716 | 0.7692 |
+| CYP2D6 | 0.9803 | 0.8104 | 1.0334 |
+| CYP3A4 | 0.5194 | 0.8029 | 0.6623 |
+| **macro** | **0.7673** | **0.8469** | **0.8285** |
+
+Widening returns about a quarter of what the shift costs, not all of it. The expectation for the
+intermediate leaderboard is therefore around **0.83 macro rather than 0.767**, and that is a
+single number, checkable on 24 September, which is the cheapest test any of this has.
+
+**52. Our delta ranges were on the wrong scale, and the fix nearly doubles the case for
+per-enzyme fitting.** Item 46 built the ranges from a cluster bootstrap of the shift in
+PREDICTIONS and used them as ranges for the shift in LABELS. Those differ by b/R^2 = 3.40 /
+2.43 / 4.48 / 1.69, so all four were wrong and the chosen shifts derived from them were void.
+Found by external review, though by a wrong route - the reviewer inferred we were still
+dividing by b, when in fact we were not converting the scale at all.
+
+Rebuilt on the kernel estimate of item 49, the picture is sharper than before:
+
+  worst case in own range     1A2     2C9     2D6     3A4    macro
+  range                    -0.1..0.2  0.3..0.4  -1.2..-0.7  0.7..0.8
+  fit at zero (today)       0.874   0.829   1.007   0.762   0.868
+  one global delta = 0.3    0.864   0.761   1.196   0.710   0.883
+  per-enzyme                0.860   0.758   0.890   0.666   0.793
+  chosen shift               +0.2    +0.4    -1.1    +0.8
+
+Per-enzyme is now worth 0.090 over the best global rule and 0.075 over current behaviour,
+against 0.037 and 0.028 on the wrong scale. And a single global delta = 0.3 is now clearly
+worse than doing nothing (0.883 against 0.868), because CYP2D6 under a positive global shift
+goes to 1.196.
+
+**53. Both external scripts reproduce in this environment.** `verify/k8_kernel.py` and
+`verify/k9_shape.py` arrived committed but had only been run in a mirror of the layout, not
+through this repo's pinned interpreter. Run here they reproduce their reported numbers exactly:
+kernel deltas +0.045 / +0.362 / -0.917 / +0.740, the linear limit d_yhat*b/R^2 agreeing
+everywhere except CYP2D6 where R^2 is lowest, and the shape result - test predictions are
+1.13 / 1.40 / 1.05 / 1.10 times WIDER than out-of-fold, KS rejecting on three enzymes of four.
+A single delta is therefore an incomplete specification of the shift for every script that
+uses one, `src/reweight.py` and `src/shrinkchoice.py` included. Expected intermediate
+leaderboard macro is about 0.83 rather than 0.77, and the widening returns about a quarter of
+what the shift costs rather than cancelling it.
+
+**54. The stratified kernel on CYP2D6: nearly half of what we called a label shift was
+composition.** Item 49's kernel needs one assumption, that E[yhat|y] is the same function on
+the test as on the training set, and item 45 showed that assumption is weakest exactly where
+the answer matters: the test carries 0.104 basic compounds against 0.355 in the CYP2D6 label
+mask, and CYP2D6 is the enzyme that binds them.
+
+Splitting the kernel by that stratum and mixing the two by the TEST's measured composition
+rather than ours turns an assumption into a measurement. The strata really do have different
+kernels on CYP2D6, by 0.35 to 0.58 across the whole scale - the model scores basic compounds
+high there almost regardless of their true activity - while on the other three enzymes the two
+kernels nearly coincide.
+
+  enzyme    pooled    stratified   of which composition   of which labels   change
+  CYP1A2    +0.045      +0.038            +0.003              +0.035       -0.007
+  CYP2C9    +0.362      +0.369            +0.005              +0.365       +0.007
+  CYP2D6    -0.917      -0.508            -0.138              -0.371       +0.409
+  CYP3A4    +0.740      +0.742            +0.008              +0.734       +0.003
+
+The control is the point: the three enzymes whose masks differ from the test by about one
+percentage point move by 0.003 to 0.007, which is nothing. CYP2D6, whose fraction differs
+threefold, moves by 0.409. Cluster bootstrap on the stratified estimate [-0.693, -0.325], zero
+still excluded.
+
+Consequence for the choice: CYP2D6's fitted shift goes from -1.1 to -0.3, per-enzyme fitting
+is worth 0.053 rather than 0.090, and a single global delta = 0.3 is now level with doing
+nothing (0.8425 against 0.8428) rather than clearly worse. The assumption has been narrowed,
+not removed - invariance is still assumed within each stratum, and a shift along some other
+axis relevant to CYP2D6 would not be caught.

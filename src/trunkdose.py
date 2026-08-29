@@ -127,22 +127,26 @@ def fit_affine_oof(p, y, lo, hi, fold):
 
     The family c + L(p - c) is identically a + b p with b = L and a = c(1 - L), so fixing
     the offset slices a two-parameter family along an arbitrary line. Both are searched.
+
+    The whole grid is evaluated at once rather than in a double loop. The denominator of
+    ST-RAE does not depend on (off, L) - it is the constant predictor against the same bands -
+    so minimising the metric is minimising its numerator, and the numerator over the grid is
+    one broadcast, about four times faster than the double loop it replaces. Checked against
+    that loop: the chosen (c, L) and every prediction agree exactly.
     """
     o = np.full_like(p, np.nan)
+    A = OFFGRID[:, None] * (1.0 - LAMGRID[None, :])          # свободный член c(1-L)
+    B = np.broadcast_to(LAMGRID[None, :], A.shape)            # наклон L
     for f in np.unique(fold):
         te, trn = fold == f, fold != f
         if te.sum() == 0 or trn.sum() < 10:
             continue
         mu = p[trn].mean()
-        best, bv = None, np.inf
-        for off in OFFGRID:
-            c = mu + off
-            for L in LAMGRID:
-                v = strae(y[trn], c + L * (p[trn] - c),
-                          y_true_upper=hi[trn], y_true_lower=lo[trn])
-                if v < bv:
-                    bv, best = v, (c, L)
-        c, L = best
+        # q = c + L(p - c) с c = mu + off, то есть q = (mu + A) + B p - B mu
+        q = (mu * (1.0 - B) + A)[:, :, None] + B[:, :, None] * p[trn][None, None, :]
+        pen = (np.maximum(q - hi[trn], 0.0) + np.maximum(lo[trn] - q, 0.0)).sum(axis=2)
+        i, j = np.unravel_index(pen.argmin(), pen.shape)
+        c, L = mu + OFFGRID[i], LAMGRID[j]
         o[te] = c + L * (p[te] - c)
     return o
 
@@ -284,54 +288,93 @@ def main():
     print("=" * 92)
     print("6. Под наклоном: при каком delta сравнение ствола с бустингом ещё то же самое")
     print("=" * 92)
+    # Four seeds, not one. The earlier version ran on split seed 0 alone, and seed 0 is where
+    # the runaway compound of the previous subsection lands - so the single number in the
+    # document bearing on what gets submitted was computed on the one split known to be
+    # contaminated. The boosting side exists for all four: seed 0 in oof.json, seeds 1-3 in
+    # oof_seeds.json, written by verify/f3_seeds.py.
+    #
+    # Trunk predictions are clipped to the enzyme's label range plus or minus two units before
+    # any post-processing. Isotonic absorbs a runaway on its own; the affine pair does not, and
+    # the affine pair is exactly the like-for-like comparison. Without the clip this block
+    # would be measuring one molecule.
     oof = json.load(open(RES + "preds/oof.json"))
-    f0 = folds[0]
-    arms = {}
-    for e, c in enumerate(CYPS):
-        m = ~np.isnan(y[:, e])
-        g = np.asarray(oof[f"FP+DESC+MECH|{c}"], float)
-        arms.setdefault("бустинг сырой", {})[c] = g
-        arms.setdefault("бустинг + аффинная пара", {})[c] = fit_affine_oof(
-            g, y[m, e], lo[m, e], hi[m, e], f0[m])
-        for mode, lam, name in (("twohead", 0.0, "ствол l=0 + изо"),
-                                ("twohead", 3.0, "ствол двухгол. l=3 + изо"),
-                                ("calibrated", 3.0, "ствол калибр. l=3 + изо")):
-            p = P[f"{mode}|0|{lam}"][m, e]
-            arms.setdefault(name, {})[c] = iso_oof(p, y[m, e], f0[m])
-        # Like for like. Above, the boosting gets the affine pair and the trunk gets
-        # isotonic - two different post-processings, so the comparison confounds model with
-        # post-processing. These two rows give the trunk exactly what the boosting got.
-        for mode, lam, name in (("twohead", 3.0, "ствол двухгол. l=3 + пара"),
-                                ("calibrated", 3.0, "ствол калибр. l=3 + пара")):
-            p = P[f"{mode}|0|{lam}"][m, e]
-            arms.setdefault(name, {})[c] = fit_affine_oof(
-                p, y[m, e], lo[m, e], hi[m, e], f0[m])
+    oofs = json.load(open(RES + "preds/oof_seeds.json"))
     deltas = np.round(np.arange(0.0, 0.61, 0.1), 1)
-    print(f"{'вариант':26s} " + " ".join(f"{('d=' + str(d)):>8s}" for d in deltas))
+    ROWS = [("бустинг сырой", None), ("бустинг + аффинная пара", None),
+            ("ствол l=0 + изо", ("twohead", 0.0, "изо")),
+            ("ствол двухгол. l=3 + изо", ("twohead", 3.0, "изо")),
+            ("ствол калибр. l=3 + изо", ("calibrated", 3.0, "изо")),
+            ("ствол двухгол. l=3 + пара", ("twohead", 3.0, "пара")),
+            ("ствол калибр. l=3 + пара", ("calibrated", 3.0, "пара"))]
+
+    byseed = {}
+    for seed in seeds:
+        fs, arms = folds[seed], {}
+        for e, c in enumerate(CYPS):
+            m = ~np.isnan(y[:, e])
+            yy, ll, hh, ff = y[m, e], lo[m, e], hi[m, e], fs[m]
+            lb, ub = yy.min() - 2.0, yy.max() + 2.0
+            g = np.asarray(oof[f"FP+DESC+MECH|{c}"] if seed == 0
+                           else oofs[f"{seed}|FP+DESC+MECH|{c}"], float)
+            arms.setdefault("бустинг сырой", {})[c] = g
+            arms.setdefault("бустинг + аффинная пара", {})[c] = fit_affine_oof(g, yy, ll, hh, ff)
+            for name, spec in ROWS:
+                if spec is None:
+                    continue
+                mode, lam, how = spec
+                q = np.clip(P[f"{mode}|{seed}|{lam}"][m, e], lb, ub)
+                arms.setdefault(name, {})[c] = (iso_oof(q, yy, ff) if how == "изо"
+                                                else fit_affine_oof(q, yy, ll, hh, ff))
+        byseed[seed] = {}
+        for name, _ in ROWS:
+            byseed[seed][name] = []
+            for d in deltas:
+                v = []
+                for e, c in enumerate(CYPS):
+                    m = ~np.isnan(y[:, e])
+                    v.append(wstrae(y[m, e], arms[name][c], lo[m, e], hi[m, e],
+                                    tilt(y[m, e], float(d))))
+                byseed[seed][name].append(float(np.mean(v)))
+
+    print(f"{'вариант':26s} " + " ".join(f"{('d=' + str(d)):>8s}" for d in deltas)
+          + "   (среднее по сидам)")
     tabs = {}
-    for name, byc in arms.items():
-        row = []
-        for d in deltas:
-            v = []
-            for e, c in enumerate(CYPS):
-                m = ~np.isnan(y[:, e])
-                w = tilt(y[m, e], float(d))
-                v.append(wstrae(y[m, e], byc[c], lo[m, e], hi[m, e], w))
-            row.append(float(np.mean(v)))
-        tabs[name] = row
-        print(f"{name:26s} " + " ".join(f"{x:8.4f}" for x in row))
+    for name, _ in ROWS:
+        tabs[name] = [float(np.mean([byseed[s_][name][i] for s_ in seeds]))
+                      for i in range(len(deltas))]
+        print(f"{name:26s} " + " ".join(f"{x:8.4f}" for x in tabs[name]))
+
+    a, b = "бустинг + аффинная пара", "ствол двухгол. l=3 + пара"
+    print(f"\nКлючевая разность при одинаковой постобработке: «{b}» минус «{a}».")
+    print("Положительное = бустинг лучше.\n")
+    print(f"{'':26s} " + " ".join(f"{('d=' + str(d)):>8s}" for d in deltas))
+    for s_ in seeds:
+        print(f"{('сид ' + str(s_)):26s} "
+              + " ".join(f"{byseed[s_][b][i] - byseed[s_][a][i]:+8.4f}" for i in range(len(deltas))))
+    print(f"{'среднее':26s} "
+          + " ".join(f"{tabs[b][i] - tabs[a][i]:+8.4f}" for i in range(len(deltas))))
+    same = [len({int(np.sign(round(byseed[s_][b][i] - byseed[s_][a][i], 4))) for s_ in seeds}) == 1
+            for i in range(len(deltas))]
+    print(f"{'знак на всех сидах':26s} " + " ".join(f"{str(x):>8s}" for x in same))
+    # Разность объявляем измеренной только там, где её знак держится на всех сидах.
+    # Иначе на 0.0001 можно объявить перемену порядка, которой нет.
+    meas = [i for i in range(len(deltas)) if same[i]]
     print()
-    a, b = "бустинг + аффинная пара", "ствол двухгол. l=3 + изо"
-    print(f"{b + ' минус ' + a:26.26s} " + " ".join(
-        f"{tabs[b][i] - tabs[a][i]:+8.4f}" for i in range(len(deltas))))
-    flip = [i for i in range(len(deltas)) if (tabs[b][i] - tabs[a][i]) < 0]
-    if flip:
-        print(f"\nПорядок переворачивается начиная с delta = {deltas[flip[0]]}: до него лучше")
-        print("бустинг со сдвинутым центром, после - ствол. Правдоподобный диапазон delta")
-        print("по src/reweight.py - от +0.1 до +0.6, так что точка переворота лежит внутри")
-        print("него, а не за ним.")
+    if not meas:
+        print("Ни при одном delta знак не держится на всех сидах: разность не измерена нигде.")
     else:
-        print("\nПорядок не переворачивается ни при одном delta из проверенного диапазона.")
+        lo_d, hi_d = deltas[meas[0]], deltas[meas[-1]]
+        sgn = np.sign(tabs[b][meas[0]] - tabs[a][meas[0]])
+        who = "бустинг" if sgn > 0 else "ствол"
+        print(f"Знак держится на всех сидах при delta от {lo_d} до {hi_d}; там впереди {who}, "
+              f"на {abs(tabs[b][meas[-1]] - tabs[a][meas[-1]]):.4f} в конце диапазона.")
+        if meas[0] > 0:
+            print(f"При delta ниже {lo_d} знак не держится, то есть разность не измерена: "
+                  f"модели там неразличимы.")
+    print(f"Для масштаба: сама разность нигде не превышает "
+          f"{max(abs(tabs[b][i] - tabs[a][i]) for i in range(len(deltas))):.4f}, тогда как "
+          f"постобработка стоит {tabs['бустинг сырой'][0] - tabs[a][0]:.4f}.")
     print("""
 Оговорка, без которой шестой блок читается сильнее, чем следует. Наклон правит маргиналь
 МЕТОК и предполагает, что p(y | yhat) на тесте та же; постобработка здесь подогнана при
