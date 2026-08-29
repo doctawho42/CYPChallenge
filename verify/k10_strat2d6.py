@@ -115,6 +115,14 @@ def main():
     PT = np.load(D + "test_pred.npz")
     cid, _ = cluster_ids(list(rows.SMILES))
     cid = np.asarray(cid)
+    # Тестовая сторона тоже ресэмплится, и тоже блоками. Первая версия этого скрипта
+    # держала pt.mean() фиксированной внутри бутстрапа: она ловила неопределённость ядра и
+    # выбрасывала неопределённость цели, а цель входит в обращение с множителем 1/наклон и
+    # весит больше. Дефект унаследован от verify/k8_kernel.py и там же исправлен.
+    te = pd.read_csv(D + "cyp-challenge-TEST-BLINDED.csv")
+    tcid, _ = cluster_ids(list(te.SMILES), threshold=0.50)
+    tcid = np.asarray(tcid)
+    tu = np.unique(tcid)
 
     print("=" * 100)
     print("1. Состав страт: насколько маска фермента и тест отличаются по основаниям")
@@ -172,6 +180,7 @@ def main():
     print("4. Кластерный бутстрап стратифицированной оценки")
     print("=" * 100)
     rng = np.random.default_rng(0)
+    print("   Ресэмплятся ОБЕ стороны: обучающие кластеры и тестовые серии.\n")
     print(f"{'фермент':8s} {'стратифиц.':>11s} {'95% интервал':>22s} {'ноль внутри':>12s}")
     for c in CYPS:
         y, p, b, g, pt = S[c]
@@ -184,7 +193,10 @@ def main():
             yo, oo = y[idx][~b[idx]], p[idx][~b[idx]]
             if len(yb) < 40 or len(yo) < 40:
                 continue
-            v, _ = solve_strat(yb, iso(yb, ob), yo, iso(yo, oo), f_test, y[idx].mean(), pt.mean())
+            tid = np.concatenate([np.where(tcid == k)[0]
+                                  for k in rng.choice(tu, len(tu), replace=True)])
+            v, _ = solve_strat(yb, iso(yb, ob), yo, iso(yo, oo),
+                               f_test, y[idx].mean(), float(pt[tid].mean()))
             if np.isfinite(v):
                 bs.append(v)
         lo, hi = np.percentile(bs, [2.5, 97.5])
