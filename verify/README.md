@@ -589,3 +589,36 @@ default path is untouched: at delta = 0 the weights are all ones, the ST-RAE den
 not depend on the parameters, so the weighted-numerator objective picks the identical (off,
 lambda) on all four enzymes - checked, not argued. Which delta to actually ship is a decision
 for the team, not a side effect of an edit.
+
+**45. The CYP2D6 contradiction was never a contradiction: the two numbers measure different
+things, and the negative shift is real chemistry.** Item 44 left the anchor argument giving
++0.19 for CYP2D6 and `verify/k5_shift.py` giving -0.19, with one of them presumably wrong.
+Neither is. `src/reweight.py` hard-codes anchor percentiles 93 / 98 / 62 / 90, and its own
+prose says why 2D6 is 62: **that enzyme took no part in anchor selection**. Its number is the
+internal control - an enzyme not used to pick anchors should show no enrichment, and it shows
+none. It was never an estimate of 2D6's shift, and the +0.1 to +0.6 bracket comes from the
+three enzymes that were used. Carrying that bracket over to 2D6 was our error, not a
+disagreement between measurements.
+
+The measurement then stands on its own, and it is tight: the prediction shift is -0.190 with a
+bootstrap interval of [-0.234, -0.145] over the 750 test compounds. A model can move its own
+output without the labels moving, though, so it needs a mechanism, and there is one that can
+be checked without a single test label.
+
+CYP2D6 binds through a salt bridge from an active-site aspartate and glutamate to a
+protonated basic nitrogen; the other three bind by lipophilicity, planarity or an anion. The
+test set is depleted in exactly that chemistry, by about half: the 2D6 pharmacophore feature
+falls 0.148 to 0.083, the fraction basic at pH 7.4 falls 0.175 to 0.104, tertiary amines and
+piperidines roughly halve, cation count falls 0.610 to 0.400. Every one of ten such features
+moves down, all at |z| > 4.8.
+
+And on our own labels, **CYP2D6 is the only enzyme where basic compounds are more active** -
+by +0.55, against -0.24, -0.44 and -0.45 on the other three. So one composition shift lowers
+2D6 and slightly raises the rest, which is what the measurement shows: the sign agrees on all
+four enzymes. The magnitude does not - a single binary feature accounts for about a fifth of
+2D6's shift and less elsewhere, where most of it comes from the activity enrichment the set
+was built for. It is an estimate of direction, not a model of the shift, and `k7` says so.
+
+The consequence for the submission is concrete: **the marginal shift is not one number for all
+four enzymes.** Fitting the post-processing to a single global delta fits CYP2D6 in the wrong
+direction outright. `verify/k7_2d6shift.py`.
