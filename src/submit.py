@@ -69,6 +69,7 @@ from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_erro
 
 import feats as F
 from cypsplit import butina_folds
+from reweight import tilt
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 TDI_CYPS = ["CYP3A4", "CYP2D6"]          # the only two the organisers score
@@ -102,7 +103,7 @@ def test_features(desc_names, mech_names):
 OFFGRID = np.linspace(-0.2, 1.6, 37)
 
 
-def fit_shrinkage(X, y, mask, fold):
+def fit_shrinkage(X, y, mask, fold, delta=0.0):
     """Offset and lambda per enzyme, both chosen out-of-fold on the training data.
 
     Fitting the two jointly rather than fixing the offset and searching lambda: the
@@ -130,9 +131,14 @@ def fit_shrinkage(X, y, mask, fold):
             p[b] = gbm_reg().fit(Xi[a], yy[a]).predict(Xi[b])
         lo = LO[m, e]; hi = HI[m, e]
         mu = p.mean()
-        off, L = min(((o, l) for o in OFFGRID for l in GRID),
-                     key=lambda t: strae(yy, (mu + t[0]) + t[1] * (p - (mu + t[0])),
-                                         y_true_upper=hi, y_true_lower=lo))
+        # Under an assumed shift the objective is the tilted one: our own labels reweighted
+        # so their mean sits delta higher. At delta = 0 the weights are all ones and this is
+        # exactly the untilted fit, so the default path is unchanged.
+        w = np.ones_like(yy) if delta == 0 else tilt(yy, float(delta))
+        def obj(t):
+            q = (mu + t[0]) + t[1] * (p - (mu + t[0]))
+            return float((w * (np.maximum(q - hi, 0.0) + np.maximum(lo - q, 0.0))).sum())
+        off, L = min(((o, l) for o in OFFGRID for l in GRID), key=obj)
         out.append((L, mu + off))
         print(f"    {c}: lambda {L:.2f}, смещение {off:+.2f}, "
               f"сдвиг предсказаний {(1-L)*off:+.3f}", flush=True)
@@ -143,6 +149,15 @@ def main():
     global LO, HI
     ap = argparse.ArgumentParser()
     ap.add_argument("--shrink", action="store_true", help="применить усадку (см. docstring)")
+    ap.add_argument("--delta", type=float, default=0.0,
+                    help="предполагаемый сдвиг средней активности теста относительно нашей "
+                         "выборки. Пара (off, lambda) подбирается под ЭТО предположение. "
+                         "Ноль означает «тест распределён как обучающая выборка» - это не "
+                         "отсутствие предположения, а предположение, и src/shrinkchoice.py "
+                         "показывает, что по вилке +0.1..+0.6 оно худшее из трёх правил: "
+                         "худший случай на 0.087, средний на 0.040 хуже подгонки под "
+                         "середину вилки. Значение по умолчанию оставлено нулевым, чтобы "
+                         "поведение не менялось само собой")
     ap.add_argument("--outdir", default=RES + "submission/")
     a = ap.parse_args()
 
@@ -171,7 +186,7 @@ def main():
     if a.shrink:
         print("подбираю усадку вне выборки на обучающих данных", flush=True)
         fold, _ = butina_folds(list(rows.SMILES))
-        lams = fit_shrinkage(X, y, mask, fold)
+        lams = fit_shrinkage(X, y, mask, fold, a.delta)
 
     print("обучаю на всей выборке и предсказываю тест", flush=True)
     act = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})

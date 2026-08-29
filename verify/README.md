@@ -556,3 +556,36 @@ predictions afterwards decides almost everything. That is where the remaining ef
 depend on (off, lambda), so minimising the metric is minimising its numerator, and the
 numerator over the whole grid is one broadcast. About four times faster, and verified to pick
 the same (c, L) and produce identical predictions on every fold.
+
+**44. Where to fit the affine pair, given that delta is only bracketed - and it matters twenty
+times more than the model choice.** Item 43 left the post-processing worth 0.051 against 0.005
+for the whole boosting-versus-trunk question. That post-processing has a free parameter we
+cannot observe: the pair is fitted on our own label marginal, at delta = 0, while the test's
+marginal sits somewhere in +0.1 to +0.6.
+
+The object that answers it is a matrix, not a number: fit under an ASSUMED delta, score under
+a TRUE delta, out of fold throughout, four seeds (`src/shrinkchoice.py`). Its diagonal is the
+oracle; its top row is what `src/submit.py` does today. Over the bracket:
+
+  fit at 0 (today)        worst 0.913   mean 0.816   at 0.1  0.734   at 0.6  0.913
+  fit at the mid-bracket  worst 0.826   mean 0.776   at 0.1  0.747   at 0.6  0.826
+  minimax over bracket    worst 0.800   mean 0.786   at 0.1  0.800   at 0.6  0.796
+  oracle (unreachable)    worst 0.792   mean 0.764   at 0.1  0.731   at 0.6  0.792
+
+Fitting at zero is the worst of the three by both criteria - 0.087 worse in the worst case,
+0.040 worse on average - and its sign holds on all four seeds for every test delta at 0.2 and
+above. It wins in exactly one place, the bottom edge of the bracket, by 0.013. So "fit at
+zero" is not the choice that avoids an assumption; it is the choice that assumes the test
+looks like the training set, which the same document spends a section showing it does not.
+
+Per-enzyme the shifts differ, and on CYP2D6 the estimate is *negative*. Fitting each enzyme at
+its own estimate would be worth up to 0.022 more than one global delta - but that number is
+the per-enzyme oracle conditional on `verify/k5_shift.py` being exactly right, and it is an
+upper bound, not a gain. Note also that the k5 estimate for 2D6 contradicts the +0.1 to +0.6
+bracket outright: one of the two measurements is wrong there.
+
+`src/submit.py` gains `--delta`, defaulting to 0 so nothing changes by itself. Verified the
+default path is untouched: at delta = 0 the weights are all ones, the ST-RAE denominator does
+not depend on the parameters, so the weighted-numerator objective picks the identical (off,
+lambda) on all four enzymes - checked, not argued. Which delta to actually ship is a decision
+for the team, not a side effect of an edit.
