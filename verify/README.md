@@ -999,3 +999,105 @@ the fewest shared compounds - six - so its offset is the least known of the four
 **One split seed.** This repository's rule is four, and until then 0.013 is an indication
 rather than a result. It is nonetheless twice everything the choice between boosting and the
 neural trunk is worth, from a source untouched for two months.
+
+**62. The zero overlap with the test says nothing about the test.** `k12_extneighbors.py`.
+Exact overlap is the wrong check on its own: a compound one methyl from a test compound leaks
+and matches nothing. Measured for every test compound its highest Tanimoto to the external
+set — median 0.329, 75th percentile 0.382, **fraction above 0.7 exactly zero, above 0.9 exactly
+zero**. Our own compounds sit at 0.450 from each other, so the external set is further from the
+test than our training set is from itself. Leakage is closed by proximity, not only by identity.
+
+The zero then invites an inference, and the obvious one is wrong. Overlap with our training
+set is 64 of 4905, or 1.30%, which on 750 test compounds predicts about ten matches; the chance
+of none is 5·10⁻⁵, so the zero is deliberate. Two readings survive and they point opposite ways.
+*A-strong*: the test was assembled to avoid publicly known chemistry — then it is depleted of
+public compounds and the model this document rests on, test = anchors plus their analogues from
+the same pool, is weakened. *B*: the released external file was deduplicated against the blinded
+test before publication — an ordinary act that says nothing about the test.
+
+A-strong predicts the test must be **farther** from public chemistry than our training set is,
+since that is the property it selects on. Measured: the test is **closer**, by +0.014 of median,
+95% interval [+0.010, +0.021] over 2000 draws, none of them negative. Both sides are resampled
+and the training side by Butina cluster, because holding one side fixed is the defect of item 57.
+A-strong is refuted.
+
+A third reading is not refuted and should not be. *A-weak* — the test was cleaned of exact
+public matches only — predicts precisely what is observed, no exact overlap and an untouched
+neighbour distribution, and is observationally identical to B. It is also harmless: under it at
+most 1.3% of the test was removed, against the twofold depletion in basic amines that carries
+the CYP2D6 shift. The orders of magnitude are not comparable and the δ analysis stands either way.
+
+**63. Why CYP2C9 alone is harmed by the external data, and the answer is not their labels.**
+`k11_exttransfer.py`. Item 61 offered an explanation that does not fit: that CYP2C9's paired
+offset rests on six shared compounds and is unreliable. But CYP2C9 is harmed in the arm where
+**no offset is applied at all**, and it has 2506 external labels, second most of the four.
+Neither thin estimation nor scarce data can be the cause.
+
+One run separates their labels from our merging — train on the external rows alone and predict
+our compounds. Nothing is merged, so whatever appears belongs to their data.
+
+    enzyme     ext   ST-RAE   our rho   theirs   ratio   effect
+    CYP1A2    1343    0.973     0.496    0.351    0.71   -0.026
+    CYP2C9    2506    1.236     0.597    0.397    0.66   +0.022
+    CYP2D6    2540    1.237     0.403    0.340    0.84   -0.036
+    CYP3A4    4773    1.247     0.765    0.535    0.70   -0.011
+
+**CYP2C9 does not stand out.** By raw rank correlation it is second of the four, and by ST-RAE
+it ties CYP2D6 and beats CYP3A4. The hypothesis that their CYP2C9 labels pool incompatible probe
+substrates — plausible chemistry, since CYP2C9 IC50 depends strongly on whether the probe is
+diclofenac or tolbutamide — is not supported by this measurement, and is not testable from the
+published file at all, which carries SMILES and four label columns and no assay metadata.
+
+Raw rank correlation is not comparable across enzymes, which are measured on different compounds
+with different predictability. Dividing by our own out-of-fold rank on the same compounds removes
+that, and the resulting **ratio orders the four enzymes exactly as the effect does**: CYP2D6
+transfers best and gains most, CYP2C9 transfers worst and is the only one that loses. The
+break-even ratio lies between 0.66 and 0.70. Four points, and a perfect ordering arises by chance
+with probability 1/24 — so this is a hypothesis carrying a prediction, not a result: raise the
+transfer on CYP2C9 and the sign must flip.
+
+**64. One descriptor overflows, on the external compounds and nowhere else.** Both external runs
+printed `overflow encountered in cast`. The cause is `Ipc`, which grows exponentially with
+molecule size: our 4905 compounds reach 5.1·10¹⁴, the external 8004 reach **1.5·10³⁶**, and one
+exceeds float32 outright. For the boosting this is harmless — bins are quantiles and the infinity
+lands in the top one. For the neural trunk it is not: the standardising variance is computed in
+float32, squaring 10³⁶ overflows, and the column is divided by infinity and **silently becomes
+zero**. Both arms of the trunk experiment lose it equally, so the channel's contribution — the
+quantity that experiment exists to measure — is unaffected; what it changes is the account of the
+bookkeeping term, from "the normalisation moved" to "one feature was deleted".
+
+The submission path was checked and is clean: the blinded test's largest `Ipc` is 4.1·10⁸, nine
+orders below overflow. No change was made — guarding the descriptor in `feats.py` would move
+published numbers for no gain.
+
+**65. The gap between the two label sets is not uniform, and one indicator column beats every
+offset.** `src/ablsrc.py`. Item 61 treated the gap as a bias and subtracted it three ways, the
+crudest of them harmfully. But the gap is a **selection** effect — ChEMBL holds what people
+chose to publish, which is what worked — and selection does not act uniformly across chemical
+space. Subtracting one number per enzyme repeats the error item 59 diagnosed for the test set:
+a shift is not the whole shape.
+
+One extra column instead, one for external rows and zero for ours, trained on the union and
+predicted with the column set to zero. The learner then decides region by region how much the
+external labels say about ours.
+
+    seed 0                    1A2      2C9      2D6      3A4    macro
+    no external rows        0.8786   0.6908   0.9803   0.5194   0.7673
+    external as they are    0.8526   0.7124   0.9444   0.5087   0.7545
+    source indicator        0.8548   0.6905   0.9386   0.5179   0.7505
+
+The comparison was pre-registered because this arm is a strict generalisation of both
+extremes: split on the indicator at the root and it reproduces the first row, never split on
+it and it reproduces the second. Landing between them would have meant the indicator bought
+nothing a constant did not. It landed **below both**, so the borrowing genuinely has to differ
+across regions.
+
+The headline is the second column, not the macro. **CYP2C9 flips sign**, from +0.022 to
+−0.0003, and is no longer the one enzyme the external data harms. That is the prediction item
+63 attached to its own hypothesis — raise the transfer on CYP2C9 and the sign must flip — made
+before this arm was run and satisfied on the first attempt. CYP2D6 improves further as well,
+0.9444 to 0.9386. CYP1A2 and CYP3A4 give back a little against the raw arm and stay ahead of
+the control.
+
+One seed. The rule here is four, and this needs them before it enters the document as a number
+rather than as a direction.
