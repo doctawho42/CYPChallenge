@@ -818,3 +818,32 @@ A single delta is therefore an incomplete specification of the shift for every s
 uses one, `src/reweight.py` and `src/shrinkchoice.py` included. Expected intermediate
 leaderboard macro is about 0.83 rather than 0.77, and the widening returns about a quarter of
 what the shift costs rather than cancelling it.
+
+**54. The stratified kernel on CYP2D6: nearly half of what we called a label shift was
+composition.** Item 49's kernel needs one assumption, that E[yhat|y] is the same function on
+the test as on the training set, and item 45 showed that assumption is weakest exactly where
+the answer matters: the test carries 0.104 basic compounds against 0.355 in the CYP2D6 label
+mask, and CYP2D6 is the enzyme that binds them.
+
+Splitting the kernel by that stratum and mixing the two by the TEST's measured composition
+rather than ours turns an assumption into a measurement. The strata really do have different
+kernels on CYP2D6, by 0.35 to 0.58 across the whole scale - the model scores basic compounds
+high there almost regardless of their true activity - while on the other three enzymes the two
+kernels nearly coincide.
+
+  enzyme    pooled    stratified   of which composition   of which labels   change
+  CYP1A2    +0.045      +0.038            +0.003              +0.035       -0.007
+  CYP2C9    +0.362      +0.369            +0.005              +0.365       +0.007
+  CYP2D6    -0.917      -0.508            -0.138              -0.371       +0.409
+  CYP3A4    +0.740      +0.742            +0.008              +0.734       +0.003
+
+The control is the point: the three enzymes whose masks differ from the test by about one
+percentage point move by 0.003 to 0.007, which is nothing. CYP2D6, whose fraction differs
+threefold, moves by 0.409. Cluster bootstrap on the stratified estimate [-0.693, -0.325], zero
+still excluded.
+
+Consequence for the choice: CYP2D6's fitted shift goes from -1.1 to -0.3, per-enzyme fitting
+is worth 0.053 rather than 0.090, and a single global delta = 0.3 is now level with doing
+nothing (0.8425 against 0.8428) rather than clearly worse. The assumption has been narrowed,
+not removed - invariance is still assumed within each stratum, and a shift along some other
+axis relevant to CYP2D6 would not be caught.
