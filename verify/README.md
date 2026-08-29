@@ -786,3 +786,35 @@ included:
 Widening returns about a quarter of what the shift costs, not all of it. The expectation for the
 intermediate leaderboard is therefore around **0.83 macro rather than 0.767**, and that is a
 single number, checkable on 24 September, which is the cheapest test any of this has.
+
+**52. Our delta ranges were on the wrong scale, and the fix nearly doubles the case for
+per-enzyme fitting.** Item 46 built the ranges from a cluster bootstrap of the shift in
+PREDICTIONS and used them as ranges for the shift in LABELS. Those differ by b/R^2 = 3.40 /
+2.43 / 4.48 / 1.69, so all four were wrong and the chosen shifts derived from them were void.
+Found by external review, though by a wrong route - the reviewer inferred we were still
+dividing by b, when in fact we were not converting the scale at all.
+
+Rebuilt on the kernel estimate of item 49, the picture is sharper than before:
+
+  worst case in own range     1A2     2C9     2D6     3A4    macro
+  range                    -0.1..0.2  0.3..0.4  -1.2..-0.7  0.7..0.8
+  fit at zero (today)       0.874   0.829   1.007   0.762   0.868
+  one global delta = 0.3    0.864   0.761   1.196   0.710   0.883
+  per-enzyme                0.860   0.758   0.890   0.666   0.793
+  chosen shift               +0.2    +0.4    -1.1    +0.8
+
+Per-enzyme is now worth 0.090 over the best global rule and 0.075 over current behaviour,
+against 0.037 and 0.028 on the wrong scale. And a single global delta = 0.3 is now clearly
+worse than doing nothing (0.883 against 0.868), because CYP2D6 under a positive global shift
+goes to 1.196.
+
+**53. Both external scripts reproduce in this environment.** `verify/k8_kernel.py` and
+`verify/k9_shape.py` arrived committed but had only been run in a mirror of the layout, not
+through this repo's pinned interpreter. Run here they reproduce their reported numbers exactly:
+kernel deltas +0.045 / +0.362 / -0.917 / +0.740, the linear limit d_yhat*b/R^2 agreeing
+everywhere except CYP2D6 where R^2 is lowest, and the shape result - test predictions are
+1.13 / 1.40 / 1.05 / 1.10 times WIDER than out-of-fold, KS rejecting on three enzymes of four.
+A single delta is therefore an incomplete specification of the shift for every script that
+uses one, `src/reweight.py` and `src/shrinkchoice.py` included. Expected intermediate
+leaderboard macro is about 0.83 rather than 0.77, and the widening returns about a quarter of
+what the shift costs rather than cancelling it.
