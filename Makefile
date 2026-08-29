@@ -74,7 +74,7 @@ verify: data/feats.npz  ## the quick verification scripts (skips f3, f12: ~70 mi
 verify-extra: data/feats.npz  ## the h* and k* verification scripts (~25 min), logs into results/logs/
 	@mkdir -p results/logs
 	@for f in h1_geometry h2_tdi_alerts h3_alerts_delta k1_shrink k3_center k4_enrich \
-	          k5_shift k6_shift1d k7_2d6shift k8_kernel k9_shape; do \
+	          k5_shift k6_shift1d k7_2d6shift k8_kernel k9_shape k10_strat2d6; do \
 	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
 	done
 	@echo "logs in results/logs/"
