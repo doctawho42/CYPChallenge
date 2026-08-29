@@ -1101,3 +1101,48 @@ the control.
 
 One seed. The rule here is four, and this needs them before it enters the document as a number
 rather than as a direction.
+
+**66. The auxiliary head works, and it works on the enzyme the merge breaks.** `src/trunkext.py`.
+The joint-likelihood trunk was built, measured and shelved because the screening channel it was
+given carries little about pIC50. The machinery was never the problem; the channel was. The
+external CYP labels are a channel with information in it, and feeding them to the auxiliary head
+instead removes the question that the boosting route has to answer — how the two label scales
+relate — rather than answering it. External rows enter with fold index −1, so they sit in every
+training fold and no held-out one; their pIC50 entries are NaN and ours are NaN in the auxiliary
+block, so neither head sees the other's rows. `trunk.py` is imported unchanged and its published
+numbers are untouched.
+
+The first attempt at a control was wrong and the run refuted it. It looked obvious that λ = 0 here
+must reproduce `trunk_twohead.json` exactly, since external rows carry no pIC50 and so contribute
+no gradient to the primary head. Maximum absolute difference: 6.49. The cause is not a leak in the
+fold logic — feature standardisation is computed over the training rows and there are now 12909
+instead of 4905, and the step count rises because epochs are fixed and batches are not. External
+rows change the model without contributing a single gradient through either head. Item 64 names
+one concrete part of it: `Ipc` overflows and the column is silently deleted.
+
+So the effect decomposes into two terms, and conflating them would have made the whole measurement
+noise:
+
+    seed    baseline   lambda 0   lambda 3    channel    bookkeeping
+       0      0.7672     0.7748     0.7684    -0.0064        +0.0076
+       1      0.7837     0.7843     0.7748    -0.0095        +0.0006
+       2      0.8099     0.7839     0.7627    -0.0212        -0.0260
+       3      0.7623     0.7938     0.7606    -0.0332        +0.0315
+    mean      0.7808     0.7842     0.7666    -0.0176        +0.0034
+
+**The channel is worth −0.0176 and its sign holds on all four seeds.** The bookkeeping term — what
+the rows do through normalisation and step count alone, with no information transfer — averages
+near zero but ranges over 0.058, three times the effect it sits on top of. Any single-seed reading
+against the published baseline would have measured mostly that.
+
+Per enzyme the channel and the boosting route do not overlap. The channel gains most on CYP1A2
+(−0.039) and CYP2D6 (−0.022); appending rows to the boosting gains most on CYP2D6 (−0.036) and
+CYP1A2 (−0.026). The difference that matters is CYP2C9: the boosting route **harms** it by +0.022
+and the auxiliary head helps it by −0.008. That is precisely the design argument — each source
+keeps its own output and no assumption about the relationship between scales is needed — and the
+enzyme that breaks under forced merging is the one it rescues.
+
+An earlier reading of two seeds put the channel at −0.008 and concluded that a single indicator
+column beat the whole shared latent. On four seeds it does not: −0.0176 against the indicator's
+−0.0168. The comparison is still not settled, because every boosting arm here has one seed and
+this has four.
