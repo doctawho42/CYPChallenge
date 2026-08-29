@@ -40,6 +40,7 @@ _sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
 from cyppaths import D, RES, tutorial
 tutorial()
 
+import argparse
 import json
 
 import numpy as np
@@ -90,15 +91,30 @@ def fit_apply(p, lo, hi, fold, w):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--preds", default="", help="иной источник предсказаний вне фолда")
+    ap.add_argument("--key", default="{seed}|L1 по метке|{c}",
+                    help="шаблон ключа в этом источнике")
+    ap.add_argument("--seeds", default="", help="сиды, если источник покрывает не все")
+    a = ap.parse_args()
+    seeds = SEEDS if not a.seeds else [int(x) for x in a.seeds.split(",")]
+
     rows = pd.read_csv(D + "rows.csv")
     tr = (pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
             .set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index())
-    oof = json.load(open(RES + "preds/oof.json"))
-    oofs = json.load(open(RES + "preds/oof_seeds.json"))
+    if a.preds:
+        alt = json.load(open(a.preds))
+        alt = alt.get("preds", alt)
+        print(f"предсказания из {a.preds}, ключ {a.key!r}, сиды {seeds}\n")
+        oof = oofs = None
+    else:
+        alt = None
+        oof = json.load(open(RES + "preds/oof.json"))
+        oofs = json.load(open(RES + "preds/oof_seeds.json"))
 
     # M[seed][assumed][true] = макро ST-RAE
     M, MC = {}, {}
-    for seed in SEEDS:
+    for seed in seeds:
         fold, _ = butina_folds(list(rows.SMILES), seed=seed)
         per = np.zeros((len(DELTAS), len(DELTAS)))
         perc = {c: np.zeros((len(DELTAS), len(DELTAS))) for c in CYPS}
@@ -108,8 +124,11 @@ def main():
             y = tr.loc[m, col].to_numpy()
             lo = tr.loc[m, col + "_conf_low"].to_numpy()
             hi = tr.loc[m, col + "_conf_high"].to_numpy()
-            p = np.asarray(oof[f"FP+DESC+MECH|{c}"] if seed == 0
-                           else oofs[f"{seed}|FP+DESC+MECH|{c}"], float)
+            if alt is not None:
+                p = np.asarray(alt[a.key.format(seed=seed, c=c)], float)
+            else:
+                p = np.asarray(oof[f"FP+DESC+MECH|{c}"] if seed == 0
+                               else oofs[f"{seed}|FP+DESC+MECH|{c}"], float)
             f = fold[m]
             W = {d: tilt(y, float(d)) for d in DELTAS}
             for ia, da in enumerate(DELTAS):
@@ -120,7 +139,7 @@ def main():
                     perc[c][ia, it] = v
         M[seed] = per
         MC[seed] = perc
-    A = np.mean([M[s] for s in SEEDS], axis=0)
+    A = np.mean([M[s] for s in seeds], axis=0)
 
     print("=" * 94)
     print("1. Подогнали при одном сдвиге, проверяем при другом (макро ST-RAE, среднее по сидам)")
@@ -159,11 +178,11 @@ def main():
     print(f"Разность «{DELTAS[ib]:.1f} против 0», по сидам (отрицательное = подгонка при "
           f"{DELTAS[ib]:.1f} лучше):\n")
     print(f"{'':10s} " + " ".join(f"{('тест ' + str(d)):>9s}" for d in DELTAS[inb]))
-    for s in SEEDS:
+    for s in seeds:
         print(f"{('сид ' + str(s)):10s} "
               + " ".join(f"{M[s][ib, it] - M[s][i0, it]:+9.4f}" for it in inb))
     print(f"{'среднее':10s} " + " ".join(f"{A[ib, it] - A[i0, it]:+9.4f}" for it in inb))
-    same = [len({int(np.sign(round(M[s][ib, it] - M[s][i0, it], 4))) for s in SEEDS}) == 1
+    same = [len({int(np.sign(round(M[s][ib, it] - M[s][i0, it], 4))) for s in seeds}) == 1
             for it in inb]
     print(f"{'знак 4/4':10s} " + " ".join(f"{str(x):>9s}" for x in same))
 
@@ -182,7 +201,7 @@ def main():
     print("   поферментный ОРАКУЛ при условии, что k5 прав, то есть верхняя граница того, что")
     print("   поферментная подгонка могла бы дать, а не то, что она даст.\n")
     K5 = {"CYP1A2": 0.018, "CYP2C9": 0.164, "CYP2D6": -0.256, "CYP3A4": 0.437}
-    AC = {c: np.mean([MC[s][c] for s in SEEDS], axis=0) for c in CYPS}
+    AC = {c: np.mean([MC[s][c] for s in seeds], axis=0) for c in CYPS}
     print(f"{'фермент':8s} {'ядро':>10s} {'единое 0.3':>11s} {'оракул':>8s} "
           f"{'строка оракула':>15s}")
     glob_i = int(min(range(len(DELTAS)), key=lambda ia: A[ia, inb].mean()))
@@ -245,7 +264,7 @@ def main():
     # k10_strat2d6.py; исправлены оба.
     TRUTH = {"CYP1A2": (-0.3, 0.4), "CYP2C9": (0.1, 0.7),
              "CYP2D6": (-1.1, 0.1), "CYP3A4": (0.5, 1.0)}
-    AC = {c: np.mean([MC[s][c] for s in SEEDS], axis=0) for c in CYPS}
+    AC = {c: np.mean([MC[s][c] for s in seeds], axis=0) for c in CYPS}
     K5 = {"CYP1A2": 0.038, "CYP2C9": 0.369, "CYP2D6": -0.508, "CYP3A4": 0.742}
 
     def rng_idx(c):

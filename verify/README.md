@@ -1400,3 +1400,49 @@ are nonzero. Recorded as explained in part.
 Nothing here contradicts the document. Stratifying by a feature and splitting on it are different
 uses, and the shift analysis needs the first. But the feature that carries the chemistry in our
 analysis carries nothing in our model, and that is worth knowing before any more weight is put on it.
+
+**77. Every gain measured today disappears under the post-processing the submission actually uses.**
+The question was narrow — recompute the δ rule on the L1 predictions, since the rule in `submit.py`
+was tuned against the residuals of a model that L1 replaces. The rule barely moved: under the mean
+criterion CYP1A2 goes +0.1 to 0.0, CYP2C9 +0.3 to +0.4, CYP2D6 and CYP3A4 unchanged, and the value
+of per-enzyme fitting is the same, +0.0486 against +0.0468. The shift work is not absorbed by the
+loss change, which was the risk worth checking.
+
+But the levels inverted, and following that inverted the whole session. Every number in this
+repository's ablation tables is a raw out-of-fold ST-RAE, and the submission does not submit raw
+predictions — it fits an affine pair per fold and applies it. Refitting that pair out of fold on
+each arm gives:
+
+    arm                       raw    +affine    gain raw   gain after
+    L2 baseline            0.7673     0.7150     +0.0000      +0.0000
+    L1 instead of L2       0.7218     0.7131     -0.0455      -0.0019
+    source indicator       0.7504     0.7117     -0.0168      -0.0033
+    tilt to paired offset  0.7363     0.7156     -0.0310      +0.0006
+    external as they are   0.7545     0.7218     -0.0128      +0.0068
+    encoder concatenated   0.7589     0.7263     -0.0084      +0.0113
+
+**Not one survives.** All five fall under the 0.007 noise floor of item 70, and three of the five
+change sign to harmful. The largest finding of the day, worth 0.046 raw, is worth 0.002 after — and
+the mechanism is plain: the affine pair is a shrinkage fitted directly to the metric, per fold, so
+anything that reduces prediction variance or removes a systematic offset is something it already
+does. On the L2 baseline that pair is worth 0.0523; on the L1 predictions only 0.0087, because L1
+had already taken most of what there was.
+
+`fit_apply` was checked for contamination first: it fits on the training folds and applies to the
+held-out one, so the comparison is honest.
+
+What this costs is not five results but a method. **The ablation grid measures the wrong quantity.**
+Comparing feature sets, learners and data sources on raw predictions overstates differences that the
+submission pipeline erases, and the document's headline — model choice 0.005 against post-processing
+0.051 — understates its own point: the post-processing does not add to the other improvements, it
+substitutes for them.
+
+Three qualifications, and none rescues the arms. This is seed 0, and at the noise floor no ordering
+among the six is resolvable — but five independent arms collapsing into a band of 0.013 is a much
+stronger pattern than any single comparison. The affine pair here is fitted at δ = 0; under the
+posterior over δ the same reversal holds, L1 with its own δ scoring 0.7764 against the L2 baseline's
+0.7647. And redundancy on our own label marginal is not proof of redundancy on the test's shifted
+one — but that cannot be checked without test labels, and assuming it in our favour is the error
+this log exists to catch.
+
+Practical consequence: **nothing in `submit.py` changes**, on any of today's findings.
