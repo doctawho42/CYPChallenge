@@ -1446,3 +1446,29 @@ one — but that cannot be checked without test labels, and assuming it in our f
 this log exists to catch.
 
 Practical consequence: **nothing in `submit.py` changes**, on any of today's findings.
+
+**78. The two corrections do not add, and the full square shows why.** The question was whether the
+loss change and the paired tilt combine. The missing cell was run — `src/ablsrc.py` gained a
+`--loss` switch so the external arms can use absolute error — and the square closes.
+
+    seed 0                      raw    +affine
+    L2                       0.7673     0.7150
+    L2 + paired tilt         0.7363     0.7156
+    L1                       0.7218     0.7131
+    L1 + paired tilt         0.7225     0.7238
+
+**They do not add.** The tilt is worth −0.0310 on top of L2 and **+0.0007** on top of L1: L1 has
+already taken everything the tilt was buying. Additivity would have predicted 0.6908; the observed
+value is 0.7225, which is L1 alone.
+
+With the affine pair applied the four collapse into a band of 0.0107, of which 0.007 is noise, and
+the worst of the four is **both corrections together**. So there are three interventions here — a
+metric-aligned loss, a reweighting of the external labels, and the affine shrinkage — and they are
+substitutes rather than complements. Any one reaches about 0.713 and applying more than one gains
+nothing or costs something.
+
+That is the same statement as item 77 seen from the other side. The affine pair is a shrinkage
+fitted to the metric per fold; L1 is a shrinkage built into the fit; the tilt is a reweighting that
+happens to reduce the same variance. The raw column spans 0.046 across these four and the
+post-processed column spans 0.011. Whatever we were measuring in the raw column was largely the
+absence of a correction we always apply.
