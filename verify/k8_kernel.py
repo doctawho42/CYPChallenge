@@ -65,6 +65,10 @@ def pack(c):
     return (tr.loc[m, col].to_numpy(), np.asarray(oof[f"FP+DESC+MECH|{c}"]), PT[c], cid[m])
 
 
+te_ = pd.read_csv(D + "cyp-challenge-TEST-BLINDED.csv")
+tcid, _ = cluster_ids(list(te_.SMILES), threshold=0.50)
+tcid = np.asarray(tcid); tu = np.unique(tcid)
+
 print("=" * 104)
 print("1. Одно наблюдение, четыре способа превратить его в delta")
 print("=" * 104)
@@ -77,11 +81,18 @@ for c in CYPS:
     b = np.polyfit(p, y, 1)[0]
     R2 = 1 - ((y - p) ** 2).sum() / ((y - y.mean()) ** 2).sum()
     d_iso = solve_delta(y, IsotonicRegression(out_of_bounds="clip").fit(y, p).predict(y), pt.mean())
+    # ИСПРАВЛЕНО. Прежде ресэмплились только обучающие кластеры, а pt.mean() держалась
+    # фиксированной: интервал ловил неопределённость ядра и выбрасывал неопределённость
+    # цели. При обращении цель входит с множителем 1/наклон, а наклоны здесь 0.22-0.59,
+    # так что выброшенная часть была больше оставленной. Теперь ресэмплятся обе стороны,
+    # тестовая --- блоками по сериям аналогов.
     rng = np.random.default_rng(0); u = np.unique(g); bs = []
     for _ in range(300):
         idx = np.concatenate([np.where(g == k)[0] for k in rng.choice(u, len(u), replace=True)])
+        tid = np.concatenate([np.where(tcid == k)[0]
+                              for k in rng.choice(tu, len(tu), replace=True)])
         it = IsotonicRegression(out_of_bounds="clip").fit(y[idx], p[idx])
-        v = solve_delta(y[idx], it.predict(y[idx]), pt.mean())
+        v = solve_delta(y[idx], it.predict(y[idx]), float(pt[tid].mean()))
         if np.isfinite(v):
             bs.append(v)
     q = np.percentile(bs, [2.5, 97.5]); OUT[c] = (d_iso, q, np.array(bs))

@@ -847,3 +847,43 @@ is worth 0.053 rather than 0.090, and a single global delta = 0.3 is now level w
 nothing (0.8425 against 0.8428) rather than clearly worse. The assumption has been narrowed,
 not removed - invariance is still assumed within each stratum, and a shift along some other
 axis relevant to CYP2D6 would not be caught.
+
+**55. The bootstrap in both kernel scripts was half a bootstrap, and fixing it widens every
+interval by two to five times.** `verify/k8_kernel.py` resampled training clusters while
+holding the observed test mean fixed, so it captured the uncertainty of the kernel and threw
+away the uncertainty of the target. Under inversion the target enters with a factor of one
+over the kernel slope, and those slopes are 0.29 / 0.41 / 0.22 / 0.59, so the discarded part
+was larger than the part kept. Our `k10_strat2d6.py` inherited the same construction. Both now
+resample both sides, the test in blocks by analogue series.
+
+  enzyme    delta    old 95%              honest 95%
+  CYP1A2   +0.038   [-0.064, +0.153]     [-0.331, +0.437]
+  CYP2C9   +0.369   [+0.288, +0.445]     [+0.055, +0.723]
+  CYP2D6   -0.508   [-0.693, -0.325]     [-1.140, +0.093]
+  CYP3A4   +0.742   [+0.666, +0.799]     [+0.484, +1.030]
+
+**And the strongest claim in the section survives only barely.** Under the unstratified kernel
+CYP2D6's honest interval is [-1.505, -0.505] and excludes zero, which is what the external
+review predicted. Under the stratified kernel - the better estimate - it is [-1.140, +0.093]
+and does not. Measured directly on 1500 draws, P(delta >= 0) = 0.039: the 90 % interval
+excludes zero, the 95 % interval does not. "The shift on CYP2D6 is negative" remains the
+firmest of the four statements; "clearly different from zero" is no longer the right wording
+for it.
+
+**56. Wider ranges make per-enzyme fitting more valuable, not less.** The prediction was that
+honest intervals would shrink the case for per-enzyme fitting to "CYP2D6 and CYP3A4, zero
+elsewhere". The opposite happened, and the reason is structural: a wider range makes the worst
+case worse for any single fixed rule, while per-enzyme fitting gains room to hedge each enzyme
+separately. Per-enzyme is now worth 0.091 over the best global rule and 0.107 over current
+behaviour, against 0.053 and 0.053 on the narrow ranges.
+
+The qualitative prediction inverted too. CYP2D6's range now straddles zero, so the worst-case
+rule picks almost nothing there (-0.1), while the substantial shifts go to CYP1A2 (+0.4) and
+CYP2C9 (+0.5). The enzyme that motivated per-enzyme fitting is now the one it barely touches.
+
+Two smaller corrections accepted from the same review. The composition component of -0.138 in
+item 54 is not independent confirmation of item 48 - it is the same product, the change in
+basic fraction times the activity contrast, computed a second way. And the residual
+uncertainty on CYP2D6 is set by conditioning rather than by which correction was applied: the
+kernel slope there is 0.224 against 0.593 on CYP3A4, and 0.119 within the basic stratum, so
+inversion amplifies error by 8.4 times where CYP3A4 amplifies it by 1.7.
