@@ -1000,6 +1000,14 @@ the fewest shared compounds - six - so its offset is the least known of the four
 rather than a result. It is nonetheless twice everything the choice between boosting and the
 neural trunk is worth, from a source untouched for two months.
 
+*Later.* The four-seed run was started and stopped after six of sixteen cells, because items 69
+and the loss experiment produced arms worth 0.031 and 0.046 against this arm's 0.013, and it was
+holding half the machine for eleven more hours to validate the weakest of the three. What it
+reached is kept here rather than discarded: the control gives 0.7673 and 0.7690 on seeds 0 and 1,
+the raw external arm 0.7545 and 0.7482, so the effect is **−0.0128 and −0.0208** and its sign
+holds on both. Two seeds, and the second is the larger. The rule of four now belongs to the arms
+that superseded this one.
+
 **62. The zero overlap with the test says nothing about the test.** `k12_extneighbors.py`.
 Exact overlap is the wrong check on its own: a compound one methyl from a test compound leaks
 and matches nothing. Measured for every test compound its highest Tanimoto to the external
