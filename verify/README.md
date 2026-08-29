@@ -923,3 +923,38 @@ no expected return. Zero there is not caution, it is the better move.
 
 Note this is neither of the two qualitative predictions on offer. It is not "per-enzyme on
 CYP2D6 and CYP3A4, zero elsewhere", and it is not per-enzyme everywhere.
+
+**59. The offset grid was clipping the fit at both ends, and one adopted number was wrong
+because of it.** `OFFGRID` ran from -0.2 to +1.6. At assumed shifts below -0.3 the fitted
+offset hit the lower edge and stopped moving, which made the objective look flat from -0.3 to
+-0.6 when it was not; at +0.7 on CYP3A4 it sat on the upper edge. A fitted parameter resting
+on a grid boundary is not a fitted parameter, and flatness beside one is an artefact. Widened
+to +-3 in `src/submit.py` and `src/shrinkchoice.py`, and `submit.py` now prints a warning if
+an optimum lands on an edge. The search is vectorised at the same time - the whole grid in one
+broadcast - because the wider grid made the Python loop too slow to finish.
+
+The correction changes one adopted number: CYP2D6's mean-criterion pick moves from -0.3 to
+**-0.5**, improving that cell from 0.8335 to 0.8241. The other three are unchanged. Adopted
+vector: **0, +0.3, -0.5, +0.7**, and `src/submit.py --delta` now defaults to it.
+
+**60. Break-even is the better question, and it sharpens the warning rather than settling it.**
+The posterior integrates sampling noise and contains nothing about systematic error - which is
+exactly what a failure of kernel invariance would be. So the question to ask of a rule is not
+"how likely is it to lose" but "how far can the estimate be wrong before this cell loses to
+doing nothing":
+
+  enzyme   pick   E[delta]   break-even   margin
+  CYP1A2   +0.1     +0.037      +0.05      0.01
+  CYP2C9   +0.3     +0.361      +0.16      0.20
+  CYP2D6   -0.5     -0.518      -0.24      0.28
+  CYP3A4   +0.7     +0.733      +0.40      0.33
+
+CYP1A2's margin is 0.01, which is independent confirmation that zero is right there - any
+non-zero pick sits on a knife edge.
+
+The uncomfortable one is CYP2D6. **Stratifying the kernel moved its estimate by 0.41, and the
+margin remaining is 0.28.** A correction we have already applied is larger than the room left
+before the cell turns. That is not an argument for hedging - a partial shift of -0.2 instead
+of -0.5 costs 0.007 expected and buys only 0.03 of margin, a bad trade - it is an argument for
+finding out whether a second composition axis of comparable weight exists. The first was found
+by chemistry in an evening; whether it is the only one has not been asked.

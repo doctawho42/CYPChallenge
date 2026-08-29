@@ -48,6 +48,34 @@ offset being fixed, reaching macro 0.7150 against 0.7227 for the +0.40 slice. No
 offset is in centre units: predictions move by (1 - lambda) times it, so the +0.40 once
 quoted was never +0.40 in pIC50 - the real shifts are +0.13 / +0.10 / +0.03 / +0.17.
 
+WHICH SHIFT, AND UNDER WHICH CRITERION. Both were open questions until they were
+measured, and the second turned out to matter more than the first.
+
+The shift is not one number for four enzymes. On CYP2D6 it is negative, and the reason is
+chemistry rather than statistics: the test carries about a third as many compounds that are
+basic at pH 7.4 as the CYP2D6 label mask does, and CYP2D6 is the one enzyme of the four that
+binds through a salt bridge to a protonated nitrogen, so basic compounds are MORE active
+there and less so everywhere else (verify/k7_2d6shift.py, k10_strat2d6.py).
+
+The criterion was doing more work than any of the estimates. Choosing the pair by the WORST
+case inside each enzyme's plausible range is insurance against a bad leaderboard; choosing by
+the MEAN over the posterior of delta is a bid for the best expected score. The two disagree
+by more than any two estimates of delta disagree - the per-enzyme gain is 0.107 by worst case
+and 0.045 by mean - and they differ in the sign of their derivative with respect to how wide
+the range is. The mean is adopted here: we are after the best expected score, not insurance.
+
+The default is therefore 0, +0.3, -0.5, +0.7, and the zero on CYP1A2 is deliberate. There the
+sign of the shift is not determined at all, P(delta >= 0) = 0.59, so any non-zero choice is a
+coin flip against doing nothing: the mean criterion picks +0.1, gains 0.0001 by it, and loses
+to zero in half the posterior draws. That is added variance for no expected return.
+
+Held to the same standard, this rule is clean where the earlier one was not. The worst-case
+rule picked +0.4 on CYP1A2 and lost to doing nothing in 81 % of draws - exactly the defect
+that got a single global delta rejected, relocated to another cell. Under the adopted rule
+the fractions are 0.09 / 0.11 / 0.01 on the three enzymes it touches.
+
+None of this fires unless --shrink is passed. That switch is the one decision still open.
+
 The size of the shift is bracketed rather than pinned. src/reweight.py tilts the label
 marginal and puts the centre at +0.4 for delta = 0 and +0.9 for delta = 0.5; the anchor
 percentiles put delta at +1.05, an upper bound, since the anchors' neighbours were chosen
@@ -100,7 +128,12 @@ def test_features(desc_names, mech_names):
     return te, np.hstack([FP, dsc.to_numpy(np.float32), M.to_numpy(np.float32)])
 
 
-OFFGRID = np.linspace(-0.2, 1.6, 37)
+# Сетка смещений намеренно шире, чем нужно любому правдоподобному сдвигу. Прежняя,
+# linspace(-0.2, 1.6), зажимала подгонку с обеих сторон: при предполагаемом сдвиге ниже -0.3
+# оптимальное смещение упиралось в нижний край и переставало двигаться, а на CYP3A4 при
+# +0.7 оно садилось на верхний. Подогнанный параметр, стоящий на границе сетки, --- не
+# подогнанный параметр, и плоскость целевой функции рядом с ним мнимая.
+OFFGRID = np.round(np.arange(-3.0, 3.01, 0.05), 2)
 
 
 def fit_shrinkage(X, y, mask, fold, delta=(0.0, 0.0, 0.0, 0.0)):
@@ -136,10 +169,16 @@ def fit_shrinkage(X, y, mask, fold, delta=(0.0, 0.0, 0.0, 0.0)):
         # exactly the untilted fit, so the default path is unchanged.
         de = float(delta[e])
         w = np.ones_like(yy) if de == 0 else tilt(yy, de)
-        def obj(t):
-            q = (mu + t[0]) + t[1] * (p - (mu + t[0]))
-            return float((w * (np.maximum(q - hi, 0.0) + np.maximum(lo - q, 0.0))).sum())
-        off, L = min(((o, l) for o in OFFGRID for l in GRID), key=obj)
+        # Вся сетка одним броадкастом: q = c + L(p - c) = (mu + off)(1 - L) + L p.
+        A = OFFGRID[:, None] * (1.0 - GRID[None, :])
+        B = np.broadcast_to(GRID[None, :], A.shape)
+        q = (mu * (1.0 - B) + A)[:, :, None] + B[:, :, None] * p[None, None, :]
+        pen = (w * (np.maximum(q - hi, 0.0) + np.maximum(lo - q, 0.0))).sum(axis=2)
+        ii, jj = np.unravel_index(pen.argmin(), pen.shape)
+        off, L = float(OFFGRID[ii]), float(GRID[jj])
+        if ii in (0, len(OFFGRID) - 1) or jj in (0, len(GRID) - 1):
+            print(f"    ВНИМАНИЕ {c}: оптимум на краю сетки (off {off:+.2f}, lambda {L:.2f})",
+                  flush=True)
         out.append((L, mu + off))
         print(f"    {c}: lambda {L:.2f}, смещение {off:+.2f}, "
               f"сдвиг предсказаний {(1-L)*off:+.3f}", flush=True)
@@ -150,7 +189,7 @@ def main():
     global LO, HI
     ap = argparse.ArgumentParser()
     ap.add_argument("--shrink", action="store_true", help="применить усадку (см. docstring)")
-    ap.add_argument("--delta", default="0",
+    ap.add_argument("--delta", default="0,0.3,-0.5,0.7",
                     help="предполагаемый сдвиг средней активности теста относительно нашей "
                          "выборки. Пара (off, lambda) подбирается под ЭТО предположение. "
                          "Ноль означает «тест распределён как обучающая выборка» - это не "
@@ -158,11 +197,9 @@ def main():
                          "показывает, что по вилке +0.1..+0.6 оно худшее из трёх правил: "
                          "худший случай на 0.087, средний на 0.040 хуже подгонки под "
                          "середину вилки. Значение по умолчанию оставлено нулевым, чтобы "
-                         "поведение не менялось само собой. Принимает одно число на все "
-                         "ферменты или четыре через запятую в порядке CYPS: сдвиг НЕ один на "
-                         "все, и на CYP2D6 он отрицательный (verify/k7_2d6shift.py), так что "
-                         "единое положительное значение подгоняет 2D6 в неверную сторону. "
-                         "Поферментный выбор по худшему случаю: 0.3,0.4,-0.1,0.8")
+                         "Принимает одно число на все ферменты или четыре через запятую в "
+                         "порядке CYPS. Умолчание --- принятое правило: по среднему "
+                         "апостериорному, с нулём на CYP1A2, см. docstring")
     ap.add_argument("--outdir", default=RES + "submission/")
     a = ap.parse_args()
 
