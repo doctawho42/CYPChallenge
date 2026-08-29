@@ -1263,3 +1263,40 @@ One anomaly to explain before building rather than after: on CYP2D6 the sign of 
 relationship is **reversed**, +0.770 against −0.394 / −0.407 / −0.462 elsewhere, and the same flip
 appears in the TDI arm. It is the same enzyme that is anomalous in the salt bridge, in the sign of
 its shift, and in how well external data transfers to it.
+
+**72. Emax has no dynamic range, which kills a proposal and one of my own claims.** `k13_channels.py`.
+Item 71 recorded that Emax is a genuinely separate axis because it correlates with affinity at |r|
+about 0.4. That was wrong, and wrong in the way this log keeps finding: a rank correlation says
+nothing about whether there is anything to measure. The range does.
+
+    enzyme      min      1%     50%     99%     max     IQR   above -0.5
+    CYP1A2    -1.15   -1.10   -0.99   -0.82   -0.46   0.072       0.071%
+    CYP2C9    -1.27   -1.19   -1.02   -0.73   -0.50   0.106       0.078%
+    CYP2D6    -1.08   -1.06   -1.03   -0.91   -0.83   0.048       0.000%
+    CYP3A4    -1.06   -1.04   -0.98   -0.84   -0.37   0.020       0.214%
+
+**Every compound in the set inhibits essentially completely.** Ninety-nine percent of the mass sits
+below −0.73 and not one of 6524 observations exceeds zero. The |r| ≈ 0.4 correlations are ordering
+inside a band 0.05 wide. A latent for mechanism cannot rest on a channel that is nearly constant,
+so the third view in the affinity-and-turnover proposal is not available, and that is a harder
+obstacle than the collinearity of the first two.
+
+It also refutes a prediction derived from one-site against multi-site binding: Emax should have been
+bimodal on CYP3A4, where a large cavity with several sub-sites would leave partial inhibitors, and
+unimodal at full inhibition on CYP2D6, where a single small site with a salt bridge would be
+occluded completely. A Gaussian mixture prefers two components everywhere, but the components are
+0.03 to 0.13 apart — it is splitting one narrow blob. And the direction is reversed: CYP3A4 has the
+**narrowest** distribution of the four, IQR 0.020 against CYP2C9's 0.106.
+
+**73. Rank agreement on four points does not single out a hypothesis, and this is the third time.**
+Item 67 found that two explanations of the same ordering are rank-identical, and recorded it as "no
+measurement here can prefer one", which is too strong: nothing about rank ordering can prefer one,
+and rank ordering on four points is the weakest evidence available. The pattern has now failed three
+times — the screening correlation against ST-RAE change, and transfer against pair count.
+
+The rule to carry: **agreement of ranks at n = 4 does not select a hypothesis, it only fails to
+refute it.** Hypotheses of this kind separate under intervention, not under more correlations. The
+two candidates here make different predictions about what happens if more or better-matched external
+labels are added on CYP2C9 — a transfer deficit predicts improvement, an identifiability deficit
+predicts none, because the indicator column has already extracted what there was. Those are two
+runs, not two correlations.

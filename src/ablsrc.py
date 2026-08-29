@@ -82,6 +82,9 @@ def main():
     ap.add_argument("--ext-y", required=True)
     ap.add_argument("--seeds", default="0")
     ap.add_argument("--arms", default="индикатор,наклон,наклон-парный")
+    ap.add_argument("--loss", default="squared_error",
+                    help="функция потерь ученика; absolute_error проверяет, "
+                         "складывается ли смена потерь с поправкой на источник")
     ap.add_argument("--cache", default="")
     ap.add_argument("--out", default=RES + "preds/oof_src.json")
     a = ap.parse_args()
@@ -121,7 +124,8 @@ def main():
     # Последний столбец --- источник. Обучаемся на обоих значениях, предсказываем при нуле.
     Xi_all = np.hstack([X, np.zeros((len(X), 1), np.float32)])
     Xe_all = np.hstack([Xe, np.ones((len(Xe), 1), np.float32)])
-    print(f"строк: наших {len(X)}, внешних {len(Xe)}; ширина {Xi_all.shape[1]}\n")
+    print(f"строк: наших {len(X)}, внешних {len(Xe)}; ширина {Xi_all.shape[1]}; "
+          f"потери {a.loss}\n")
 
     arms = a.arms.split(",")
     out, table = {}, []
@@ -170,7 +174,8 @@ def main():
                     if w is not None:
                         kw["sample_weight"] = np.concatenate([w[:len(y)][trn], w[len(y):]])
                     # При индикаторе предсказываем с источник = наш: столбец в Xm уже нулевой.
-                    p[te] = HistGradientBoostingRegressor(**KW).fit(Xt, yt, **kw).predict(Xm[te])
+                    p[te] = (HistGradientBoostingRegressor(**KW, loss=a.loss)
+                             .fit(Xt, yt, **kw).predict(Xm[te]))
                 out[f"{seed}|{arm}|{c}"] = p.tolist()
                 r[c] = round(float(strae(y, p, y_true_upper=hi, y_true_lower=lo)), 4)
             r["MACRO"] = round(float(np.mean([r[c] for c in CYPS])), 4)

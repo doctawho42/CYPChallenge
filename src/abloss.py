@@ -58,9 +58,13 @@ ARMS = {
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default="0")
+    ap.add_argument("--only", default="", help="через запятую, какие руки считать")
     ap.add_argument("--out", default=RES + "preds/oof_loss.json")
     a = ap.parse_args()
     seeds = [int(x) for x in a.seeds.split(",")]
+    arms = ARMS if not a.only else {k: v for k, v in ARMS.items() if k in a.only.split(",")}
+    if not arms:
+        raise SystemExit(f"ни одна рука не подошла: {a.only}")
 
     rows = pd.read_csv(D + "rows.csv")
     tr = (pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
@@ -80,7 +84,7 @@ def main():
     out, table = {}, []
     for seed in seeds:
         fold, _ = butina_folds(list(rows.SMILES), seed=seed)
-        for name, kw in ARMS.items():
+        for name, kw in arms.items():
             t0 = time.time()
             r = {"seed": seed, "рука": name}
             for c in CYPS:
