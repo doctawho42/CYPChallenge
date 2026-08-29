@@ -622,3 +622,31 @@ was built for. It is an estimate of direction, not a model of the shift, and `k7
 The consequence for the submission is concrete: **the marginal shift is not one number for all
 four enzymes.** Fitting the post-processing to a single global delta fits CYP2D6 in the wrong
 direction outright. `verify/k7_2d6shift.py`.
+
+**46. Per-enzyme fitting, and the global rule actively harms CYP2D6.** Item 45 established
+that the marginal shift is not one number for four enzymes. The consequence is measurable
+(`src/shrinkchoice.py`, block 5). Each enzyme gets its own plausible range for the true shift,
+built from what was measured: the direct estimate is one edge, since it is a lower bound in
+magnitude, and a margin in the direction of its sign is the other; for CYP2D6 the second edge
+is zero, because the anchor control says there is no enrichment there. Rules are compared by
+their WORST case inside each range rather than at a point - choosing a rule to match an
+estimate and then scoring it at that same estimate would be one action, not two.
+
+  worst case in own range   1A2     2C9     2D6     3A4    macro
+  fit at zero (today)     0.911   0.878   0.913   0.762   0.866
+  one global delta = 0.3  0.878   0.790   1.035   0.710   0.853
+  per-enzyme              0.878   0.777   0.906   0.666   0.807
+  chosen shift             +0.3    +0.4    -0.1    +0.8
+
+Per-enzyme fitting is worth 0.046 over the best global rule and 0.059 over current behaviour.
+The macro is not the interesting part. **The best global rule makes CYP2D6 worse than doing
+nothing at all** - 1.035 against 0.913. A single positive delta does not merely underperform
+on 2D6; it actively damages it, because the real shift there has the opposite sign.
+
+The minima are interior, not artefacts of where the grid stops: rechecked on a grid extended
+to +1.6, CYP3A4's worst-case curve descends to +0.8 and rises after it (0.663, 0.666, 0.674,
+0.690), and CYP1A2's turns at +0.3 with both neighbours higher.
+
+`src/submit.py --delta` now takes either one number or four comma-separated, defaulting to
+zero so nothing changes by itself. Changing the default changes what gets submitted and is the
+team's decision.
