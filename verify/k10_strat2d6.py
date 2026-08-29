@@ -180,13 +180,14 @@ def main():
     print("4. Кластерный бутстрап стратифицированной оценки")
     print("=" * 100)
     rng = np.random.default_rng(0)
+    draws = {}
     print("   Ресэмплятся ОБЕ стороны: обучающие кластеры и тестовые серии.\n")
     print(f"{'фермент':8s} {'стратифиц.':>11s} {'95% интервал':>22s} {'ноль внутри':>12s}")
     for c in CYPS:
         y, p, b, g, pt = S[c]
         u = np.unique(g)
         bs = []
-        for _ in range(300):
+        for _ in range(1500):
             idx = np.concatenate([np.where(g == k)[0]
                                   for k in rng.choice(u, len(u), replace=True)])
             yb, ob = y[idx][b[idx]], p[idx][b[idx]]
@@ -200,8 +201,15 @@ def main():
             if np.isfinite(v):
                 bs.append(v)
         lo, hi = np.percentile(bs, [2.5, 97.5])
+        draws[c] = [float(x) for x in bs]
         print(f"{c:8s} {res[c][1]:+11.3f} [{lo:+8.3f}, {hi:+8.3f}] "
-              f"{('да' if lo * hi < 0 else 'нет'):>12s}")
+              f"{('да' if lo * hi < 0 else 'нет'):>12s} "
+              f"  P(delta>=0) = {float((np.asarray(bs) >= 0).mean()):.3f}")
+    # Розыгрыши сохраняются: имея их, можно сравнивать правила по СРЕДНЕМУ, а не только по
+    # худшему случаю внутри диапазона. Это разные цели, и выбор между ними надо делать
+    # явно, а не наследовать (src/shrinkchoice.py, блок 6).
+    json.dump(draws, open(RES + "preds/delta_draws.json", "w"))
+    print(f"\n  розыгрыши сохранены: {RES}preds/delta_draws.json")
 
     print("""
 Как это читать.
