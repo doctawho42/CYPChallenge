@@ -1,6 +1,6 @@
 # Verification
 
-Twenty-two scripts in four groups. `f*` was a sweep over everything that had been computed
+Twenty-five scripts in four groups. `f*` was a sweep over everything that had been computed
 and written by that point; `g*` answers four questions raised against the document; `h*`
 tests two claims the document made about geometry and about reactivity; `k*` is about
 post-hoc rescaling of the predictions and about how far the test set sits from the training
@@ -34,6 +34,9 @@ which `k5_shift.py` writes. Everything else runs in any order.
 | `k4_enrich.py` | is the test set activity-enriched — nearest-neighbour-label proxy | ~2 min |
 | `k5_shift.py` | covariate shift measured in the model's own prediction space | ~5 min |
 | `k6_shift1d.py` | the same reweighting done along one axis, where it does not degenerate | ~1 min |
+| `k7_2d6shift.py` | the CYP2D6 shift against basic-amine composition, and the raw shifts | ~2 min |
+| `k8_kernel.py` | delta by inverting the kernel E[yhat\|y] — no instrument, no scalar propagation | ~5 min |
+| `k9_shape.py` | the test is shifted *and* widened, and what that does to ST-RAE | ~2 min |
 
 ## What it found
 
@@ -71,7 +74,7 @@ was at fault it is said so explicitly.
    `feats.py`, has always listed 30 and matches the copy committed in `results/`.
 10. There are **fourteen** verification scripts, not twenty-three, in both this file and
     the top-level README. (Eight more were added later, in the `h*` and `k*` groups; the
-    current count is twenty-two and both files say so.)
+    current count is twenty-five and both files say so.)
 11. `f12_cvhard.py` could never have run to completion as committed: line 34 referenced an
     undefined `fRES`. Fixed, and the script now reproduces the documented -0.153.
 12. The test-set clustering figures in §2 (194 groups, median size two, 55 groups of five
@@ -698,3 +701,88 @@ for the other three. The test is fully labelled at 0.104. So the correct differe
 -0.251, not -0.071, the expected shift is -0.138 against -0.190 measured, and the salt-bridge
 mechanism explains about **three quarters** of the observed shift rather than "about a fifth".
 The reported figure for the other three enzymes stays at a few percent. Fixed.
+
+
+**49. The propagation factor does not have to be estimated at all.** `k8_kernel.py`. Item 47
+closed three designs for it and was right about all three, but every one of them was an attempt
+to estimate a multiplier. The multiplier can be bypassed. The identity
+
+    E_test[yhat] = INT E[yhat|y] * p_test(y) dy
+
+holds exactly whenever the kernel E[yhat|y] is the same on both sets. It needs the *reverse*
+regression — whose slope in the linear case is the R^2/b that item 47 identified as the correct
+one — and here that kernel is estimated by isotonic regression, so linearity is not assumed
+either. The training label marginal is then tilted until the implied prediction mean matches the
+observed test mean. No instrument, so no exclusion restriction to violate; the reverse
+regression, so no algebraic collapse onto `b`; and propagation never has to be a scalar, because
+the direction is fixed by the tilt itself. The window cells at 1.22 and 1.55 are not evidence
+against this — along a descriptor the model reads directly, propagation really is near one; that
+is simply a different direction from the one the question is about.
+
+| enzyme | d(yhat) | b | R^2 | R^2/b | *b/R^2 linear | isotonic kernel | 95 % clustered |
+|---|---|---|---|---|---|---|---|
+| CYP1A2 | +0.014 | 0.789 | 0.215 | 0.273 | +0.050 | **+0.045** | −0.059 … +0.156 |
+| CYP2C9 | +0.147 | 0.898 | 0.364 | 0.405 | +0.364 | **+0.362** | +0.288 … +0.434 |
+| CYP2D6 | −0.190 | 0.743 | 0.146 | 0.196 | −0.968 | **−0.917** | −1.151 … −0.715 |
+| CYP3A4 | +0.437 | 0.999 | 0.592 | 0.593 | +0.737 | **+0.740** | +0.663 … +0.810 |
+
+A null worth having: isotonic and linear agree to 0.05, so kernel nonlinearity contributes
+nothing and the whole correction is the b -> R^2/b substitution.
+
+Against the shifts item 46 chose by worst-case reasoning — +0.3 / +0.4 / −0.1 / +0.8 — this
+agrees closely on the two enzymes that carry the decision (CYP3A4 +0.740 against +0.8, CYP2C9
++0.362 against +0.4, both by a completely different route) and disagrees sharply on CYP2D6
+(−0.917 against −0.1) and mildly on CYP1A2 (+0.045 against +0.3, and its interval contains zero
+exactly as item 47 says).
+
+The disagreement is not a tie to be split, and CYP2D6 is where this estimate should be trusted
+least rather than most. Its one assumption is kernel invariance, and item 45 is precisely a
+finding that the test's composition changed in a chemically specific way — the basic-amine
+depletion — on the enzyme where bases are the active class. If the test's low-activity compounds
+are low for a different structural reason than the training set's, E[yhat|y] is not the same
+function and the inversion is biased there. The fix follows from item 45 rather than contradicting
+it: estimate the kernel separately inside and outside the basic stratum and mix the two at the
+test's measured composition, which replaces the invariance assumption with a measured mixing
+weight on the one axis known to have moved. Not yet run.
+
+**50. Under an asymmetric cost the action is a quantile, not a midpoint.** With underestimation
+costing 0.087 and overestimation 0.013 on CYP3A4, a piecewise-linear loss is minimised at the
+quantile of level 0.087/(0.087+0.013) = **0.87** of the posterior for delta, not at its centre.
+On item 47's range that is +0.539 rather than +0.435; on this file's bootstrap, +0.782 rather
+than +0.741. This is the same Bayes-point argument the document already makes in section 10 for
+the point prediction under ST-RAE, applied one level up, and it means the range does not have to
+be narrowed before it can be acted on. The caveat is the shape of the loss: 0.87 is exact if
+0.087 and 0.013 are slopes at comparable distances, and if instead they are costs at the ends of
+the range with curvature in between, the expectation should be minimised over the measured curve
+— the answer moves but stays well above the midpoint.
+
+**51. One delta is not enough: the test is shifted *and* widened, and that partly pays the shift
+back.** `k9_shape.py`. Exponential tilting matches the test's prediction mean by construction and
+misses its spread: 0.625 / 0.504 / 0.517 / 0.718 against the test's 0.708 / 0.740 / 0.526 / 0.928,
+with KS rejecting on three enzymes of four. Tilting can move a mean; it cannot add variance. Every
+scheme in this repository that is parameterised by a single delta — `reweight.py` and
+`shrinkchoice.py` included — is therefore incompletely specified.
+
+This reverses one premise. "A sample narrower in activity has a smaller denominator, so ST-RAE
+rises anyway" assumes narrowing; the test is **wider**, by 1.13 / 1.40 / 1.05 / 1.10 in the
+standard deviation of the predictions, and at least that much in label space provided the kernel
+noise is no larger on the test — which the similarity geometry supports, since the test sits
+closer to the training set (0.587) than the training set does to itself (0.435).
+
+Fitting both moments degenerates on CYP2C9 exactly as the weights in `k5_shift.py` did —
+effective sample size 20 of 1285 — and those numbers are discarded rather than reported. The
+conservative version widens the label distribution only as far as the predictions widened, a
+lower bound, and keeps an effective size of 492 to 1355. Scored on the full ST-RAE, numerator
+included:
+
+| enzyme | delta = 0 | shift only | shift + widening |
+|---|---|---|---|
+| CYP1A2 | 0.8786 | 0.9028 | 0.8491 |
+| CYP2C9 | 0.6908 | 0.8716 | 0.7692 |
+| CYP2D6 | 0.9803 | 0.8104 | 1.0334 |
+| CYP3A4 | 0.5194 | 0.8029 | 0.6623 |
+| **macro** | **0.7673** | **0.8469** | **0.8285** |
+
+Widening returns about a quarter of what the shift costs, not all of it. The expectation for the
+intermediate leaderboard is therefore around **0.83 macro rather than 0.767**, and that is a
+single number, checkable on 24 September, which is the cheapest test any of this has.
