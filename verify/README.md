@@ -1018,7 +1018,7 @@ test before publication — an ordinary act that says nothing about the test.
 A-strong predicts the test must be **farther** from public chemistry than our training set is,
 since that is the property it selects on. Measured: the test is **closer**, by +0.014 of median,
 95% interval [+0.010, +0.021] over 2000 draws, none of them negative. Both sides are resampled
-and the training side by Butina cluster, because holding one side fixed is the defect of item 57.
+and the training side by Butina cluster, because holding one side fixed is the defect of item 55.
 A-strong is refuted.
 
 A third reading is not refuted and should not be. *A-weak* — the test was cleaned of exact
@@ -1074,8 +1074,8 @@ published numbers for no gain.
 offset.** `src/ablsrc.py`. Item 61 treated the gap as a bias and subtracted it three ways, the
 crudest of them harmfully. But the gap is a **selection** effect — ChEMBL holds what people
 chose to publish, which is what worked — and selection does not act uniformly across chemical
-space. Subtracting one number per enzyme repeats the error item 59 diagnosed for the test set:
-a shift is not the whole shape.
+space. Subtracting one number per enzyme repeats the error item 51 diagnosed for the test set:
+a shift is not the whole shape, and the test is widened as well as moved.
 
 One extra column instead, one for external rows and zero for ours, trained on the union and
 predicted with the column set to zero. The learner then decides region by region how much the
