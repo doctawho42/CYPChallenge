@@ -455,3 +455,36 @@ out of two, the hypothesis fails" claimed too much from correlations of -0.400 a
 n = 4, which sit in the middle of the permutation null: the honest statement is that the
 predicted ordering is not observed. The single-latent arm's ordering, by contrast, is stable -
 it holds under the median and without seed 0.
+
+**40. Swapping the instrument calibration between two enzymes: the map does not order them.**
+Three quantities order the four enzymes identically (item 38); the band was eliminated by
+rescoring, leaving the screen's informativeness and the calibration gain. Noise cannot
+separate those two, because it moves informativeness and leaves the map untouched. Swapping
+(E, h) between CYP2D6 and CYP3A4 is the one intervention that does the reverse: the compounds,
+labels, bands, split, initial weights, batch order and screening readout all stay literally
+identical, and only the instrument map moves. `src/trunk.py --swap-cal CYP2D6,CYP3A4`, single
+latent arm, lambda 0 and 3, four seeds, about fifteen minutes.
+
+Two controls, both passed. At lambda = 0 the screening term is absent from the loss, so
+g_of_pi is never called and the swap cannot reach the predictions: bit-identical on all four
+seeds. And CYP1A2 and CYP2C9 keep their own calibrations throughout, so their movement
+measures what a rerun costs: 0.019 and 0.009.
+
+The prediction was that CYP2D6, handed CYP3A4's steeper map, should be hurt far less than its
+usual +0.63, and CYP3A4, handed CYP2D6's shallower one, should go from near zero to tenths.
+Neither happened. Excluding seed 0, CYP2D6 moved +0.003 and CYP3A4 moved +0.016 - both smaller
+than the untouched CYP1A2 control. The damage stayed with the enzyme. The calibration gain is
+therefore out, eliminated by intervention rather than by correlation, and what remains is the
+screen's informativeness or something else in that enzyme's own data that has not been named.
+The experiment establishes where the mechanism is not.
+
+**41. Split seed 0 has now produced three separate false conclusions in the single-latent
+arm.** In the swap above its CYP2D6 movement is +0.61 against +0.00 on the other three, and
+the mean over four seeds reads +0.155 - fifteen times the control noise and apparently
+decisive - while the median and the three-seed mean read zero. The same seed alone produced
+the perfect four-point ordering of item 39, where dropping it turns Spearman -1.000 into
++0.400. And it is the seed on which the arm diverged to NaN at two noise rungs (item 37).
+Three conclusions in one section have leaned on one split. The four-seed rule in README's "How
+we work" exists for this, and it has now paid for itself three times; any per-enzyme claim in
+the joint-likelihood work should be read per seed before it is believed. Why that split is
+different has not been investigated.

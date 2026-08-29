@@ -256,6 +256,10 @@ def main():
     ap.add_argument("--epochs", type=int, default=EPOCHS)
     ap.add_argument("--wd", type=float, default=WEIGHT_DECAY)
     ap.add_argument("--blocks", default=BLOCKS)
+    ap.add_argument("--swap-cal", default="",
+                    help="обменять (E, h) между двумя ферментами, например CYP2D6,CYP3A4 - "
+                         "единственное вмешательство, которое двигает карту прибора, "
+                         "оставляя данные, метки, полосы, разбиение и информативность теми же")
     ap.add_argument("--noise", type=float, default=0.0,
                     help="eta: порча скринингового канала в его же ско, ранг падает в "
                          "sqrt(1+eta^2) раз, масштаб сохраняется")
@@ -265,8 +269,21 @@ def main():
 
     HIDDEN, DEPTH, DROPOUT = a.hidden, a.depth, a.dropout
     EPOCHS, WEIGHT_DECAY = a.epochs, a.wd
+    # Swapping the instrument map between two enzymes. lambda = 0 does not touch g_of_pi at
+    # all, so that arm is unaffected by construction and serves as the leak check.
+    global CAL_E, CAL_H
+    swap = ""
+    if a.swap_cal:
+        u, v = [CYPS.index(x.strip()) for x in a.swap_cal.split(",")]
+        CAL_E = CAL_E.copy(); CAL_H = CAL_H.copy()
+        CAL_E[[u, v]] = CAL_E[[v, u]]
+        CAL_H[[u, v]] = CAL_H[[v, u]]
+        swap = f"_swap{CYPS[u][3:]}-{CYPS[v][3:]}"
+        print(f"карта прибора обменяна: {CYPS[u]} <-> {CYPS[v]}; "
+              f"E {CAL_E.tolist()}, h {CAL_H.tolist()}", flush=True)
+
     if a.out is None:
-        tag = "" if a.noise == 0 else f"_noise{a.noise:g}"
+        tag = ("" if a.noise == 0 else f"_noise{a.noise:g}") + swap
         a.out = RES + f"preds/trunk_{a.mode}{tag}.json"
     lams = [float(v) for v in a.lams.split(",")]
     seeds = [int(v) for v in a.seeds.split(",")]
@@ -301,7 +318,8 @@ def main():
     print(df.to_string(index=False))
     meta = {"mode": a.mode, "blocks": a.blocks, "hidden": a.hidden, "depth": a.depth,
             "dropout": a.dropout, "epochs": a.epochs, "wd": a.wd, "lr": LR, "batch": BATCH,
-            "seeds": seeds, "lams": lams, "noise": a.noise, "device": a.device,
+            "seeds": seeds, "lams": lams, "noise": a.noise, "swap_cal": a.swap_cal,
+            "device": a.device,
             "pc0": PC0, "cal_e": CAL_E.tolist(), "cal_h": CAL_H.tolist(),
             "torch": torch.__version__, "numpy": np.__version__}
     json.dump({"table": table, "preds": saved, "meta": meta}, open(a.out, "w"))
