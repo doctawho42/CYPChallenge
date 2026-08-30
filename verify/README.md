@@ -1490,3 +1490,119 @@ fitted to the metric per fold; L1 is a shrinkage built into the fit; the tilt is
 happens to reduce the same variance. The raw column spans 0.046 across these four and the
 post-processed column spans 0.011. Whatever we were measuring in the raw column was largely the
 absence of a correction we always apply.
+
+**79. Item 77 had an exception and missed it: the trunk's screening channel survives.** The
+table in item 77 put five arms through the affine pair and found nothing left. It did not
+include the sixth — the joint-likelihood trunk — because that arm lives in another file and was
+measured raw, at $-0.0176$. Put through the same pipeline, with the same clipping the
+document's own model comparison uses and the same affine pair on all three:
+
+    seed    trunk lam=0   trunk lam=3   boosting    channel   trunk3 - boost
+       0         0.7397        0.7182     0.7150    -0.0214          +0.0032
+       1         0.7446        0.7142     0.7183    -0.0305          -0.0042
+       2         0.7376        0.7145     0.7164    -0.0231          -0.0019
+       3         0.7435        0.7128     0.7124    -0.0307          +0.0003
+    mean         0.7414        0.7149     0.7155    -0.0264          -0.0006
+
+The channel is worth **−0.0264 after post-processing**, the sign holds on all four seeds,
+t = −10.87, p = 0.002. It is the only intervention in this repository that survives. Clipping is
+not optional here and it is not a thumb on the scale: without it seed 0 gives 0.9192, which is
+the single compound of item 42 predicted at −360, and the document's existing comparison already
+clips for that reason.
+
+The second half does not follow, though. The trunk with the channel does **not** beat the
+boosting: 0.7149 against 0.7155, the sign alternates across seeds, t = −0.39, p = 0.72. Parity,
+not superiority. So the decision to shelve the trunk stands; what was wrong was writing the
+channel off as carrying nothing.
+
+**80. Why post-processing absorbs some interventions and not others, and it is one line.** The
+affine pair, and isotonic calibration too, are **monotone**. A monotone map can move scale and
+location and cannot change the order of predictions. So an intervention survives post-processing
+if and only if it adds **rank** information, and that is measurable directly rather than
+inferred:
+
+    change in Spearman with the truth      delta      t        p    signs
+    channel in the trunk (lam 3 - lam 0)  +0.0350   13.83    0.001    ++++
+    L1 instead of L2                      +0.0016    0.97    0.405    -+++
+    trunk lam=3 against boosting          +0.0016    0.53    0.632    -+++
+
+    rank itself: trunk lam=0  0.5297   trunk lam=3  0.5646   boosting  0.5630   L1  0.5646
+
+That closes three questions at once. The loss change collapses because it adds no rank — and
+note the collapse is not, as first supposed, because L1 merely rescaled: Spearman between L1 and
+L2 predictions is 0.82 to 0.96, so it reordered a great deal, and none of the reordering was
+information. The channel survives because it adds 0.035 of rank. And the parity between the
+trunk and the boosting has the same explanation as both: the channel lifts the trunk to exactly
+the rank the boosting already had, 0.5646 against 0.5630, and no further.
+
+The practical rule for every future ablation, and it costs nothing: **report the change in rank
+correlation beside the raw score.** The raw column answers "did the intervention move the
+predictions", which is not the question; the rank column answers "did it move them somewhere the
+post-processing cannot reach", which is. A post-isotonic score is the same criterion expressed in
+the metric's own units, and is the conservative bound, since isotonic spans a wider class of
+monotone maps than the affine pair does.
+
+**81. The mechanistic block survives post-processing, and the raw measure had been hiding it.**
+The question asked was whether the block does anything on CYP2D6 at all, prompted by item 76:
+`frac_prot_74` is never split on there, which looked like evidence that the chemistry explains
+how the test differs from the training set without entering the predictor. Both arms already
+existed on four seeds, so the answer cost nothing.
+
+    block against no block, 4 seeds     raw       p    after pair       p     d rho       p
+    CYP1A2                          -0.0016   0.600      -0.0016   0.372   -0.0019   0.375
+    CYP2C9                          -0.0170   0.022      -0.0147   0.029   +0.0148   0.017
+    CYP2D6                          -0.0151   0.088      -0.0221   0.000   +0.0454   0.002
+    CYP3A4                          +0.0017   0.498      +0.0007   0.777   +0.0008   0.619
+    macro                           -0.0080   0.069      -0.0094   0.006   +0.0148   0.003
+
+The chemistry **does** enter the predictor, decisively on CYP2D6: the block adds 0.045 of rank
+correlation there, more than the trunk's screening channel adds anywhere, and after the affine
+pair it is worth −0.0221 with p = 0.0004.
+
+Note the direction, which is the opposite of everything else in items 77 to 80. For every other
+intervention the raw score **overstated** the gain. Here it **understates** it: raw gives
+p = 0.088 on CYP2D6, not significant, and after post-processing p = 0.0004. That is exactly what
+item 80's criterion predicts. The block's contribution is rank, and the raw comparison mixes it
+with scale-and-location noise that the affine pair removes; strip that away and the signal comes
+out cleaner and larger.
+
+Two things this corrects. The document records "the mechanistic block's ST-RAE gain is
+indistinguishable from zero, both per enzyme and on the macro" as a negative result. That was
+measured raw and is wrong. And the reading of item 76 that this check was meant to test —
+chemistry explains the data but not the model — is refuted; what item 76 shows is narrower than
+it looked, namely that the block works on CYP2D6 through something other than the protonated
+fraction the text credits. Which part is the subject of `src/ablmech.py`.
+
+**82. Which part of the mechanistic block works, and it differs by enzyme in the way the
+chemistry says it should.** `src/ablmech.py`. Item 81 showed the block earns its place; item 76
+showed `frac_prot_74`, the feature the text credits, is never split on. Splitting the block into
+three groups — 16 counts of nitrogen and acid functionality, 8 protonation-state features
+including `frac_prot_74`, and 6 topological distances from a basic nitrogen to an aromatic ring
+plus the explicit CYP2D6 pharmacophore flags — resolves both. Four seeds, scored as item 80 says
+to score.
+
+    change in rank correlation vs no block    CYP2D6       p    CYP2C9       p
+    whole block (30)                         +0.0454  0.0017   +0.0148  0.0167
+    protonation state only (8)               +0.0454  0.0076   +0.0097  0.0013
+    functional-group counts only (16)        +0.0437  0.0130   +0.0111  0.0042
+    geometry and pharmacophore only (6)      +0.0580  0.0007   +0.0030  0.5454
+
+On **CYP2D6 the six geometric features carry it, and carry it better than all thirty**: +0.0127
+of rank over the whole block, p = 0.009. The other twenty-four dilute. On **CYP2C9 geometry does
+nothing at all** (p = 0.55) and the contribution comes from counts and protonation state, with no
+group distinguishable from the whole.
+
+That is the split the mechanism predicts. CYP2D6 binds through a salt bridge to Asp301 and
+Glu216, which is a **geometric** constraint — a protonated nitrogen at a particular distance from
+an aromatic ring — and geometry is exactly what those six features encode. CYP2C9's Arg108 binds
+anions, which is a question of **what the molecule contains**, not where. A prediction of this
+shape was recorded in the script's docstring before the run and holds on CYP2D6.
+
+It also settles item 76 without contradicting it. `frac_prot_74` is not split on because the
+geometric features carry the same chemistry more sharply, not because protonation is irrelevant:
+the state group alone still gives +0.0454, the same as the whole block. The groups are largely
+redundant with one another, and geometry is the sharpest of the three.
+
+One honest limit. Geometry's advantage over the whole block is solid in rank (p = 0.009) and only
+a trend in the metric after the affine pair (−0.0038, p = 0.090). "Six features beat thirty" is
+established about rank and not about ST-RAE, and the two are not the same claim.
