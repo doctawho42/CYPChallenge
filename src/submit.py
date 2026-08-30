@@ -97,6 +97,7 @@ from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_erro
 
 import feats as F
 from cypsplit import butina_folds
+from gp import prepare as gp_prepare, gp_predict
 from reweight import tilt
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
@@ -207,11 +208,31 @@ def oof_predictions(X, y, mask, fold, mode):
     за неё возьмётся усадка. По критерию пункта 80 это относится к тем вмешательствам,
     которые постобработка не поглощает, --- и проверено, что не поглощает.
     """
-    if mode == "ансамбль":
-        a = _oof_one(X, y, mask, fold, False)
-        b = _oof_one(X, y, mask, fold, True)
-        return [(u + v) / 2.0 for u, v in zip(a, b)]
+    if mode in ("ансамбль", "ансамбль-без-GP"):
+        parts = [_oof_one(X, y, mask, fold, False), _oof_one(X, y, mask, fold, True)]
+        if mode == "ансамбль":
+            parts.append(_oof_gp(X, y, mask, fold))
+        return [np.mean([p[e] for p in parts], axis=0) for e in range(len(CYPS))]
     return _oof_one(X, y, mask, fold, mode == "пул")
+
+
+def _oof_gp(X, y, mask, fold):
+    """Гауссов процесс вне фолда. Ядро на дескрипторах, потому что пункт 90 намерил, что
+    именно в этом пространстве сосед несёт информацию, а Морган --- худшее из четырёх."""
+    P = []
+    for e in range(len(CYPS)):
+        m = mask[:, e]
+        yy, fi = y[m, e], fold[m]
+        tf = gp_prepare(X[m])
+        Xi = tf(X[m])
+        p = np.zeros(len(yy))
+        for f in range(5):
+            trn, te = fi != f, fi == f
+            if te.sum() == 0:
+                continue
+            p[te] = gp_predict(Xi[trn], yy[trn], Xi[te])
+        P.append(p)
+    return P
 
 
 def fit_shrinkage(P, y, mask, delta=(0.0, 0.0, 0.0, 0.0)):
@@ -260,8 +281,9 @@ def main():
     global LO, HI
     ap = argparse.ArgumentParser()
     ap.add_argument("--shrink", action="store_true", help="применить усадку (см. docstring)")
-    ap.add_argument("--mode", default="ансамбль", choices=["раздельно", "пул", "ансамбль"],
-                    help="раздельно воспроизводит поведение до пункта 84")
+    ap.add_argument("--mode", default="ансамбль",
+                    choices=["раздельно", "пул", "ансамбль", "ансамбль-без-GP"],
+                    help="раздельно воспроизводит поведение до пункта 84; ансамбль включает GP")
     ap.add_argument("--delta", default="0,0.5,-0.5,0.8",
                     help="предполагаемый сдвиг средней активности теста относительно нашей "
                          "выборки. Пара (off, lambda) подбирается под ЭТО предположение. "
@@ -314,7 +336,7 @@ def main():
     print(f"обучаю на всей выборке (режим: {a.mode}) и предсказываю тест", flush=True)
     act = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})
     shared = None
-    if a.mode in ("пул", "ансамбль"):
+    if a.mode in ("пул", "ансамбль", "ансамбль-без-GP"):
         Xs = [pooled_design(X[mask[:, e]], e) for e in range(len(CYPS))]
         ys = [y[mask[:, e], e] for e in range(len(CYPS))]
         shared = gbm_reg().fit(np.vstack(Xs), np.concatenate(ys))
@@ -323,10 +345,13 @@ def main():
     for e, c in enumerate(CYPS):
         m = mask[:, e]
         parts = []
-        if a.mode in ("раздельно", "ансамбль"):
+        if a.mode in ("раздельно", "ансамбль", "ансамбль-без-GP"):
             parts.append(gbm_reg().fit(X[m], y[m, e]).predict(Xte))
-        if a.mode in ("пул", "ансамбль"):
+        if a.mode in ("пул", "ансамбль", "ансамбль-без-GP"):
             parts.append(shared.predict(pooled_design(Xte, e)))
+        if a.mode == "ансамбль":
+            tf = gp_prepare(X[m])
+            parts.append(gp_predict(tf(X[m]), y[m, e], tf(Xte)))
         p = np.mean(parts, axis=0)
         if lams is not None:
             L, mu = lams[e]

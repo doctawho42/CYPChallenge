@@ -1960,3 +1960,38 @@ A first attempt at this comparison was confounded and is worth recording as a ca
 within-fold to cross-fold nearest-neighbour similarity finds the cross-fold neighbour *closer*,
 because the training folds hold four times as many compounds. The control has to be a random
 split of the same sizes, not the other half of the same split.
+
+**92. A Gaussian process is worse than the boosting alone and improves it in the ensemble.**
+`src/gp.py`. The proposal was a GP with a Tanimoto kernel over Morgan fingerprints, the
+cheminformatics standard. Item 90 having found Morgan to be the least informative of four
+neighbour spaces, the kernel goes on standardised RDKit descriptors instead, clipped at five
+deviations because `Ipc` alone spans fourteen orders of magnitude and would otherwise define the
+metric by itself. Exact inference — 1285 to 2335 rows per enzyme is one to three seconds of
+Cholesky — with the lengthscale and noise chosen by marginal likelihood on the training folds.
+
+    four seeds                pair     rank
+    per-enzyme boosting     0.7155   0.5630
+    pooled boosting         0.7089   0.5767
+    GP alone                0.7237   0.5535
+    boosting ensemble       0.6921   0.5921
+    all three, equal        0.6845   0.5994
+
+**The GP is the worst of the three on its own and the ensemble is better with it**: −0.0076
+against the two-model ensemble, p = 0.0009, with rank up 0.0073, p = 0.0003. From the per-enzyme
+baseline the three-way ensemble is worth −0.0310. Weighting hardly matters — equal gives −0.0076,
+three-to-one −0.0075, five-to-one −0.0062 — so equal weight is used, being simplest and no worse.
+
+This is the fourth intervention to clear item 77's ceiling and the first from a different model
+family. The reason it works is the reason it was proposed: a GP posterior mean is a
+similarity-weighted average of neighbouring labels, which is the local structure a tree cannot
+represent, so its errors are decorrelated from the boosting's in a way the pooled and per-enzyme
+models' are not. Item 22's measurement that the test sits closer to the training set (0.587) than
+the training set sits to itself (0.435) is the setting that favours it.
+
+The first run had to be discarded and the reason is worth recording: the lengthscale sat on the
+grid's lower edge and the noise on its upper edge for three enzymes of four, so the grid chose
+rather than the marginal likelihood. That is item 59's error in a new place. The grid now spans
+0.0625 to 4 and 0.01 to 3, an edge check prints, and nothing sits on a boundary.
+
+`src/submit.py` gains the GP as a third ensemble member, with `ансамбль-без-GP` preserved to
+reproduce the previous state.
