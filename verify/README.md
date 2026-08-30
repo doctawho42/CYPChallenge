@@ -1659,3 +1659,37 @@ catch a calibration biased outside its fitted range, because permuting preserves
 Not run. The idea survives on CYP1A2 and CYP2C9, is questionable on CYP3A4 until the reversed
 selection is understood, and is dead on CYP2D6 — and any version of it needs the calibration
 re-fitted or validated on screen-negative compounds first, which is a separate measurement.
+
+**84. Pooling the four enzymes into one model survives post-processing, and the gain lands where
+it was pre-registered.** `src/ablpool.py`. Every model in this repository is fitted per enzyme, so
+CYP2D6 sees 1493 rows and nothing else, while the four label sets share most of their chemistry.
+Stacking them into one table with a four-way enzyme indicator gives 6525 rows and lets the shared
+part be learned on all of them.
+
+    seed 0          raw     after pair      rho
+    independent  0.7673         0.7150   0.5651
+    pooled       0.7415         0.7062   0.5792
+
+**−0.0088 after the affine pair**, above the 0.007 noise floor, with a rank gain of +0.0141. The
+third intervention in this repository to clear the ceiling, after the trunk's screening channel
+and the mechanistic block, and like both of them it clears it by moving rank.
+
+    rank by enzyme   independent   pooled    gain
+    CYP1A2                0.4957   0.5084  +0.0127
+    CYP2C9                0.5972   0.6029  +0.0057
+    CYP2D6                0.4027   0.4448  +0.0421
+    CYP3A4                0.7646   0.7607  -0.0039
+
+The docstring recorded "expect the gain on CYP2D6 above all" before the run, and it is there:
++0.042, level with what the mechanistic block gives on the same enzyme. CYP3A4 is the only loss,
+which is what the argument predicts — it has the most labels and the best fit already, so it has
+the least to borrow.
+
+One correction to how this should be described. Item 71 established that 73.3% of compounds carry
+a label for exactly one enzyme, so pooling does **not** give CYP2D6 the same molecules seen
+through four assays. It gives it five thousand *different* molecules labelled elsewhere. The
+mechanism is transfer across compounds, not multi-task on shared ones, and the version that would
+be multi-task on shared ones — adding each compound's pre-incubation pIC50, which item 71 showed
+is 100% co-located — is a separate arm and is not yet measured.
+
+One seed. Four are running.
