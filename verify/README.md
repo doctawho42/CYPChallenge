@@ -1728,3 +1728,48 @@ That is an argument for per-enzyme feature sets, and it is also exactly the extr
 freedom `src/ablmech.py` pre-registered a warning about: picking the best of four configurations
 per enzyme on the same data. On one seed only the main effects on three enzymes clear the noise
 floor; the interactions do not. Four seeds are running before any of this goes near the pipeline.
+
+**86. The rule for choosing which compounds get a curve, recovered — and it is not the one
+proposed.** `verify/k14_design.py`. Curves exist for about a third of the 4376 screened molecules
+and the dependence on the screening reading looks different on every enzyme: a hard threshold at
+the active end on CYP2D6, softer on CYP1A2, flat on CYP2C9, and rising toward the WEAK end on
+CYP3A4. The decile table reproduces an outside reading's exactly.
+
+The hypothesis offered was that all four are one rule — run a curve where the single point is most
+informative about π, which is the Fisher weight E·h·ln10·x/(1+x)², maximal at π = pC₀ — and that
+the apparent reversal on CYP3A4 is an artefact of looking along the wrong axis. It predicts that
+P(curve) plotted against Fisher weight collapses the four curves into one.
+
+**It does not collapse.** Between-enzyme spread is 0.212 at matched rank and 0.201 at matched
+weight, a ratio of 0.95. And the mechanism fails directly on half the enzymes: the median weight
+of curved against uncurved compounds is 0.326 / 0.564 on CYP1A2 and 0.466 / 0.529 on CYP3A4 —
+**backwards** — against 0.688 / 0.556 and 0.622 / 0.000 on CYP2C9 and CYP2D6.
+
+Significance was tried next and also fails to collapse (spread 0.226), but it localises the
+anomaly to one enzyme. The share of curves among screen-significant and non-significant compounds
+is 46.5% / 2.4% on CYP1A2, 34.4% / 8.1% on CYP2C9, 43.9% / 0.0% on CYP2D6 — three enzymes where
+**a non-hit essentially never gets a curve** — and 37.3% / **66.4%** on CYP3A4.
+
+What CYP3A4 follows instead is the compound's profile on the *other* three enzymes:
+
+    significant elsewhere      n     P(curve on 3A4)
+    on none                  115               0.930
+    on one                   693               0.632
+    on two                  1496               0.429
+    on all three            2072               0.298
+
+and it holds within both levels of the compound's own CYP3A4 significance — 0.854 / 0.563 / 0.344
+when 3A4 is significant, 0.985 / 0.722 / 0.489 when it is not. So on CYP3A4 curves were run on the
+compounds that look **clean elsewhere**, most reliably on those clean everywhere.
+
+That reads as ordinary practice rather than an optimal design: a compound that hits the other
+three is already disqualified as a promiscuous inhibitor and its exact CYP3A4 IC₅₀ changes nothing,
+while an apparently clean candidate has to be confirmed because a false negative there is
+expensive. It also explains the "reversed selection" without inverting any axis — the uncurved
+CYP3A4 compounds are the promiscuous strong inhibitors, which is why their median log2fc is
+−1.932 against −1.437 for the curved ones.
+
+Consequence for the pseudo-label proposal, which is why this was measured. The unlabelled pool is
+not a random remainder on any enzyme, and its composition differs by enzyme in a way now known:
+confirmed inactives on CYP1A2, CYP2C9 and CYP2D6, and promiscuous multi-enzyme inhibitors on
+CYP3A4. Any use of those readings inherits that composition.
