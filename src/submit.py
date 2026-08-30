@@ -136,7 +136,64 @@ def test_features(desc_names, mech_names):
 OFFGRID = np.round(np.arange(-3.0, 3.01, 0.05), 2)
 
 
-def fit_shrinkage(X, y, mask, fold, delta=(0.0, 0.0, 0.0, 0.0)):
+# Правило по delta выбрано под СМЕСЬЮ двух апостериоров, а не под одним. Обращение ядра
+# даёт разные ответы на раздельной и пулированной моделях --- +0.04 против +0.34 на 1A2,
+# +0.35 против +0.78 на 2C9, -0.51 против -0.41 на 2D6, +0.74 против +0.84 на 3A4, --- и
+# расхождение сопоставимо со всей выборочной неопределённостью, а на 2C9 её превышает.
+# Выбрать между ними без тестовых меток нельзя, поэтому розыгрыши обеих сложены с равным
+# весом (это решение, а не вывод) и правило подобрано под расширенное распределение.
+# Оно вышло между двумя крайними: +0.066 выигрыша против +0.047 под раздельным апостериором
+# и +0.101 под пулированным. CYP1A2 пропущен: его сдвиг стоит 0.003 макро при 36% шанса
+# навредить. verify/k15_pooldelta.py, verify/README.md пункт 87.
+
+
+def pooled_design(X, e):
+    """Признаки плюс четырёхпозиционный индикатор фермента."""
+    ind = np.zeros((len(X), len(CYPS)), np.float32)
+    ind[:, e] = 1.0
+    return np.hstack([X, ind])
+
+
+def oof_predictions(X, y, mask, fold, pool):
+    """Предсказания вне фолда по каждому ферменту --- раздельно или одной моделью.
+
+    Пул складывает все четыре набора меток в одну таблицу с индикатором фермента, так что
+    CYP2D6 обучается не на своих 1493 строках, а на 6525 всех, а специфику забирает через
+    взаимодействия с индикатором. На четырёх сидах это стоит -0.0067 макро ПОСЛЕ аффинной
+    пары (t = -9.06, p = 0.003) и прибавляет 0.0137 ранговой связи, то есть относится к тому
+    классу вмешательств, которые постобработка не поглощает (verify/README.md, пункты 80, 84).
+
+    Фолды --- по молекуле, поэтому все четыре копии соединения лежат в одном фолде и утечки
+    между ферментами нет.
+    """
+    P = [np.zeros(int(mask[:, e].sum())) for e in range(len(CYPS))]
+    for f in range(5):
+        if not pool:
+            for e in range(len(CYPS)):
+                m = mask[:, e]
+                fi, Xi, yy = fold[m], X[m], y[m, e]
+                a, b = fi != f, fi == f
+                if b.sum() == 0:
+                    continue
+                P[e][b] = gbm_reg().fit(Xi[a], yy[a]).predict(Xi[b])
+            continue
+        Xs, ys = [], []
+        for e in range(len(CYPS)):
+            sel = mask[:, e] & (fold != f)
+            if sel.any():
+                Xs.append(pooled_design(X[sel], e))
+                ys.append(y[sel, e])
+        model = gbm_reg().fit(np.vstack(Xs), np.concatenate(ys))
+        for e in range(len(CYPS)):
+            m = mask[:, e]
+            b = fold[m] == f
+            if b.sum() == 0:
+                continue
+            P[e][b] = model.predict(pooled_design(X[m][b], e))
+    return P
+
+
+def fit_shrinkage(P, y, mask, delta=(0.0, 0.0, 0.0, 0.0)):
     """Offset and lambda per enzyme, both chosen out-of-fold on the training data.
 
     Fitting the two jointly rather than fixing the offset and searching lambda: the
@@ -154,14 +211,7 @@ def fit_shrinkage(X, y, mask, fold, delta=(0.0, 0.0, 0.0, 0.0)):
     for e, c in enumerate(CYPS):
         m = mask[:, e]
         yy = y[m, e]
-        p = np.zeros(m.sum())
-        fi = fold[m]
-        Xi = X[m]
-        for f in range(5):
-            a, b = fi != f, fi == f
-            if b.sum() == 0:
-                continue
-            p[b] = gbm_reg().fit(Xi[a], yy[a]).predict(Xi[b])
+        p = P[e]
         lo = LO[m, e]; hi = HI[m, e]
         mu = p.mean()
         # Under an assumed shift the objective is the tilted one: our own labels reweighted
@@ -189,7 +239,9 @@ def main():
     global LO, HI
     ap = argparse.ArgumentParser()
     ap.add_argument("--shrink", action="store_true", help="применить усадку (см. docstring)")
-    ap.add_argument("--delta", default="0,0.3,-0.5,0.7",
+    ap.add_argument("--no-pool", dest="pool", action="store_false",
+                    help="обучать по ферментам раздельно, как до пункта 84")
+    ap.add_argument("--delta", default="0,0.5,-0.4,0.8",
                     help="предполагаемый сдвиг средней активности теста относительно нашей "
                          "выборки. Пара (off, lambda) подбирается под ЭТО предположение. "
                          "Ноль означает «тест распределён как обучающая выборка» - это не "
@@ -235,13 +287,23 @@ def main():
             raise SystemExit(f"--delta: нужно одно число или четыре через запятую, дано {len(d)}")
         print(f"предполагаемый сдвиг по ферментам: "
               + ", ".join(f"{c} {v:+.2f}" for c, v in zip(CYPS, d)), flush=True)
-        lams = fit_shrinkage(X, y, mask, fold, d)
+        P = oof_predictions(X, y, mask, fold, a.pool)
+        lams = fit_shrinkage(P, y, mask, d)
 
-    print("обучаю на всей выборке и предсказываю тест", flush=True)
+    print(f"обучаю на всей выборке ({'пул по ферментам' if a.pool else 'раздельно'}) "
+          f"и предсказываю тест", flush=True)
     act = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})
+    shared = None
+    if a.pool:
+        Xs = [pooled_design(X[mask[:, e]], e) for e in range(len(CYPS))]
+        ys = [y[mask[:, e], e] for e in range(len(CYPS))]
+        shared = gbm_reg().fit(np.vstack(Xs), np.concatenate(ys))
+        print(f"    одна модель на {sum(int(mask[:, e].sum()) for e in range(len(CYPS)))} строках",
+              flush=True)
     for e, c in enumerate(CYPS):
         m = mask[:, e]
-        p = gbm_reg().fit(X[m], y[m, e]).predict(Xte)
+        p = (shared.predict(pooled_design(Xte, e)) if a.pool
+             else gbm_reg().fit(X[m], y[m, e]).predict(Xte))
         if lams is not None:
             L, mu = lams[e]
             p = mu + L * (p - mu)

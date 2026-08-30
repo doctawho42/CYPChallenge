@@ -1792,3 +1792,48 @@ Consequence for the pseudo-label proposal, which is why this was measured. The u
 not a random remainder on any enzyme, and its composition differs by enzyme in a way now known:
 confirmed inactives on CYP1A2, CYP2C9 and CYP2D6, and promiscuous multi-enzyme inhibitors on
 CYP3A4. Any use of those readings inherits that composition.
+
+**87. The shift estimate is not invariant to the model, and the amount it moves is as large as
+everything we had called uncertainty.** `verify/k15_pooldelta.py`. Item 84 switched the submission
+to a pooled model, and the δ rule was re-chosen on the pooled predictions and found unchanged.
+That check used the wrong input: `src/shrinkchoice.py` takes the posterior over δ as a fixed file,
+and those draws came from inverting the kernel of the **per-enzyme** model. Re-estimating δ with
+`src/covshift.py` on pooled predictions on both sides — the blind predictions recomputed with the
+pooled learner rather than read from the file built by the other one — gives a different answer.
+
+    enzyme     delta (per-enzyme)              delta (pooled)          amplification
+    CYP1A2   +0.045 [-0.361, +0.435]   +0.344 [-0.004, +0.724]        3.4 -> 3.5
+    CYP2C9   +0.362 [+0.065, +0.665]   +0.801 [+0.480, +1.160]        2.4 -> 2.6
+    CYP2D6   -0.917 [-1.486, -0.434]   -0.405 [-1.109, +0.059]        4.5 -> 4.8
+    CYP3A4   +0.740 [+0.485, +0.986]   +0.847 [+0.589, +1.088]        1.7 -> 1.8
+
+The left column reproduces the published estimates exactly, so the harness is sound. A prediction
+recorded before the run — that the pooled model's better rank would steepen the kernel and shrink
+the amplification factors, most on CYP2D6 — **fails**: they rise slightly on all four. The rank
+gain does not reach the inversion.
+
+What moves instead is δ itself, by **+0.30 / +0.44 / +0.51 / +0.11**, all upward. The mechanism is
+visible: the gap between the mean test prediction and the mean out-of-fold training prediction
+grows under pooling on every enzyme, from +0.014 / +0.147 / −0.190 / +0.437 to +0.101 / +0.300 /
+−0.078 / +0.477. The pooled model raises what it says about the test more than what it says about
+the training set, and the inversion reads that as a larger label shift.
+
+δ is meant to be a property of the **test's labels**, which do not depend on our model. So this is
+a measurement of how badly the kernel-invariance assumption holds — the step section 11 flags as
+unverifiable and which had never been quantified. Set against the bootstrap half-widths of 0.40 /
+0.30 / 0.53 / 0.25, the model-induced movement is comparable everywhere and **larger than the
+whole sampling interval on CYP2C9**, from two models of the same family.
+
+The rule does change, contrary to what item 84 recorded. Under the pooled posterior the mean
+criterion picks +0.3 / +0.8 / −0.4 / +0.8 against +0.0 / +0.3 / −0.5 / +0.7, and all four enzymes
+pass the "not worse than doing nothing" check rather than three.
+
+**What was adopted.** Not either estimate — neither can be preferred without test labels, and the
+larger correction resting on the possibly-biased one is the more expensive mistake. The draws from
+both are pooled with equal weight, which is a decision and not a derivation, and the rule is chosen
+under that widened posterior: **0 / +0.5 / −0.4 / +0.8**, with CYP1A2 skipped again because its
+shift is worth 0.003 of macro against a 36% chance of harm. Per-enzyme fitting is then worth
++0.066, between the +0.047 and +0.101 the two single-model posteriors imply.
+
+This is the first time model uncertainty has entered the δ posterior at all. It makes the method
+stricter rather than softer: the systematic term was previously not counted anywhere.
