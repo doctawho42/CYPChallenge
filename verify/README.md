@@ -2181,3 +2181,37 @@ separately — so the substitution would have silently applied that shift twice.
 
 `src/submit.py` now grids over the shift; `src/shrinkchoice.py` is untouched, since its published
 numbers were produced with lambdas below 0.8 where the offset grid did not bind.
+
+**100. Three more members tried, one accepted, and the decorrelation criterion picks the wrong
+one.** `src/ablweak.py`. Item 92's regime — worse alone, better in the ensemble — suggests adding
+members for diversity rather than accuracy, and an outside reading proposed choosing them by
+residual decorrelation measured before inclusion. Three candidates, four seeds:
+
+    alone                pair     rank
+    random forest      0.7256   0.5602
+    ridge on desc      0.7239   0.5599
+    kNN on desc        0.7952   0.4816
+    (per-enzyme GBM)   0.7156   0.5630
+
+    added to the three-member ensemble    pair     rank   change        p
+    current three                       0.6845   0.5994        -        -
+    + ridge                             0.6819   0.6009   -0.0026   0.0005
+    + forest                            0.6866   0.5981   +0.0021   0.0033
+    + kNN                               0.6887   0.5959   +0.0042   0.0013
+    all six                             0.6873   0.5968   +0.0028   0.0006
+
+**Only the ridge helps.** A linear function of 247 descriptors, six seconds to fit, improves an
+ensemble of two boostings and a Gaussian process — because it errs smoothly where all three err
+locally. The forest and kNN both make it worse, and adding everything is worse than adding
+nothing.
+
+The criterion fails, and instructively. Ranked by residual decorrelation the order is kNN 0.892,
+pooled 0.896, per-enzyme 0.899, ridge 0.908, GP 0.918, forest 0.930 — so **the most decorrelated
+candidate is the most harmful one**. Decorrelation is necessary and not sufficient: kNN's rank of
+0.4816 against 0.56 for the others makes it too weak for its independence to be worth anything.
+The proposal did carry the qualifier "subject to individual accuracy above a floor", and this
+measures how much work that qualifier does — without it the criterion inverts.
+
+`src/submit.py` takes the ridge as a fourth member. Membership is now settled by measurement in
+every case rather than by the principle that more diversity is better, which this item shows is
+false as stated.

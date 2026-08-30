@@ -98,6 +98,7 @@ from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_erro
 import feats as F
 from cypsplit import butina_folds
 from gp import prepare as gp_prepare, gp_predict
+from sklearn.linear_model import RidgeCV
 from reweight import tilt
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
@@ -138,6 +139,7 @@ OFFGRID = np.round(np.arange(-3.0, 3.01, 0.05), 2)
 # Сетка по сдвигу предсказаний. Диапазон намеренно шире любого правдоподобного: оценки
 # delta лежат в пределах -1.3 .. +1.0, а сдвиг всегда меньше delta по модулю.
 SHIFTGRID = np.round(np.arange(-2.0, 2.001, 0.01), 2)
+DESC_MECH = 247   # ширина блока DESC+MECH в конце матрицы признаков
 
 
 # Правило по delta выбрано под смесью ТРЁХ апостериоров --- раздельной модели, пулированной
@@ -220,7 +222,36 @@ def oof_predictions(X, y, mask, fold, mode):
         parts = [_oof_one(X, y, mask, fold, False), _oof_one(X, y, mask, fold, True)]
         if mode == "ансамбль":
             parts.append(_oof_gp(X, y, mask, fold))
+            parts.append(_oof_ridge(X, y, mask, fold))
         return [np.mean([p[e] for p in parts], axis=0) for e in range(len(CYPS))]
+
+
+def _desc_scaled(X):
+    """Дескрипторы и механистический блок, стандартизованные с обрезкой."""
+    A = np.nan_to_num(X[:, -DESC_MECH:].astype(np.float64), posinf=0.0, neginf=0.0)
+    return np.clip((A - A.mean(0)) / (A.std(0) + 1e-9), -5.0, 5.0)
+
+
+def _oof_ridge(X, y, mask, fold):
+    """Гребневая на дескрипторах вне фолда, alpha по leave-one-out на обучающих строках.
+
+    Четвёртый член ансамбля. Поодиночке она слабее бустинга (ранг 0.560 против 0.565), но
+    в ансамбле даёт -0.0026 (p = 0.0005), потому что ошибается ГЛАДКО там, где деревья и
+    гауссов процесс ошибаются локально. Лес и kNN проверены тем же способом и оба ухудшают,
+    так что членство определяется измерением, а не принципом «больше разнообразия лучше»."""
+    P = []
+    for e in range(len(CYPS)):
+        m = mask[:, e]
+        yy, fi = y[m, e], fold[m]
+        Xi = _desc_scaled(X[m])
+        p = np.zeros(len(yy))
+        for f in range(5):
+            trn, te = fi != f, fi == f
+            if te.sum() == 0:
+                continue
+            p[te] = RidgeCV(alphas=np.logspace(-1, 4, 12)).fit(Xi[trn], yy[trn]).predict(Xi[te])
+        P.append(p)
+    return P
     return _oof_one(X, y, mask, fold, mode == "пул")
 
 
@@ -369,6 +400,10 @@ def main():
         if a.mode == "ансамбль":
             tf = gp_prepare(X[m])
             parts.append(gp_predict(tf(X[m]), y[m, e], tf(Xte)))
+            B = _desc_scaled(np.vstack([X[m], Xte]))
+            nb = int(m.sum())
+            parts.append(RidgeCV(alphas=np.logspace(-1, 4, 12))
+                         .fit(B[:nb], y[m, e]).predict(B[nb:]))
         p = np.mean(parts, axis=0)
         if lams is not None:
             L, mu_tr, sh = lams[e]
