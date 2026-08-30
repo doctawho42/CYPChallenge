@@ -1911,3 +1911,52 @@ A second pre-registration failed and is worth recording. The widened posterior w
 make the rule more cautious. It did the opposite on CYP2D6, −0.4 back to −0.5, because the
 ensemble's outlying estimate moved the mixture's centre more than it widened its spread. The
 prediction was wrong about which of the two effects would dominate, not about the mechanism.
+
+**90. Morgan is the worst space in which to look for a neighbour, and it is the one used
+everywhere.** `verify/k18_nbspace.py`. Two queued methods — neighbour labels as features, and a
+Gaussian process with a similarity kernel — both need a definition of "close", and this
+repository has always used Tanimoto over Morgan counts without testing it. The test needs no
+model: give each compound the label of its nearest neighbour among the other folds and
+rank-correlate with the truth.
+
+    space                  1A2      2C9      2D6      3A4     mean
+    Morgan / Tanimoto   0.1887  -0.0512   0.2126   0.0638   0.1034
+    pharmacophore pairs 0.1965   0.1407   0.1538   0.2575   0.1871
+    chemprop embedding  0.2109   0.1357   0.2273   0.3148   0.2222
+    RDKit descriptors   0.2110   0.2774   0.1268   0.4289   0.2610
+
+**Morgan is last of the four and carries nothing at all on CYP2C9** (−0.05). Descriptors win by
+2.5× over it, and the best space differs by enzyme: the embedding on CYP2D6, descriptors on
+CYP2C9 and CYP3A4. An outside prediction that pharmacophore similarity would beat substructure
+similarity holds — 0.187 against 0.103 — but its consequence, that neighbours should be built in
+pharmacophore space, does not: two other spaces beat it.
+
+A one-nearest-neighbour rule is a deliberately weak predictor and these numbers are far below the
+boosting's. The comparison is between spaces.
+
+**91. The split protects in both spaces, twice as strongly in the one it clusters on.** The
+finding above raises a question about the Butina split itself: it groups by Morgan similarity,
+and activity information turns out to travel by descriptors. Measured against a random split of
+the same fold sizes, on cross-fold nearest-neighbour similarity:
+
+    quantile of the random split's own distribution     random   Butina   ratio
+    Morgan, top 1%                                        1.0%     0.2%    4.0
+    Morgan, top 5%                                        4.9%     4.0%    1.2
+    descriptors, top 1%                                   1.0%     0.5%    2.1
+    descriptors, top 5%                                   5.0%     4.1%    1.2
+
+Medians are identical to three decimals in both spaces, 0.431 and 0.731, which reproduces item
+22's finding that the cluster split earns its keep in the tail rather than the median — and
+extends it to descriptors. In the extreme tail the split cuts Morgan neighbours by 4× and
+descriptor neighbours by 2.1×.
+
+So the split is not blind to the space that matters, but it protects there half as strongly.
+Held-out estimates are therefore somewhat optimistic in descriptor terms. The size of the gap is
+a factor of two in tail protection, not an order of magnitude, so this qualifies the split rather
+than invalidating it — and the qualification is that our numbers describe generalisation to new
+substructures better than generalisation to new property combinations.
+
+A first attempt at this comparison was confounded and is worth recording as a caution: comparing
+within-fold to cross-fold nearest-neighbour similarity finds the cross-fold neighbour *closer*,
+because the training folds hold four times as many compounds. The control has to be a random
+split of the same sizes, not the other half of the same split.
