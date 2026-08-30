@@ -1995,3 +1995,71 @@ rather than the marginal likelihood. That is item 59's error in a new place. The
 
 `src/submit.py` gains the GP as a third ensemble member, with `ансамбль-без-GP` preserved to
 reproduce the previous state.
+
+**93. The heteroscedastic decision layer fails its own pre-registered threshold.** `src/abhetero.py`.
+The argument for it was a proof rather than a hope: the affine pair is fitted once per fold and is
+therefore global, so a correction indexed by the individual compound's uncertainty cannot be
+expressed by it. It was the only proposal on the table that escapes item 77's ceiling by
+construction. Two conditioners, both fitted out of fold with nested cross-validation so that bin
+edges and per-bin pairs never see the rows they are applied to.
+
+    seed 0        raw    global pair   by band width   by model spread
+    CYP1A2     0.8786         0.8101          0.8105            0.8142
+    CYP2C9     0.6908         0.6546          0.6604            0.6583
+    CYP2D6     0.9803         0.9052          0.8904            0.8996
+    CYP3A4     0.5194         0.4853          0.4834            0.4838
+    macro      0.7673         0.7138          0.7112            0.7140
+
+The threshold recorded before the run was a macro gain of 0.005 for either conditioner, or a
+favourable sign on three enzymes of four. Band width gives −0.0026 and two of four; model spread
+gives +0.0002 and two of four. Neither passes, so the four-seed run is not made.
+
+What is not zero and should not be buried: on **CYP2D6 the band-width conditioner is worth
+−0.0148**, and CYP2D6 is the enzyme with the widest variation in band width and the worst fit. The
+effect exists, is concentrated on one enzyme, and is cancelled by a loss of the same size on
+CYP2C9. That is an open thread rather than a clean null.
+
+Item 80's criterion predicted this and the prediction was recorded only after the run was
+launched, which is worth admitting: a per-bin affine map is monotone inside each bin and moves
+rank only between bins, so by the rank rule it should not have been expected to survive. Being
+inexpressible by the global pair and being useful are different properties, and only the second
+one matters.
+
+**94. The mechanistic block should not be trimmed to its geometric part.** Item 82 found that on
+CYP2D6 six geometric features beat all thirty by +0.0127 of rank, which raised the question of
+whether the block should be cut down. Running the same split on CYP1A2 and CYP3A4 completes the
+macro, and the answer is no.
+
+On those two enzymes every subset of the block sits within 0.002 of every other and of no block at
+all, which agrees with item 81 — the block does nothing there in any composition. Combining with
+the CYP2D6 and CYP2C9 halves:
+
+    macro after the affine pair, four seeds     whole block (30)   geometry only (6)
+                                                          0.7156              0.7177
+
+Geometry wins on CYP2D6 and loses on CYP2C9, and the macro comes out **0.0021 in favour of keeping
+the whole block**. That is scenario two of the three `src/ablmech.py` pre-registered: a gain on one
+enzyme, a wash on the macro, and nothing left but per-enzyme feature sets — which is the extra
+degree of freedom the same file warned against choosing on this data.
+
+**95. Choosing the shift by worst case across models agrees with the mixture centre.** An outside
+reading suggested that after item 89 — where the ensemble's estimate landed outside its
+components' range — the rule should be picked by the worst case over models rather than the centre
+of their mixture, so that one nonlinear model cannot drag the answer. Compared on the three
+posteriors available:
+
+    enzyme    model medians           mixture centre   minimax
+    CYP1A2    +0.04 +0.33 +0.19               +0.195      +0.2
+    CYP2C9    +0.35 +0.78 +0.57               +0.574      +0.6
+    CYP2D6    -0.51 -0.41 -0.69               -0.538      -0.5
+    CYP3A4    +0.74 +0.84 +0.78               +0.781      +0.8
+
+They agree within one grid step everywhere, because the model medians sit roughly symmetrically
+about their own midpoint on each enzyme. The concern does not materialise, and the choice of
+criterion here is worth nothing — unlike the worst-case-versus-mean choice inside a single
+posterior, which item 57 measured at 0.05.
+
+This is a proxy and not the full comparison. Minimising the largest distance to any model's median
+is not the same as minimising the largest expected loss under any model's posterior; the two part
+company when the loss is asymmetric in δ. The proper version needs the assumed-by-true matrices
+per posterior, which `src/shrinkchoice.py` does not currently emit.
