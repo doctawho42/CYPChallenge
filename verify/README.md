@@ -1693,3 +1693,38 @@ be multi-task on shared ones — adding each compound's pre-incubation pIC50, wh
 is 100% co-located — is a separate arm and is not yet measured.
 
 One seed. Four are running.
+
+**85. Pooling and the mechanistic block do not substitute for each other, and the four enzymes
+fall into four different regimes.** The two interventions that clear item 77's ceiling both land
+hardest on CYP2D6 and give it almost the same rank gain, which invited the question whether they
+carry the same information. The 2×2 says no.
+
+    CYP2D6, rank, seed 0     no block    block    block effect
+    independent                0.3509   0.4027         +0.0518
+    pooled                     0.3847   0.4448         +0.0601
+    pooling effect            +0.0338  +0.0421
+
+Together they are worth +0.0939 against +0.0856 for the sum of the separate effects, so they
+complement rather than substitute: each is worth more in the presence of the other. That reads
+sensibly — the block points at the CYP2D6 recognition geometry explicitly, pooling supplies more
+molecules in which that geometry can be seen, and a pointer plus examples beat either alone. The
+excess over additivity, +0.0083, is barely above the 0.007 floor on one seed, so "they add" is
+firm and "they add with a bonus" is not.
+
+Per enzyme there is no single answer at all:
+
+    enzyme     block alone   pool alone   together   interaction
+    CYP1A2         -0.0012      +0.0265    +0.0115       -0.0138   substitutes
+    CYP2C9         +0.0138      +0.0038    +0.0195       +0.0019   independent
+    CYP2D6         +0.0518      +0.0338    +0.0939       +0.0083   complements
+    CYP3A4         +0.0010      -0.0044    -0.0029       +0.0005   both empty
+
+On **CYP1A2 the block is worthless alone and harmful under pooling** — pooling by itself gives
++0.0265 and adding the block drops that to +0.0115. On CYP2C9 the reverse: the block works and
+pooling does not. On CYP3A4 neither does anything, which fits — it has the most labels and the
+best fit already.
+
+That is an argument for per-enzyme feature sets, and it is also exactly the extra degree of
+freedom `src/ablmech.py` pre-registered a warning about: picking the best of four configurations
+per enzyme on the same data. On one seed only the main effects on three enzymes clear the noise
+floor; the interactions do not. Four seeds are running before any of this goes near the pipeline.

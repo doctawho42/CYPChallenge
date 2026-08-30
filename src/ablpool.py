@@ -57,6 +57,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default="0,1,2,3")
     ap.add_argument("--arms", default="независимо,пул,пул+TDI")
+    ap.add_argument("--blocks", default="FP+DESC+MECH",
+                    help="какие блоки признаков; FP+DESC отключает механистический")
     ap.add_argument("--out", default=RES + "preds/oof_pool.json")
     a = ap.parse_args()
     seeds = [int(x) for x in a.seeds.split(",")]
@@ -68,8 +70,9 @@ def main():
     td = (pd.read_csv(D + "cyp-challenge-TRAIN_TDI.csv")
             .set_index("Molecule_Name").reindex(rows.Molecule_Name).reset_index())
     z = np.load(D + "feats.npz")
-    X = np.hstack([z["FP"], z["DESC"], z["MECH"]]).astype(np.float32)
+    X = np.hstack([z[b] for b in a.blocks.split("+")]).astype(np.float32)
     n = len(X)
+    print(f"признаки: {a.blocks}, ширина {X.shape[1]}")
 
     # Маски и метки: прямое ингибирование --- то, на чём считаем; TDI --- только надзор.
     M = {c: tr[f"{c}_pIC50_direct_inhibition"].notna().to_numpy() for c in CYPS}
