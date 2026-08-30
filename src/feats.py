@@ -149,7 +149,44 @@ def build(smiles, desc_names=None, mech_names=None):
         dsc = dsc.reindex(columns=list(desc_names))
     if mech_names is not None:
         M = M.reindex(columns=list(mech_names))
+    dsc = _guard(dsc)
     return FP, dsc.fillna(0.0), M.fillna(0.0), ok
+
+
+# float32 хранит до 3.4e38, а стандартизация возводит в квадрат, поэтому опасный порог
+# для дисперсии --- корень из него. 1e12 --- порог другого рода: выше него колонка для
+# дерева уже вырождена по рангу, и это стоит знать, но ронять сборку из-за этого нельзя.
+VAR_OVERFLOW = float(np.sqrt(np.finfo(np.float32).max))
+RANK_DEGENERATE = 1e12
+
+
+def _guard(dsc):
+    """Catch descriptor columns that overflow float32, and say which.
+
+    The existing `replace([inf, -inf], nan)` runs on float64 values and therefore misses the
+    case that actually occurs: a value finite in float64 that becomes infinite when cast to
+    float32 downstream. Ipc does this - it grows exponentially with molecule size, reaches
+    1.5e36 on public ChEMBL compounds and overflows outright on one of them, while our own
+    training set tops out at 5.1e14 and never triggers it. The cleaning has to happen after
+    the cast that creates the problem, not before it.
+
+    Columns are cleared to NaN rather than clipped, because a value this large carries no
+    usable information either way and clipping would invent a number. RDKit ships `AvgIpc`
+    for exactly this reason; swapping it in would be the real fix and would move every
+    published number, so it is a deliberate change and not this function's business.
+    """
+    a = dsc.to_numpy(np.float64)
+    bad = np.isfinite(a) & ~np.isfinite(a.astype(np.float32))
+    if bad.any():
+        for j in np.where(bad.any(0))[0]:
+            print(f"  ВНИМАНИЕ: {dsc.columns[j]} переполняет float32 в "
+                  f"{int(bad[:, j].sum())} строках, эти ячейки обнулены")
+        dsc = dsc.mask(pd.DataFrame(bad, index=dsc.index, columns=dsc.columns))
+    mx = np.nanmax(np.abs(np.where(np.isfinite(a), a, np.nan)), axis=0)
+    for j in np.where(mx > RANK_DEGENERATE)[0]:
+        lvl = "переполнит дисперсию" if mx[j] > VAR_OVERFLOW else "вырождена по рангу"
+        print(f"  ВНИМАНИЕ: {dsc.columns[j]} доходит до {mx[j]:.2e}, {lvl}")
+    return dsc
 
 
 if __name__ == "__main__":

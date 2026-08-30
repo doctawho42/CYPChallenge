@@ -12,16 +12,25 @@ same Butina folds, the same masks, the same metric. The embedding comes from
 src/embed.py, which runs the organisers' pretrained chemprop encoder in a separate
 environment and leaves an array behind.
 
-Three rows are computed and two of them are controls:
+Four rows are computed and one of them is a control:
 
-  EMB          - the embedding alone, against FP+DESC alone;
-  EMB+MECH     - with the mechanistic block, against FP+DESC+MECH, the headline row;
-  FP+DESC+MECH - recomputed here rather than read from oof.json, so that any difference in
-                 environment or library version shows up as a discrepancy in a number we
-                 already know rather than as a silent bias in the new one.
+  EMB              - the embedding alone, against FP+DESC alone;
+  EMB+MECH         - with the mechanistic block, against FP+DESC+MECH, the headline row;
+  FP+DESC+MECH     - recomputed here rather than read from oof.json, so that any difference in
+                     environment or library version shows up as a discrepancy in a number we
+                     already know rather than as a silent bias in the new one;
+  FP+DESC+MECH+EMB - the embedding CONCATENATED rather than substituted.
 
-That third row is the one that makes the comparison trustworthy. If it does not reproduce
+The third row is the one that makes the comparison trustworthy. If it does not reproduce
 0.767 the rest of the table means nothing.
+
+The fourth row was missing from the first version of this file, and its absence made the
+conclusion weaker than it was written. The `rdkit2d` checkpoint is the honest choice for the
+substitution question, because it was pretrained to predict the very descriptors our DESC
+block contains - but that makes it the LEAST favourable choice for the complementarity
+question, since an encoder trained to reproduce what we already have is the one least able to
+add to it. Substitution losing therefore does not establish that the representation was not
+the bottleneck; only concatenation losing as well does that.
 
 Reads data/feats.npz, data/emb_chemprop_rdkit2d.npz, results/preds/oof.json. Writes
 results/preds/oof_emb.json.
@@ -52,6 +61,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default="0")
     ap.add_argument("--emb", default=D + "emb_chemprop_rdkit2d.npz")
+    ap.add_argument("--only", default="", help="через запятую, какие наборы считать")
     ap.add_argument("--out", default=RES + "preds/oof_emb.json")
     a = ap.parse_args()
     seeds = [int(x) for x in a.seeds.split(",")]
@@ -65,11 +75,18 @@ def main():
         raise SystemExit(f"эмбеддинг {len(E)} строк против {len(rows)} в rows.csv")
 
     SETS = {
-        "EMB":          E,
-        "EMB+MECH":     np.hstack([E, z["MECH"]]),
-        "FP+DESC+MECH": np.hstack([z["FP"], z["DESC"], z["MECH"]]),
+        "EMB":              E,
+        "EMB+MECH":         np.hstack([E, z["MECH"]]),
+        "FP+DESC+MECH":     np.hstack([z["FP"], z["DESC"], z["MECH"]]),
+        "FP+DESC+MECH+EMB": np.hstack([z["FP"], z["DESC"], z["MECH"], E]),
     }
-    print(f"эмбеддинг {E.shape}, для сравнения FP+DESC+MECH {SETS['FP+DESC+MECH'].shape}\n")
+    if a.only:
+        keep = set(a.only.split(","))
+        SETS = {k: v for k, v in SETS.items() if k in keep}
+        if not SETS:
+            raise SystemExit(f"ни одно имя не подошло: {sorted(keep)}")
+    print(f"эмбеддинг {E.shape}; считаю наборы: "
+          + ", ".join(f"{k} {v.shape[1]}" for k, v in SETS.items()) + "\n")
 
     out, table = {}, []
     for seed in seeds:

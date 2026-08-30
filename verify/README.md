@@ -999,3 +999,494 @@ the fewest shared compounds - six - so its offset is the least known of the four
 **One split seed.** This repository's rule is four, and until then 0.013 is an indication
 rather than a result. It is nonetheless twice everything the choice between boosting and the
 neural trunk is worth, from a source untouched for two months.
+
+*Later.* The four-seed run was started and stopped after six of sixteen cells, because items 69
+and the loss experiment produced arms worth 0.031 and 0.046 against this arm's 0.013, and it was
+holding half the machine for eleven more hours to validate the weakest of the three. What it
+reached is kept here rather than discarded: the control gives 0.7673 and 0.7690 on seeds 0 and 1,
+the raw external arm 0.7545 and 0.7482, so the effect is **−0.0128 and −0.0208** and its sign
+holds on both. Two seeds, and the second is the larger. The rule of four now belongs to the arms
+that superseded this one.
+
+**62. The zero overlap with the test says nothing about the test.** `k12_extneighbors.py`.
+Exact overlap is the wrong check on its own: a compound one methyl from a test compound leaks
+and matches nothing. Measured for every test compound its highest Tanimoto to the external
+set — median 0.329, 75th percentile 0.382, **fraction above 0.7 exactly zero, above 0.9 exactly
+zero**. Our own compounds sit at 0.450 from each other, so the external set is further from the
+test than our training set is from itself. Leakage is closed by proximity, not only by identity.
+
+The zero then invites an inference, and the obvious one is wrong. Overlap with our training
+set is 64 of 4905, or 1.30%, which on 750 test compounds predicts about ten matches; the chance
+of none is 5·10⁻⁵, so the zero is deliberate. Two readings survive and they point opposite ways.
+*A-strong*: the test was assembled to avoid publicly known chemistry — then it is depleted of
+public compounds and the model this document rests on, test = anchors plus their analogues from
+the same pool, is weakened. *B*: the released external file was deduplicated against the blinded
+test before publication — an ordinary act that says nothing about the test.
+
+A-strong predicts the test must be **farther** from public chemistry than our training set is,
+since that is the property it selects on. Measured: the test is **closer**, by +0.014 of median,
+95% interval [+0.010, +0.021] over 2000 draws, none of them negative. Both sides are resampled
+and the training side by Butina cluster, because holding one side fixed is the defect of item 55.
+A-strong is refuted.
+
+A third reading is not refuted and should not be. *A-weak* — the test was cleaned of exact
+public matches only — predicts precisely what is observed, no exact overlap and an untouched
+neighbour distribution, and is observationally identical to B. It is also harmless: under it at
+most 1.3% of the test was removed, against the twofold depletion in basic amines that carries
+the CYP2D6 shift. The orders of magnitude are not comparable and the δ analysis stands either way.
+
+**63. Why CYP2C9 alone is harmed by the external data, and the answer is not their labels.**
+`k11_exttransfer.py`. Item 61 offered an explanation that does not fit: that CYP2C9's paired
+offset rests on six shared compounds and is unreliable. But CYP2C9 is harmed in the arm where
+**no offset is applied at all**, and it has 2506 external labels, second most of the four.
+Neither thin estimation nor scarce data can be the cause.
+
+One run separates their labels from our merging — train on the external rows alone and predict
+our compounds. Nothing is merged, so whatever appears belongs to their data.
+
+    enzyme     ext   ST-RAE   our rho   theirs   ratio   effect
+    CYP1A2    1343    0.973     0.496    0.351    0.71   -0.026
+    CYP2C9    2506    1.236     0.597    0.397    0.66   +0.022
+    CYP2D6    2540    1.237     0.403    0.340    0.84   -0.036
+    CYP3A4    4773    1.247     0.765    0.535    0.70   -0.011
+
+**CYP2C9 does not stand out.** By raw rank correlation it is second of the four, and by ST-RAE
+it ties CYP2D6 and beats CYP3A4. The hypothesis that their CYP2C9 labels pool incompatible probe
+substrates — plausible chemistry, since CYP2C9 IC50 depends strongly on whether the probe is
+diclofenac or tolbutamide — is not supported by this measurement, and is not testable from the
+published file at all, which carries SMILES and four label columns and no assay metadata.
+
+Raw rank correlation is not comparable across enzymes, which are measured on different compounds
+with different predictability. Dividing by our own out-of-fold rank on the same compounds removes
+that, and the resulting **ratio orders the four enzymes exactly as the effect does**: CYP2D6
+transfers best and gains most, CYP2C9 transfers worst and is the only one that loses. The
+break-even ratio lies between 0.66 and 0.70. Four points, and a perfect ordering arises by chance
+with probability 1/24 — so this is a hypothesis carrying a prediction, not a result: raise the
+transfer on CYP2C9 and the sign must flip.
+
+**64. One descriptor overflows, on the external compounds and nowhere else.** Both external runs
+printed `overflow encountered in cast`. The cause is `Ipc`, which grows exponentially with
+molecule size: our 4905 compounds reach 5.1·10¹⁴, the external 8004 reach **1.5·10³⁶**, and one
+exceeds float32 outright. For the boosting this is harmless — bins are quantiles and the infinity
+lands in the top one. For the neural trunk it is not: the standardising variance is computed in
+float32, squaring 10³⁶ overflows, and the column is divided by infinity and **silently becomes
+zero**. Both arms of the trunk experiment lose it equally, so the channel's contribution — the
+quantity that experiment exists to measure — is unaffected; what it changes is the account of the
+bookkeeping term, from "the normalisation moved" to "one feature was deleted".
+
+The asymmetry is worth naming rather than assuming harmless. The trunk with external rows ran on
+2294 live columns and every boosting arm on 2295, and the trunk's own published baseline keeps all
+2295 because our training set tops out at 5.1·10¹⁴ and the sum of squares stays inside float32.
+The lost column is a degenerate one and its loss sits entirely inside the bookkeeping term, but a
+comparison between two families should not carry an unremarked difference in what they were given.
+
+The submission path was checked and is clean: the blinded test's largest `Ipc` is 4.1·10⁸, nine
+orders below overflow. No change was made — guarding the descriptor in `feats.py` would move
+published numbers for no gain.
+
+**65. The gap between the two label sets is not uniform, and one indicator column beats every
+offset.** `src/ablsrc.py`. Item 61 treated the gap as a bias and subtracted it three ways, the
+crudest of them harmfully. But the gap is a **selection** effect — ChEMBL holds what people
+chose to publish, which is what worked — and selection does not act uniformly across chemical
+space. Subtracting one number per enzyme repeats the error item 51 diagnosed for the test set:
+a shift is not the whole shape, and the test is widened as well as moved.
+
+One extra column instead, one for external rows and zero for ours, trained on the union and
+predicted with the column set to zero. The learner then decides region by region how much the
+external labels say about ours.
+
+    seed 0                    1A2      2C9      2D6      3A4    macro
+    no external rows        0.8786   0.6908   0.9803   0.5194   0.7673
+    external as they are    0.8526   0.7124   0.9444   0.5087   0.7545
+    source indicator        0.8548   0.6905   0.9386   0.5179   0.7505
+
+The comparison was pre-registered because this arm is a strict generalisation of both
+extremes: split on the indicator at the root and it reproduces the first row, never split on
+it and it reproduces the second. Landing between them would have meant the indicator bought
+nothing a constant did not. It landed **below both**, so the borrowing genuinely has to differ
+across regions.
+
+The headline is the second column, not the macro. **CYP2C9 flips sign**, from +0.022 to
+−0.0003, and is no longer the one enzyme the external data harms. That is the prediction item
+63 attached to its own hypothesis — raise the transfer on CYP2C9 and the sign must flip — made
+before this arm was run and satisfied on the first attempt. CYP2D6 improves further as well,
+0.9444 to 0.9386. CYP1A2 and CYP3A4 give back a little against the raw arm and stay ahead of
+the control.
+
+One seed. The rule here is four, and this needs them before it enters the document as a number
+rather than as a direction.
+
+**66. The auxiliary head works, and it works on the enzyme the merge breaks.** `src/trunkext.py`.
+The joint-likelihood trunk was built, measured and shelved because the screening channel it was
+given carries little about pIC50. The machinery was never the problem; the channel was. The
+external CYP labels are a channel with information in it, and feeding them to the auxiliary head
+instead removes the question that the boosting route has to answer — how the two label scales
+relate — rather than answering it. External rows enter with fold index −1, so they sit in every
+training fold and no held-out one; their pIC50 entries are NaN and ours are NaN in the auxiliary
+block, so neither head sees the other's rows. `trunk.py` is imported unchanged and its published
+numbers are untouched.
+
+The first attempt at a control was wrong and the run refuted it. It looked obvious that λ = 0 here
+must reproduce `trunk_twohead.json` exactly, since external rows carry no pIC50 and so contribute
+no gradient to the primary head. Maximum absolute difference: 6.49. The cause is not a leak in the
+fold logic — feature standardisation is computed over the training rows and there are now 12909
+instead of 4905, and the step count rises because epochs are fixed and batches are not. External
+rows change the model without contributing a single gradient through either head. Item 64 names
+one concrete part of it: `Ipc` overflows and the column is silently deleted.
+
+So the effect decomposes into two terms, and conflating them would have made the whole measurement
+noise:
+
+    seed    baseline   lambda 0   lambda 3    channel    bookkeeping
+       0      0.7672     0.7748     0.7684    -0.0064        +0.0076
+       1      0.7837     0.7843     0.7748    -0.0095        +0.0006
+       2      0.8099     0.7839     0.7627    -0.0212        -0.0260
+       3      0.7623     0.7938     0.7606    -0.0332        +0.0315
+    mean      0.7808     0.7842     0.7666    -0.0176        +0.0034
+
+**The channel is worth −0.0176 and its sign holds on all four seeds.** The bookkeeping term — what
+the rows do through normalisation and step count alone, with no information transfer — averages
+near zero but ranges over 0.058, three times the effect it sits on top of. Any single-seed reading
+against the published baseline would have measured mostly that.
+
+Per enzyme the channel and the boosting route do not overlap. The channel gains most on CYP1A2
+(−0.039) and CYP2D6 (−0.022); appending rows to the boosting gains most on CYP2D6 (−0.036) and
+CYP1A2 (−0.026). The difference that matters is CYP2C9: the boosting route **harms** it by +0.022
+and the auxiliary head helps it by −0.008. That is precisely the design argument — each source
+keeps its own output and no assumption about the relationship between scales is needed — and the
+enzyme that breaks under forced merging is the one it rescues.
+
+An earlier reading of two seeds put the channel at −0.008 and concluded that a single indicator
+column beat the whole shared latent. On four seeds it does not: −0.0176 against the indicator's
+−0.0168. The comparison is still not settled, because every boosting arm here has one seed and
+this has four.
+
+**67. Item 63's hypothesis was never distinguishable from its rival, and the caveat named the
+wrong risk.** Item 63 found that the external data's per-enzyme effect is ordered exactly by how
+well the external labels transfer, and guarded the finding with "four points, a perfect ordering
+arises by chance with probability 1/24". An outside reading proposed a different explanation for
+the same ordering — not transfer but **identifiability of the source offset**, since the number of
+compounds shared between the two label sets is 15 / 6 / 41 / 9 and CYP2C9 has the fewest.
+
+Both explanations were checked against the same four numbers, and they are **rank-identical**.
+Transfer ratio 0.71 / 0.66 / 0.84 / 0.70 has ranks [3, 1, 4, 2]; pair count 15 / 6 / 41 / 9 has
+ranks [3, 1, 4, 2]. Both give ρ = −1.00 against the effect of appending rows. On this data no
+measurement can prefer one, and the guard should have asked how many hypotheses produce the same
+ordering rather than how often chance produces an ordering at all.
+
+Worse for both: **neither explains the indicator column's own contribution**, which is what
+actually flipped CYP2C9. Against the column's per-enzyme gain both give ρ = +0.20. And the
+mechanism named in item 63 is not the mechanism that operated — an indicator column does not raise
+transfer, it lets the model express a source correction — so the prediction "raise the transfer and
+the sign flips" was satisfied by something else. Affirming the consequent, and it was written as a
+confirmation.
+
+**68. The pretrained encoder does add information; item 61's headline was wrong.** That item
+concluded the representation was never the bottleneck, from a table in which the embedding only ever
+**replaced** our features. The missing row is concatenation, and the reason it is the row that
+decides is specific to this checkpoint: `rdkit2d` was pretrained to predict the very RDKit
+descriptors our DESC block contains, which makes it the honest choice for the substitution question
+and the **least** favourable one for the complementarity question. An encoder trained to reproduce
+what we already have is the one least able to add to it.
+
+    FP+DESC+MECH (control)   0.7673
+    EMB (substitution)       0.7784
+    EMB+MECH                 0.7765
+    FP+DESC+MECH+EMB         0.7589
+
+Concatenated it is worth **−0.0084** while as a replacement it loses 0.011. It helps CYP1A2 (−0.022)
+and CYP2D6 (−0.039) and harms CYP2C9 (+0.009) and CYP3A4 (+0.019) — the same per-enzyme pattern the
+external data shows. One seed.
+
+**69. The scale gap is selection on two enzymes, quantity on a third, and neither on the fourth.**
+`src/ablsrc.py`. If the gap between the two label sets is selection — ChEMBL holds what people chose
+to publish — then the correction belongs on the WEIGHT, not the label: reweighting moves the label
+distribution without altering a single label, where subtracting an offset corrupts every one of
+them. Exponential tilting is the minimum-relative-entropy way to do it and was already written in
+`src/reweight.py` for the delta work.
+
+Two targets, because they answer different questions. Tilting to our own mean removes the whole
+marginal gap, which is the quantity that as a subtraction was catastrophic. Tilting to the **paired**
+offset removes only the source effect measured at fixed chemistry, leaving the enrichment in actives
+intact as information.
+
+    no external rows          0.7673
+    external as they are      0.7545
+    source indicator          0.7505
+    tilt to our mean          0.7452
+    tilt to the paired offset 0.7363
+
+**Tilting to the paired offset is the best result this repository has produced**, −0.0310 against the
+control, twice the indicator and six times the entire budget of the model-choice question.
+
+The obvious alternative explanation is that tilting simply uses less external data — effective sample
+size falls from 4773 to 106 on CYP3A4 under the marginal target. The control is to permute the same
+weights across rows, which preserves effective sample size exactly and destroys the correlation with
+the label. It separates the two cleanly:
+
+    change from the raw arm      shape      quantity
+    CYP1A2                      +0.0013      -0.0143
+    CYP2C9                      -0.0363      +0.0028
+    CYP2D6                      -0.0449      +0.0170
+    CYP3A4                      +0.0268      +0.0103
+    macro                       -0.0133      +0.0039
+
+The two mechanisms are nearly orthogonal and distributed differently across enzymes. On CYP1A2 the
+whole gain is **quantity** and the shape does nothing. On CYP2C9 and CYP2D6 the **shape** does
+everything and reducing the data actively hurts. On CYP3A4 the marginal tilt is worse than random
+down-weighting of the same strength, which is what the paired target then repairs — effective sample
+goes from 106 to 3010 and the enzyme moves from 0.5458 to 0.5020. In the macro the two mechanisms
+partly cancel, and without the permutation control the whole gain would have been credited to one.
+
+**70. The noise floor at fixed seed is 0.007, and it was never measured before.** A falsifiable
+prediction accompanied item 69: the paired and marginal targets coincide on CYP2D6 (−0.60 against
+−0.59), so the two arms should differ there by nothing. They differ by 0.0071 — from a change of 0.01
+in the tilt target, propagated through different split choices. On CYP2C9 the targets differ by 0.38
+and the arms differ by 0.0053, less than that.
+
+So 0.007 is this pipeline's chaotic sensitivity at a fixed seed and fixed folds, and differences below
+it are not interpretable even before seed variation is considered. This is a smaller number than the
+0.016 that item 7 measures for a change of split seed, and a larger one than several comparisons
+recorded earlier in this log were resting on.
+
+**71. The three-channel proposal passes its size gate by two orders of magnitude, and fails a
+different one.** `k13_channels.py`. A mechanistic proposal separates two latents the single pIC50
+target confounds — affinity, and turnover into something reactive — using direct inhibition,
+time-dependent inhibition and Emax as three views. The objection raised against it was that the
+compounds carrying all three might number in the dozens, which would end it before any modelling.
+
+That objection was a guess, and it was wrong by a factor of a hundred. The channels are essentially
+co-extensive: every compound with a direct pIC50 also has a TDI curve and an Emax, giving 1412 /
+1285 / 1493 / 2334 triples, **6524 compound-enzyme observations**, the whole labelled set. On
+CYP2D6 and CYP3A4 the binary `is_TDI` covers them too, so there are four channels rather than
+three; on CYP1A2 and CYP2C9 that label does not exist at all.
+
+The constraint is elsewhere and it is real. Direct and TDI pIC50 are the same molecule under two
+incubation protocols, and they correlate at 0.906 to 0.990. Everything the second channel says
+about turnover lives in the residual between them, whose spread is 0.17 / 0.28 / 0.45 / 0.33 of the
+signal's own. On CYP1A2 a turnover latent would have to be estimated from a sixth of the variance.
+Emax is a genuinely separate axis, |r| about 0.4 against affinity, so a third dimension does exist.
+
+One anomaly to explain before building rather than after: on CYP2D6 the sign of the Emax
+relationship is **reversed**, +0.770 against −0.394 / −0.407 / −0.462 elsewhere, and the same flip
+appears in the TDI arm. It is the same enzyme that is anomalous in the salt bridge, in the sign of
+its shift, and in how well external data transfers to it.
+
+**72. Emax has no dynamic range, which kills a proposal and one of my own claims.** `k13_channels.py`.
+Item 71 recorded that Emax is a genuinely separate axis because it correlates with affinity at |r|
+about 0.4. That was wrong, and wrong in the way this log keeps finding: a rank correlation says
+nothing about whether there is anything to measure. The range does.
+
+    enzyme      min      1%     50%     99%     max     IQR   above -0.5
+    CYP1A2    -1.15   -1.10   -0.99   -0.82   -0.46   0.072       0.071%
+    CYP2C9    -1.27   -1.19   -1.02   -0.73   -0.50   0.106       0.078%
+    CYP2D6    -1.08   -1.06   -1.03   -0.91   -0.83   0.048       0.000%
+    CYP3A4    -1.06   -1.04   -0.98   -0.84   -0.37   0.020       0.214%
+
+**Every compound in the set inhibits essentially completely.** Ninety-nine percent of the mass sits
+below −0.73 and not one of 6524 observations exceeds zero. The |r| ≈ 0.4 correlations are ordering
+inside a band 0.05 wide. A latent for mechanism cannot rest on a channel that is nearly constant,
+so the third view in the affinity-and-turnover proposal is not available, and that is a harder
+obstacle than the collinearity of the first two.
+
+It also refutes a prediction derived from one-site against multi-site binding: Emax should have been
+bimodal on CYP3A4, where a large cavity with several sub-sites would leave partial inhibitors, and
+unimodal at full inhibition on CYP2D6, where a single small site with a salt bridge would be
+occluded completely. A Gaussian mixture prefers two components everywhere, but the components are
+0.03 to 0.13 apart — it is splitting one narrow blob. And the direction is reversed: CYP3A4 has the
+**narrowest** distribution of the four, IQR 0.020 against CYP2C9's 0.106.
+
+**73. Rank agreement on four points does not single out a hypothesis, and this is the third time.**
+Item 67 found that two explanations of the same ordering are rank-identical, and recorded it as "no
+measurement here can prefer one", which is too strong: nothing about rank ordering can prefer one,
+and rank ordering on four points is the weakest evidence available. The pattern has now failed three
+times — the screening correlation against ST-RAE change, and transfer against pair count.
+
+The rule to carry: **agreement of ranks at n = 4 does not select a hypothesis, it only fails to
+refute it.** Hypotheses of this kind separate under intervention, not under more correlations. The
+two candidates here make different predictions about what happens if more or better-matched external
+labels are added on CYP2C9 — a transfer deficit predicts improvement, an identifiability deficit
+predicts none, because the indicator column has already extracted what there was. Those are two
+runs, not two correlations.
+
+**74. Pre-registration: three orderings for where the L1 gain should land.** Switching the learner's
+loss from squared to absolute error is worth **−0.0455** of macro on seed 0, 0.7218 against 0.7673.
+That is larger than the external data with its best correction (0.031) and nine times the whole
+budget of the model-choice question (0.005). The number is not in doubt; the mechanism is, and three
+candidates make different predictions about which enzyme gains most. This is written before the
+per-enzyme table exists.
+
+*Outliers.* Squared error chases extreme residuals and absolute error does not. Measured: the worst
+one percent of compounds carries 5.1 to 8.2 percent of ST-RAE, five to eight times uniform, and the
+largest absolute error is 3.9. The −360 prediction cited earlier for this belongs to the neural
+trunk, not the boosting, which cannot leave the range of its leaf values. Predicts the maximum on
+**CYP2D6**, where the anomalies have lived.
+
+*The inactive mass.* A large share of compounds sits low, 23.7 / 42.6 / 32.1 / 58.4 percent below
+4.5, so for a typical compound the conditional distribution is one-sided and mean and median part
+company. Note this is not censoring in the strict sense — the minimum label is 1.91 to 2.10, values
+continue down to it, and only 0.1 percent sit exactly at the floor. Predicts **3A4 > 2C9 > 2D6 >
+1A2**.
+
+*The mean-minus-median gap.* Measured directly on the residuals: −0.049 / −0.027 / −0.009 / −0.010.
+Predicts **1A2 > 2C9 > 3A4 > 2D6** — nearly the reverse of the previous one, with CYP1A2 first
+rather than last.
+
+None of the three currently accounts for the size. The mean-median gap is 0.05 of pIC50 at most
+against band half-widths of 0.13 to 0.28, so it sits inside the region the metric does not penalise
+at all; the outlier concentration is real but moderate. A fourth possibility is not about the
+estimand but about training: with absolute error the gradient is a sign, so hard compounds cannot
+buy a disproportionate share of the splits, and ST-RAE additionally makes error inside the band free,
+so squared error spends capacity on differences that are not scored. That one predicts no particular
+enzyme and is not separable with the losses this scikit-learn offers — there is no Huber in
+`HistGradientBoostingRegressor`.
+
+**75. The loss function is worth 0.046, and all three pre-registered mechanisms failed.**
+`src/abloss.py`.
+
+    seed 0             1A2      2C9      2D6      3A4    macro
+    L2 on the label  0.8786   0.6908   0.9803   0.5194   0.7673
+    L1 on the label  0.8104   0.6802   0.8872   0.5095   0.7218
+    L1 on the bounds 0.8098   0.6813   0.9015   0.4906   0.7208
+
+The control reproduces. Switching to absolute error is worth **−0.0455**, larger than the external
+data with its best correction and nine times the model-choice budget, from one keyword.
+
+The band-target arm confirms a prediction made in item 74 from the measured band asymmetry: pooling
+`lo` and `hi` and fitting the median is worth **0.0010** against fitting L1 on the point label, six
+times below the noise floor. Section 10's action is right and minimising it directly buys nothing,
+because the bands are nearly symmetric so the pooled median sits on the point label. The whole gain
+is L1 against L2. Without that middle arm the result would have been credited to the theorem.
+
+The per-enzyme ordering is 2D6 0.0931 > 1A2 0.0682 > 2C9 0.0106 > 3A4 0.0099, and it refutes all
+three candidates of item 74. The inactive-mass account predicted 3A4 first and 1A2 last and gets
+ρ = −0.8, close to exactly inverted. The mean-minus-median account predicted 1A2 first, ρ = −0.2.
+The outlier account predicted the maximum on CYP2D6 and got it — but the quantity it rests on, the
+share of ST-RAE in the worst one percent, orders the enzymes 2C9 > 3A4 > 1A2 > 2D6 with **CYP2D6
+last**, so the prediction was satisfied against its own evidence.
+
+What does order the gain is how badly the model was doing: baseline ST-RAE 0.9803 / 0.8786 / 0.6908
+/ 0.5194 against gains 0.0931 / 0.0682 / 0.0106 / 0.0099, a perfect match. By item 73's own rule
+that selects nothing — it is rank agreement on four points, the weakest evidence there is — so it
+is recorded as a description and not a mechanism. The mechanism is open.
+
+**76. Monotonic constraints do nothing, and the way they do nothing is the finding.**
+`src/ablmono.py`. Four features whose sign biochemistry knows, one to two per enzyme, constrained
+per enzyme.
+
+    seed 0             1A2      2C9      2D6      3A4    macro    tails
+    free             0.8786   0.6908   0.9803   0.5194   0.7673   0.7007
+    correct signs    0.8735   0.6942   0.9803   0.5155   0.7659   0.7026
+    flipped signs    0.8765   0.6941   0.9803   0.5391   0.7725   0.7049
+
+Correct signs gain 0.0014 and flipped signs lose 0.0052, both under the 0.007 noise floor. The
+tails, where the whole extrapolation argument lives, get monotonically worse rather than better.
+There is no effect to interpret at the macro level.
+
+One enzyme is different and it is the wrong one. On **CYP2D6 the predictions are bit-identical
+across all three arms** — maximum absolute difference exactly 0.00e+00 in both directions — while
+the other three move by 0.29 to 1.09. The constrained feature there is `frac_prot_74`, the
+protonated fraction, which is the feature this document's entire CYP2D6 story rests on: the salt
+bridge, the stratified kernel, the composition half of the shift. The boosting never splits on it.
+
+The dull explanation is ruled out: on CYP2D6 that feature is the most variable of the four, sd 0.434
+against 0.29 to 0.30, with 551 distinct values, and no single fingerprint bit correlates above
+0.405. The remaining explanation is joint redundancy — a ridge on the fingerprint block alone
+reproduces it with R² = 0.653 out of fold, the highest of the four enzymes — so the tree can reach
+the same chemistry through the bits and never needs the aggregate. That is partial: 0.653 against
+0.50 to 0.62 elsewhere is not sharp enough to explain an exactly zero difference where the others
+are nonzero. Recorded as explained in part.
+
+Nothing here contradicts the document. Stratifying by a feature and splitting on it are different
+uses, and the shift analysis needs the first. But the feature that carries the chemistry in our
+analysis carries nothing in our model, and that is worth knowing before any more weight is put on it.
+
+**77. Every gain measured today disappears under the post-processing the submission actually uses.**
+The question was narrow — recompute the δ rule on the L1 predictions, since the rule in `submit.py`
+was tuned against the residuals of a model that L1 replaces. The rule barely moved: under the mean
+criterion CYP1A2 goes +0.1 to 0.0, CYP2C9 +0.3 to +0.4, CYP2D6 and CYP3A4 unchanged, and the value
+of per-enzyme fitting is the same, +0.0486 against +0.0468. The shift work is not absorbed by the
+loss change, which was the risk worth checking.
+
+But the levels inverted, and following that inverted the whole session. Every number in this
+repository's ablation tables is a raw out-of-fold ST-RAE, and the submission does not submit raw
+predictions — it fits an affine pair per fold and applies it. Refitting that pair out of fold on
+each arm gives:
+
+    arm                       raw    +affine    gain raw   gain after
+    L2 baseline            0.7673     0.7150     +0.0000      +0.0000
+    L1 instead of L2       0.7218     0.7131     -0.0455      -0.0019
+    source indicator       0.7504     0.7117     -0.0168      -0.0033
+    tilt to paired offset  0.7363     0.7156     -0.0310      +0.0006
+    external as they are   0.7545     0.7218     -0.0128      +0.0068
+    encoder concatenated   0.7589     0.7263     -0.0084      +0.0113
+
+**Not one survives.** All five fall under the 0.007 noise floor of item 70, and three of the five
+change sign to harmful. The largest finding of the day, worth 0.046 raw, is worth 0.002 after — and
+the mechanism is plain: the affine pair is a shrinkage fitted directly to the metric, per fold, so
+anything that reduces prediction variance or removes a systematic offset is something it already
+does. On the L2 baseline that pair is worth 0.0523; on the L1 predictions only 0.0087, because L1
+had already taken most of what there was.
+
+`fit_apply` was checked for contamination first: it fits on the training folds and applies to the
+held-out one, so the comparison is honest.
+
+What this costs is not five results but a method. **The ablation grid measures the wrong quantity.**
+Comparing feature sets, learners and data sources on raw predictions overstates differences that the
+submission pipeline erases, and the document's headline — model choice 0.005 against post-processing
+0.051 — understates its own point: the post-processing does not add to the other improvements, it
+substitutes for them.
+
+Three qualifications, and none rescues the arms. This is seed 0, and at the noise floor no ordering
+among the six is resolvable — but five independent arms collapsing into a band of 0.013 is a much
+stronger pattern than any single comparison. The affine pair here is fitted at δ = 0; under the
+posterior over δ the same reversal holds, L1 with its own δ scoring 0.7764 against the L2 baseline's
+0.7647. And redundancy on our own label marginal is not proof of redundancy on the test's shifted
+one — but that cannot be checked without test labels, and assuming it in our favour is the error
+this log exists to catch.
+
+*Four seeds, on the largest arm.* The single-seed objection was the obvious one, so the loss arm
+was run on all four.
+
+    seed    L2 raw   L2 affine    L1 raw   L1 affine    gain raw   gain after
+       0    0.7673      0.7150    0.7218      0.7131     -0.0455      -0.0019
+       1    0.7690      0.7183    0.7242      0.7156     -0.0449      -0.0027
+       2    0.7661      0.7164    0.7199      0.7118     -0.0462      -0.0046
+       3    0.7644      0.7124    0.7234      0.7139     -0.0410      +0.0014
+    mean    0.7667      0.7155    0.7223      0.7136     -0.0444      -0.0019
+
+The raw gain holds its sign on all four seeds and spans 0.041 to 0.046, so by this repository's own
+standard it is a result. After the affine pair it is 0.0019 and the sign **breaks on seed 3**, so by
+the same standard it is not one. The rule that has governed every comparison here for two months
+answers this question by itself.
+
+Incidentally the affine pair is worth 0.0512 on the L2 baseline averaged over four seeds, which is
+the figure the document published by another route.
+
+Practical consequence: **nothing in `submit.py` changes**, on any of today's findings.
+
+**78. The two corrections do not add, and the full square shows why.** The question was whether the
+loss change and the paired tilt combine. The missing cell was run — `src/ablsrc.py` gained a
+`--loss` switch so the external arms can use absolute error — and the square closes.
+
+    seed 0                      raw    +affine
+    L2                       0.7673     0.7150
+    L2 + paired tilt         0.7363     0.7156
+    L1                       0.7218     0.7131
+    L1 + paired tilt         0.7225     0.7238
+
+**They do not add.** The tilt is worth −0.0310 on top of L2 and **+0.0007** on top of L1: L1 has
+already taken everything the tilt was buying. Additivity would have predicted 0.6908; the observed
+value is 0.7225, which is L1 alone.
+
+With the affine pair applied the four collapse into a band of 0.0107, of which 0.007 is noise, and
+the worst of the four is **both corrections together**. So there are three interventions here — a
+metric-aligned loss, a reweighting of the external labels, and the affine shrinkage — and they are
+substitutes rather than complements. Any one reaches about 0.713 and applying more than one gains
+nothing or costs something.
+
+That is the same statement as item 77 seen from the other side. The affine pair is a shrinkage
+fitted to the metric per fold; L1 is a shrinkage built into the fit; the tilt is a reweighting that
+happens to reduce the same variance. The raw column spans 0.046 across these four and the
+post-processed column spans 0.011. Whatever we were measuring in the raw column was largely the
+absence of a correction we always apply.
