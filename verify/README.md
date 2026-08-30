@@ -1837,3 +1837,36 @@ shift is worth 0.003 of macro against a 36% chance of harm. Per-enzyme fitting i
 
 This is the first time model uncertainty has entered the δ posterior at all. It makes the method
 stricter rather than softer: the systematic term was previously not counted anywhere.
+
+**88. With three models the systematic spread in δ grows rather than settles, and on two enzymes
+it exceeds everything we publish as uncertainty.** `verify/k16_modelspread.py`. Item 87 measured
+the spread from two models and called it a lower bound. A third — the same learner with absolute
+error, structurally the most distant of the three since it estimates a conditional median rather
+than a mean — makes the bound larger.
+
+    enzyme    per-enzyme L2   pooled   per-enzyme L1    range   bootstrap half-width   ratio
+    CYP1A2           +0.045   +0.344          -0.011    0.354                  0.399    0.89
+    CYP2C9           +0.362   +0.801          +0.283    0.518                  0.308    1.68
+    CYP2D6           -0.917   -0.405          -1.167    0.762                  0.509    1.50
+    CYP3A4           +0.740   +0.847          +0.616    0.230                  0.255    0.90
+
+The range grew on every enzyme against the two-model figures of 0.299 / 0.439 / 0.512 / 0.107, so
+the quantity has not converged and three models remain a small sample of one learner family on
+one feature set.
+
+Two consequences worth stating separately from the number.
+
+**On CYP2D6 the sign holds across all three and the magnitude does not.** All are negative, which
+is the claim the document actually makes, but they run from −0.405 to −1.167. The published
+−0.917 is one point in that interval rather than an estimate bracketed by ±0.5, and the honest
+form of the CYP2D6 statement is the sign plus a range about twice as wide as reported.
+
+**On CYP1A2 not even the sign survives**: +0.045, +0.344, −0.011. The rule already skips CYP1A2,
+adopted in item 58 because the chosen shift was worse than doing nothing in half the draws. That
+decision now has a second and independent reason that was not visible then — the direction of the
+shift there is not determined by the data at all.
+
+Separately, the seed-to-seed noise in the same estimate is sd 0.005 / 0.005 / 0.048 / 0.012, so
+the model term is nine to eighty-eight times the fold-fitting term. The disagreement is
+systematic, not sampling, which is why averaging the models is not a way to resolve it: it
+produces a third model whose own bias is unmeasured, with a narrow interval that is not earned.
