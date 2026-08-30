@@ -1870,3 +1870,44 @@ Separately, the seed-to-seed noise in the same estimate is sd 0.005 / 0.005 / 0.
 the model term is nine to eighty-eight times the fold-fitting term. The disagreement is
 systematic, not sampling, which is why averaging the models is not a way to resolve it: it
 produces a third model whose own bias is unmeasured, with a narrow interval that is not earned.
+
+**89. Averaging the models is the right thing to do to the predictions and the wrong thing to do
+to the shift estimate, and the two answers have the same cause.** The question was whether to
+average posteriors, as item 87 did, or to average the models and estimate δ once on the result.
+
+*As a model, the ensemble wins clearly.* The average of the per-enzyme and the pooled predictions
+gives 0.6921 macro after the affine pair against 0.7155 for the per-enzyme model and 0.7089 for
+the pooled one — **−0.0234** and **−0.0168** respectively, p = 0.0001 and p = 0.00004 on four
+seeds, with rank up by +0.0291 and +0.0155. It clears item 77's ceiling for the same reason
+everything that clears it does: it moves rank. The mechanism is ordinary — the two bases see
+different training tables, their errors are partly independent, and averaging removes variance
+before the shrinkage gets to it — but by the rank criterion it was not guaranteed, and five other
+interventions failed the same test. `src/submit.py` now has three modes and submits this one.
+
+*As a way to estimate δ, it is not.* Seed-to-seed noise in the estimate — folds change, test
+predictions do not — has sd 0.005 / 0.005 / 0.048 / 0.012, while the model-to-model spread is
+0.11 to 0.51. The disagreement is systematic by a factor of nine to eighty-eight, so collapsing
+it into a third model buys a narrow interval around an object whose own bias is unmeasured.
+
+The measurement settles it more sharply than the argument does. A prediction was recorded in
+`k17_ensdelta.py` before the run: the ensemble's δ need not lie between its components', because
+the inversion is nonlinear and an average of predictions is not an average of solutions.
+
+    enzyme    per-enzyme   pooled   ensemble   between?
+    CYP1A2        +0.044   +0.335     +0.192   yes
+    CYP2C9        +0.351   +0.782     +0.577   yes
+    CYP2D6        -0.507   -0.408     -0.686   **no, outside both**
+
+On CYP2D6 — the enzyme the document is built around — the submitted model's own estimate is more
+negative than either component. Averaging the models did not produce a compromise there; it
+produced the most extreme of the four estimates now available.
+
+*The rule.* Draws from all three are mixed with equal weight, which remains a decision rather
+than a derivation, and the rule is chosen on the ensemble's out-of-fold predictions under that
+posterior: **0 / +0.5 / −0.5 / +0.8**, CYP1A2 skipped. Per-enzyme fitting is worth +0.066 under
+it.
+
+A second pre-registration failed and is worth recording. The widened posterior was expected to
+make the rule more cautious. It did the opposite on CYP2D6, −0.4 back to −0.5, because the
+ensemble's outlying estimate moved the mixture's centre more than it widened its spread. The
+prediction was wrong about which of the two effects would dominate, not about the mechanism.
