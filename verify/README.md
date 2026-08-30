@@ -2152,3 +2152,32 @@ The reading is sobering rather than encouraging: within gradient boosting on the
 candidates are near-duplicates, and further ensembling of the same kind has little left to
 extract. Whether a structurally different member breaks out of the band is a prediction to check
 against the ridge and kNN arms now running.
+
+**99. The shrinkage grid was parameterised so that it must fail as the model improves.** Building
+the submission on the three-member ensemble printed a grid-edge warning on CYP2C9: offset +3.00,
+which is the grid's maximum, at lambda 0.90. A parameter sitting on a boundary was chosen by the
+grid rather than by the data — the third occurrence of item 59's error, and this one inside the
+submitted pipeline.
+
+The cause is structural rather than a matter of range. The shift the predictions actually receive
+is `(1 - lambda) * offset`, so for a fixed shift the offset needed grows without bound as lambda
+approaches one. Better models are trusted more, lambda rises — 0.58 to 0.90 on CYP2C9 between the
+per-enzyme model and the ensemble — and the same correction demands an ever larger offset. **A grid
+over the offset is guaranteed to break as the model gets better.**
+
+The fix is a reparameterisation, not a wider grid. The family is unchanged:
+
+    c + lambda*(p - c)   with c = mu + offset   ==   lambda*p + (1-lambda)*mu + s,   s = (1-lambda)*offset
+
+so gridding over the shift `s` covers the same set of transformations. But `s` is in pIC50 units
+and bounded by anything one would believe about a shift, while the offset is bounded by nothing.
+Verified identical to 1e-15 on synthetic data at three (offset, lambda) pairs, including the
+edge case that triggered this.
+
+One error inside the fix, caught before it ran. Applying the new form used the mean of the TEST
+predictions where the fit had used the mean of the out-of-fold training predictions. Those differ
+by exactly the marginal shift between the two sets — which is the quantity `delta` estimates
+separately — so the substitution would have silently applied that shift twice.
+
+`src/submit.py` now grids over the shift; `src/shrinkchoice.py` is untouched, since its published
+numbers were produced with lambdas below 0.8 where the offset grid did not bind.

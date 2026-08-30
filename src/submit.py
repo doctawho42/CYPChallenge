@@ -135,6 +135,9 @@ def test_features(desc_names, mech_names):
 # +0.7 оно садилось на верхний. Подогнанный параметр, стоящий на границе сетки, --- не
 # подогнанный параметр, и плоскость целевой функции рядом с ним мнимая.
 OFFGRID = np.round(np.arange(-3.0, 3.01, 0.05), 2)
+# Сетка по сдвигу предсказаний. Диапазон намеренно шире любого правдоподобного: оценки
+# delta лежат в пределах -1.3 .. +1.0, а сдвиг всегда меньше delta по модулю.
+SHIFTGRID = np.round(np.arange(-2.0, 2.001, 0.01), 2)
 
 
 # Правило по delta выбрано под смесью ТРЁХ апостериоров --- раздельной модели, пулированной
@@ -266,19 +269,28 @@ def fit_shrinkage(P, y, mask, delta=(0.0, 0.0, 0.0, 0.0)):
         # exactly the untilted fit, so the default path is unchanged.
         de = float(delta[e])
         w = np.ones_like(yy) if de == 0 else tilt(yy, de)
-        # Вся сетка одним броадкастом: q = c + L(p - c) = (mu + off)(1 - L) + L p.
-        A = OFFGRID[:, None] * (1.0 - GRID[None, :])
-        B = np.broadcast_to(GRID[None, :], A.shape)
+        # Сетка ведётся по СДВИГУ предсказаний s, а не по смещению центра off. Это та же
+        # двухпараметрическая семья --- q = c + L(p - c) при c = mu + off тождественно равно
+        # L p + (1 - L) mu + s, где s = (1 - L) off, --- но параметризация другая, и разница
+        # не косметическая. Сдвиг s измеряется в единицах pIC50 и ограничен здравым смыслом;
+        # смещение off при L -> 1 не ограничено ничем, потому что тот же сдвиг требует всё
+        # большего off. Прежняя сетка по off упиралась в край на CYP2C9, как только ансамбль
+        # поднял L до 0.90, и параметр выбирала сетка, а не данные.
+        A = SHIFTGRID[:, None]
+        B = np.broadcast_to(GRID[None, :], (len(SHIFTGRID), len(GRID)))
         q = (mu * (1.0 - B) + A)[:, :, None] + B[:, :, None] * p[None, None, :]
         pen = (w * (np.maximum(q - hi, 0.0) + np.maximum(lo - q, 0.0))).sum(axis=2)
         ii, jj = np.unravel_index(pen.argmin(), pen.shape)
-        off, L = float(OFFGRID[ii]), float(GRID[jj])
-        if ii in (0, len(OFFGRID) - 1) or jj in (0, len(GRID) - 1):
-            print(f"    ВНИМАНИЕ {c}: оптимум на краю сетки (off {off:+.2f}, lambda {L:.2f})",
+        sh, L = float(SHIFTGRID[ii]), float(GRID[jj])
+        if ii in (0, len(SHIFTGRID) - 1) or jj in (0, len(GRID) - 1):
+            print(f"    ВНИМАНИЕ {c}: оптимум на краю сетки (сдвиг {sh:+.2f}, lambda {L:.2f})",
                   flush=True)
-        out.append((L, mu + off))
-        print(f"    {c}: lambda {L:.2f}, смещение {off:+.2f}, "
-              f"сдвиг предсказаний {(1-L)*off:+.3f}", flush=True)
+        # mu --- среднее предсказаний ВНЕ ФОЛДА на обучении. Именно оно, а не среднее по
+        # тесту: преобразование подогнано относительно него, и подстановка тестового
+        # среднего молча сместила бы центр на разницу маргиналей, то есть ровно на то,
+        # что мы отдельно оцениваем как delta.
+        out.append((L, mu, sh))
+        print(f"    {c}: lambda {L:.2f}, сдвиг предсказаний {sh:+.3f}", flush=True)
     return out
 
 
@@ -359,8 +371,8 @@ def main():
             parts.append(gp_predict(tf(X[m]), y[m, e], tf(Xte)))
         p = np.mean(parts, axis=0)
         if lams is not None:
-            L, mu = lams[e]
-            p = mu + L * (p - mu)
+            L, mu_tr, sh = lams[e]
+            p = L * p + (1.0 - L) * mu_tr + sh
         act[f"{c}_pIC50_direct_inhibition"] = p
         print(f"    {c}: n_обуч {m.sum()}, среднее предсказание {p.mean():.3f}", flush=True)
 
