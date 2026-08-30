@@ -1692,7 +1692,26 @@ mechanism is transfer across compounds, not multi-task on shared ones, and the v
 be multi-task on shared ones — adding each compound's pre-incubation pIC50, which item 71 showed
 is 100% co-located — is a separate arm and is not yet measured.
 
-One seed. Four are running.
+*Four seeds.* The comparison is paired on the same folds, so the relevant scatter is that of the
+difference, not the 0.007 floor of item 70 which was measured for a different kind of comparison.
+
+    seed    independent    pooled    difference    rank gain
+       0         0.7150    0.7062       -0.0088      +0.0141
+       1         0.7183    0.7120       -0.0063      +0.0160
+       2         0.7164    0.7110       -0.0054      +0.0086
+       3         0.7125    0.7063       -0.0062      +0.0159
+    mean         0.7156    0.7089       -0.0067      +0.0137
+
+Sign holds on all four seeds in both columns: −0.0067 after the pair with sd 0.0015, t = −9.06,
+p = 0.0028, and +0.0137 of rank, p = 0.0043. Three interventions now clear the ceiling, at
+comparable significance — the trunk's screening channel at −0.0264, the mechanistic block at
+−0.0094, pooling at −0.0067.
+
+The three are not equally useful, and the difference decides. The trunk's channel only lifts the
+network to parity with the boosting, so it adds nothing to what is submitted. The block and the
+pooling both live inside the boosting route, and item 85 shows they add rather than substitute.
+Pooling is therefore the first thing measured in this stretch that could actually move the
+submission.
 
 **85. Pooling and the mechanistic block do not substitute for each other, and the four enzymes
 fall into four different regimes.** The two interventions that clear item 77's ceiling both land
