@@ -48,6 +48,7 @@ KW = dict(max_iter=300, learning_rate=0.06, max_leaf_nodes=31,
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default="0,1,2,3")
+    ap.add_argument("--sets", default="", help="через | какие наборы считать")
     ap.add_argument("--out", default=RES + "preds/oof_shape.json")
     a = ap.parse_args()
     seeds = [int(x) for x in a.seeds.split(",")]
@@ -60,8 +61,16 @@ def main():
     if len(S) != len(rows):
         raise SystemExit(f"форма {len(S)} строк против {len(rows)}")
     base = np.hstack([z["FP"], z["DESC"], z["MECH"]])
-    SETS = {"без формы": base, "с формой": np.hstack([base, S])}
-    print(f"база {base.shape[1]} колонок, с формой {SETS['с формой'].shape[1]}\n")
+    # Последние два столбца --- не индексы формы, а настоящее расстояние от основного азота
+    # до центра ароматического кольца в ангстремах. Механистический блок меряет то же самое
+    # в СВЯЗЯХ, а фармакофор CYP2D6 определён в ангстремах, так что это уточнение прокси,
+    # а не новая ось. Их надо отделить, иначе «форма помогла» будет означать две разные вещи.
+    ALL = {"без формы": base,
+           "с формой": np.hstack([base, S]),
+           "только индексы формы": np.hstack([base, S[:, :-2]]),
+           "только расстояния": np.hstack([base, S[:, -2:]])}
+    SETS = ALL if not a.sets else {k: v for k, v in ALL.items() if k in a.sets.split("|")}
+    print("наборы: " + ", ".join(f"{k} ({v.shape[1]})" for k, v in SETS.items()) + "\n")
 
     out, table = {}, []
     for seed in seeds:

@@ -2078,3 +2078,77 @@ uncertainty is sampling and averaging is natural, while across models it is stru
 is no reason the truth should be the average of what models believe. The mixture centre stays as
 the default and the alternative is recorded with its price, because by item 57's own finding this
 kind of choice moves more than the estimates do.
+
+**96. Fingerprints are not ballast, and the reason completes item 90.** Item 90 found Morgan the
+least informative of four neighbour spaces, carrying nothing on CYP2C9. The natural inference is
+that 2048 of 2295 columns sit in the space where signal is weakest and could be dropped. The
+answer was already in `oof.json` and it is no.
+
+    set              columns      raw   +pair     rank
+    FP                  2048   0.8333  0.7566   0.5249
+    DESC                 217   0.8071  0.7520   0.5166
+    MECH                  30   1.0350  0.9013   0.3054
+    FP+DESC             2265   0.7729  0.7215   0.5487
+    DESC+MECH            247   0.7996  0.7420   0.5330
+    FP+DESC+MECH        2295   0.7673  0.7150   0.5650
+
+Dropping the fingerprints costs **0.027 after the pair and 0.032 of rank**, more than almost
+anything this log records as a gain.
+
+The reconciliation is the point and belongs in the document. **Substructure is a poor metric and a
+good feature.** Tanimoto over the whole Morgan vector is a weak measure of closeness; individual
+Morgan bits are strong variables to split on. A tree asks "is this fragment present", not "how
+similar are these two vectors", so the two facts are about different objects and neither implies
+the other. Both are now measured, which is unusual.
+
+**97. The GP's contribution shrinks as neighbours get closer, which is the opposite of why it was
+added.** An outside reading argued that the GP is evaluated in a harsher regime than it will work
+in — held-out compounds sit at 0.435 median similarity to the training set, the test at 0.587 —
+so its ensemble weight should be raised above equal. Stratifying the held-out compounds by their
+cross-fold nearest-neighbour similarity and measuring the GP's contribution in each stratum:
+
+    stratum       n     ensemble of 2   ensemble of 3   GP contribution
+    < 0.35     1086            0.7701          0.7540           -0.0161
+    0.35-0.45  2553            0.7051          0.6967           -0.0084
+    0.45-0.55  2090            0.6746          0.6699           -0.0047
+    > 0.55      795            0.7016          0.7012           -0.0004
+
+The contribution falls monotonically with proximity and is zero in the closest stratum — which is
+where the test sits. So the extrapolation runs the other way: −0.0076 measured out of fold
+**overstates** what the GP will deliver on the test, and its weight should if anything be lowered.
+
+That also revises why item 92 works. The GP was justified as exploiting close neighbours; it
+earns its place where neighbours are **far**, and there because everything is wrong there and a
+differently-wrong model helps most. Its value is generic variance reduction in hard regions, not
+similarity exploitation.
+
+A second thing falls out. Accuracy is **not monotone** in proximity: 0.7701 / 0.7051 / 0.6746 /
+0.7016. The closest stratum is worse than the middle one, which is the signature of activity
+cliffs — near-identical structures with sharply different activity. That is a measured population
+on which similarity actively misleads, and it is worth its own look.
+
+The rightmost stratum holds 795 observations across four seeds, so its −0.0004 is noisy on its
+own; the monotone trend across four strata is the evidence, not any single one.
+
+**98. The diversity well is nearly dry for this family of candidates.** Item 92's success invites
+a general rule — accept an ensemble member by how decorrelated its errors are, not by how accurate
+it is — and that is measurable before including anything. Out-of-fold residual correlations across
+six candidates, averaged over the four enzymes:
+
+    mean correlation with the others, lower is more valuable
+      GP          0.908
+      pooled      0.909
+      DESC+MECH   0.930
+      FP+DESC     0.932
+      L1          0.932
+      per-enzyme  0.936
+
+Every pair sits between 0.89 and 0.97. The GP is the least correlated, which agrees with it being
+the member that helped, but its margin over the pooled model is 0.001 — the criterion ranks them
+correctly and separates them barely. The most similar pair is the per-enzyme model and FP+DESC at
+0.969, which is as expected since they differ only by the mechanistic block.
+
+The reading is sobering rather than encouraging: within gradient boosting on these features the
+candidates are near-duplicates, and further ensembling of the same kind has little left to
+extract. Whether a structurally different member breaks out of the band is a prediction to check
+against the ridge and kNN arms now running.
