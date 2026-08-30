@@ -96,6 +96,7 @@ def main():
     ap.add_argument("--key", default="{seed}|L1 по метке|{c}",
                     help="шаблон ключа в этом источнике")
     ap.add_argument("--seeds", default="", help="сиды, если источник покрывает не все")
+    ap.add_argument("--dump-ac", default="", help="куда выгрузить матрицы предполагаемое x истинное")
     a = ap.parse_args()
     seeds = SEEDS if not a.seeds else [int(x) for x in a.seeds.split(",")]
 
@@ -202,6 +203,10 @@ def main():
     print("   поферментная подгонка могла бы дать, а не то, что она даст.\n")
     K5 = {"CYP1A2": 0.018, "CYP2C9": 0.164, "CYP2D6": -0.256, "CYP3A4": 0.437}
     AC = {c: np.mean([MC[s][c] for s in seeds], axis=0) for c in CYPS}
+    if a.dump_ac:
+        json.dump({"deltas": [float(x) for x in DELTAS],
+                   "AC": {c: AC[c].tolist() for c in CYPS}}, open(a.dump_ac, "w"))
+        print(f"матрицы выгружены: {a.dump_ac}", flush=True)
     print(f"{'фермент':8s} {'ядро':>10s} {'единое 0.3':>11s} {'оракул':>8s} "
           f"{'строка оракула':>15s}")
     glob_i = int(min(range(len(DELTAS)), key=lambda ia: A[ia, inb].mean()))

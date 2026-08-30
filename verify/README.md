@@ -2054,12 +2054,27 @@ posteriors available:
     CYP2D6    -0.51 -0.41 -0.69               -0.538      -0.5
     CYP3A4    +0.74 +0.84 +0.78               +0.781      +0.8
 
-They agree within one grid step everywhere, because the model medians sit roughly symmetrically
-about their own midpoint on each enzyme. The concern does not materialise, and the choice of
-criterion here is worth nothing — unlike the worst-case-versus-mean choice inside a single
-posterior, which item 57 measured at 0.05.
+They agree within one grid step everywhere. **That conclusion is wrong**, and the caveat recorded
+beside it is why: minimising the largest distance to a model's median is not minimising the
+largest expected loss under a model's posterior, and the loss is asymmetric in δ. The proper
+version was then computed — `src/shrinkchoice.py` gained a `--dump-ac` option for the
+assumed-by-true matrices — and the two criteria differ on three enzymes of four.
 
-This is a proxy and not the full comparison. Minimising the largest distance to any model's median
-is not the same as minimising the largest expected loss under any model's posterior; the two part
-company when the loss is asymmetric in δ. The proper version needs the assumed-by-true matrices
-per posterior, which `src/shrinkchoice.py` does not currently emit.
+    enzyme    minimax   mixture centre   pooled     GP   ensemble3
+    CYP1A2       +0.3             +0.2     +0.3   +0.2        +0.2
+    CYP2C9       +0.8             +0.6     +0.8   +0.5        +0.6
+    CYP2D6       -0.4             -0.7     -0.4   -1.0        -0.8
+    CYP3A4       +0.9             +0.9     +0.8   +0.9        +0.8
+
+The gap is largest on CYP2D6, 0.3, which is where the posteriors disagree most — the pooled model
+says −0.4 and the GP says −1.0. Measured in worst-case expected ST-RAE the mixture centre costs
+**+0.0108** of macro against the minimax, and 0.0266 of that is CYP2D6 alone.
+
+*Which to adopt is a decision and not a computation.* The same choice was made once already inside
+a single posterior — item 57, worst case against mean, worth 0.05 — and the mean was adopted,
+because the goal is the best expected score rather than insurance. Taking the minimax across
+models while keeping the mean within one is inconsistent. Against that: inside a posterior the
+uncertainty is sampling and averaging is natural, while across models it is structural, and there
+is no reason the truth should be the average of what models believe. The mixture centre stays as
+the default and the alternative is recorded with its price, because by item 57's own finding this
+kind of choice moves more than the estimates do.
