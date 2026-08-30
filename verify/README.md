@@ -1606,3 +1606,56 @@ redundant with one another, and geometry is the sharpest of the three.
 One honest limit. Geometry's advantage over the whole block is solid in rank (p = 0.009) and only
 a trend in the metric after the affine pair (−0.0038, p = 0.090). "Six features beat thirty" is
 established about rank and not about ST-RAE, and the two are not the same claim.
+
+**83. The screening file holds 11509 unlabelled readings, and the reason nobody could use them is
+the reason they exist.** An outside reading pointed out that the single-concentration file covers
+4376 molecules on all four enzymes — 17504 rows, one concentration of 4.95·10⁻⁵ M, which is
+exactly pC₀ = 4.305 — while only 6525 molecule-enzyme pairs have a dose-response curve. Every
+count reproduces: 2964 / 3091 / 2883 / 2571 screened pairs lack a curve, 11509 in total, 1.8× the
+labelled set. The four-vector is complete for every one of the 4376 molecules, which also
+corrects item 71's reading of the selectivity question: 73.3% of compounds carry one enzyme *in
+the curve files*, and none of that applies to the screen.
+
+The proposal is to invert those readings into pseudo-labels through the fitted Hill calibration
+of section 4, keeping only where the Fisher information is high. Two gates were measured before
+building anything.
+
+*Invertibility.* The inversion π = pC₀ − log₁₀(E/I − 1)/h needs 0 < I < E.
+
+    enzyme    screen-only   invertible        Fisher > 0.3 max
+    CYP1A2           2964    2553  86.1%       2041  68.9%
+    CYP2C9           3091    2831  91.6%       2185  70.7%
+    CYP2D6           2883     362  12.6%        265   9.2%
+    CYP3A4           2571    2269  88.3%       1678  65.3%
+
+**CYP2D6 collapses to nine percent**, and it is the enzyme the project is built around. The cause
+is not saturation at the top but blindness at the bottom: 87.4% of its screen-only readings have
+I ≤ 0, no inhibition detected, with a median of −0.298 — noise around zero. Both of the
+prediction orderings offered with the proposal put CYP2D6 above CYP3A4; neither anticipated it
+getting almost nothing.
+
+*Selection, and it is severe.* Comparing the screen readings of compounds that have a curve
+against those that do not:
+
+    enzyme    log2fc with curve   without    active fraction with / without
+    CYP1A2               -1.551    -0.197           88.5%  /  40.0%
+    CYP2C9               -0.815    -0.602           82.5%  /  67.0%
+    CYP2D6               -1.738    +0.376          100.0%  /   5.7%
+    CYP3A4               -1.437    -1.932           78.4%  /  92.0%
+
+The CYP2D6 row explains the whole structure: **curves were run according to the screen.** All of
+its curve compounds are screen-active and 5.7% of the rest are, so "screened but unlabelled" is
+by construction the screen-negative subset. On CYP3A4 the selection runs the other way, so there
+is no single statement of the form "pseudo-labels pull the marginal down while the test pulls it
+up" — the direction differs by enzyme.
+
+That yields an objection the proposal does not carry and which we judge decisive as stated: **E
+and h were fitted on compounds selected for being active**, and inverting readings from compounds
+selected for being inactive applies that calibration outside the population it was estimated on.
+The error enters all ~5900 pseudo-labels systematically and in the same direction. The permutation
+control suggested alongside catches "the gain was extra rows rather than information"; it does not
+catch a calibration biased outside its fitted range, because permuting preserves that bias exactly.
+
+Not run. The idea survives on CYP1A2 and CYP2C9, is questionable on CYP3A4 until the reversed
+selection is understood, and is dead on CYP2D6 — and any version of it needs the calibration
+re-fitted or validated on screen-negative compounds first, which is a separate measurement.
