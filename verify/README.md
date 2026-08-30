@@ -1541,3 +1541,34 @@ predictions", which is not the question; the rank column answers "did it move th
 post-processing cannot reach", which is. A post-isotonic score is the same criterion expressed in
 the metric's own units, and is the conservative bound, since isotonic spans a wider class of
 monotone maps than the affine pair does.
+
+**81. The mechanistic block survives post-processing, and the raw measure had been hiding it.**
+The question asked was whether the block does anything on CYP2D6 at all, prompted by item 76:
+`frac_prot_74` is never split on there, which looked like evidence that the chemistry explains
+how the test differs from the training set without entering the predictor. Both arms already
+existed on four seeds, so the answer cost nothing.
+
+    block against no block, 4 seeds     raw       p    after pair       p     d rho       p
+    CYP1A2                          -0.0016   0.600      -0.0016   0.372   -0.0019   0.375
+    CYP2C9                          -0.0170   0.022      -0.0147   0.029   +0.0148   0.017
+    CYP2D6                          -0.0151   0.088      -0.0221   0.000   +0.0454   0.002
+    CYP3A4                          +0.0017   0.498      +0.0007   0.777   +0.0008   0.619
+    macro                           -0.0080   0.069      -0.0094   0.006   +0.0148   0.003
+
+The chemistry **does** enter the predictor, decisively on CYP2D6: the block adds 0.045 of rank
+correlation there, more than the trunk's screening channel adds anywhere, and after the affine
+pair it is worth −0.0221 with p = 0.0004.
+
+Note the direction, which is the opposite of everything else in items 77 to 80. For every other
+intervention the raw score **overstated** the gain. Here it **understates** it: raw gives
+p = 0.088 on CYP2D6, not significant, and after post-processing p = 0.0004. That is exactly what
+item 80's criterion predicts. The block's contribution is rank, and the raw comparison mixes it
+with scale-and-location noise that the affine pair removes; strip that away and the signal comes
+out cleaner and larger.
+
+Two things this corrects. The document records "the mechanistic block's ST-RAE gain is
+indistinguishable from zero, both per enzyme and on the macro" as a negative result. That was
+measured raw and is wrong. And the reading of item 76 that this check was meant to test —
+chemistry explains the data but not the model — is refuted; what item 76 shows is narrower than
+it looked, namely that the block works on CYP2D6 through something other than the protonated
+fraction the text credits. Which part is the subject of `src/ablmech.py`.
