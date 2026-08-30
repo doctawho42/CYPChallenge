@@ -1490,3 +1490,54 @@ fitted to the metric per fold; L1 is a shrinkage built into the fit; the tilt is
 happens to reduce the same variance. The raw column spans 0.046 across these four and the
 post-processed column spans 0.011. Whatever we were measuring in the raw column was largely the
 absence of a correction we always apply.
+
+**79. Item 77 had an exception and missed it: the trunk's screening channel survives.** The
+table in item 77 put five arms through the affine pair and found nothing left. It did not
+include the sixth — the joint-likelihood trunk — because that arm lives in another file and was
+measured raw, at $-0.0176$. Put through the same pipeline, with the same clipping the
+document's own model comparison uses and the same affine pair on all three:
+
+    seed    trunk lam=0   trunk lam=3   boosting    channel   trunk3 - boost
+       0         0.7397        0.7182     0.7150    -0.0214          +0.0032
+       1         0.7446        0.7142     0.7183    -0.0305          -0.0042
+       2         0.7376        0.7145     0.7164    -0.0231          -0.0019
+       3         0.7435        0.7128     0.7124    -0.0307          +0.0003
+    mean         0.7414        0.7149     0.7155    -0.0264          -0.0006
+
+The channel is worth **−0.0264 after post-processing**, the sign holds on all four seeds,
+t = −10.87, p = 0.002. It is the only intervention in this repository that survives. Clipping is
+not optional here and it is not a thumb on the scale: without it seed 0 gives 0.9192, which is
+the single compound of item 42 predicted at −360, and the document's existing comparison already
+clips for that reason.
+
+The second half does not follow, though. The trunk with the channel does **not** beat the
+boosting: 0.7149 against 0.7155, the sign alternates across seeds, t = −0.39, p = 0.72. Parity,
+not superiority. So the decision to shelve the trunk stands; what was wrong was writing the
+channel off as carrying nothing.
+
+**80. Why post-processing absorbs some interventions and not others, and it is one line.** The
+affine pair, and isotonic calibration too, are **monotone**. A monotone map can move scale and
+location and cannot change the order of predictions. So an intervention survives post-processing
+if and only if it adds **rank** information, and that is measurable directly rather than
+inferred:
+
+    change in Spearman with the truth      delta      t        p    signs
+    channel in the trunk (lam 3 - lam 0)  +0.0350   13.83    0.001    ++++
+    L1 instead of L2                      +0.0016    0.97    0.405    -+++
+    trunk lam=3 against boosting          +0.0016    0.53    0.632    -+++
+
+    rank itself: trunk lam=0  0.5297   trunk lam=3  0.5646   boosting  0.5630   L1  0.5646
+
+That closes three questions at once. The loss change collapses because it adds no rank — and
+note the collapse is not, as first supposed, because L1 merely rescaled: Spearman between L1 and
+L2 predictions is 0.82 to 0.96, so it reordered a great deal, and none of the reordering was
+information. The channel survives because it adds 0.035 of rank. And the parity between the
+trunk and the boosting has the same explanation as both: the channel lifts the trunk to exactly
+the rank the boosting already had, 0.5646 against 0.5630, and no further.
+
+The practical rule for every future ablation, and it costs nothing: **report the change in rank
+correlation beside the raw score.** The raw column answers "did the intervention move the
+predictions", which is not the question; the rank column answers "did it move them somewhere the
+post-processing cannot reach", which is. A post-isotonic score is the same criterion expressed in
+the metric's own units, and is the conservative bound, since isotonic spans a wider class of
+monotone maps than the affine pair does.
