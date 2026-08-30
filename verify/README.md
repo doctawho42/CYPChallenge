@@ -1572,3 +1572,37 @@ measured raw and is wrong. And the reading of item 76 that this check was meant 
 chemistry explains the data but not the model — is refuted; what item 76 shows is narrower than
 it looked, namely that the block works on CYP2D6 through something other than the protonated
 fraction the text credits. Which part is the subject of `src/ablmech.py`.
+
+**82. Which part of the mechanistic block works, and it differs by enzyme in the way the
+chemistry says it should.** `src/ablmech.py`. Item 81 showed the block earns its place; item 76
+showed `frac_prot_74`, the feature the text credits, is never split on. Splitting the block into
+three groups — 16 counts of nitrogen and acid functionality, 8 protonation-state features
+including `frac_prot_74`, and 6 topological distances from a basic nitrogen to an aromatic ring
+plus the explicit CYP2D6 pharmacophore flags — resolves both. Four seeds, scored as item 80 says
+to score.
+
+    change in rank correlation vs no block    CYP2D6       p    CYP2C9       p
+    whole block (30)                         +0.0454  0.0017   +0.0148  0.0167
+    protonation state only (8)               +0.0454  0.0076   +0.0097  0.0013
+    functional-group counts only (16)        +0.0437  0.0130   +0.0111  0.0042
+    geometry and pharmacophore only (6)      +0.0580  0.0007   +0.0030  0.5454
+
+On **CYP2D6 the six geometric features carry it, and carry it better than all thirty**: +0.0127
+of rank over the whole block, p = 0.009. The other twenty-four dilute. On **CYP2C9 geometry does
+nothing at all** (p = 0.55) and the contribution comes from counts and protonation state, with no
+group distinguishable from the whole.
+
+That is the split the mechanism predicts. CYP2D6 binds through a salt bridge to Asp301 and
+Glu216, which is a **geometric** constraint — a protonated nitrogen at a particular distance from
+an aromatic ring — and geometry is exactly what those six features encode. CYP2C9's Arg108 binds
+anions, which is a question of **what the molecule contains**, not where. A prediction of this
+shape was recorded in the script's docstring before the run and holds on CYP2D6.
+
+It also settles item 76 without contradicting it. `frac_prot_74` is not split on because the
+geometric features carry the same chemistry more sharply, not because protonation is irrelevant:
+the state group alone still gives +0.0454, the same as the whole block. The groups are largely
+redundant with one another, and geometry is the sharpest of the three.
+
+One honest limit. Geometry's advantage over the whole block is solid in rank (p = 0.009) and only
+a trend in the metric after the affine pair (−0.0038, p = 0.090). "Six features beat thirty" is
+established about rank and not about ST-RAE, and the two are not the same claim.
