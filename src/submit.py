@@ -234,6 +234,28 @@ TRUNK_LAM = "3.0"      # значение, на котором пункт 79 м�
 TRUNK_MODE = "twohead"
 
 
+def _trunk_device(meta_device):
+    """Тот же вычислитель, на котором посчитан сохранённый файл, если он доступен.
+
+    Не педантизм. Усадка подгоняется по предсказаниям вне фолда из trunk_twohead.json, а
+    применяется к предсказаниям теста, посчитанным здесь; если первые считались на mps, а
+    вторые пойдут на cpu, две половины пары разойдутся по численности, и подогнанное
+    lambda будет описывать не тот объект, к которому его прикладывают. Модели всё равно
+    обучаются на разных данных, так что побитового совпадения не бывает --- но
+    систематического расхождения вычислителя быть не должно.
+    """
+    import torch
+    have = {"mps": torch.backends.mps.is_available(), "cuda": torch.cuda.is_available(),
+            "cpu": True}
+    if have.get(meta_device):
+        return meta_device
+    if meta_device not in (None, "cpu"):
+        print(f"    ВНИМАНИЕ: сохранённые предсказания ствола посчитаны на {meta_device}, "
+              f"здесь его нет --- половины аффинной пары лягут на разные вычислители",
+              flush=True)
+    return "cpu"
+
+
 def _trunk_blocks(Xall):
     """Разрезать общую матрицу обратно на FP / DESC / MECH.
 
@@ -270,8 +292,8 @@ def _oof_trunk(y, mask):
     четырёх ферментов --- больше вдвое, чем даёт гребневая, и единственный член, который
     помогает всем четырём.
     """
-    T = json.load(open(RES + "preds/trunk_twohead.json"))
-    T = T.get("preds", T)
+    J = json.load(open(RES + "preds/trunk_twohead.json"))
+    T = J.get("preds", J)
     key = f"{TRUNK_MODE}|0|{TRUNK_LAM}"
     if key not in T:
         raise SystemExit(f"нет ключа {key} в trunk_twohead.json; запустите src/trunk.py")
@@ -444,10 +466,15 @@ def main():
     trunk_te = None
     if a.mode == "ансамбль5":
         import trunk as TR
-        print("    обучаю ствол на всей выборке и предсказываю тест", flush=True)
+        meta = json.load(open(RES + "preds/trunk_twohead.json")).get("meta", {})
+        dev = _trunk_device(meta.get("device"))
+        print(f"    обучаю ствол на всей выборке и предсказываю тест "
+              f"(блоки {meta.get('blocks', TR.BLOCKS)}, вычислитель {dev}, "
+              f"в файле {meta.get('device')})", flush=True)
         fp_te, de_te, me_te = _trunk_blocks(Xte)
         trunk_te = TR.fit_predict_test(fp_te, de_te, me_te, lam=float(TRUNK_LAM),
-                                       seed=0, mode=TRUNK_MODE)
+                                       seed=0, mode=TRUNK_MODE,
+                                       blocks=meta.get("blocks"), device=dev)
     if a.mode in ("пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
         Xs = [pooled_design(X[mask[:, e]], e) for e in range(len(CYPS))]
         ys = [y[mask[:, e], e] for e in range(len(CYPS))]
