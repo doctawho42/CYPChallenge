@@ -3568,7 +3568,7 @@ single calibrated screening column, recomputed here on the same folds with the s
     CYP1A2         0.8128          0.3106    0.502
     CYP2C9         0.6559          0.3154    0.340
     CYP2D6         0.9052          0.5992    0.306
-    CYP3A4         0.4860          0.2168    0.269
+    CYP3A4         0.5057          0.2168    0.289   [исправлено, см. пункт 139]
     МАКРО          0.7150          0.3605    0.354
 
 **The largest untapped gap is CYP1A2, not CYP2D6**, and it is 1.6 times CYP2D6's. CYP2D6's
@@ -3658,7 +3658,8 @@ advance and would have weakened the claim before it was written.
 
 What of item 134 survives:
 
-  the gap decomposition, 0.502 / 0.340 / 0.306 / 0.269, recomputed on the same folds;
+  the gap decomposition, 0.502 / 0.340 / 0.306 / **0.289**, recomputed on the same folds
+  (the CYP3A4 figure corrected in item 139 -- the two columns were scored on different masks);
   CYP1A2 having the largest untapped gap and CYP2D6 the second smallest, so the repository's
   mechanistic narrative is aimed at the enzyme with less headroom than the one it ignores;
   CYP2D6's screening-alone score of 0.599 being the worst of the four **with a measurement in
@@ -3744,3 +3745,224 @@ exactly where the model loses most. And if the own-booster's advantage survives 
 **not** feature subsampling -- what remains is depth 5 against 31 leaves, 200 trees against 300, or
 exact trees against histogram ones, and the `max_features` sweep now running separates the first
 from the rest.
+
+
+**139. The CYP3A4 gap is 0.289, not 0.269, and the cause is a mask that differed between the two
+columns being compared.** `verify/k37_gap.py` scored the model on every labelled compound and the
+screening column only on compounds that have a screening reading. Three of the four enzymes are
+unaffected because their labelled sets are subsets of the screened set. CYP3A4 is not: item 129's
+530-compound analog campaign carries curves and was never screened.
+
+    фермент   модель на ВСЕХ   модель на общих   скрининг   разрыв кривой   разрыв верный
+    CYP1A2            0.8128            0.8128     0.3106           0.502           0.502
+    CYP2C9            0.6559            0.6559     0.3154           0.340           0.340
+    CYP2D6            0.9052            0.9052     0.5992           0.306           0.306
+    CYP3A4            0.4860            0.5057     0.2168           0.269           0.289
+
+The correction makes CYP3A4's gap larger, not smaller, so nothing that depended on it being the
+smallest changes -- but the number is wrong wherever it was quoted and is fixed above.
+
+**140. The own booster, four seeds: the reference learner is neither the fastest nor the best, and
+the mechanism is column subsampling.**
+
+    рука                        MACRO пара   MACRO rho     1A2     2C9     2D6     3A4    время
+    HistGB (эталон, сид 0)          0.7150      0.5651   0.496   0.610   0.408   0.760   ~2400 с
+    свой бустинг, квадрат mf1.0     0.7278      0.5522   0.480   0.583   0.389   0.755   456-716
+    свой бустинг, квадрат mf0.3     0.7204      0.5615   0.486   0.601   0.405   0.754   119-179
+    свой бустинг, квадрат mf0.1     0.7171      0.5644   0.493   0.602   0.405   0.757    47-67
+    свой бустинг, попарно mf0.3     0.7172      0.5692   0.519   0.597   0.424   0.738   200-262
+
+Three readings, in order of how well they hold.
+
+**Column subsampling is worth +0.0123 of rank and is monotone in it** (0.5522, 0.5615, 0.5644 as
+max_features goes 1.0, 0.3, 0.1). The sign is the same on all four seeds and the size is nearly
+twice the 0.007 floor. The pinned scikit-learn's HistGradientBoostingRegressor **has no
+max_features at all** -- checked -- so this is not a setting the journal could have swept; changing
+the learner was the only route to it, which is the one good reason to have written one.
+
+**The pairwise objective is worth +0.0077 over the same learner's squared loss**, sign consistent
+across all four seeds (+0.0046, +0.0090, +0.0049, +0.0124), size at the floor. It is not a uniform
+improvement and the trade is the interesting part: **+0.033 on CYP1A2 and +0.018 on CYP2D6,
+-0.016 on CYP3A4 and -0.004 on CYP2C9.**
+
+**HistGB's slowness is an algorithm-to-data mismatch, not a misconfiguration**, and this was worth
+checking before four seeds rather than after. Measured: 300 iterations actually run, `n_iter_`=300,
+`do_early_stopping_`=False, **2378 ms per tree** on 1028 rows by 2295 columns. Against 15 ms for an
+exact tree at mf0.1 and about 40 ms at mf0.3 -- 161-fold and 60-fold. Nothing pathological is
+happening. A histogram booster builds a histogram over every feature at every node at a cost of
+O(features x bins) that barely depends on the number of rows; it is built to win when rows are
+many, and 1028 rows against 2295 columns is the shape where the overhead is the whole cost and
+buys nothing. **The consequence is throughput, not accuracy**: an arm that took an hour takes two
+minutes, and that is a different working regime for the nine weeks that remain.
+
+**141. Rank as this file measures it counts pairs the metric will never pay for, and CYP3A4 is
+where that bites.** Item 140's pairwise arm loses CYP3A4 rank while winning overall, which is the
+wrong shape for a loss that only ever discards pairs the bands cannot order -- so the suspicion
+falls on the criterion.
+
+After the affine pair, ST-RAE pays for an order only when the two confidence bands are disjoint:
+if they overlap, no prediction can be penalised for putting the pair either way round. Spearman
+against the point label pays for **every** pair. CYP3A4 has 51.4 per cent of its labels below the
+instrument's resolution floor -- the highest of the four -- so a large share of its rho is earned
+on pairs the competition cannot see, and an objective that deliberately drops those pairs must
+look worse under rho while being no worse under the metric. Consistent with that, the pairwise
+arm's macro *метрика* (0.7172) is level with the best squared arm (0.7171) while its rho is 0.0048
+higher and its CYP3A4 rho 0.0165 lower.
+
+Item 80 made rank the criterion because raw ST-RAE was untrustworthy, and that was right. The
+qualifier it needs is that rho over-counts on wide-banded enzymes. **[ИЗМЕРЕНО И ОПРОВЕРГНУТО,
+см. пункт 146 --- квалификатор не нужен, критерий в порядке.]** `verify/k42_visiblerank.py`
+recomputes the file's headline comparisons under a Kendall tau restricted to distinguishable
+pairs -- the same criterion with the invisible pairs removed -- and is queued. Pre-registered: if
+CYP3A4's loss shrinks under tau, the loss was the criterion and every per-enzyme comparison here
+involving CYP3A4 carries the same bias; if it survives, the trade is real and the arm is a
+per-enzyme choice.
+
+**142. The pooled arms sit on both sides of a threshold inside the learner, so item 125 compared
+two different learners.** The pinned scikit-learn defaults `early_stopping='auto'`, and 'auto'
+means on above 10000 samples and off below.
+
+    рука                всего строк   обучающих (4/5)   ранняя остановка
+    независимо (2D6)           1493              1194   нет
+    пул                        6525              5220   нет
+    пул+TDI                   13063             10450   ДА
+    пул+скрининг              18030             14424   ДА
+
+`пул` trained on all its rows for all 300 iterations. `пул+TDI` held out ten per cent as a
+validation set and stopped when that set stopped improving. The margin is 450 rows -- 4.5 per cent
+over the line -- which is why it went unseen. This does not show item 125's conclusion is wrong;
+it shows the measurement did not test what it was written to test, and that matters because
+`пул+TDI` is the arm that closed "more supervision helps", a question items 143 and 144 both
+reopen with much larger tables that would cross the same line. `verify/k41_earlystop.py` reports
+`n_iter_` and both regimes on one fold and is queued; every new arm sets `early_stopping=False`
+explicitly.
+
+**143. Item 136 closed the screening idea on a test that had no branch on which it could have
+succeeded.** `src/ablcontrast.py` handed the model the level and contrast **predicted from
+structure** as extra columns and measured -0.0015 of rank. Item 136 pre-registered that an
+unpredictable channel would be empty by construction, measured predictability at R-squared 0.32 to
+0.44, found it non-zero, and concluded the idea rather than the wiring was closed. But both
+branches lead to a null:
+
+    непредсказуемо из структуры -> канал есть шум       -> ноль
+    предсказуемо из структуры   -> канал есть функция X -> избыточен -> ноль
+
+so the null carried no information about the screen. What was never given to the model is the
+screen's **measurements**, and the preconditions for doing so are the strongest in this file:
+
+    фермент   кривых   скрининг без кривой для этого фермента
+    CYP1A2      1412                                     2963
+    CYP2C9      1285                                     3090
+    CYP2D6      1493                                     2882
+    CYP3A4      2335                                     2570
+    итого       6525                                    11505
+
+1.76 times the labelled table, on compounds that table never mentions for that enzyme. And the
+second number is the one that makes this the natural next arm rather than one more idea: item 132
+settled that pooling works by **contrast**, and the curve table carries all four enzymes for **41**
+molecules while the screen carries all four for **4375** -- a hundred and seven fold. The place
+where contrast is actually measured has never been in the training table.
+
+`src/ablaux.py` pools curve rows and screen rows with an enzyme indicator and a source column,
+calibrating log2fc to pIC50 by an isotonic fitted **on training folds only**, and its decisive arm
+is a permutation control: the same rows, the same target marginal, the molecule-to-measurement
+link destroyed. A gain that does not survive the permutation is regularisation from extra rows and
+not the screen. Pre-registered per enzyme: the gain should fall as 2C9 (2.4x), 1A2 (2.1), 2D6
+(1.9), 3A4 (1.1); a gain concentrated on 3A4 refutes the reading. Queued.
+
+**144. The NCGC panel is merged, does not touch the test set, and cannot be calibrated -- so it
+will not be.** `src/ncgcmerge.py` folded the six fetched assays into 54177 rows over 13126
+structures, `src/ncgcfeats.py` built their features through `feats.build` with the descriptor and
+mechanistic columns pinned by name.
+
+**Zero of the 750 blinded test molecules appear in the panel**, so the question of whether public
+prior measurements on test rows may be used does not arise. It was measured first and printed
+first precisely because it is not a question a script may settle.
+
+The calibration precondition failed, and this is the finding rather than a setback. Molecules
+carrying both a fitted NCGC AC50 and one of our curves:
+
+    фермент   общих   rho    сдвиг NCGC-наш   sd разности
+    CYP1A2       32  0.72            +0.762         0.577
+    CYP2C9       11  0.40            +0.448         0.710
+    CYP2D6       48  0.74            +0.442         0.484
+    CYP3A4       21  0.49            +0.868         0.843
+
+The offset is **larger** than the ChEMBL offset items 60 to 63 rejected, and eleven molecules at
+sd 0.71 give it a standard error of 0.21 against a quantity of 0.45. So the arm that subtracts a
+fitted shift is not built. What is built is item 63's actual lesson -- a **source indicator**,
+which lets the model learn the offset from all 54177 rows rather than from eleven, and as an
+interaction with chemistry rather than as a constant.
+
+Two things the merge had to get right and did. Panel rows are mapped to our folds by canonical
+SMILES and dropped when their molecule is held out, because 183 to 319 panel structures are also
+ours and their measurement would otherwise be a measurement of a test row. And censored rows --
+7258 on CYP3A4 alone -- are kept as a marked arm rather than discarded, because dropping a "not
+active up to the top concentration" is rebuilding by hand the selection that killed the ChEMBL
+merge. `src/ablncgc.py` is queued, with a permutation control and a CYP2C19 arm that asks whether
+a fifth isoform we will never be graded on still teaches the shared trunk.
+
+**145. What the intermediate leaderboard on 24-25 September is for, decided in advance.** This
+file has twice proved that validation in the test regime cannot be built here: reweighting is
+forbidden by the chi-square of 2.838 between the test and out-of-fold similarity distributions,
+which caps the effective sample at 26.1 per cent (item 123), and construction is forbidden by
+composition, 93.6 per cent Butina singletons (item 129). The leaderboard is therefore **the only
+sample from the test distribution that will exist before the close**, and spending it purely on
+"submit the best guess" wastes the one measurement money cannot buy.
+
+The largest open question it could answer is whether pooling's contrast gain survives the shift.
+Pooling is the biggest effect the submission relies on, its mechanism is now identified (item 132)
+but rests on the enzyme-conditioning structure being stable between distributions, and nothing
+internal can test that. So:
+
+  if more than one submission is allowed, one per-enzyme and one pooled. The **difference** between
+  their scores is worth more than either rank, because it is the only external measurement of the
+  assumption the submission is built on;
+
+  if only one, submit the best and pre-register now what leaderboard score would falsify the
+  out-of-fold estimate, so that the answer cannot be re-read afterwards.
+
+Written before the date rather than after it, which is the whole point.
+
+**146. The rank criterion is safe: restricting it to the pairs the metric can see changes nothing.**
+`verify/k42_visiblerank.py`. Item 141 suspected that Spearman over-counts on wide-banded enzymes
+and that CYP3A4's loss under the pairwise arm was an artefact of the criterion. Both halves are
+now measured and both are wrong.
+
+The statistic is a Kendall tau over ordered pairs with disjoint bands -- the same criterion as rho
+with the pairs ST-RAE cannot pay for removed. Visible-pair shares are 73.6, 56.6, 73.5 and 72.5
+per cent.
+
+    рука                          MACRO rho   MACRO tau   разность
+    эталон FP+DESC+MECH              0.5651      0.5209     0.0442
+    свой бустинг, квадрат mf1.0      0.5522      0.5074     0.0448
+    свой бустинг, квадрат mf0.3      0.5615      0.5164     0.0451
+    свой бустинг, квадрат mf0.1      0.5644      0.5196     0.0448
+    свой бустинг, попарно mf0.3      0.5692      0.5226     0.0466
+    L1 по метке                      0.5619      0.5167     0.0452
+    мёртвая зона x1                  0.5923      0.5453     0.0470
+    пул                              0.5792      0.5327     0.0465
+
+**The offset is 0.044 to 0.047 for every arm.** At this resolution the two criteria are an affine
+reparametrisation of each other: they order the arms identically, and every difference the file
+has recorded under rho survives under tau at nine tenths of its size. Item 80's rule needs no
+qualifier.
+
+The specific prediction fails too. CYP3A4 under the pairwise arm against the same learner's
+squared loss: **-0.0164 of rho and -0.0175 of tau.** The loss does not shrink when the invisible
+pairs are removed, it grows slightly. So the pairwise objective really does give up CYP3A4 order
+that the metric would have paid for, the trade of item 140 is real, and that arm is a per-enzyme
+choice rather than an improvement.
+
+One thing the table shows that was not being asked. Per enzyme the *level* gap between rho and tau
+is large and uneven -- CYP1A2 -0.062, CYP2C9 **+0.009**, CYP2D6 -0.047, CYP3A4 -0.077 -- and CYP2C9
+is the only enzyme where the model does better on the pairs that count than on all pairs, while
+having the fewest visible pairs of the four (56.6 per cent). Levels are not comparable across
+enzymes under either statistic; differences between arms are. That was already the rule and now
+has a measurement behind it.
+
+**The incidental result is the one worth acting on.** Read down the macro column: the dead zone at
++0.0272 of rho and +0.0244 of tau is **nearly twice pooling's** +0.0141 and +0.0118, and it wins on
+three enzymes out of four (+0.039 CYP1A2, +0.034 CYP2C9, +0.044 CYP2D6, -0.007 CYP3A4). Pooling is
+the effect this repository's submission is built around and the one whose mechanism took four
+eliminations to find. The largest measured effect in the file is now something else.
