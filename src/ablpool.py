@@ -56,7 +56,10 @@ KW = dict(max_iter=300, learning_rate=0.06, max_leaf_nodes=31,
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default="0,1,2,3")
-    ap.add_argument("--arms", default="независимо,пул,пул+TDI")
+    ap.add_argument("--arms", default="независимо,пул,пул+TDI",
+                    help="«пул слепой» --- тот же пул с обнулённым индикатором фермента. "
+                         "Перенос общей функции работал бы и без индикатора; контраст "
+                         "(пункт 111) без него невозможен, так что эта рука их разделяет.")
     ap.add_argument("--blocks", default="FP+DESC+MECH",
                     help="какие блоки признаков; FP+DESC отключает механистический")
     ap.add_argument("--out", default=RES + "preds/oof_pool.json")
@@ -83,8 +86,12 @@ def main():
           + f"; всего прямых {sum(int(M[c].sum()) for c in CYPS)}"
           + f", с TDI {sum(int(M[c].sum()) + int(MT[c].sum()) for c in CYPS)}\n")
 
-    def stack(keep, with_tdi):
-        """Собрать пулированную таблицу из строк, помеченных keep (по молекулам)."""
+    def stack(keep, with_tdi, blind=False):
+        """Собрать пулированную таблицу из строк, помеченных keep (по молекулам).
+
+        blind обнуляет индикатор, не убирая столбцы: ширина матрицы остаётся прежней,
+        так что руки отличаются только тем, что модель знает, а не формой задачи.
+        """
         Xs, ys = [], []
         for e, c in enumerate(CYPS):
             for cond, (mask, lab) in enumerate(((M[c], Y[c]), (MT[c], YT[c]))):
@@ -94,16 +101,18 @@ def main():
                 if not sel.any():
                     continue
                 ind = np.zeros((int(sel.sum()), 5), np.float32)
-                ind[:, e] = 1.0
-                ind[:, 4] = cond
+                if not blind:
+                    ind[:, e] = 1.0
+                    ind[:, 4] = cond
                 Xs.append(np.hstack([X[sel], ind]))
                 ys.append(lab[sel])
         return np.vstack(Xs), np.concatenate(ys)
 
-    def block(e, sel):
+    def block(e, sel, blind=False):
         """Признаки для предсказания: тот же индикатор, условие --- прямое ингибирование."""
         ind = np.zeros((int(sel.sum()), 5), np.float32)
-        ind[:, e] = 1.0
+        if not blind:
+            ind[:, e] = 1.0
         return np.hstack([X[sel], ind])
 
     out, table = {}, []
@@ -127,8 +136,9 @@ def main():
                         Xt, yt = X[m][~te], y[~te]
                         Xe = X[m][te]
                     else:
-                        Xt, yt = stack(~te_mol, arm.endswith("TDI"))
-                        Xe = block(e, m & te_mol)
+                        bl = "слепой" in arm
+                        Xt, yt = stack(~te_mol, arm.endswith("TDI"), blind=bl)
+                        Xe = block(e, m & te_mol, blind=bl)
                     p[te] = HistGradientBoostingRegressor(**KW).fit(Xt, yt).predict(Xe)
                 q = fit_apply(p, lo, hi, fi, np.ones(len(y)) / len(y))
                 out[f"{seed}|{arm}|{c}"] = p.tolist()

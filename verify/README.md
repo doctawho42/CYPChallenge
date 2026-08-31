@@ -2792,11 +2792,21 @@ items 1, 6 and 7 in hours applies here first, and unlike those three it survives
     CYP2D6     1493               -0.828
     CYP3A4     1805               -0.936
 
-The instrumental argument is right about this instrument. One caution, stated because it runs the
-wrong way for us: the curved compounds were selected on the size of their screening effect
-(item 14 recovered that rule), and selecting on the extremes of a predictor widens its range and
-**inflates** a correlation. So 0.83 to 0.94 is an upper bound on what would hold across the
-population the head would actually be trained on, not an estimate of it.
+This gate was already passed and the document already carries it — section 4 quotes the same
+-0.83 to -0.94 and calls the screen "almost a sufficient statistic". Reproduced here only so the
+rest of the file stands on its own numbers.
+
+Two things must be said with it, both from the document, because without them this item reads as
+promising something it does not. First: **the test set has no screening readings at all, and its
+overlap with the primary library is exactly zero.** A free monotone calibration on the *measured*
+screen reaches a macro ST-RAE of 0.359 against our 0.767, and none of that is available to us. The
+head uses the screen as an auxiliary training target and predicts from structure alone at
+inference; it is not a route to that 0.359.
+
+Second, a caution that runs the wrong way for us: the curved compounds were selected on the size
+of their screening effect (item 14 recovered that rule), and selecting on the extremes of a
+predictor widens its range and **inflates** a correlation. So 0.83 to 0.94 is an upper bound on
+what holds across the population the head would be trained on, not an estimate of it.
 
 **How much of it is new.** 59 to 71 per cent of each enzyme's screening rows sit on compounds with
 no curve for that enzyme, and **4335 molecules have a screening reading and not a single curve** —
