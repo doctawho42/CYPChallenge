@@ -2785,43 +2785,36 @@ placed second at 0.222, and as a concatenated feature block it costs 0.0075 of r
 the test's regime. A larger pretrained model is a different question, but it starts from a worse
 prior than the proposal assumed.
 
-**118. The screening head passes every precondition, and it is the strongest proposal left.**
-`verify/k26_screen.py`. Item 5 of the outside reading proposes a second head predicting the
-single-point screen at 49.5 uM alongside the curve-derived pIC50, on the instrumental argument
-that the screen is a monotone squashed version of the curve. The same discipline that closed
-items 1, 6 and 7 in hours applies here first, and unlike those three it survives.
+**118. Retracted: the screening head is built, measured, and already in the log at -0.0264.**
+This item first read item 5 of the outside reading as an unbuilt proposal, checked its
+preconditions, found them all met and recommended building it. Every operative part of that was
+wrong, and the file it should have checked first was this one.
 
-**Does the screen rank the way the curve does.** On the compounds carrying both:
+`src/trunk.py` implements exactly the proposal — shared trunk, a pIC50 head and a screening head,
+`lambda_scr` as the switch, with the control being the same architecture at `lambda_scr = 0` so
+the parameter count and the weight initialisation are identical. It has been run on four seeds.
+**Item 79 measured the channel at -0.0264 after the affine pair, with the sign holding on all four
+seeds, t = -10.87, p = 0.002** — the largest single surviving intervention in this repository. Item
+79 also found the second half: the trunk carrying the channel reaches 0.7149 against boosting's
+0.7155, sign alternating, p = 0.72. **Parity, not superiority**, which is why the trunk is shelved
+and why the channel is not.
 
-    фермент   общих   rho(log2fc, pIC50)
-    CYP1A2     1412               -0.862
-    CYP2C9     1285               -0.896
-    CYP2D6     1493               -0.828
-    CYP3A4     1805               -0.936
+So there is nothing to build and nothing to greenlight. The question item 5 actually poses, given
+all of that, is a different and narrower one: the channel carries rank information the boosting
+does not have, and the vehicle carrying it only ties. Whether that information can be moved into
+the boosting — as an ensemble member, or as the trunk's latent concatenated to the feature matrix
+— is open, and item 101's rule says the concatenated arm is the one to run.
 
-This gate was already passed and the document already carries it — section 4 quotes the same
--0.83 to -0.94 and calls the screen "almost a sufficient statistic". Reproduced here only so the
-rest of the file stands on its own numbers.
+A counting error of my own, corrected. This item claimed 4335 molecules carry a screening reading
+and no curve, and called that a near-doubling of the molecule set. The set was built as a union of
+per-enzyme complements, which counts a molecule that has a CYP1A2 curve but no CYP2C9 curve as
+"having no curve". **The correct number is one.** Every molecule in the screening file but one
+carries at least one pIC50, exactly as `trunk.py`'s docstring has said since it was written: the
+screen is extra *columns* on rows already present, not extra rows.
 
-Two things must be said with it, both from the document, because without them this item reads as
-promising something it does not. First: **the test set has no screening readings at all, and its
-overlap with the primary library is exactly zero.** A free monotone calibration on the *measured*
-screen reaches a macro ST-RAE of 0.359 against our 0.767, and none of that is available to us. The
-head uses the screen as an auxiliary training target and predicts from structure alone at
-inference; it is not a route to that 0.359.
-
-Second, a caution that runs the wrong way for us: the curved compounds were selected on the size
-of their screening effect (item 14 recovered that rule), and selecting on the extremes of a
-predictor widens its range and **inflates** a correlation. So 0.83 to 0.94 is an upper bound on
-what holds across the population the head would be trained on, not an estimate of it.
-
-**How much of it is new.** 59 to 71 per cent of each enzyme's screening rows sit on compounds with
-no curve for that enzyme, and **4335 molecules have a screening reading and not a single curve** —
-against about 4900 that have one, so the head nearly doubles the molecule count rather than
-thickening the rows we hold.
-
-**Whether they are somewhere else.** This is the claim that makes the proposal worth more than
-"more rows", and it holds unevenly, which is more interesting than if it held everywhere:
+What survives from `verify/k26_screen.py` is one measurement that is genuinely new, and it is a
+characterisation rather than a recommendation. Per enzyme, the compounds that received a curve are
+selected on their screening effect, and the severity of that selection differs sharply:
 
     фермент   медиана |log2fc| с кривой   без кривой   rho(есть кривая, |log2fc|)
     CYP1A2                        1.554        0.209                        0.655
@@ -2829,24 +2822,23 @@ thickening the rows we hold.
     CYP2D6                        1.738        0.395                        0.819
     CYP3A4                        1.437        1.932                       -0.151
 
-On CYP1A2 and CYP2D6 the selection is severe: the compounds that got curves are the ones that
-moved the screen, and the 2964 and 2883 without curves are the ones that did not. **Those are the
-weak compounds — the population item 115 measured as supplying 27.6 % of the penalty and item 105
-measured us predicting worst, with median absolute residuals of 1.27 to 1.67 pIC50.** The
-screening head puts labels exactly where we have none and are worst.
+CYP2D6 and CYP1A2 are severely selected — their curves went to the compounds that moved the
+screen, and the 2883 and 2964 without curves are the ones that did not. CYP2C9 is nearly
+unselected. **CYP3A4 is selected in reverse**: its un-curved compounds show the *larger* screening
+effect. The per-enzyme profile of the trunk's screening channel should be checked against this
+ordering, since a channel that repairs a label selection ought to pay most where the selection is
+worst. That check has not been run and is not claimed here.
 
-**On CYP3A4 the selection is inverted** — the un-curved compounds show a *larger* screening effect,
-1.932 against 1.437 — so there the head supplies potent compounds we have no curve for at all.
-CYP2C9 sits between, nearly unselected at rho 0.152.
+Structurally the un-curved compounds sit only slightly outside: median similarity to the curve set
+0.296 against 0.342 within it. So whatever this is, it is a selection on labels and not on
+chemistry.
 
-Structurally the un-curved set is only slightly further out: median similarity to the curve set
-0.296 against 0.342 within it. So this is a correction to the *label* selection, not to the
-chemical space, which is the more tractable of the two problems.
-
-Every gate passes, the population it reaches is the one we are worst on, and the per-enzyme
-pattern is specific enough to falsify the result afterwards: CYP1A2 and CYP2D6 should gain at the
-weak end, CYP3A4 at the potent end, CYP2C9 least of the four. `src/trunk.py` already has the
-shared-trunk machinery. **This is what to build next.**
+Two things to carry forward from the retraction itself. The precondition discipline that closed
+items 109, 114 and worked well elsewhere has a failure mode: **it checks whether an idea could
+work and not whether it has already been tried**, and this log is now long enough that the second
+question needs asking first. And the union bug is the kind that produces a large, satisfying number
+in the direction one is hoping for; 4335 was never sanity-checked against the 4905 rows sitting in
+the same table.
 
 **119. Four seeds for the marginal effects, and the third seed-0 mistake of the day.**
 Item 113 compared four-seed uniform gains against seed-0 reweighted ones and concluded that the
