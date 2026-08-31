@@ -3555,3 +3555,66 @@ overwhelmingly the CYP3A4 analog campaign, which has no screening data at all. E
 2.8 to 5.6 times what the curves give on CYP1A2, CYP2C9 and CYP2D6, so the route is worth having
 — but it does not deliver a measured tau, only a better-estimated one, and the layer it was meant
 to de-risk is closed on other grounds anyway.
+
+**134. What the gap to the screening column is made of, and why most of it is not recoverable
+from structure.** `verify/k36_ceiling.py`. This is the item that was built to be able to say
+"stop", and on two enzymes it does.
+
+The framing first, because it is the uncomfortable part. Across 130 items no intervention moved
+macro ST-RAE by more than about 0.03 against a floor of 0.007. The distance from our model to a
+single calibrated screening column, recomputed here on the same folds with the same affine pair:
+
+    фермент   модель+пара   скрининг один   разрыв
+    CYP1A2         0.8128          0.3106    0.502
+    CYP2C9         0.6559          0.3154    0.340
+    CYP2D6         0.9052          0.5992    0.306
+    CYP3A4         0.4860          0.2168    0.269
+    МАКРО          0.7150          0.3605    0.354
+
+**The largest untapped gap is CYP1A2, not CYP2D6**, and it is 1.6 times CYP2D6's. CYP2D6's
+screening-alone score of 0.599 is the worst of the four *even with a direct measurement in hand*,
+which says CYP2D6 is intrinsically hard rather than badly modelled. This repository's entire
+mechanistic narrative — `frac_prot_74`, the basic amines, Glu216, the stratification of item 85 —
+is built around the enzyme with the second smallest remaining headroom.
+
+So instead of another arm: take the compounds carrying the gap — the top 15 per cent by how much
+the screening column beats the model — and ask what they are, on axes split into chemical and
+behavioural **before** looking.
+
+    фермент  выигрыш   сходство    logP   колец   осн. N   полоса   метка
+    CYP1A2     1.053     +0.031  -0.397  -0.200   +0.015   +0.982  -1.176
+    CYP2C9     0.597     -0.004  -0.108  +0.017   +0.000   +0.253  -0.059
+    CYP2D6     0.818     +0.000  +0.193  +0.177   +0.142   +0.178  +0.683
+    CYP3A4     0.744     -0.009  +0.248  +0.018   +0.030   -0.083  +0.125
+
+The answer is per-enzyme, which was pre-registered as readable, and it splits two ways.
+
+**On CYP1A2 the gap is behavioural, and that is a ceiling.** The residue's chemistry is flat —
+similarity, size and basicity do not move — while its band is three times wider (1.418 against
+0.436) and its label sits at 3.955 against 5.131, below the resolution floor item 105 measured.
+These are compounds whose own pIC50 is an extrapolation from a curve the instrument never
+resolved. The screen beats the model there because it **measures** "this compound is inactive" at
+49.5 uM, while the model has to predict a number for a curve that does not exist. That is not
+missing chemistry and no representation recovers it: **most of the 0.502 is a measurement beating
+a prediction on labels that are themselves extrapolated.**
+
+This also refutes, where it is testable, the proposal that prompted the analysis. CYP1A2's gap was
+suggested to be shape selectivity — its site is a narrow planar slot and it takes flat aromatics.
+The residue has **fewer** aromatic rings (-0.200) and **lower** logP (-0.397): the opposite of a
+planar-aromatic chemotype. Whatever the shape story is worth elsewhere, it is not where this gap
+lives.
+
+**On CYP2D6 the gap is chemical, and it points at ground the project has already broken.** The
+residue is more basic (+0.142 aliphatic nitrogens), more aromatic (+0.177 rings), more lipophilic
+(+0.193) and **more potent** (+0.683) than the rest — potent basic amines, which is exactly the
+pharmacophore the mechanistic block was built for. So the block is aimed correctly and is
+under-reading: there is a chemotype here the model does not resolve, and it is the one the
+repository already believes in. That is the most actionable single sentence in this file.
+
+CYP2C9 and CYP3A4 show nothing on either group: their residues are indistinguishable from the
+rest, so their gaps are diffuse rather than concentrated, and neither a chemotype nor a ceiling
+argument applies to them from this evidence.
+
+The practical reading. Macro-level effort against the macro gap is misdirected: half of the
+largest component is a measurement advantage nobody can model away. Effort has an address, and it
+is CYP2D6's potent amines.
