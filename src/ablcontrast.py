@@ -39,10 +39,11 @@ compounds are outside the screening library entirely -- their contrast is filled
 there is nothing to predict it from. So the enzyme the prediction favours is the one where 23 per
 cent of the rows cannot receive the channel at all. On CYP3A4 the prediction therefore applies to
 its 1805 screen compounds and not to the enzyme as a whole, and a flat result there is not evidence
-against the channel. It must also
-survive the affine pair, since this is a *feature* and not a post-hoc correction -- item 128 has
-since bounded that whole class at 0.0076, which is a further reason a feature is the right shape
-for this.
+against the channel.
+
+Either way it must survive the affine pair, since this is a *feature* and not a post-hoc
+correction -- item 128 has since bounded that whole class at 0.0076, which is a further reason a
+feature is the right shape for this.
 
 Same folds, masks, metric and learner settings as src/ablate.py. Writes
 results/preds/oof_contrast.json.
