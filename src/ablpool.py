@@ -153,7 +153,7 @@ def main():
                     p[te] = HistGradientBoostingRegressor(**KW).fit(Xt, yt).predict(Xe)
                     if "центрированный" in arm:
                         # Обратно в шкалу фермента: среднее только по обучающим строкам.
-                        p[te] = p[te] + Y[c][M[c] & keep].mean()
+                        p[te] = p[te] + Y[c][M[c] & ~te_mol].mean()
                 q = fit_apply(p, lo, hi, fi, np.ones(len(y)) / len(y))
                 out[f"{seed}|{arm}|{c}"] = p.tolist()
                 r[f"{c} сырой"] = round(float(strae(y, p, y_true_upper=hi, y_true_lower=lo)), 4)
