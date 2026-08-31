@@ -3917,7 +3917,8 @@ internal can test that. So:
 
   if more than one submission is allowed, one per-enzyme and one pooled. The **difference** between
   their scores is worth more than either rank, because it is the only external measurement of the
-  assumption the submission is built on;
+  assumption the submission is built on. **[Item 147 strengthens this: the difference is not merely
+  worth more, it is the only quantity the leaderboard measures cleanly.]**
 
   if only one, submit the best and pre-register now what leaderboard score would falsify the
   out-of-fold estimate, so that the answer cannot be re-read afterwards.
@@ -3966,3 +3967,53 @@ has a measurement behind it.
 three enzymes out of four (+0.039 CYP1A2, +0.034 CYP2C9, +0.044 CYP2D6, -0.007 CYP3A4). Pooling is
 the effect this repository's submission is built around and the one whose mechanism took four
 eliminations to find. The largest measured effect in the file is now something else.
+
+**147. A rigorous bound on the leaderboard score is vacuous, and the reason says what to submit.**
+`verify/k43_lbpredict.py`, written before 24 September so the threshold cannot be chosen once the
+score is known.
+
+Three sources of movement, separated so they can be argued about apart:
+
+    фермент   ST-RAE вне фолда   выборка на 750   числитель под chi2   знаменатель под chi2
+    CYP1A2              0.8128      0.734-0.908          0.000-2.387    -0.395 .. 1.379  ВЫРОЖД
+    CYP2C9              0.6559      0.555-0.774          0.000-2.289    -0.368 .. 0.996  ВЫРОЖД
+    CYP2D6              0.9052      0.847-0.976          0.000-2.654    -0.400 .. 1.238  ВЫРОЖД
+    CYP3A4              0.4860      0.420-0.560          0.000-1.542    -0.313 .. 1.360  ВЫРОЖД
+    МАКРО               0.7150      0.639-0.804          0.000-2.218
+
+**The chi-square bound is vacuous on all four enzymes, and it is the metric's shape that does it.**
+ST-RAE's denominator is a constant predictor at the mean put through the same soft threshold, so
+for a large share of compounds it is exactly zero -- the mean already lands inside the band. Its
+standard deviation therefore exceeds its mean, and the Cauchy-Schwarz bound at radius 2.838 admits
+a reweighting that drives the denominator to zero, leaving the ratio unbounded above. A bound that
+excludes nothing cannot falsify anything, however correctly it was derived. This is the third
+independent route to the conclusion items 123 and 129 reached: the test regime is not checkable
+from here.
+
+**The sampling interval is the number nobody had.** With no shift at all, a 750-molecule draw moves
+macro ST-RAE over 0.639 to 0.804 -- **plus or minus 0.08, five times the seed spread of 0.016 and
+eleven times the 0.007 floor.** Every effect this file has ever measured is smaller than the noise
+in a single leaderboard score. That is not an argument against the effects; it is an argument about
+what a leaderboard number can be read as.
+
+**What follows for the submission, and it is sharper than item 145 had it.** The denominator is a
+property of the test set, not of the submission, so two submissions scored on the *same* test set
+share it exactly and it cancels in their difference. The difference between two submissions is
+therefore the only quantity the leaderboard measures cleanly -- free of the unknown denominator,
+free of the sampling draw, and paired. So if more than one submission is allowed, the second one is
+not a spare guess: it is the measurement. Per-enzyme against pooled tests the assumption the whole
+submission rests on, and nothing internal can test it.
+
+If only one is allowed, the pre-registered statement is the weaker one that remains honest: a score
+outside 0.639 to 0.804 (widened by the seed spread) falsifies **the named assumption** -- that the
+test's label spread and band widths resemble the training set's -- and not the model. A score inside
+confirms nothing at all.
+
+One methodological note, because the first version of this script got it wrong and the error was
+the quiet kind. `cluster_ids` returns a tuple `(cid, n_clusters)`, and wrapping it in a
+`try`/`except` made `np.asarray` raise and fall back silently to bootstrapping over molecules
+rather than clusters. The interval that produced was 0.641 to 0.799 -- narrower, plausible, and
+wrong for the right-looking reason. The fallback is now gone and the cluster count is asserted
+against the split's own: 4703. That the correction moved the interval so little is itself the
+composition result of item 129 showing through -- 93.6 per cent of clusters are singletons, so
+clusters and molecules are nearly the same unit here.
