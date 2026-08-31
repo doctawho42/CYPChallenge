@@ -3589,6 +3589,10 @@ behavioural **before** looking.
 
 The answer is per-enzyme, which was pre-registered as readable, and it splits two ways.
 
+**[ЧАСТИЧНО ОТОЗВАНО, см. пункт 135. Подписи остатка ниже верны как описание верхних 15 %;
+причинное прочтение «разрыв на CYP1A2 в основном невосстановим» проверено срезом по порогу
+прибора и не подтвердилось.]**
+
 **On CYP1A2 the gap is behavioural, and that is a ceiling.** The residue's chemistry is flat —
 similarity, size and basicity do not move — while its band is three times wider (1.418 against
 0.436) and its label sits at 3.955 against 5.131, below the resolution floor item 105 measured.
@@ -3618,3 +3622,125 @@ argument applies to them from this evidence.
 The practical reading. Macro-level effort against the macro gap is misdirected: half of the
 largest component is a measurement advantage nobody can model away. Effort has an address, and it
 is CYP2D6's potent amines.
+
+**135. The causal half of item 134 is retracted: cutting the unresolved labels does not remove the
+gap.** The test was proposed against item 134 within a day of its being written, and it is one
+line.
+
+Item 134 found that the compounds carrying most of the CYP1A2 gap have bands three times wider
+than average and labels a full unit lower, and read that as: the gap is a direct measurement
+beating a prediction on labels that are themselves extrapolations below the instrument's
+resolution. That reading has a hard consequence -- restrict both columns to labels above
+pC0 = 4.305 and the gap must collapse on CYP1A2 while barely moving on CYP2D6, whose share of
+sub-floor labels is smallest.
+
+    фермент   доля ниже pC0   разрыв весь   разрыв y > pC0   схлопнулся
+    CYP1A2           20.5 %         0.502            0.431         14 %
+    CYP2C9           31.9 %         0.340            0.398        -17 %
+    CYP2D6           15.3 %         0.306            0.250         18 %
+    CYP3A4           51.4 %         0.289            0.567        -96 %
+
+**The prediction fails on both halves.** CYP1A2 gives up 14 per cent of its gap and CYP2D6 gives up
+18 -- the enzyme that was supposed to move least moves most. And on CYP3A4 the gap nearly *doubles*
+above the floor, so there the screen's advantage lives among the compounds whose curves resolved
+perfectly.
+
+The error, named plainly because it is one this file catches in other people's proposals and did
+not catch in its own. **I took the signature of the top 15 per cent of the residue and attributed
+the whole quantity to it.** The signature is real -- those compounds do have wide bands and weak
+labels -- but removing them removes a seventh of the gap, so the bulk of CYP1A2's 0.502 lives in
+the resolvable range and has no explanation yet.
+
+The test is not tautological, and its design is what makes the failure informative: CYP3A4 has
+*twice* the share of sub-floor labels (51.4 per cent) and the *smallest* gap, so "fraction of
+unresolved labels" could never have explained the ordering by itself. That was checkable in
+advance and would have weakened the claim before it was written.
+
+What of item 134 survives:
+
+  the gap decomposition, 0.502 / 0.340 / 0.306 / 0.269, recomputed on the same folds;
+  CYP1A2 having the largest untapped gap and CYP2D6 the second smallest, so the repository's
+  mechanistic narrative is aimed at the enzyme with less headroom than the one it ignores;
+  CYP2D6's screening-alone score of 0.599 being the worst of the four **with a measurement in
+  hand**, which still says CYP2D6 is intrinsically hard rather than badly modelled;
+  the residue signatures as descriptions of the extreme tail.
+
+What does not survive: any claim that the CYP1A2 gap is largely unrecoverable, and with it the
+"stop" conclusion the file was built to be able to reach. It reached it and the reaching was
+wrong.
+
+The refutation of the shape hypothesis weakens with it. The CYP1A2 residue does have fewer
+aromatic rings and lower logP, which is the opposite of a planar-aromatic chemotype -- but since
+that residue carries only a seventh of the gap, it is evidence about the tail and not about the
+gap. The shape question on CYP1A2 is open again.
+
+**136. The screening contrast is predictable and still adds nothing, so the idea closes rather
+than its implementation.** `src/ablcontrast.py` measured the four predicted contrasts at -0.0015 of
+rank against a base of 0.5651, and the *level* control at +0.0040 -- the control beating the
+proposal, which was the pre-registered falsification. That left one ambiguity: a channel fed with
+an unpredictable quantity is empty by construction, and a null would then close the implementation
+rather than the idea.
+
+Measured out of fold, structure onto screen:
+
+    мишень            sd мишени   sd остатка      R2    ранг
+    уровень               0.673        0.441   0.570   0.757
+    контраст CYP1A2       0.604        0.498   0.320   0.580
+    контраст CYP2C9       0.441        0.355   0.350   0.577
+    контраст CYP2D6       0.834        0.686   0.324   0.506
+    контраст CYP3A4       0.846        0.632   0.442   0.669
+
+The contrast is recoverable from structure at an R-squared of 0.32 to 0.44 and a rank of 0.51 to
+0.67. **It is not an empty channel.** So the model was handed a real, if noisy, estimate of which
+enzyme a molecule prefers, and did nothing with it -- the idea is closed, not the wiring. The level
+being better predicted (0.570) is consistent with its being the arm that moved.
+
+The structural argument behind the proposal stands and is worth keeping separate from its failure:
+the screen is still the only place in the dataset where the same molecule is measured on all four
+enzymes, 4376 times against the curves' 41, and the contrast still carries 64.9 per cent of the
+screen's variance. That the boosting cannot use it is a fact about the model, not about the
+chemistry.
+
+**137. The pairwise arm was restricted to distinguishable pairs, so what failed is the proposal
+and not a weaker version of it.** Recorded because the distinction was raised. `pairwise_grad` in
+`src/ablpairloss.py` builds its pair mask as `lo[i] > hi[j]` -- a pair enters the gradient only
+when the bands are disjoint and i is strictly above j, and overlapping pairs receive exactly zero
+weight. On CYP2C9, where 56.5 per cent of pairs are distinguishable, that discards nearly half of
+them by construction. The smoke test's result -- pairwise 0.5991 against the same learner's squared
+0.6103 -- is therefore about the restricted objective that was proposed.
+**138. Feature subsampling does not free the mechanistic block, and there was nothing to free.**
+Proposed as the mechanism behind a fifty-line booster beating the pinned one, and as the link to
+the oldest open thread in this file: `frac_prot_74` takes part in no split on CYP2D6 while the
+fingerprint reconstructs it at R-squared 0.653, so the basicity signal reaches the model
+indirectly. If subsampling columns removes those bits from consideration at some nodes, the
+explicit column should start being chosen.
+
+Split counts over 200 trees, fold 0, at `max_features` 1.0 against 0.3:
+
+    фермент     mf       FP     DESC     MECH   frac_prot_74
+    CYP1A2     1.0   35.5 %   62.5 %    2.1 %        0.350 %
+    CYP1A2     0.3   35.6 %   62.1 %    2.3 %        0.419 %
+    CYP2C9     1.0   33.3 %   62.3 %    4.4 %        0.772 %
+    CYP2C9     0.3   34.1 %   61.4 %    4.4 %        0.748 %
+    CYP2D6     1.0   36.8 %   59.0 %    4.1 %        1.054 %
+    CYP2D6     0.3   37.6 %   58.0 %    4.4 %        0.731 %
+    CYP3A4     1.0   29.9 %   66.5 %    3.6 %        0.665 %
+    CYP3A4     0.3   33.3 %   63.0 %    3.8 %        0.647 %
+
+**On CYP2D6 the column is chosen thirty per cent less often with subsampling, not more**, and the
+block shares are flat to within a percentage point everywhere. The hypothesis is refuted on the
+enzyme it was made for.
+
+The reason it could not have worked is in the same table and is worth more than the refutation.
+**The dense blocks already dominate: DESC takes 58 to 66 per cent of splits while being 9.5 per
+cent of the columns, and FP takes 30 to 38 per cent while being 89 per cent of them.** A
+sixfold over-representation. There is no drowning of informative columns among two thousand sparse
+bits, because the trees barely look at the bits to begin with -- which also explains why
+`frac_prot_74` not being chosen is not a story about competition for attention.
+
+Two consequences. The oldest thread stays open: `frac_prot_74` is unused on CYP2D6 for some reason
+other than being crowded out, and item 134's residue says the compounds it should describe are
+exactly where the model loses most. And if the own-booster's advantage survives four seeds, it is
+**not** feature subsampling -- what remains is depth 5 against 31 leaves, 200 trees against 300, or
+exact trees against histogram ones, and the `max_features` sweep now running separates the first
+from the rest.
