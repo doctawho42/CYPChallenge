@@ -86,11 +86,18 @@ def main():
           + f"; всего прямых {sum(int(M[c].sum()) for c in CYPS)}"
           + f", с TDI {sum(int(M[c].sum()) + int(MT[c].sum()) for c in CYPS)}\n")
 
-    def stack(keep, with_tdi, blind=False):
+    def stack(keep, with_tdi, blind=False, centre=False):
         """Собрать пулированную таблицу из строк, помеченных keep (по молекулам).
 
         blind обнуляет индикатор, не убирая столбцы: ширина матрицы остаётся прежней,
         так что руки отличаются только тем, что модель знает, а не формой задачи.
+
+        centre вычитает среднее фермента из его меток. Вместе с blind это отделяет два
+        объяснения, которые слепая рука не различает: даёт ли индикатор модели УРОВЕНЬ
+        каждого фермента, или он позволяет учить РАЗНЫЕ зависимости от признаков. Если
+        центрирование возвращает выигрыш, работал уровень; если не возвращает --- контраст.
+        Среднее берётся ТОЛЬКО по обучающим строкам (keep), иначе оно принесёт с собой
+        метки отложенного фолда.
         """
         Xs, ys = [], []
         for e, c in enumerate(CYPS):
@@ -100,12 +107,15 @@ def main():
                 sel = mask & keep
                 if not sel.any():
                     continue
+                lab_e = lab[sel]
+                if centre:
+                    lab_e = lab_e - lab_e.mean()
                 ind = np.zeros((int(sel.sum()), 5), np.float32)
                 if not blind:
                     ind[:, e] = 1.0
                     ind[:, 4] = cond
                 Xs.append(np.hstack([X[sel], ind]))
-                ys.append(lab[sel])
+                ys.append(lab_e)
         return np.vstack(Xs), np.concatenate(ys)
 
     def block(e, sel, blind=False):
@@ -136,10 +146,14 @@ def main():
                         Xt, yt = X[m][~te], y[~te]
                         Xe = X[m][te]
                     else:
-                        bl = "слепой" in arm
-                        Xt, yt = stack(~te_mol, arm.endswith("TDI"), blind=bl)
+                        bl = ("слепой" in arm) or ("центрированный" in arm)
+                        Xt, yt = stack(~te_mol, arm.endswith("TDI"), blind=bl,
+                                       centre="центрированный" in arm)
                         Xe = block(e, m & te_mol, blind=bl)
                     p[te] = HistGradientBoostingRegressor(**KW).fit(Xt, yt).predict(Xe)
+                    if "центрированный" in arm:
+                        # Обратно в шкалу фермента: среднее только по обучающим строкам.
+                        p[te] = p[te] + Y[c][M[c] & keep].mean()
                 q = fit_apply(p, lo, hi, fi, np.ones(len(y)) / len(y))
                 out[f"{seed}|{arm}|{c}"] = p.tolist()
                 r[f"{c} сырой"] = round(float(strae(y, p, y_true_upper=hi, y_true_lower=lo)), 4)
