@@ -3460,3 +3460,51 @@ The separating arm is `--arms "пул центрированный"`: labels cen
 zeroed, the enzyme mean added back at prediction. That hands the model the level for free and
 still denies it the contrast. If the gain returns, the indicator was carrying levels; if it does
 not, contrast is what is left. It is queued.
+
+**132. Pooling works by contrast, not by level. The mechanism of the log's largest effect is
+settled.** `src/ablpool.py --arms "пул центрированный"`, seed 0. This closes a question open since
+item 110.
+
+Item 131 showed the enzyme indicator is what makes pooling work, but it removes two things at
+once. The indicator can be supplying *level* — each enzyme's own offset, and the medians do run
+from 5.13 on CYP1A2 to 4.27 on CYP3A4 — or *contrast*, the ability to learn different dependencies
+per enzyme. The separating arm hands the level over for free and still denies the contrast: labels
+centred per enzyme on the training folds, indicator still zeroed, the enzyme mean added back at
+prediction.
+
+    рука (сид 0)             ранг      1A2      2C9      2D6      3A4
+    пул                    0.5792   0.5084   0.6029   0.4448   0.7607
+    независимо             0.5651   0.4957   0.5972   0.4027   0.7646
+    пул слепой             0.4885   0.4309   0.5507   0.2690   0.6967
+    пул центрированный     0.4647   0.3860   0.5314   0.2339   0.7073
+
+**Giving the model the level for free recovers none of the gain**, and lands slightly below the
+blind arm. Level is not the mechanism; contrast is.
+
+The ordering of the four arms is itself coherent and worth reading, because it says the centred
+arm is the cleanest of the three negatives rather than an anomaly. In the blind arm the labels are
+still uncentred, so the enzymes differ in level and features correlated with level let the model
+partially infer which enzyme a row belongs to — a crutch it uses despite the zeroed indicator.
+Centring removes that too, leaving the purest possible no-contrast model, and it is the worst.
+0.4647 is therefore not "level did not help" but "this is what pooling is worth when contrast is
+fully unavailable".
+
+The elimination is now complete, and every step of it was a measurement rather than an argument:
+
+    одалживание соседей       опровергнуто, пункт 110 (выигрыш крупнейший там, где нечего брать)
+    перенос общей функции     опровергнуто, пункт 111 (связь перевёрнута, rho = -1.000)
+    объём выборки             опровергнуто, пункт 125 (удвоение таблицы не даёт ничего)
+    уровень фермента          опровергнуто, здесь
+    контраст                  единственное, что осталось
+
+So the largest effect the submission relies on has a mechanism at last: the indicator lets a tree
+learn "this split matters for CYP2D6 and not for CYP3A4", which a per-enzyme model cannot represent
+at all, and which is worth +0.0151 of rank against the per-enzyme baseline and +0.1145 against the
+same pooled table with the contrast taken away.
+
+Two consequences follow directly. Item 129's finding that only 41 compounds carry all four curves
+means this contrast is learned almost entirely *across* molecules rather than within them — the
+model never sees the same molecule on two enzymes — which is a strong constraint on any joint
+latent built later. And it is the argument for the screening channel in `src/ablcontrast.py`: the
+screen is the one place where the same molecule is measured on all four enzymes, 4376 times over,
+so it is the only source of within-molecule contrast the dataset contains.
