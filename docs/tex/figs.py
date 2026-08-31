@@ -33,7 +33,11 @@ plt.rcParams.update({
     "lines.linewidth":1.7, "pdf.fonttype":42,
 })
 def save(fig,name):
-    fig.savefig(F+name+".pdf"); fig.savefig(F+name+".png",dpi=185); plt.close(fig)
+    # CreationDate=None убирает штамп времени из PDF. Без него каждая сборка переписывает
+    # все рисунки, отличающиеся ровно на дату, --- десять немержабельных бинарников в
+    # диффе на пустом месте, при четырёх людях на четырёх машинах.
+    fig.savefig(F+name+".pdf",metadata={"CreationDate":None})
+    fig.savefig(F+name+".png",dpi=185); plt.close(fig)
     print("  ->",name)
 
 inh=pd.read_csv(D+"cyp-challenge-TRAIN_inhibition.csv")
