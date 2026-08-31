@@ -3256,3 +3256,56 @@ mechanism is not common across enzymes and should not be modelled as if it were.
 correlation between the screening readout and getting a curve is **-0.642, -0.151, -0.821 and
 +0.151** — on CYP3A4 the sign flips, and its unselected compounds inhibit *more* strongly than its
 selected ones. Whatever chose CYP3A4's curves, it was not activity in the screen.
+
+**128. The oracle gate: one measurement that bounds every post-hoc per-compound proposal, made
+before any of them is built.** `verify/k30_oracle.py`. This is a **procedure**, and it is recorded
+as one.
+
+Item 126 closed a proposal that claimed to escape item 77's ceiling *by construction*. The general
+form of that failure is worth more than the instance: **item 77's ceiling is not a claim about a
+class of functions, it is a claim about magnitudes.** Showing that a correction lies outside the
+affine family says nothing on its own; what decides is whether its non-affine part survives the
+curvature of the loss. So a proposal of the form "a per-compound correction applied to the
+predictions" needs an a-priori bound on the size of its non-affine part, not a proof that one
+exists. This file computes that bound once, for all such proposals at once.
+
+Take the correction a perfect per-compound layer would apply — move each prediction to the nearest
+point of its own true band, `c = clip(p, lo, hi) - p`. It drives the numerator to exactly zero, so
+it is unimprovable, and it is unachievable by construction since it uses the true label. Anything
+a real layer does is a subset of it.
+
+    фермент    пара   монот. потолок   бюджет   corr(оракул, остаток)
+    CYP1A2   0.7777          0.7668   0.0109                   0.948
+    CYP2C9   0.6097          0.6003   0.0094                   0.885
+    CYP2D6   0.8686          0.8588   0.0098                   0.935
+    CYP3A4   0.4716          0.4714   0.0002                   0.871
+    МАКРО    0.6819          0.6743   0.0076
+
+Two things fall out, and the second is the general one.
+
+**The whole budget for better monotone post-processing is 0.0076 macro** — at the noise floor,
+and on CYP3A4 it is 0.0002, meaning the affine pair is already at the monotone optimum there. The
+ceiling is computed by majorise-minimise, isotonic regression onto `clip(m, lo, hi)` iterated,
+which is the same reduction `src/abldead.py` uses applied to the monotone class instead of to a
+learner. Fits are in-sample on purpose: that is generous to the monotone class, which is the
+conservative direction for a gate.
+
+**The oracle correction is the model's own residual, at a correlation of 0.87 to 0.95.** That is
+the statement that closes the class, and it is stronger than any argument about monotonicity: the
+target of a post-hoc per-compound layer *is the error*, and an error computable from information
+available at prediction time is information that belonged in the model. The R-squared column
+(0.001 to 0.004) says the correction is not a function of the prediction at all — which is not a
+licence for a cleverer layer but the opposite, since it rules out every function of `p` alone, not
+just the monotone ones.
+
+One error inside this file, caught by the file itself and kept because it is the same mistake in
+miniature. The first version computed the ceiling as `p + isotonic(c | p)` and got 0.6880 —
+**worse than the affine pair**, which is impossible for a ceiling. With the oracle correction
+nearly uncorrelated with `p`, that isotonic fit is nearly flat and the "ceiling" degenerates to a
+shift, while the pair also shrinks. The metric column contradicting the R-squared column is what
+exposed it. Reporting a gate in variance units alone would have hidden it.
+
+The procedure, for future use: a proposal that adds a per-compound correction on top of the
+predictions is checked here **before** it is built, against magnitude rather than against class
+membership. If the monotone budget is at the floor and the oracle correction tracks the residual,
+the proposal is closed regardless of how it is motivated.
