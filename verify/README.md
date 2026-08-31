@@ -2237,29 +2237,36 @@ measures how much work that qualifier does — without it the criterion inverts.
 every case rather than by the principle that more diversity is better, which this item shows is
 false as stated.
 
-**101. FCFP loses as a replacement and wins as an addition — the same shape as item 68.**
+**101. FCFP loses as a replacement and does nothing as an addition.**
+*(This item was first written from seed 0 alone and claimed a win for the concatenation. The
+completed four-seed run refutes it; the corrected numbers are below and item 119 records how the
+error happened.)*
 `src/ablfcfp.py`. An outside reading proposed the pharmacophoric fingerprint on the ground that
 CYP recognition is about donors, acceptors and aromatic character rather than about the exact
-atoms. Three arms, seed 0:
+atoms. Three arms, four seeds:
 
-    набор              пара     ранг    1A2     2C9     2D6     3A4
-    ECFP (как сейчас) 0.7150   0.5651  0.496   0.597   0.403   0.765
-    FCFP вместо ECFP  0.7225   0.5554  0.477   0.582   0.403   0.760
-    оба               0.7098   0.5685  0.486   0.614   0.403   0.771
+    набор              пара     ранг      1A2      2C9      2D6      3A4
+    ECFP (как сейчас) 0.7156   0.5630   0.4957   0.5917   0.4035   0.7613
+    FCFP вместо ECFP  0.7275   0.5497   0.4755   0.5786   0.3898   0.7549
+    оба               0.7156   0.5627   0.4890   0.5984   0.3985   0.7649
 
-As a replacement FCFP is clearly worse — it loses 0.0097 of rank. Together the two beat ECFP
-alone by 0.0034 of rank and 0.0052 of pair, with the gain on CYP2C9 (+0.017) and CYP3A4 (+0.006)
-and a loss on CYP1A2.
+As a replacement FCFP is clearly worse — it loses 0.0133 of rank, consistently on every seed.
+**Concatenated it is worth nothing**: the pair moves by +0.000025 and the rank by -0.00035, three
+orders of magnitude under the floor.
 
-The generalisation is worth stating: **a representation that is worse on its own can still carry
-information the better one lacks, and testing it as a replacement measures the wrong thing.** The
-mechanistic block behaves the same way. Every future candidate representation gets the concatenated
-arm whether or not the substitution arm looks promising.
+The per-enzyme pattern is real even though the total is not. The concatenation helps CYP2C9
+(+0.0067) and CYP3A4 (+0.0036) on every seed and hurts CYP1A2 (-0.0067) and CYP2D6 (-0.0051) on
+every seed — and CYP2C9 and CYP3A4 are the pair that correlate at 0.688 (item 111). Whatever the
+pharmacophoric view adds, it adds it to one half of the panel and takes it from the other, and the
+two cancel.
 
-An earlier draft of this item called it the third recurrence and cited item 68's learned encoder
-as the precedent. Item 117 withdraws that precedent: the encoder's concatenated gain was raw
-ST-RAE and does not survive the affine pair. The numbers above are pair and rank throughout, so
-this item stands on its own; it simply has one fewer companion than it claimed.
+An earlier draft of this item read the seed-0 numbers as a win and generalised from them, citing
+item 68's learned encoder as a precedent for "worse as a replacement, better as an addition". Both
+halves have since gone. Item 117 withdrew the encoder precedent — its concatenated gain was raw
+ST-RAE and does not survive the affine pair — and the three remaining seeds withdrew this one.
+**The rule that a representation should always be tried concatenated is still worth keeping**,
+because the substitution arm genuinely measures the wrong thing; what is not supported is any
+expectation that the concatenated arm will win.
 
 **102. The aggregator suspects are chemistry, not a solubility artefact — and the flag proves it.**
 `src/ablagg.py`. The concern was that highly lipophilic compounds precipitate at assay
@@ -2840,3 +2847,43 @@ Every gate passes, the population it reaches is the one we are worst on, and the
 pattern is specific enough to falsify the result afterwards: CYP1A2 and CYP2D6 should gain at the
 weak end, CYP3A4 at the potent end, CYP2C9 least of the four. `src/trunk.py` already has the
 shared-trunk machinery. **This is what to build next.**
+
+**119. Four seeds for the marginal effects, and the third seed-0 mistake of the day.**
+Item 113 compared four-seed uniform gains against seed-0 reweighted ones and concluded that the
+shape block and the aggregator flag "go to zero" in the test's regime. The two halves of that
+comparison were not the same measurement. Weighted rank needs no affine pair, so the four-seed
+version costs nothing, with the weights rebuilt per seed because the out-of-fold similarity
+depends on the split:
+
+    эффект        сидов   равн. ранг   под тест   разброс по сидам
+    форма             4      +0.0034    +0.0014             0.0045
+    флаг агр.         1      +0.0046    +0.0002             ---
+    FCFP оба          4      -0.0004    +0.0032             0.0016
+    мех. блок         4      +0.0163    +0.0313             0.0028
+
+**The mechanistic block's doubling is confirmed on four seeds** — +0.0163 to +0.0313, with a
+seed-to-seed spread of 0.0028, an order below the effect. Together with item 116's per-enzyme
+check this is the one large claim of the day that survives every restriction placed on it.
+
+**The shape block's collapse is not established.** Its weighted estimate is +0.0014 with a
+seed-to-seed spread of 0.0045 — larger than the estimate. That is not "goes to zero", it is "the
+measurement cannot tell +0.0034 from 0", and item 113's wording is corrected to that. The flag
+still rests on one seed and is left there.
+
+**FCFP is refuted outright**, and by its own completed run. Item 101 was written from seed 0,
+where the concatenation won 0.0034 of rank. Seeds 1, 2 and 3 all reverse it, and the four-seed
+average is -0.0004 — nothing. That item has been rewritten above.
+
+This is the third time in one working session that a conclusion was drawn from partial output and
+had to be withdrawn when the run finished, after "one column beats the whole shared latent" from
+two seeds of four and "the state wins" from three rows of four. The pattern is specific enough to
+name: **the first seed is read while the rest are still computing, and it is read as though it
+were the answer.** Nothing in the tooling encourages waiting, and the ablation scripts print
+per-seed lines precisely so that progress is visible. The remedy is a rule rather than more care —
+**no item is written from a run that has not printed its aggregate table**, and the three
+withdrawals above are the argument for it.
+
+It is worth noting what the same discipline bought when it was applied. Items 109, 114 and 118
+each settled a multi-day proposal in under an hour by measuring a precondition first, and none of
+them has needed correcting. The failures and the successes of the day differ by exactly one thing:
+whether the number was finished before it was believed.
