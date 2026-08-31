@@ -2908,7 +2908,16 @@ The size is the point. Item 100 admitted the ridge to the submission at -0.0026 
 under the 0.007 floor while its per-enzyme signs are unanimous. By the rule item 100 set — that
 membership is settled by measurement — the trunk belongs in the ensemble.
 
-Two things make this trustworthy rather than merely large. `trunk.py` calls `butina_folds` from
+One attribution is not yet earned, and it is flagged here before the answer arrives rather than
+after. This item is written as though the *screening channel* is what the ensemble gains from,
+because that is the thread item 118 left hanging. But the trunk is also the only member from a
+different model family, and item 100 established that family diversity alone buys something. The
+arm that separates them is the trunk at `lambda = 0` — same architecture, same parameter count,
+same initial weights, screening head receiving no gradient — and it is running. If it delivers
+the same -0.0061, then what helps is the multilayer perceptron and not the channel, and the
+paragraph above is credited to the wrong thing. `verify/k27_trunkens.py` now carries that arm.
+
+Two things make the measurement itself trustworthy rather than merely large. `trunk.py` calls `butina_folds` from
 `cypsplit.py` with the same seed, so the trunk's out-of-fold predictions, the boosting's, and the
 affine pair are all on one split; nothing is being averaged across incompatible partitions. And
 the clip is not a thumb on the scale — item 79 records that without it seed 0 is one compound

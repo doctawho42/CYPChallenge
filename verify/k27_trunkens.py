@@ -16,6 +16,10 @@ Two arms, four seeds:
 
     current four   per-enzyme boosting, pooled boosting, GP on descriptors, ridge on descriptors
     plus trunk     the same four with the two-head trunk at lambda = 3
+    control        the same four with the trunk at lambda = 0 -- same architecture, same
+                   parameter count, same initial weights, screening head receiving no
+                   gradient. Without this arm a gain could be the model family rather than
+                   the channel, and item 5 would be credited with something it did not do
 
 and the trunk alone as the reference, so a null result can be read as "nothing to add" rather
 than "the member is broken".
@@ -46,7 +50,7 @@ CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 SEEDS = (0, 1, 2, 3)
 MEMBERS = [("oof_pool_all", "независимо"), ("oof_pool_all", "пул"),
            ("oof_gp", "GP"), ("oof_weak", "гребневая")]
-LAM = "3.0"
+LAMS = ("3.0", "0.0")   # с каналом и без; вторая --- контроль на семейство
 
 
 def main():
@@ -61,9 +65,9 @@ def main():
     table = []
     for seed in SEEDS:
         fold, _ = butina_folds(list(rows.SMILES), seed=seed)
-        tk = np.asarray(T[f"twohead|{seed}|{LAM}"], float)
+        TK = {L: np.asarray(T[f"twohead|{seed}|{L}"], float) for L in LAMS}
         r = {"seed": seed}
-        for tag in ("четыре", "пять", "ствол один"):
+        for tag in ("четыре", "пять", "пять lam0", "ствол один", "ствол lam0"):
             pr, rk = [], []
             for e, c in enumerate(CYPS):
                 col = f"{c}_pIC50_direct_inhibition"
@@ -73,11 +77,14 @@ def main():
                 hi = tr.loc[m, col + "_conf_high"].to_numpy()
                 fi, u = fold[m], np.ones(m.sum()) / m.sum()
                 # Тот же клип, что в src/trunkdose.py: диапазон меток фермента +-2.
-                t = np.clip(tk[m, e], y.min() - 2.0, y.max() + 2.0)
+                t3 = np.clip(TK["3.0"][m, e], y.min() - 2.0, y.max() + 2.0)
+                t0 = np.clip(TK["0.0"][m, e], y.min() - 2.0, y.max() + 2.0)
                 ps = [np.asarray(cache[fn][f"{seed}|{arm}|{c}"], float) for fn, arm in MEMBERS]
                 p = {"четыре": np.mean(ps, axis=0),
-                     "пять": np.mean(ps + [t], axis=0),
-                     "ствол один": t}[tag]
+                     "пять": np.mean(ps + [t3], axis=0),
+                     "пять lam0": np.mean(ps + [t0], axis=0),
+                     "ствол один": t3,
+                     "ствол lam0": t0}[tag]
                 q = fit_apply(p, lo, hi, fi, u)
                 pr.append(float(strae(y, q, y_true_upper=hi, y_true_lower=lo)))
                 rk.append(float(spearmanr(y, p).statistic))
@@ -87,19 +94,25 @@ def main():
         table.append(r)
         print(f"  сид {seed}: четыре {r['пара четыре']:.4f}/{r['ранг четыре']:.4f}  "
               f"пять {r['пара пять']:.4f}/{r['ранг пять']:.4f}  "
-              f"ствол {r['пара ствол один']:.4f}/{r['ранг ствол один']:.4f}", flush=True)
+              f"пять-lam0 {r['пара пять lam0']:.4f}/{r['ранг пять lam0']:.4f}", flush=True)
 
     df = pd.DataFrame(table)
     dp = df["пара пять"] - df["пара четыре"]
     dr = df["ранг пять"] - df["ранг четыре"]
     print(f"\n{'':14s} {'пара':>9s} {'ранг':>9s}")
-    for tag in ("четыре", "пять", "ствол один"):
+    for tag in ("четыре", "пять", "пять lam0", "ствол один", "ствол lam0"):
         print(f"{tag:14s} {df[f'пара {tag}'].mean():9.4f} {df[f'ранг {tag}'].mean():9.4f}")
     tp = ttest_1samp(dp, 0.0); tr_ = ttest_1samp(dr, 0.0)
     print(f"\nдобавление ствола: пара {dp.mean():+.4f} (t={tp.statistic:+.2f}, p={tp.pvalue:.3f}, "
           f"знаков {int((dp < 0).sum())}/4)")
     print(f"                   ранг {dr.mean():+.4f} (t={tr_.statistic:+.2f}, p={tr_.pvalue:.3f}, "
           f"знаков {int((dr > 0).sum())}/4)")
+    d0 = df["пара пять lam0"] - df["пара четыре"]
+    tt0 = ttest_1samp(d0, 0.0)
+    print(f"контроль без канала: пара {d0.mean():+.4f} (t={tt0.statistic:+.2f}, "
+          f"p={tt0.pvalue:.3f}, знаков {int((d0 < 0).sum())}/4)")
+    print(f"вклад самого канала (пять минус пять-lam0): "
+          f"{(df['пара пять'] - df['пара пять lam0']).mean():+.4f}")
     print("\nПо ферментам, прирост ранга от пятого члена:")
     for c in CYPS:
         d = df[f"{c}|пять"] - df[f"{c}|четыре"]
@@ -109,10 +122,11 @@ def main():
 Как читать. Порог 0.007 и знак на четырёх сидах из четырёх; ни то ни другое поодиночке не
 хватает при n = 4.
 
-Ноль здесь означает, что канал не переносится усреднением, и тогда остаётся единственный
-неиспробованный путь --- скрытый слой ствола как блок признаков в бустинг, то есть та же
-конкатенация, что и в пункте 101. Отрицательный результат и там закрыл бы пункт 5 целиком, а
-не оставил бы его висеть, как сейчас.""")
+Контрольная рука решает вопрос атрибуции, и без неё вывод был бы неверен. Ствол при lam = 0
+--- та же архитектура, то же число параметров, те же начальные веса, но скрининговая голова не
+получает градиента. Если он даёт ансамблю столько же, то помогает НЕ канал, а просто другое
+семейство моделей, и пункт 5 к выигрышу отношения не имеет. Если меньше --- разница между двумя
+руками и есть вклад канала, измеренный внутри ансамбля.""")
 
 
 if __name__ == "__main__":
