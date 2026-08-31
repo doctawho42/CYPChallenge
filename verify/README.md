@@ -1,6 +1,6 @@
 # Verification
 
-Forty-one scripts in four groups. `f*` was a sweep over everything that had been computed
+Forty-three scripts in four groups. `f*` was a sweep over everything that had been computed
 and written by that point; `g*` answers four questions raised against the document; `h*`
 tests two claims the document made about geometry and about reactivity; `k*` began as a
 group about post-hoc rescaling of the predictions and about how far the test set sits from
@@ -55,6 +55,8 @@ which `k5_shift.py` writes. Everything else runs in any order.
 | `k23_tilt.py` | reweight the ensemble toward pooling with one parameter, chosen out of sample | ~6 min |
 | `k24_visible.py` | why pooling's advantage grows exactly where the test set sits | ~5 min |
 | `k25_reweight.py` | re-score every saved ablation under weights matching the test set's regime | ~10 min |
+| `k26_screen.py` | preconditions for the screening head: informativeness, novelty, and what it corrects | ~3 min |
+| `k27_trunkens.py` | the trunk as a fifth ensemble member, with the lambda-zero control | ~4 min |
 
 ## What it found
 
