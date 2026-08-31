@@ -57,7 +57,10 @@ KW = dict(max_iter=300, learning_rate=0.06, max_leaf_nodes=31,
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--seeds", default="0,1")
+    ap.add_argument("--seeds", default="0")
+    ap.add_argument("--only-pairs", action="store_true",
+                    help="считать только попарные руки: «один» и «+все» совпадают с "
+                         "«независимо» и «пул» из ablpool.py и берутся оттуда")
     ap.add_argument("--out", default=RES + "preds/oof_pair.json")
     a = ap.parse_args()
     seeds = [int(x) for x in a.seeds.split(",")]
@@ -103,6 +106,8 @@ def main():
                 if d != c:
                     arms[f"+{d[3:]}"] = [c, d]
             arms["+все"] = list(CYPS)
+            if a.only_pairs:
+                arms = {k: v for k, v in arms.items() if k not in ("один", "+все")}
 
             for nm, members in arms.items():
                 t0 = time.time()
@@ -133,7 +138,16 @@ def main():
     df = pd.DataFrame(table)
     print("\nПрирост ранга против одиночного обучения, среднее по сидам:")
     piv = df.pivot_table(index="цель", columns="рука", values="ранг", aggfunc="mean")
-    gain = piv.sub(piv["один"], axis=0).drop(columns=["один"])
+    if "один" in piv.columns:
+        base = piv["один"]
+    else:
+        # Рука «один» тождественна «независимо» из ablpool.py --- постоянный столбец
+        # индикатора дереву ничего не даёт. Проверено: CYP1A2 даёт 0.4957 в обоих файлах.
+        P0 = json.load(open(RES + "preds/oof_pool_all.json"))["preds"]
+        base = pd.Series({c: float(np.mean([spearmanr(
+            Y[c][M[c]], np.asarray(P0[f"{s_}|независимо|{c}"], float)).statistic
+            for s_ in seeds])) for c in CYPS})
+    gain = piv.sub(base, axis=0).drop(columns=[c for c in ("один",) if c in piv.columns])
     print(gain.to_string(float_format=lambda x: f"{x:+.4f}"))
 
     print("\nСвязь прироста с корреляцией и с числом добавленных строк (12 клеток):")

@@ -71,11 +71,22 @@ KEEP = ["PUBCHEM_SID", "PUBCHEM_CID", "PUBCHEM_EXT_DATASOURCE_SMILES",
 SID_CHUNK = 8000        # PUG отдаёт 400 при запросе больше 10000 SID за раз
 
 
-def get(url, tries=4, pause=3.0):
-    """PubChem отдаёт 503 при нагрузке, поэтому повтор с паузой обязателен."""
+def get(url, body=None, tries=4, pause=3.0):
+    """PubChem отдаёт 503 при нагрузке, поэтому повтор с паузой обязателен.
+
+    Список SID уходит телом POST, а не в адресе: восемь тысяч идентификаторов дают строку
+    длиной под семьдесят тысяч символов, и сервер отвечает 413. GET остаётся для коротких
+    запросов вроде списка SID.
+    """
     for k in range(tries):
         try:
-            with urllib.request.urlopen(url, timeout=180) as r:
+            if body is None:
+                req = urllib.request.Request(url)
+            else:
+                req = urllib.request.Request(
+                    url, data=body.encode(),
+                    headers={"Content-Type": "application/x-www-form-urlencoded"})
+            with urllib.request.urlopen(req, timeout=300) as r:
                 return r.read().decode("utf-8", "replace")
         except Exception as e:
             if k == tries - 1:
@@ -103,7 +114,7 @@ def main():
             parts = []
             for i in range(0, len(sids), SID_CHUNK):
                 ch = ",".join(sids[i:i + SID_CHUNK])
-                txt = get(f"{BASE}/assay/aid/{aid}/CSV?sid={ch}")
+                txt = get(f"{BASE}/assay/aid/{aid}/CSV", body=f"sid={ch}")
                 parts.append(pd.read_csv(io.StringIO(txt), low_memory=False))
                 print(f"    {min(i+SID_CHUNK, len(sids))}/{len(sids)}", flush=True)
                 time.sleep(0.4)
