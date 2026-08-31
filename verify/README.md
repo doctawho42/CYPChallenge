@@ -2658,12 +2658,78 @@ the label. A model of the edges is a monotone reparameterisation of a model of t
 item 93's rule closes the proposal along with it. Five minutes, nothing fitted.
 
 The side effect is worth more than the closure. If the half-width is a known decreasing function
-of potency, then **ST-RAE is very nearly a potency-weighted absolute error**: the forgiveness
-threshold is about 1.25 pIC50 below a label of 3.5 and about 0.13 above 4.6. The competition
-metric is, to within three per cent of the width's variance, "get the potent compounds right, the
-weak ones are nearly free."
+of potency, then **ST-RAE is a potency-weighted absolute error**: the forgiveness threshold is
+about 1.25 pIC50 below a label of 3.5 and about 0.13 above 4.6. That is a much simpler statement
+than "soft-thresholded error against a confidence band" and it belongs in the document.
 
-That is a much simpler statement than "soft-thresholded error against a confidence band", it is
-the statement that actually explains where the model's effort should go, and it belongs in the
-document. It also says what item 105's dead-zone objective is really doing: not handling censored
-data, but declining to spend capacity at the weak end, in a pattern the labels themselves dictate.
+**115. Where the score is actually made, and a correction to the sentence above.** Reading item
+114 as "get the potent compounds right, the weak ones are nearly free" is the obvious inference
+and it is wrong. Share of the ST-RAE numerator by potency quartile, on the submitted ensemble:
+
+    фермент   кв.1 слабые   кв.2    кв.3   кв.4 сильные   полупорог кв.1   полупорог кв.4
+    CYP1A2         37.1 %   9.6 %  12.5 %         40.8 %            0.537            0.098
+    CYP2C9         27.9 %   9.9 %  12.8 %         49.5 %            0.546            0.128
+    CYP2D6         29.2 %   9.6 %  10.2 %         51.0 %            0.245            0.105
+    CYP3A4         16.0 %  20.9 %  22.4 %         40.7 %            1.233            0.069
+    среднее        27.6 %  12.5 %  14.4 %         45.5 %
+
+**The penalty is U-shaped, not monotone.** The potent quartile does dominate at 45.5 %, for the
+reason item 114 gives — there is almost no forgiveness there. But the weak quartile is second at
+27.6 %, and the two middle quartiles together supply only 26.9 %. The weak end is not free in
+practice, because item 105 measured our median absolute residual there at 1.27 to 1.67 pIC50, and
+that overruns even a threshold of half a log unit.
+
+The forgiveness at the weak end differs fivefold between enzymes — a half-threshold of 0.245 on
+CYP2D6 against 1.233 on CYP3A4 — and the share tracks it: CYP3A4, the most forgiven, is the only
+enzyme whose weak quartile is cheap at 16.0 %, while CYP2D6 with the tightest bands pays 29.2 %
+there despite being the enzyme where every model does worst.
+
+So the effort goes to both ends and the middle can be left alone, which is a different
+prescription from the one the previous paragraph implied.
+
+It also raises a concern about item 105's dead-zone objective, and the concern is recorded here
+before that run reports. Item 114 found the band width is a function of the label, so "wide band"
+and "weak compound" should be nearly the same set, and they are: the Jaccard overlap between the
+rows with a band above 1.0 pIC50 and the equally many weakest rows is 0.823, 0.738, 0.897 and
+0.930 across the four enzymes. The dead zone is therefore close to a potency-based down-weighting
+of the weak end — **and the weak end supplies 27.6 % of the penalty, not the near-nothing the
+band widths alone would suggest.** Withdrawing effort there may well cost more than it saves.
+
+If the dead zone loses, that is the reason, and it will be a better-understood loss than a win
+would have been. The residual disagreement between the two sets is largest on CYP2C9, at a
+Jaccard of 0.738, so that is the enzyme where the two readings can be told apart.
+
+**116. The doubling in item 113 holds for the mechanistic block and is unverifiable for pooling.**
+Item 113 reported that the two large effects roughly double in the test's regime, as a macro
+average, and in the same breath stated that CYP1A2 and CYP2D6 fall below the one-third effective
+sample size rule. Those are the same two enzymes the effects live on, so the macro average may be
+reporting a doubling that exists only in the cells the file said not to trust. Rank needs no affine
+pair, so the breakdown costs nothing:
+
+    фермент   ESS/n   мех. блок равн.   под тест   пул равн.   под тест
+    CYP1A2   24.8 %           -0.0012    +0.0081     +0.0127    +0.0564
+    CYP2C9   36.7 %           +0.0138    +0.0283     +0.0057    -0.0053
+    CYP2D6   20.7 %           +0.0517    +0.0739     +0.0421    +0.0636
+    CYP3A4   39.3 %           +0.0009    +0.0024     -0.0039    +0.0017
+
+    макро по всем четырём      мех +0.0163 -> +0.0282   пул +0.0142 -> +0.0291
+    только ESS выше трети      мех +0.0074 -> +0.0154   пул +0.0009 -> -0.0018
+
+**The mechanistic block's doubling survives the restriction** — +0.0074 to +0.0154 on the two
+enzymes whose weights can be read. The claim stands on the cells it is allowed to stand on.
+
+**Pooling's does not.** Restricted to CYP2C9 and CYP3A4 it is +0.0009 uniform and -0.0018
+weighted, and CYP2C9 flips sign outright. The whole of the macro doubling comes from CYP1A2 and
+CYP2D6, at effective sample sizes of 24.8 % and 20.7 %.
+
+The right conclusion is narrower than either "confirmed" or "refuted". Pooling helps CYP1A2 and
+CYP2D6 and does nothing for CYP2C9 and CYP3A4 **under uniform weights already** — that much is
+solid and has four seeds behind it. Under test weights the helped enzymes appear helped more, but
+those are precisely the enzymes whose reweighted estimate is too thin to read, so the doubling is
+**unverifiable rather than established**. Item 113's ordering claim is untouched; its magnitude
+claim for pooling is withdrawn.
+
+This is also the pattern item 111 predicts. Pooling helps CYP2D6, which correlates with nothing,
+and CYP1A2, the next least correlated; it does nothing for the CYP2C9-CYP3A4 pair that correlates
+at 0.688. The per-enzyme breakdown and the mechanism disagree with each other nowhere, which is
+some comfort about both.
