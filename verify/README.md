@@ -2429,8 +2429,14 @@ bootstrap over compounds, 1000 resamples, the same resample indices given to bot
     гребневая - пофермент +0.0098 [-.007,+.028] +0.0053 [-.005,+.017] -0.0153 [-.027,-.002] -0.0202 [-.045,+.004]
 
 Both principal effects hold and both are monotone across the four layers. **Pooling's advantage in
-the layer the test sits in is +0.0367, against the +0.0067 this log records for it overall** — five
-times larger, and in the far layer pooling is actually harmful. The Gaussian process runs the other
+the layer the test sits in is +0.0367 of rank, against the +0.0137 of rank it is worth overall** —
+2.7 times larger, and in the far layer pooling is actually harmful.
+
+*(An earlier version of this paragraph set the +0.0367 against 0.0067 and called it five times
+larger. That 0.0067 is pooling's gain in ST-RAE after the pair, which sits in the column next to
+the rank gain in the very table it was read from; the two are different quantities and the ratio
+was wrong. The same slip reached section 13 of the document and has been corrected there. The
+direction and the monotone trend are unaffected — only the multiple was overstated.)* The Gaussian process runs the other
 way and is worst exactly where the test lives. Item 97 was not a one-off.
 
 Acting on it directly fails. Ensemble weights fitted inside each layer, leave-one-fold-out so no
