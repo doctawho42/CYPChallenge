@@ -41,3 +41,4 @@ docs/tex/fig/*.png
 
 # Файлы отправки пересобираются скриптом; в git не нужны.
 results/submission/
+data/ncgc/
