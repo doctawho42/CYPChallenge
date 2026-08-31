@@ -3061,3 +3061,44 @@ that is a fact about the challenge rather than about our arithmetic.
 It also closes a line of work before it starts. A smoother ratio — logistic discrimination between
 the two sets instead of histogram bins — would reduce binning variance and cannot move the bound.
 Not worth the afternoon.
+
+**124. The verification layer had never been verified, and two of its scripts were lying.**
+A regression pass after a day of edits, run only to check nothing had broken, found four defects in
+the checking code itself. None of them is about the model; all of them are about whether this file
+can be believed.
+
+**`verify/f1_formulas.py` has never run on the numpy this repository actually uses.** It calls
+`np.trapezoid`, which exists only from numpy 2.0, and the environment has 1.26.4. The call has been
+there since the first commit. `pyproject.toml` states that numpy is deliberately unpinned because
+"1.26.4 and 2.5.2 both reproduce exactly" — true of the pipeline, false of this script, and the
+script is the one the table at the top of this file calls "44 numerical checks of every formula in
+the document". It crashed before reaching any of them. Now uses whichever name the installed numpy
+has.
+
+**Once it ran, one of the 44 failed — and the check was wrong, not the formula.** `I -> E as
+C -> inf` was tested at C = 100 M with a tolerance of 1e-9. The residual is exactly
+10^(h(pC - pi)), which at C = 100 comes to 6.3e-8: sixty times the tolerance. The limit is correct
+and the test point could never satisfy it; it needs C above about 10^3.8 M. Tested at 1e6 M it
+passes. **44 of 44 now.**
+
+**`verify/f6_data.py` reported three discrepancies that do not exist.** It "reconciles 21 numbers
+from the document against the source tables", and three of the 21 were the script's own fault:
+
+- it looked for a column named `concentration` where the file has `concentration_M`, and printed
+  "no such column" as a mismatch against a value that is in fact exactly what the text says;
+- its expected interquartile ranges had CYP1A2 and CYP2D6 **transposed** relative to
+  `docs/tex/s14.tex`. The document says 1.00 and 0.83, the data give 1.00 and 0.83, and the script
+  expected 0.83 and 1.00. Two reported errors, both phantom.
+
+**21 of 21 now.** Nothing in the document moved; the checker was stale.
+
+The meta-point is uncomfortable and worth stating plainly. This file's authority rests on those
+scripts, and the two whose whole purpose is reconciling the document against the data were between
+them producing one crash and three false alarms. A false alarm in a checker is worse than no
+checker: it trains the reader to discount the output. And the failure mode is specific — **nothing
+runs the verification scripts on a schedule.** `make verify` exists, CI runs only
+`tests/test_split.py`, and f1 has been dead since the first commit without anyone noticing.
+
+The cheap fix is not more care. `make verify` and `make verify-extra` should run somewhere that
+reports, or at minimum the fast ones should join the test suite; f1 takes forty seconds and f6
+twenty, and both would have caught all four of these on the day they appeared.
