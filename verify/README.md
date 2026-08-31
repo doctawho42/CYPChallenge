@@ -1199,7 +1199,10 @@ transfer, it lets the model express a source correction — so the prediction "r
 the sign flips" was satisfied by something else. Affirming the consequent, and it was written as a
 confirmation.
 
-**68. The pretrained encoder does add information; item 61's headline was wrong.** That item
+**68. The pretrained encoder does add information; item 61's headline was wrong.**
+*(Withdrawn by item 117. The gain below is raw ST-RAE, which item 77 showed the affine pair
+rewrites; after the pair it is +0.011 and by rank it is -0.0075. Item 61's headline stands and
+this item does not. Kept in place because item 77's table counts it among the five.)* That item
 concluded the representation was never the bottleneck, from a table in which the embedding only ever
 **replaced** our features. The missing row is concatenation, and the reason it is the row that
 decides is specific to this checkpoint: `rdkit2d` was pretrained to predict the very RDKit
@@ -2248,12 +2251,15 @@ As a replacement FCFP is clearly worse — it loses 0.0097 of rank. Together the
 alone by 0.0034 of rank and 0.0052 of pair, with the gain on CYP2C9 (+0.017) and CYP3A4 (+0.006)
 and a loss on CYP1A2.
 
-This is the third time the same distinction has decided a question here. Item 68 found it for the
-learned encoder, which lost as a substitute for the fingerprint and won concatenated to it; the
-mechanistic block behaves the same way. The generalisation is worth stating because it keeps being
-rediscovered: **a representation that is worse on its own can still carry information the better
-one lacks, and testing it as a replacement measures the wrong thing.** Every future candidate
-representation gets the concatenated arm whether or not the substitution arm looks promising.
+The generalisation is worth stating: **a representation that is worse on its own can still carry
+information the better one lacks, and testing it as a replacement measures the wrong thing.** The
+mechanistic block behaves the same way. Every future candidate representation gets the concatenated
+arm whether or not the substitution arm looks promising.
+
+An earlier draft of this item called it the third recurrence and cited item 68's learned encoder
+as the precedent. Item 117 withdraws that precedent: the encoder's concatenated gain was raw
+ST-RAE and does not survive the affine pair. The numbers above are pair and rank throughout, so
+this item stands on its own; it simply has one fewer companion than it claimed.
 
 **102. The aggregator suspects are chemistry, not a solubility artefact — and the flag proves it.**
 `src/ablagg.py`. The concern was that highly lipophilic compounds precipitate at assay
@@ -2733,3 +2739,41 @@ This is also the pattern item 111 predicts. Pooling helps CYP2D6, which correlat
 and CYP1A2, the next least correlated; it does nothing for the CYP2C9-CYP3A4 pair that correlates
 at 0.688. The per-enzyme breakdown and the mechanism disagree with each other nowhere, which is
 some comfort about both.
+
+**117. The concatenated encoder loses by rank, and item 68 was never updated to match the
+document.** The chemprop embedding concatenated to FP+DESC+MECH was recorded in item 68 at a raw
+macro ST-RAE of 0.7589 against 0.7673, read as a gain of 0.0084 and used to overturn item 61's
+conclusion that the representation was never the bottleneck. Item 77 then found that raw ST-RAE is
+rewritten by the affine pair, and the document's table of the five collapsed findings already
+carries this row at +0.011 after the pair. **The journal entry was left saying the opposite of the
+document's own table**, and has been marked withdrawn above.
+
+Re-reading the saved predictions under the criterion that decides things now adds the part neither
+had:
+
+    фермент   сырое база   сырое +EMB   пара база   пара +EMB   ранг база   ранг +EMB
+    CYP1A2        0.8786       0.8562      0.8128      0.8184      0.4957      0.4733
+    CYP2C9        0.6908       0.6998      0.6559      0.6833      0.5972      0.5869
+    CYP2D6        0.9803       0.9412      0.9052      0.8966      0.4027      0.4217
+    CYP3A4        0.5194       0.5383      0.4860      0.5071      0.7646      0.7485
+    МАКРО         0.7673       0.7589      0.7150      0.7263      0.5650      0.5576
+
+    сырое -0.0084   пара +0.0113   ранг -0.0075   ранг под тест -0.0182
+
+**The raw number and the pair number carry opposite signs**, which is the sharpest instance of
+item 77 in the log — an apparent gain of 0.0084 that is a loss of 0.0113 once the post-processing
+runs. By rank it loses 0.0075, and in the test set's regime it loses 0.0182, more than twice as
+much. Item 61 is reinstated: on this checkpoint the representation was not the bottleneck, as a
+substitute or as an addition.
+
+Two things follow beyond the row itself. The first is procedural: item 77 invalidated five
+findings, the document was corrected, and **one journal entry was left standing in contradiction
+to it for a month**. Nothing catches that automatically; the only defence is re-reading old items
+against new criteria, which is what this one did.
+
+The second bears on item 10 of the outside reading, which proposes pretrained representations as
+features on the ground that item 96 forbids carrying a metric result over to features. That
+remains true, but the transfer has now been measured and it is negative: chemprop as a metric
+placed second at 0.222, and as a concatenated feature block it costs 0.0075 of rank and 0.0182 in
+the test's regime. A larger pretrained model is a different question, but it starts from a worse
+prior than the proposal assumed.
