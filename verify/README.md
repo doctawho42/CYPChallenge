@@ -2555,8 +2555,28 @@ behaviour *differs*, and a near-duplicate partner adds rows without adding infor
 
 Four points cannot establish this, and worse, they cannot separate it from plain sample size:
 CYP3A4 has both the most labels and the highest correlation, so the two candidate explanations are
-themselves confounded across these four numbers. `src/ablpair.py` pools one partner at a time,
-where the two orderings disagree and can be told apart.
+themselves confounded across these four numbers.
+
+Two arms separate them and both are stated here before they report.
+
+**`src/ablpool.py --arms "пул слепой"`** — the same pooled table with the enzyme indicator zeroed
+rather than removed, so the design matrix keeps its width and the arms differ only in what the
+model is allowed to know. Transfer of shared function works without the indicator: a model that
+cannot tell the enzymes apart still estimates their common part from 6525 rows instead of 1285.
+Contrast cannot work without it at all — "this split matters for CYP2D6 and not for CYP3A4" is
+unrepresentable when the two are indistinguishable. **So: if the blind arm still beats the
+per-enzyme model, the gain is rows and regularisation and the indicator is incidental. If it
+collapses to the per-enzyme model or below, the indicator carries the effect.**
+
+**`src/ablpool.py --arms "пул+TDI"`** — the pre-incubation arm of the same four enzymes, which
+more than doubles the table to 13063 rows with maximally correlated ones. Under sample size this
+should be the largest gain available anywhere. Under contrast it adds rows and no information.
+
+`src/ablpair.py` would have separated them per partner as well, but at 2048 seconds for the
+cheapest of twelve arms it was stopped as too expensive for what it buys. Its one completed cell
+is worth recording as a hint and not more: CYP1A2 pooled with CYP2C9 alone reaches rank 0.5136
+against 0.4957 on its own — **more than the full four-way pool gives it, 0.5084** — so partners
+are not additive and one well-chosen partner can beat all three. One cell, seed 0.
 
 **112. Tilting the ensemble toward pooling: consistent, and under the noise floor.**
 `verify/k23_tilt.py`. Item 108 established the layer effect and refuted the sixteen-parameter way
