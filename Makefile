@@ -7,7 +7,8 @@
 UV := uv run
 
 .DEFAULT_GOAL := help
-.PHONY: help setup hooks features baseline ablate score submit reweight verify verify-extra test doc clean-cache
+.PHONY: help setup hooks features baseline ablate score submit reweight verify \
+        verify-extra verify-delta verify-regime test doc clean-cache
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
@@ -61,7 +62,7 @@ trunk-score: data/feats.npz  ## read the saved trunk predictions: lambda respons
 	uv run python src/trunkdose.py
 	uv run python src/trunknoise.py
 
-test:  ## golden-value guard on the cross-validation split
+test:  ## golden-value guard on the split, plus the fifth ensemble member's guards
 	$(UV) pytest
 
 verify: data/feats.npz  ## the quick verification scripts (skips f3, f12: ~70 min combined)
@@ -71,10 +72,26 @@ verify: data/feats.npz  ## the quick verification scripts (skips f3, f12: ~70 mi
 	  echo "=== $$f ==="; $(UV) python $$f || exit 1; \
 	done
 
-verify-extra: data/feats.npz  ## the h* and k* verification scripts (~25 min), logs into results/logs/
+verify-extra: data/feats.npz  ## h* and k1-k10: rescaling and how far the test sits (~25 min)
 	@mkdir -p results/logs
 	@for f in h1_geometry h2_tdi_alerts h3_alerts_delta k1_shrink k3_center k4_enrich \
 	          k5_shift k6_shift1d k7_2d6shift k8_kernel k9_shape k10_strat2d6; do \
+	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
+	done
+	@echo "logs in results/logs/"
+
+verify-delta: data/feats.npz  ## k11-k19: external data and the test label shift (~55 min)
+	@mkdir -p results/logs
+	@for f in k11_exttransfer k12_extneighbors k13_channels k14_design k15_pooldelta \
+	          k16_modelspread k17_ensdelta k18_nbspace k19_ens3delta; do \
+	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
+	done
+	@echo "logs in results/logs/"
+
+verify-regime: data/feats.npz  ## k20-k27: is our regime the test's, and what it costs (~40 min)
+	@mkdir -p results/logs
+	@for f in k20_strat k21_borda k22_layerboot k23_tilt k24_visible k25_reweight \
+	          k26_screen k27_trunkens; do \
 	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
 	done
 	@echo "logs in results/logs/"
