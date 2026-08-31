@@ -68,7 +68,11 @@ KW = dict(max_iter=300, learning_rate=0.06, max_leaf_nodes=31,
 NTREE = 200
 LR = 0.06
 DEPTH = 5
-MAXFEAT = 0.3
+MAXFEAT = 0.3     # умолчание; рука вида «квадрат mf1.0» переопределяет его
+
+# Пиновый scikit-learn 1.3.2 не имеет max_features у HistGradientBoostingRegressor вовсе ---
+# проверено. Значит подвыборка признаков недоступна учителю, на котором стоит весь журнал,
+# и если механизм в ней, сменить учителя --- единственный маршрут, а не вопрос настройки.
 
 
 def pairwise_grad(s, y, lo, hi, chunk=512):
@@ -93,7 +97,7 @@ def pairwise_grad(s, y, lo, hi, chunk=512):
     return g
 
 
-def boost(Xtr, ytr, lotr, hitr, Xte, mode, seed):
+def boost(Xtr, ytr, lotr, hitr, Xte, mode, seed, maxfeat=MAXFEAT):
     """Свой бустинг над обычными деревьями. mode: 'sq' или 'pair'."""
     rng = np.random.default_rng(seed)
     s = np.full(len(ytr), float(np.mean(ytr)) if mode == "sq" else 0.0)
@@ -107,7 +111,7 @@ def boost(Xtr, ytr, lotr, hitr, Xte, mode, seed):
             nrm = np.abs(resid).max()
             if nrm > 0:
                 resid = resid / nrm
-        tree = DecisionTreeRegressor(max_depth=DEPTH, max_features=MAXFEAT,
+        tree = DecisionTreeRegressor(max_depth=DEPTH, max_features=maxfeat,
                                      random_state=int(rng.integers(1 << 30)))
         tree.fit(Xtr, resid)
         s = s + LR * tree.predict(Xtr)
@@ -119,6 +123,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default="0")
     ap.add_argument("--only", default="", help="через запятую, какие ферменты")
+    ap.add_argument("--arms", default="HistGB, квадрат|свой бустинг, квадрат|свой бустинг, попарно",
+                    help="через | --- какие руки считать")
     ap.add_argument("--out", default=RES + "preds/oof_pairloss.json")
     a = ap.parse_args()
     seeds = [int(x) for x in a.seeds.split(",")]
@@ -145,7 +151,7 @@ def main():
     out, table = {}, []
     for seed in seeds:
         fold, _ = butina_folds(list(rows.SMILES), seed=seed)
-        for nm in ("HistGB, квадрат", "свой бустинг, квадрат", "свой бустинг, попарно"):
+        for nm in a.arms.split("|"):
             t0 = time.time()
             r = {"seed": seed, "рука": nm}
             for c in cyps:
@@ -165,8 +171,11 @@ def main():
                             Xi[trn], y[trn]).predict(Xi[te])
                     else:
                         mode = "sq" if "квадрат" in nm else "pair"
+                        mf = MAXFEAT
+                        if "mf" in nm:
+                            mf = float(nm.split("mf")[1].split()[0])
                         s_tr, s_te = boost(Xi[trn], y[trn], lo[trn], hi[trn],
-                                           Xi[te], mode, seed * 10 + f)
+                                           Xi[te], mode, seed * 10 + f, mf)
                         if mode == "pair":
                             # Попарная потеря задаёт порядок и молчит про шкалу; изотоника
                             # переводит счёт в pIC50, подогнанная на обучающих фолдах.
