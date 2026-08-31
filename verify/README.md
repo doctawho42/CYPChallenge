@@ -1,10 +1,12 @@
 # Verification
 
-Twenty-five scripts in four groups. `f*` was a sweep over everything that had been computed
+Forty-one scripts in four groups. `f*` was a sweep over everything that had been computed
 and written by that point; `g*` answers four questions raised against the document; `h*`
-tests two claims the document made about geometry and about reactivity; `k*` is about
-post-hoc rescaling of the predictions and about how far the test set sits from the training
-distribution. All of them expect the data in `data/` and the organisers' metric code
+tests two claims the document made about geometry and about reactivity; `k*` began as a
+group about post-hoc rescaling of the predictions and about how far the test set sits from
+the training distribution, and `k20` onward is about a second question that grew out of the
+first: whether the regime our cross-validation runs in is the regime the test will be scored
+in, and which of this log's conclusions depend on the answer. All of them expect the data in `data/` and the organisers' metric code
 (`git submodule update --init`).
 
 The only dependency between scripts is that `k6_shift1d.py` reads `data/test_pred.npz`,
@@ -37,6 +39,22 @@ which `k5_shift.py` writes. Everything else runs in any order.
 | `k7_2d6shift.py` | the CYP2D6 shift against basic-amine composition, and the raw shifts | ~2 min |
 | `k8_kernel.py` | delta by inverting the kernel E[yhat\|y] — no instrument, no scalar propagation | ~5 min |
 | `k9_shape.py` | the test is shifted *and* widened, and what that does to ST-RAE | ~2 min |
+| `k10_strat2d6.py` | the kernel estimate of delta, split along the one axis known to have moved | ~5 min |
+| `k11_exttransfer.py` | train on the external labels alone: which enzyme fails to transfer, and how | ~15 min |
+| `k12_extneighbors.py` | how close the external compounds get to ours, and what zero overlap with the test means | ~4 min |
+| `k13_channels.py` | how many compounds carry all three observation channels, and whether the channels are distinct | ~1 min |
+| `k14_design.py` | recover the organisers' rule for choosing which compounds get a dose-response curve | ~2 min |
+| `k15_pooldelta.py` | re-estimate the test shift on the pooled base | ~6 min |
+| `k16_modelspread.py` | how far apart three models put the same test shift | ~8 min |
+| `k17_ensdelta.py` | the shift estimated on the model that is actually submitted | ~6 min |
+| `k18_nbspace.py` | in which space is a neighbour informative — measured with no model at all | ~5 min |
+| `k19_ens3delta.py` | the shift on the three-member ensemble, and whether a fourth family widens the spread | ~7 min |
+| `k20_strat.py` | every model's rank, measured in the regime the test set actually sits in | ~4 min |
+| `k21_borda.py` | average the members' ranks instead of their values | ~1 min |
+| `k22_layerboot.py` | is the layer effect real, and does gating the ensemble on similarity pay | ~8 min |
+| `k23_tilt.py` | reweight the ensemble toward pooling with one parameter, chosen out of sample | ~6 min |
+| `k24_visible.py` | why pooling's advantage grows exactly where the test set sits | ~5 min |
+| `k25_reweight.py` | re-score every saved ablation under weights matching the test set's regime | ~10 min |
 
 ## What it found
 
@@ -2215,3 +2233,437 @@ measures how much work that qualifier does — without it the criterion inverts.
 `src/submit.py` takes the ridge as a fourth member. Membership is now settled by measurement in
 every case rather than by the principle that more diversity is better, which this item shows is
 false as stated.
+
+**101. FCFP loses as a replacement and wins as an addition — the same shape as item 68.**
+`src/ablfcfp.py`. An outside reading proposed the pharmacophoric fingerprint on the ground that
+CYP recognition is about donors, acceptors and aromatic character rather than about the exact
+atoms. Three arms, seed 0:
+
+    набор              пара     ранг    1A2     2C9     2D6     3A4
+    ECFP (как сейчас) 0.7150   0.5651  0.496   0.597   0.403   0.765
+    FCFP вместо ECFP  0.7225   0.5554  0.477   0.582   0.403   0.760
+    оба               0.7098   0.5685  0.486   0.614   0.403   0.771
+
+As a replacement FCFP is clearly worse — it loses 0.0097 of rank. Together the two beat ECFP
+alone by 0.0034 of rank and 0.0052 of pair, with the gain on CYP2C9 (+0.017) and CYP3A4 (+0.006)
+and a loss on CYP1A2.
+
+This is the third time the same distinction has decided a question here. Item 68 found it for the
+learned encoder, which lost as a substitute for the fingerprint and won concatenated to it; the
+mechanistic block behaves the same way. The generalisation is worth stating because it keeps being
+rediscovered: **a representation that is worse on its own can still carry information the better
+one lacks, and testing it as a replacement measures the wrong thing.** Every future candidate
+representation gets the concatenated arm whether or not the substitution arm looks promising.
+
+**102. The aggregator suspects are chemistry, not a solubility artefact — and the flag proves it.**
+`src/ablagg.py`. The concern was that highly lipophilic compounds precipitate at assay
+concentration, so their curves are wrong and their rows are noise. The falsification proposed with
+it was that a real artefact would improve all four enzymes at once. Four arms, seed 0:
+
+    рука                 пара     ранг    1A2     2C9     2D6     3A4
+    база               0.7150   0.5651  0.496   0.597   0.403   0.765
+    флаг               0.7126   0.5697  0.504   0.596   0.415   0.763
+    вес по структуре   0.7128   0.5695  0.503   0.595   0.418   0.763
+    вес со скринингом  0.7126   0.5692  0.500   0.591   0.417   0.768
+
+All three interventions help by the same amount, about 0.0045 of rank, and the gain sits on CYP1A2
+and CYP2D6 while CYP2C9 and CYP3A4 do not move. The pre-registered test therefore fails: two
+enzymes out of four, not four.
+
+The coincidence of the three arms says more than their size. **If these rows were corrupted
+labels, down-weighting would have to beat flagging** — a wrong label cannot be explained away by
+handing the model an extra column, it can only be discounted. The two are equal to within 0.0002,
+so what the suspect column carries is signal the model can use, not noise to remove. The flag
+stays in as a feature; the down-weighting does not go in, because it throws away rows to buy the
+same thing.
+
+**103. The reparameterised grid does not reproduce the old submission bit for bit, and should not.**
+Item 99 replaced the offset grid with a grid over the prediction shift. Re-running the submission:
+
+    фермент   lambda    сдвиг   эталон   среднее   эталон
+    CYP1A2      0.58   +0.130   +0.126     5.091    5.087
+    CYP2C9      0.76   +0.240   +0.247     4.929    4.933
+    CYP2D6      0.52   -0.190   -0.192     4.478    4.476
+    CYP3A4      0.74   +0.430   +0.429     4.852    4.851
+
+Every shift differs, by 0.001 to 0.007. This is resolution, not behaviour: the old grid stepped
+the offset by 0.05, which at lambda 0.58 is a step of 0.05 x (1 - 0.58) = 0.021 in the shift, while
+the new grid steps the shift by 0.01 directly. Each optimum has moved by less than one old step,
+and the new grid is the finer of the two. It is recorded here because "the regression passes"
+would have been the wrong words and the four decimals in the document come from these numbers.
+
+**104. The geometry prediction failed, and the two halves of the block are not separable.**
+`src/ablshape.py`, `--sets`, four seeds. The block was justified by a per-enzyme prediction:
+planarity should help CYP1A2, volume and flexibility should help CYP3A4, and CYP2D6 should not
+move. Measured:
+
+    набор           пара     ранг      1A2      2C9      2D6      3A4
+    без формы     0.7156   0.5630   0.4957   0.5917   0.4035   0.7613
+    с формой      0.7132   0.5664   0.5017   0.5914   0.4122   0.7605
+
+The block does help — 0.0034 of rank, above the 0.007 floor only marginally but consistent across
+four seeds — and it helps on **CYP2D6 (+0.0087) and CYP1A2 (+0.0060), with CYP3A4 flat**. That is
+the enzyme the prediction said would not move, and not the enzyme it said would. The block is kept
+on measurement and its stated mechanism is withdrawn.
+
+Splitting it does not rescue the story either:
+
+    только индексы формы   0.7152   0.5649   0.5022   0.5904   0.4066   0.7603
+    только расстояния      0.7148   0.5650   0.4989   0.5922   0.4076   0.7615
+
+The two halves are indistinguishable at the macro level and each recovers about half the CYP2D6
+gain, while together they deliver more than the sum. Item 91's attribution of the effect to the
+3D geometric distances alone was drawn from a partial run and does not hold: neither half is the
+driver.
+
+**105. There is no censoring spike, and the real finding is larger than the one that was looked for.**
+The proposal was that labels pile up at the instrument's floor, pC0 = -log10(49.5 uM) = 4.305, and
+that such rows are left-censored and should enter as inequalities. The histogram says no: the
+density passes through 4.305 smoothly in all four enzymes, the most frequent single value is shared
+by two compounds, and 20.5 / 31.9 / 15.3 / 51.4 per cent of the labels lie *below* the floor. The
+organisers did not clamp; they let the fit extrapolate past the top tested concentration.
+
+Asking where resolution actually ends, rather than assuming it, gives a much sharper picture. An
+unresolved curve does not announce itself with a spike — the fit still returns a number — it
+announces itself by the confidence band widening. Median band width against potency, CYP2D6 as the
+example:
+
+    pIC50           n   медиана ширины   доля шире 1.0
+    [0.00,3.50)   102        2.609          100.0 %
+    [3.50,4.00)    27        2.494          100.0 %
+    [4.00,4.30)   100        0.513           18.0 %
+    [4.30,4.60)   378        0.263            0.0 %
+    [4.60,5.00)   340        0.297            0.3 %
+
+The same cliff appears in all four. Emax is flat at about -1.0 throughout, so these compounds do
+reach full suppression; it is the inflection that is unpinned, not the depth. Across the four
+enzymes **19.3 % of the 6525 labels carry a band wider than 1.0 pIC50** and 12 % wider than 2.0.
+
+What that costs, measured on the saved out-of-fold predictions:
+
+    фермент   доля строк   доля кв.потери   доля ST-RAE
+    CYP1A2       14.6 %         44.7 %         20.0 %
+    CYP2C9       17.0 %         33.8 %         12.6 %
+    CYP2D6        9.9 %         41.2 %         12.8 %
+    CYP3A4       29.4 %         44.5 %         11.3 %
+
+**A squared loss spends about forty per cent of its effort on rows that supply about thirteen per
+cent of the score.** On CYP3A4, 73.9 % of the predictions on those rows already land inside the
+band — the error is already free and the objective is still pushing on it. On CYP2C9 the median
+such row has an absolute residual of 0.605 and an ST-RAE of exactly 0.000. The misallocation
+compounds, because these are also the weakest compounds and therefore the ones a squared loss
+weights most heavily.
+
+The censoring hypothesis is closed. What replaces it is the measured case for item 106's objective.
+
+**106. Averaging ranks instead of values changes nothing, and the reason it fails is worth keeping.**
+`verify/k21_borda.py`. Since only rank survives the affine pair, an outside reading proposed that
+the ensemble average ranks rather than values — Borda — so that no member's scale drags the joint
+answer around. Four seeds, ranks mapped back through the empirical quantile function of the labels:
+
+    членов   значения (пара/ранг)   ранги (пара/ранг)   разница пары   разница ранга
+        2      0.6921 / 0.5921      0.6964 / 0.5922        +0.0043        +0.0000
+        3      0.6845 / 0.5994      0.6923 / 0.5991        +0.0078        -0.0003
+        4      0.6819 / 0.6009      0.6921 / 0.6000        +0.0102        -0.0009
+
+**The rank is identical** — every difference is an order of magnitude below the 0.007 floor. The
+members' scales are commensurate and there was nothing to fix. The pair, meanwhile, degrades, and
+degrades further with each member added. The mechanism is clean: the quantile map forces the
+predictions to have the spread of the labels, which is exactly the over-dispersion that fitting
+lambda below one exists to remove, and a two-parameter affine pair cannot undo a quantile
+transform. Half an hour, question closed, and it doubles as a check that the shrinkage is doing
+real work rather than compensating for something else.
+
+**107. kNN does not recover where the neighbours are near — it gets worse, and that is not what
+the rejection assumed.** `verify/k20_strat.py`. Item 97 found the cross-validation runs at a
+nearest-neighbour similarity of 0.435 while the test set sits at 0.587, so every choice in this log
+was made in a harder regime than the one it will be scored in. The natural first suspect was item
+100's rejection of kNN: a nearest-neighbour method is exactly the method whose accuracy should
+depend on how near the neighbours are, and it was judged at 0.435. Rank inside each layer, four
+seeds, four enzymes:
+
+    модель                  < 0.35   0.35-0.45   0.45-0.55      > 0.55
+    n на слой                 1086        2553        2090         795
+    бустинг поферментно     0.5280      0.5350      0.5872      0.5657
+    бустинг пул             0.5143      0.5570      0.6061      0.6023
+    GP                      0.5328      0.5317      0.5660      0.5315
+    лес                     0.5278      0.5363      0.5827      0.5479
+    гребневая               0.5380      0.5404      0.5719      0.5458
+    kNN                     0.4626      0.4599      0.5038      0.4567
+
+Columns are not comparable to one another — the layers have different label spreads — so only
+comparisons down a column are drawn. kNN's deficit against the per-enzyme boosting **widens** from
+-0.0655 in the far layer to -0.1090 in the near one. The rejection was not delivered in the wrong
+regime; if anything it was delivered in the regime most favourable to kNN.
+
+The reason is the interesting part, and it does not close the difference-model proposal that this
+check was run to gate. kNN assumes the label of a near neighbour transfers unchanged. Item 96
+already measured that similarity actively misleads in the middle layers, and item 99's activity
+cliffs are by construction near pairs whose labels differ. So kNN fails hardest in the near layer
+precisely because that is where the assumption Delta-y = 0 is worst — which is the one thing a
+model of Delta-y is for. The precondition test does not decide the proposal; it relocates it. The
+question to ask of the difference model is not whether neighbours are near but whether Delta-y
+between near neighbours is predictable at all, and that is a different measurement.
+
+**108. The layer effect is real and monotone; fitting weights on it loses in every layer.**
+`verify/k22_layerboot.py`. The table in item 107 is eyeballed from about 200 compounds per enzyme
+per seed in the right-hand column, where a Spearman carries a standard error near 0.06. Paired
+bootstrap over compounds, 1000 resamples, the same resample indices given to both models:
+
+    сравнение                   < 0.35            0.35-0.45          0.45-0.55            > 0.55
+    пул - поферментно   -0.0136 [-.031,+.004] +0.0221 [+.011,+.032] +0.0191 [+.007,+.031] +0.0367 [+.011,+.063]
+    GP - поферментно    +0.0044 [-.012,+.022] -0.0034 [-.015,+.007] -0.0210 [-.033,-.009] -0.0336 [-.060,-.007]
+    гребневая - пофермент +0.0098 [-.007,+.028] +0.0053 [-.005,+.017] -0.0153 [-.027,-.002] -0.0202 [-.045,+.004]
+
+Both principal effects hold and both are monotone across the four layers. **Pooling's advantage in
+the layer the test sits in is +0.0367, against the +0.0067 this log records for it overall** — five
+times larger, and in the far layer pooling is actually harmful. The Gaussian process runs the other
+way and is worst exactly where the test lives. Item 97 was not a one-off.
+
+Acting on it directly fails. Ensemble weights fitted inside each layer, leave-one-fold-out so no
+compound contributes to the weights that score it:
+
+    слой         равные веса   подогнанные   разница   средние веса
+    < 0.35            0.7367        0.7559    +0.0192   пофермент .35 пул .17 GP .25 гребн .23
+    0.35-0.45         0.6925        0.6968    +0.0043   пофермент .22 пул .38 GP .17 гребн .23
+    0.45-0.55         0.6640        0.6687    +0.0047   пофермент .20 пул .49 GP .11 гребн .20
+    > 0.55            0.7185        0.7345    +0.0160   пофермент .20 пул .62 GP .04 гребн .13
+
+Worse in all four. And the weights are not learning the wrong thing — in the near layer the fit
+puts 0.62 on pooling and 0.04 on the Gaussian process, which is precisely the ordering the
+bootstrap established. **Four free parameters estimated on about 160 rows per fold cost more in
+variance than the misweighting costs in bias.** The effect is real and this way of spending it is
+not; equal weights survive on a measurement rather than on inertia.
+
+That leaves the effect unspent rather than refuted, which is what `verify/k23_tilt.py` is for: one
+parameter instead of sixteen, chosen by holding out a whole seed.
+
+**109. The difference model on near neighbours has neither a training set nor a starting point.**
+Item 107 relocated the proposal: the question is not whether the neighbours are near but whether
+the label difference across them is predictable. Two counts decide it before anything is built —
+how many co-labelled pairs exist above the threshold, and how the spread of Delta-y across them
+compares with the boosting's own residual, since Delta-y = 0 is the naive rule the model would
+have to beat.
+
+    фермент       n   порог     пар   пар/мол   std dy   станд. остаток
+    CYP1A2     1412    0.55      58      0.04    1.188            0.913
+    CYP2C9     1285    0.55      48      0.04    1.176            0.624
+    CYP2D6     1493    0.55      62      0.04    0.932            0.846
+    CYP3A4     2335    0.55     996      0.43    1.014            0.698
+
+Both preconditions fail at once. There is no training set — 48 to 62 pairs on three of the four
+enzymes, against the "an order of magnitude more pairs than molecules" the proposal assumed. And
+**the neighbour's label is a worse starting point than the model's own prediction in every
+enzyme**: the spread of Delta-y across near pairs exceeds the residual the boosting already
+achieves, by a factor of nearly two on CYP2C9. Correcting a neighbour's label starts further from
+the truth than simply predicting.
+
+This is the second proposal to die on the same count. Item 88 refuted the matched-molecular-pair
+method by finding 4230 distinct transformations across 4265 pairs and none with five examples.
+The cause is structural and was visible from the start: Butina at 0.35 gives 4703 clusters for
+about 4900 molecules, which is a set with almost no near neighbours by construction. Any method
+whose unit of learning is a *pair* is refuted by that number, and the class should be treated as
+closed rather than re-proposed one member at a time.
+
+The count did leave something behind. Twelve per cent of rows have some training neighbour above
+0.55 while co-labelled pairs that near are essentially absent — so the near neighbours exist and
+carry labels for other enzymes. `verify/k24_visible.py` follows that.
+
+**110. Pooling does not win by borrowing neighbours, and its largest effect stays unexplained.**
+`verify/k24_visible.py`. Item 108 left the sign flip in item 107's table without a mechanism:
+pooling is worth +0.0367 of rank where neighbours are near and -0.0136 where they are far. Item
+109 supplied a candidate. The label matrix is sparse, so a molecule's nearest structural neighbour
+usually carries a label for a different enzyme; the per-enzyme model cannot see that row at all
+and the pooled model can. On that reading pooling's advantage is the neighbours it reaches that
+the per-enzyme model cannot, and it should vanish where there are none to reach.
+
+The invisible fraction is large enough for the mechanism to have worked:
+
+    фермент   меток   медиана nn все   медиана nn с меткой   доля с зазором > 0.02
+    CYP1A2     1412            0.415                 0.371                  40.2 %
+    CYP2C9     1285            0.452                 0.423                  36.1 %
+    CYP2D6     1493            0.392                 0.341                  44.5 %
+    CYP3A4     2335            0.461                 0.442                  20.2 %
+
+It did not:
+
+    зазор          n   преимущество пула
+    ~ 0         4398             +0.0165
+    0.02-0.08   1153             +0.0035
+    0.08-0.18    756             +0.0125
+    > 0.18       216             +0.0450
+
+The prediction was zero in the top row and a monotone rise. What happens is neither: the
+advantage is **large precisely where the per-enzyme model can already see the whole
+neighbourhood**, then falls, then rises again. The widest-gap bin is consistent with borrowing
+and holds 216 rows; the top bin holds 4398 and refutes it.
+
+So pooling is not reaching for neighbours. What is left is transfer of *function* rather than of
+neighbours — the four enzymes share enough structure-activity relationship (item 86's promiscuity)
+that fitting all 6525 rows at once estimates the shared part better, with the indicator carrying
+the differences. That reading is consistent with the numbers but it was not tested here, and it
+does not explain the sign flip by itself.
+
+**The largest single effect available to the submission is therefore unexplained, and that is
+worse than it sounds.** An effect we cannot attribute is an effect we cannot argue will survive
+the move to the test set; +0.0367 measured in a proxy layer is not the same claim as +0.0367 on
+the real thing. This is now the most important open question in the log.
+
+**111. Pooling does not transfer shared function either — the relation is perfectly inverted.**
+Item 110 left transfer of the structure-activity relationship as the surviving reading. It makes a
+prediction that costs nothing to check: the amount of function available to transfer is the rank
+correlation between two enzymes' labels on the molecules carrying both, and the enzyme most
+correlated with the rest should gain most.
+
+    фермент   меток   средняя корреляция с прочими   выигрыш пула (ранг)
+    CYP2D6     1493                        -0.002                +0.0374
+    CYP1A2     1412                         0.288                +0.0157
+    CYP2C9     1285                         0.330                +0.0071
+    CYP3A4     2335                         0.375                -0.0057
+
+Monotone, and inverted in every step: rho = -1.000 across the four. **Pooling helps most exactly
+where there is no shared function, and hurts the one enzyme that shares the most.** CYP2C9 and
+CYP3A4 correlate at 0.688 and pooling does nothing for either; CYP2D6 correlates with nobody —
+-0.120 against CYP2C9 — and takes the largest gain in the whole log.
+
+Both natural mechanisms are now refuted. What the inversion suggests instead is **contrast**: with
+the enzyme indicator in the design a tree can learn "this split matters for CYP2D6 and not for
+CYP3A4", which is strictly more than "this split matters for CYP2D6", and a per-enzyme model
+cannot represent it at all. On that reading a partner is useful in proportion to how much its
+behaviour *differs*, and a near-duplicate partner adds rows without adding information.
+
+Four points cannot establish this, and worse, they cannot separate it from plain sample size:
+CYP3A4 has both the most labels and the highest correlation, so the two candidate explanations are
+themselves confounded across these four numbers. `src/ablpair.py` pools one partner at a time,
+where the two orderings disagree and can be told apart.
+
+**112. Tilting the ensemble toward pooling: consistent, and under the noise floor.**
+`verify/k23_tilt.py`. Item 108 established the layer effect and refuted the sixteen-parameter way
+of spending it. One parameter instead: slide from equal weights toward the pooling-heavy corner
+that the near-layer fit found, w(t) = (1-t)·equal + t·(0.20, 0.62, 0.04, 0.13), with t chosen by
+holding out a whole seed.
+
+    t     близкий > 0.55        всё   далёкий < 0.45
+    0.00          0.7058     0.6819           0.7030
+    0.30          0.6996     0.6799           0.7032
+    0.70          0.6963     0.6814           0.7073
+    1.00          0.6973     0.6857           0.7132
+
+Held out, with t chosen on the overall metric rather than on the layer — the more honest of the
+two selections, since it never looks at the thing it is scored on:
+
+    сид   t      близкий   разница        всё   разница
+      0   0.30    0.6948   -0.0073     0.6773   -0.0020
+      1   0.30    0.6842   -0.0040     0.6826   -0.0024
+      2   0.45    0.7086   -0.0100     0.6829   -0.0006
+      3   0.30    0.7082   -0.0060     0.6771   -0.0027
+
+**All four held-out seeds improve, in both the near layer and overall**, and t lands at 0.30 three
+times out of four. The consistency is the whole of the evidence: the near-layer gain averages
+-0.0068 and the overall gain -0.0019, both at or under the 0.007 floor. Selecting t on the near
+layer instead reaches -0.0079 there but reverses on seed 1.
+
+The weights this implies are per-enzyme 0.23, pooled 0.38, GP 0.18, ridge 0.21. **It is not going
+into `src/submit.py`.** Four consistent seeds are worth something, but the size is below the floor
+this repository set for itself, and the case for it rests on the layer standing in for the test
+set — which items 110 and 111 have just shown we cannot explain. Changing the submission on an
+unexplained effect measured under its own noise floor is the trade this log exists to refuse. It is
+recorded so that the decision is visible rather than silently taken either way.
+
+**113. Every conclusion in the log survives being re-scored in the test set's regime — and item
+97's gap was overstated.** `verify/k25_reweight.py`. This is the check items 107 and 108 made
+necessary: if the models rank differently where the test sits, how many of the log's conclusions
+were reached in a regime that does not apply to them.
+
+The shift here is identifiable in a way the label shift of item 94 is not. The variable is
+similarity to the training set, computed from structures, and the test structures are published:
+p_test(s) is counted rather than inferred, with no posterior and no model-choice systematic.
+
+One confound had to be removed first. An out-of-fold row's similarity is a maximum over four
+fifths of the training set and a test row's over all of it, and a maximum over a larger reference
+set is larger for free. Taking the test similarities against random four-fifths subsets instead:
+
+    OOF медиана 0.435, тест медиана 0.566
+
+Item 97's 0.587 is a maximum over the whole training set, and setting it against the out-of-fold
+0.435, which is a maximum over four fifths, compares two different reference sizes. Matched at
+four fifths the test sits at 0.566 and **the gap is 0.131 rather than the 0.152 that pairing
+implies.** Item 22 already carried the matched control and was not caught out by this: its
+leave-one-out figure of 0.450 is taken against about 4900 molecules, the same as the test's 0.587,
+and that gap is 0.137. So the gap is about 0.13 by either size-matched comparison, and what was
+too large is the mixed pairing, not any single number. Items 107, 108 and 112 use the layer
+boundaries rather than the median and none of their conclusions turn on this.
+
+Weights by similarity bin run from 0.00 below 0.35 to 8.00 above 0.70, and the price is steep:
+
+    фермент       n     ESS   ESS/n
+    CYP1A2     1412     350   24.8 %
+    CYP2C9     1285     471   36.7 %
+    CYP2D6     1493     309   20.7 %
+    CYP3A4     2335     918   39.3 %
+
+**Two enzymes fall below the one-third rule this file states for itself**, so for CYP1A2 and
+CYP2D6 what follows is directional and not decisive. Said here rather than in a footnote, because
+the rule was written before the numbers were seen.
+
+Six of the seven ablations keep their arm ordering exactly:
+
+    файл                  вывод при равных весах        под тест
+    признаки              FP+DESC+MECH > FP+DESC > FP   тот же
+    пул                   пул > независимо              тот же
+    слабые                лес > гребневая > kNN         тот же
+    форма                 с формой > без формы          тот же
+    FCFP                  оба > ECFP > FCFP             тот же
+    агрегаты              флаг > ... > база             ПОРЯДОК ИЗМЕНИЛСЯ
+
+The one reordering is the aggregator file, whose arms differ by about 0.0045 — under the floor —
+so a reshuffle there is what noise looks like, not a finding.
+
+The sizes are the interesting part. The two large effects roughly double in the test's regime and
+the two small ones disappear:
+
+    эффект                   равные веса   под тест
+    механистический блок         +0.0163    +0.0282
+    пул                          +0.0142    +0.0291
+    FCFP оба                     +0.0035    +0.0024
+    форма                        +0.0033    +0.0001
+    флаг агрегатов               +0.0047    +0.0001
+
+So the regime question, which items 107 and 108 opened as a threat to the whole log, closes as a
+reprieve for the conclusions and a warning about the marginal ones: **nothing we concluded is
+wrong in the test's regime, and two of the things we concluded are worth nothing there.** The
+shape block and the aggregator flag are both retained on a gain that vanishes at the similarity
+the test set actually sits at.
+
+**114. Quantile regression onto the band edges is a monotone reparameterisation of the model we
+already have — and the metric is simpler than we have been describing it.** The proposal was two
+quantile regressions onto `lo` and `hi` as targets in their own right, taking the action as the
+median of the pooled predicted edges. Its argument was that this is a *different* function of the
+features rather than a monotone correction, so unlike item 93 it could reorder compounds within a
+group.
+
+Item 105 makes that checkable without fitting anything. Isotonic regression from the label alone
+onto the band width:
+
+    фермент       n   rho(y, ширина)   R2 изотоники   ост. std   std доли метки в полосе
+    CYP1A2     1412           -0.885          0.963      0.125                     0.057
+    CYP2C9     1285           -0.899          0.928      0.155                     0.063
+    CYP2D6     1493           -0.558          0.955      0.143                     0.087
+    CYP3A4     2335           -0.928          0.970      0.159                     0.088
+
+**The width is a deterministic function of the label to within three per cent of its variance**,
+and the label sits at a nearly fixed relative position inside the band — the fraction (y - lo)/w
+has a standard deviation under 0.09. So `lo` and `hi` are the label plus and minus a function of
+the label. A model of the edges is a monotone reparameterisation of a model of the centre, and
+item 93's rule closes the proposal along with it. Five minutes, nothing fitted.
+
+The side effect is worth more than the closure. If the half-width is a known decreasing function
+of potency, then **ST-RAE is very nearly a potency-weighted absolute error**: the forgiveness
+threshold is about 1.25 pIC50 below a label of 3.5 and about 0.13 above 4.6. The competition
+metric is, to within three per cent of the width's variance, "get the potent compounds right, the
+weak ones are nearly free."
+
+That is a much simpler statement than "soft-thresholded error against a confidence band", it is
+the statement that actually explains where the model's effort should go, and it belongs in the
+document. It also says what item 105's dead-zone objective is really doing: not handling censored
+data, but declining to spend capacity at the weak end, in a pattern the labels themselves dictate.
