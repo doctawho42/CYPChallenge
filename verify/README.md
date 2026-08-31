@@ -2908,14 +2908,27 @@ The size is the point. Item 100 admitted the ridge to the submission at -0.0026 
 under the 0.007 floor while its per-enzyme signs are unanimous. By the rule item 100 set — that
 membership is settled by measurement — the trunk belongs in the ensemble.
 
-One attribution is not yet earned, and it is flagged here before the answer arrives rather than
-after. This item is written as though the *screening channel* is what the ensemble gains from,
-because that is the thread item 118 left hanging. But the trunk is also the only member from a
-different model family, and item 100 established that family diversity alone buys something. The
-arm that separates them is the trunk at `lambda = 0` — same architecture, same parameter count,
-same initial weights, screening head receiving no gradient — and it is running. If it delivers
-the same -0.0061, then what helps is the multilayer perceptron and not the channel, and the
-paragraph above is credited to the wrong thing. `verify/k27_trunkens.py` now carries that arm.
+**The attribution was flagged as unearned before the control ran, and the control earns it.** The
+trunk is also the only member from a different model family, and item 100 established that family
+diversity alone buys something, so a gain here could have been the multilayer perceptron rather
+than the channel. The separating arm is the trunk at `lambda = 0` — same architecture, same
+parameter count, same initial weights, screening head receiving no gradient:
+
+    состав                пара      ранг
+    четыре              0.6819    0.6009
+    пять (lam = 3)      0.6758    0.6063
+    пять (lam = 0)      0.6811    0.6001
+    ствол один (lam=3)  0.7153    0.5646
+    ствол один (lam=0)  0.7416    0.5297
+
+    семейство само по себе   пара -0.0008 (t = -3.28, p = 0.046, знаков 4/4)
+    вклад канала             пара -0.0053
+
+**The family contributes -0.0008 of pair and -0.0008 of rank — that is, by rank it slightly
+hurts.** The channel supplies -0.0053 of the -0.0061 and the whole of the rank gain. Standalone
+the same split is starker: the trunk's rank goes from 0.5297 without the channel to 0.5646 with
+it. So the credit belongs where item 5 of the outside reading put it, and it is the screening
+supervision rather than the architecture that the ensemble is buying.
 
 Two things make the measurement itself trustworthy rather than merely large. `trunk.py` calls `butina_folds` from
 `cypsplit.py` with the same seed, so the trunk's out-of-fold predictions, the boosting's, and the
@@ -2928,6 +2941,9 @@ What this costs to act on is the honest caveat. The four current members are all
 and run on the 750 test structures, which is new plumbing rather than a new average. The
 measurement says it is worth building; the building is not done.
 
-It also answers the question item 118 was left holding. The channel does transfer, and it
-transfers by averaging rather than by concatenation — so the remaining unexplored route from that
-item, the trunk's latent as a feature block, is no longer the only one and is no longer urgent.
+It also answers the question item 118 was left holding, and answers item 5 of the outside reading
+in the affirmative after all. The screening channel does transfer out of the shelved model; it
+transfers by averaging rather than by concatenation; and the vehicle that only ties with the
+boosting is worth carrying anyway, for the one thing inside it that the boosting has no route to.
+The remaining unexplored path from item 118 — the trunk's latent as a feature block — is no longer
+the only one and is no longer urgent.
