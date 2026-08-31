@@ -3208,3 +3208,51 @@ badly. Had the construction been right, that arm would have found nothing left t
 This closes the decision layer. It does not touch the rest of the hierarchical proposal, and the
 diagnosis is specific enough to be useful there: a layer whose benefit is per-compound has to
 clear an estimation-variance bar that two well-fitted global parameters set surprisingly high.
+
+**127. The selection layer is buildable on three enzymes and structurally impossible on the
+fourth — which is the one that needs it most.** Precondition check for the MNAR correction, run
+before building anything.
+
+The labels are missing not at random: a compound received a dose-response curve if it looked
+active in the single-concentration screen. The standard correction is a weight of 1/P(curve | x),
+and it is estimable here because the screening column is complete and it is known who received a
+curve. The target population is the full 4905 training compounds — a compound unlabelled for an
+enzyme *is* an unselected one, and its screening readout exists.
+
+The first diagnostic I ran was wrong and is recorded because the error is instructive. I computed
+the chi-square divergence of the weights over the **selected** compounds, as item 123 does for the
+similarity reweighting, and read CYP2D6's 0.017 as "cheap". It is not cheap; it is degenerate.
+Chi-square over the selected set measures the spread of the weights among them, not whether they
+can reach the target at all. When P(selected | x) goes to zero over a whole region, no weight
+recovers it — that is a **positivity** violation, and an effective sample size cannot see it.
+
+The correct check is overlap:
+
+    фермент   отобрано   недостижимая доля цели   перекрытие по скрину
+    CYP1A2       1412                     1.3 %                 98.7 %
+    CYP2C9       1285                    15.4 %                 77.5 %
+    CYP2D6       1493                    99.7 %                  0.3 %
+    CYP3A4       1805                     1.4 %                 98.1 %
+
+("Unreachable" is the share of the target population whose propensity falls below the 1st
+percentile of the selected. Counts are over compounds that also carry a screening readout, 89.2 %
+of rows.)
+
+**On CYP2D6 the two populations are disjoint.** Median screening log2fc is -1.738 among the
+selected and +0.376 among the unselected; the selection rule is effectively a hard threshold and
+99.7 % of the target sits below anything the labelled set contains. Propensity weighting cannot be
+done there at all. A parametric selection model can be *written* for it, but every number it
+produces outside the support is the model's assumption rather than the data's, with nothing to
+check it against — the Heckman situation, and it is known to be at its most fragile exactly when
+overlap is this poor.
+
+On CYP1A2 and CYP3A4 positivity is comfortable and the layer is worth building. CYP2C9 sits in
+between at 15.4 %.
+
+Two things this changes. First, the layer's coverage is inverted with respect to need: it is
+available on the enzymes we already predict best, and unavailable on CYP2D6, which is both our
+worst (ST-RAE 0.86 against 0.46 on CYP3A4) and the one whose selection is most severe. Second, the
+mechanism is not common across enzymes and should not be modelled as if it were. The rank
+correlation between the screening readout and getting a curve is **-0.642, -0.151, -0.821 and
++0.151** — on CYP3A4 the sign flips, and its unselected compounds inhibit *more* strongly than its
+selected ones. Whatever chose CYP3A4's curves, it was not activity in the screen.
