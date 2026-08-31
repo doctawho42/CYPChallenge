@@ -3102,3 +3102,31 @@ runs the verification scripts on a schedule.** `make verify` exists, CI runs onl
 The cheap fix is not more care. `make verify` and `make verify-extra` should run somewhere that
 reports, or at minimum the fast ones should join the test suite; f1 takes forty seconds and f6
 twenty, and both would have caught all four of these on the day they appeared.
+
+**125. Doubling the pooled table with maximally correlated rows buys nothing, so sample size is
+not what pooling is doing.** `src/ablpool.py --arms "пул+TDI"`, two seeds. The pre-incubation arm
+covers the same four enzymes under a different condition and adds 6538 rows, taking the pooled
+table from 6525 to 13063 — more than double, and about as correlated with the direct-inhibition
+labels as any rows could be, since they are the same molecules on the same enzymes.
+
+Under the sample-size reading this had to be the largest gain anywhere in this log. Rank, averaged
+over seeds 0 and 1:
+
+    рука          MACRO      1A2      2C9      2D6      3A4
+    независимо   0.5627   0.4934   0.5940   0.3999   0.7636
+    пул          0.5778   0.5134   0.6027   0.4385   0.7566
+    пул+TDI      0.5751   0.5136   0.6042   0.4302   0.7526
+
+**It adds nothing.** Against plain pooling it is -0.0027, which is under the floor and therefore
+not a loss either — the honest statement is that more than doubling the table changed the answer by
+less than the seed does. Per enzyme it is +0.0002, +0.0015, -0.0083, -0.0040: no enzyme gains.
+
+That is decisive against sample size and it was the arm designed to be decisive. Pooling four
+enzymes at 6525 rows is worth +0.0151 of rank; adding 6538 more rows of the same enzymes is worth
+nothing. Whatever pooling supplies, it is not quantity, and the argument no longer rests on the
+four-point inversion of item 111 alone.
+
+Two mechanisms down by measurement — borrowing neighbours in item 110, shared function in item
+111 — and now quantity as well. Contrast is what is left standing, and `src/ablpool.py --arms
+"пул слепой"` tests it directly by zeroing the enzyme indicator: shared function and quantity both
+survive without it, contrast cannot exist without it.
