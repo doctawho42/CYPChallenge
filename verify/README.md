@@ -3416,3 +3416,47 @@ pairs per enzyme to estimate.
 **Measuring tau is what makes the leaderboard readable.** The two programmes are one piece of work,
 not two, and that promotes tau above the selection layer in the order: without it, 24 September
 returns four numbers we cannot convert into the quantity we most need.
+
+**131. Removing the enzyme indicator does not merely cancel pooling's gain — it drops the model
+0.076 of rank below training each enzyme separately.** `src/ablpool.py --arms "пул слепой"`, two
+seeds. This is the arm items 110, 111 and 125 were converging on, and it was pre-registered in
+item 111 before it ran.
+
+The design differs from the pooled arm in exactly one thing: the enzyme indicator is zeroed rather
+than removed, so the matrix keeps its width and the model keeps its 6525 rows. Only what it is
+allowed to know changes.
+
+    рука (2 сида)   MACRO ранг      1A2      2C9      2D6      3A4
+    независимо          0.5627   0.4934   0.5940   0.3999   0.7636
+    пул                 0.5778   0.5134   0.6027   0.4385   0.7566
+    пул слепой          0.4868   0.4309   0.5507   0.2690   0.6967
+
+Pooling with the indicator is worth +0.0151; pooling without it is worth **-0.0759**. The
+indicator is therefore not a feature that helps, it is the condition under which pooling is not
+harmful at all: forced to fit one function to four enzymes whose structure-activity relationships
+diverge — CYP2D6 correlates with the others at -0.002 and with CYP2C9 at -0.120 (item 111) — the
+model finds a compromise worse than any of the four separate fits.
+
+That completes the elimination. Pooling does not work by borrowing neighbours (item 110), by
+transferring shared function (item 111), or by sample size (item 125), and it does not work at all
+without the indicator. What the indicator supplies is what pooling is.
+
+**What this does not yet establish**, and the distinction is the last one standing. The indicator
+can be doing either of two things, and this arm removes both at once:
+
+  *level* — giving each enzyme its own offset. Medians run from 5.13 on CYP1A2 to 4.27 on CYP3A4,
+  so a model that cannot tell them apart must average those together.
+
+  *contrast* — letting the trees learn different dependencies, "this split matters for CYP2D6 and
+  not for CYP3A4", which a per-enzyme model cannot represent at all.
+
+The damage is at least suggestive: it is threefold uneven, CYP2D6 losing 0.1309 against CYP2C9's
+0.0433, and a pure level effect ought to cost every enzyme about its own offset rather than
+tracking how much it disagrees with the rest. But across four enzymes the rank correlation between
+the damage and the mean between-enzyme correlation is only -0.4, not item 111's -1.000, so this is
+a pointer and not a result.
+
+The separating arm is `--arms "пул центрированный"`: labels centred per enzyme, indicator still
+zeroed, the enzyme mean added back at prediction. That hands the model the level for free and
+still denies it the contrast. If the gain returns, the indicator was carrying levels; if it does
+not, contrast is what is left. It is queued.
