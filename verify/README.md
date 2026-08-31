@@ -2953,3 +2953,51 @@ transfers by averaging rather than by concatenation; and the vehicle that only t
 boosting is worth carrying anyway, for the one thing inside it that the boosting has no route to.
 The remaining unexplored path from item 118 — the trunk's latent as a feature block — is no longer
 the only one and is no longer urgent.
+
+**121. The fifth member is wired in, behind a flag, with three guards.** Item 120 measured the
+trunk as worth -0.0061 of pair and +0.0054 of rank and item 120's control attributed almost all of
+it to the screening channel. Acting on that needed the trunk applied to the 750 blinded structures,
+which the repository could not do: `src/trunk.py` only ever cross-validated.
+
+`trunk.fit_predict_test` is that path and it is deliberately not new code. The test rows are
+appended with their own fold index and NaN in both target blocks, so `masked_mse` gives them no
+gradient and every statistic `run_fold` computes — the feature standardisation included — is still
+taken over training rows alone. `run_fold` is then called unchanged, which makes the claim
+checkable rather than asserted: holding out fold 1 through the ordinary route and through the
+appended-rows route must give the same numbers. **Maximum absolute difference: 0.000e+00.**
+`src/trunk.py --check-test-path` runs it.
+
+Three guards, because each of these fails silently rather than loudly:
+
+- **The feature split.** The trunk takes FP, DESC and MECH separately because it puts the
+  fingerprint through `log1p`, and `submit.py` carries them hstacked. The widths are read from
+  `feats.npz` rather than written as numbers; all three blocks are verified to round-trip.
+- **The device.** The saved out-of-fold predictions were computed on `mps`. The affine pair is
+  fitted on those and applied to test predictions computed here, so the two halves must not land
+  on different arithmetic. The device is taken from the file's own meta block, with a warning if
+  it is unavailable.
+- **The split.** This is the only member read from a file rather than recomputed. If the split
+  ever moves, every other member follows it and this one silently stays on seed 0's folds, at
+  which point its "out-of-fold" predictions are nothing of the kind. The fold digest is checked
+  against the same golden `2d93c19815e14261` that `tests/test_split.py` pins, and the guard is
+  verified to fire on a deliberately altered fold vector.
+
+`src/submit.py --mode ансамбль5` runs end to end and writes both files: 750 rows, no missing
+values, predictions between 2.0 and 6.1. **The default is not switched.** The measurement supports
+the member; the choice of what to submit belongs to the team, and the mode makes the change one
+flag rather than one edit.
+
+**122. The document build stopped manufacturing conflicts.** Not a model finding, but this
+repository is worked from four machines and its binary artefacts cannot be merged, so it is the
+same class of problem as the split digest.
+
+Rebuilding the document rewrote all ten figure PDFs and the main PDF every time. Checked rather
+than assumed: `docs/tex/fig/nnsim.pdf` before and after a rebuild is 31185 bytes both times and
+identical outside a single `CreationDate` string. Ten unmergeable binaries were entering every
+diff carrying no information at all.
+
+`docs/tex/figs.py` now writes figures with `metadata={"CreationDate": None}` and `docs/build.sh`
+pins `SOURCE_DATE_EPOCH`. Verified the way the rest of this file verifies things — two consecutive
+builds, byte-compared: the figures match, and so does the main PDF. **A rebuild that changes
+nothing is now no diff at all**, which means a rebuild that does change something is entirely
+signal.
