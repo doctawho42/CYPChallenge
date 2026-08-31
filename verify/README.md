@@ -3130,3 +3130,81 @@ Two mechanisms down by measurement — borrowing neighbours in item 110, shared 
 111 — and now quantity as well. Contrast is what is left standing, and `src/ablpool.py --arms
 "пул слепой"` tests it directly by zeroing the enzyme indicator: shared function and quantity both
 survive without it, contrast cannot exist without it.
+
+**126. The exact Bayes action under ST-RAE loses to the two-parameter pair it was meant to
+replace, and the argument for it has a hole worth naming.** `src/bayesact.py`, seed 0.
+
+The proposal was the strongest thing an outside reading has put forward, because it claimed to
+escape the ceiling that killed five earlier findings *provably* rather than empirically. The chain
+was: item 114 gives the band as a near-deterministic function of the label, so the loss
+max(0, lo - p, p - hi) is known as a function of (prediction, truth); under a posterior for the
+truth the optimal action is a one-dimensional convex minimisation per compound; that action
+depends on the posterior's **spread**, and item 93's rule only reaches corrections that are
+monotone in the point.
+
+The premise checks out. The best monotone function of the point prediction explains 0.110, 0.114,
+0.100 and 0.080 of the spread's variance across the four enzymes — about nine tenths of the spread
+is information the point does not carry. That was measured before the file was written.
+
+The conclusion does not follow, and this is the hole:
+
+    **"the correction depends on X, and X is not a function of the point" does not imply
+    "the correction is not a function of the point".** The dependence also has to be strong
+    enough to survive the loss's curvature. Here it is not.
+
+Measured, with the falsification criterion written into the script before it ran:
+
+    рука                  ST-RAE      ранг
+    сырое                 0.6979    0.6029
+    аффинная пара         0.6793    0.6014
+    байесово действие     0.6893    0.6012
+    байесово + пара       0.6863    0.5998
+
+    монотонность действия к входу:  1A2 +0.985  2C9 +0.996  2D6 +0.972  3A4 +0.997
+    средний сдвиг:                      +0.127      +0.125      +0.118      +0.178
+
+**The action comes out 97 to 99.7 per cent monotone in the point**, and reduces in practice to a
+shift of about +0.13 — which is precisely what the pair's shift parameter is. The pair fits that
+shift by direct empirical minimisation against the *true* bands on the training folds; the Bayes
+action derives it through a model of the band, a model of where the label sits inside it, and a
+model of the posterior, accumulating three approximations. The pair wins by 0.0100.
+
+Three checks were run before closing it, because none of the three failures should be blamed on
+the implementation.
+
+*The cliff mechanism does not exist.* The obvious rescue is that the action should bite where the
+posterior straddles the width cliff — forgiveness is about 1.25 below a label of 3.5 and 0.13
+above 4.6 (item 115). Deviation from the best monotone fit, by predicted potency: 0.043 / 0.056 /
+0.061 on CYP1A2 and 0.010 / 0.038 / 0.050 on CYP2D6. It is flat, and if anything largest where the
+band is *narrowest* — the opposite of the mechanism. CYP2D6 being both the least monotone enzyme
+and the only one where the action wins (-0.0027) is a coincidence.
+
+*The construction is not degenerate.* Within a spread bin every compound receives the same
+residual pool, so the action there is "point plus a constant", and the whole non-affine effect
+lives in the differences between bins. Those differences are real — a range of 0.07 to 0.20 across
+five bins — so the design does have something to work with. But the per-bin offsets are not
+ordered by spread (CYP1A2: +0.080, +0.020, **+0.190**, +0.070, +0.110), which is what estimation
+noise looks like rather than signal.
+
+*The residual subsample was mine, not the idea's.* `NRES = 150` was a speed choice. Using every
+residual and sweeping the bin count:
+
+    корзин   байесово   пара
+      3       0.6864   0.6793
+      5       0.6866   0.6793
+     10       0.6886   0.6793
+     20       0.6944   0.6793
+
+Dropping the subsample does help — 0.6893 to 0.6866 — which confirms the shortcut was adding
+noise. And the trend settles it: **the fewer bins, the better the action performs, and one bin is
+the affine shift.** Every degree of per-compound adaptivity the construction adds costs more in
+estimation variance than it buys in decision quality. Extrapolated to its own optimum, the
+principled rule converges to the thing it was built to beat.
+
+The fourth arm is the summary. A pair applied on top of the Bayes action still improves it, from
+0.6893 to 0.6863 — so the action has not replaced the post-processing, it has approximated it
+badly. Had the construction been right, that arm would have found nothing left to fix.
+
+This closes the decision layer. It does not touch the rest of the hierarchical proposal, and the
+diagnosis is specific enough to be useful there: a layer whose benefit is per-compound has to
+clear an estimation-variance bar that two well-fitted global parameters set surprisingly high.
