@@ -230,6 +230,71 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
     return p.cpu().numpy() * ys + ym
 
 
+def fit_predict_test(FP_te, DESC_te, MECH_te, lam=3.0, seed=0, mode="twohead",
+                     blocks=None, device="cpu"):
+    """Train on the whole training set and predict the blinded test rows.
+
+    Item 120 measured the trunk as a fifth ensemble member at -0.0061 of pair and +0.0054 of
+    rank, four seeds out of four on every enzyme, which is more than twice what the ridge
+    contributes and the only member that helps all four. Acting on that needs the trunk applied
+    to the 750 test structures, and this is that path.
+
+    Nothing about the fitting is new. The test rows are appended with their own fold index and
+    with NaN in both target blocks, so `masked_mse` gives them no gradient and every statistic
+    `run_fold` computes -- the feature standardisation included -- is still taken over training
+    rows alone. `run_fold` itself is called unchanged, which is what makes the regression check
+    below possible.
+
+    The one thing a caller must not get wrong: `load()` puts the fingerprint block through
+    log1p before standardising, and `src/submit.py` does not. The transform is applied here so
+    that a caller passing raw counts, as submit.py builds them, gets the right matrix.
+    """
+    blocks = blocks or BLOCKS
+    X, y, lo, hi, scr, smiles = load(blocks)
+    parts_te = {"FP": np.log1p(np.asarray(FP_te, np.float32)),
+                "DESC": np.asarray(DESC_te, np.float32),
+                "MECH": np.asarray(MECH_te, np.float32)}
+    Xte = np.hstack([parts_te[b] for b in blocks.split("+")]).astype(np.float32)
+    Xte = np.nan_to_num(Xte, nan=0.0, posinf=0.0, neginf=0.0)
+    if Xte.shape[1] != X.shape[1]:
+        raise SystemExit(f"ширина не совпала: обучение {X.shape[1]}, тест {Xte.shape[1]}")
+
+    n_tr, n_te = len(X), len(Xte)
+    Xa = np.vstack([X, Xte])
+    ya = np.vstack([y, np.full((n_te, 4), np.nan, np.float32)])
+    sa = np.vstack([scr, np.full((n_te, 4), np.nan, np.float32)])
+    fold = np.concatenate([np.zeros(n_tr, int), np.ones(n_te, int)])
+    return run_fold(Xa, ya, sa, fold, 1, lam, seed, device, mode=mode)
+
+
+def check_test_path(seed=0, lam=3.0, mode="twohead", blocks=None, device="cpu"):
+    """The test path must be `run_fold` and nothing else. Prove it rather than assert it.
+
+    Holding out fold 1 through the ordinary route and through the appended-rows route has to
+    give identical numbers: same weight seed (both use f = 1), same batching seed, same
+    standardisation over the complement of fold 1. Any difference means the appended rows are
+    reaching a statistic they should not.
+    """
+    blocks = blocks or BLOCKS
+    X, y, lo, hi, scr, smiles = load(blocks)
+    fold, _ = butina_folds(smiles, seed=seed)
+    direct = run_fold(X, y, scr, fold, 1, lam, seed, device, mode=mode)
+
+    keep = fold != 1
+    Xa = np.vstack([X[keep], X[~keep]])
+    ya = np.vstack([y[keep], np.full((int((~keep).sum()), 4), np.nan, np.float32)])
+    sa = np.vstack([scr[keep], np.full((int((~keep).sum()), 4), np.nan, np.float32)])
+    fa = np.concatenate([np.zeros(int(keep.sum()), int), np.ones(int((~keep).sum()), int)])
+    viaappend = run_fold(Xa, ya, sa, fa, 1, lam, seed, device, mode=mode)
+
+    d = float(np.max(np.abs(direct - viaappend)))
+    print(f"фолд 1, сид {seed}, lam {lam}: максимум |разности| между обычным путём и "
+          f"путём с дописанными строками = {d:.3e}")
+    print("совпало побитово" if d == 0.0 else
+          "НЕ совпало --- дописанные строки куда-то дотягиваются, путь на тест использовать нельзя")
+    return d
+
+
 def evaluate(y, lo, hi, pred):
     """ST-RAE and Spearman per enzyme plus macro, over observed cells."""
     out = {}
@@ -265,7 +330,17 @@ def main():
                          "sqrt(1+eta^2) раз, масштаб сохраняется")
     ap.add_argument("--mode", default="twohead", choices=["twohead", "calibrated"],
                     help="twohead: free second head. calibrated: screen via g(pi), one latent")
+    ap.add_argument("--check-test-path", action="store_true",
+                    help="проверить, что путь на тест --- это тот же run_fold, и выйти")
     a = ap.parse_args()
+
+    if a.check_test_path:
+        HIDDEN, DEPTH, DROPOUT = a.hidden, a.depth, a.dropout
+        EPOCHS, WEIGHT_DECAY = a.epochs, a.wd
+        for seed in [int(x) for x in a.seeds.split(",")]:
+            check_test_path(seed=seed, lam=float(a.lams.split(",")[-1]),
+                            mode=a.mode, blocks=a.blocks, device=a.device)
+        return
 
     HIDDEN, DEPTH, DROPOUT = a.hidden, a.depth, a.dropout
     EPOCHS, WEIGHT_DECAY = a.epochs, a.wd
