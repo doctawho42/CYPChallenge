@@ -2647,6 +2647,9 @@ Weights by similarity bin run from 0.00 below 0.35 to 8.00 above 0.70, and the p
 CYP2D6 what follows is directional and not decisive. Said here rather than in a footnote, because
 the rule was written before the numbers were seen.
 
+*(Item 123 shows that rule cannot be met here by any estimator, and rewords what the low numbers
+mean. The caution stands; the framing of it as a shortfall does not.)*
+
 Six of the seven ablations keep their arm ordering exactly:
 
     файл                  вывод при равных весах        под тест
@@ -3023,3 +3026,38 @@ pins `SOURCE_DATE_EPOCH`. Verified the way the rest of this file verifies things
 builds, byte-compared: the figures match, and so does the main PDF. **A rebuild that changes
 nothing is now no diff at all**, which means a rebuild that does change something is entirely
 signal.
+
+
+**123. The low effective sample size in item 113 is the phenomenon, not a defect of the estimator.**
+Item 113 reweighted the out-of-fold rows to the test set's similarity distribution, got ESS/n of
+20.7 to 39.3 per cent, and disclaimed two enzymes for falling under the one-third rule. That reads
+as though a better density-ratio estimate would rescue them. It would not, and the bound is worth
+computing before anyone tries.
+
+For self-normalised importance weights the effective fraction converges to 1/(1 + chi2) where chi2
+is the chi-square divergence between the two distributions, whatever produces the weights. Measured
+on the same bins:
+
+    chi2(тест || OOF) = 2.838      потолок ESS/n = 1/(1 + chi2) = 26.1 %
+
+    обрезка веса     ESS/n: 1A2    2C9    2D6    3A4
+    4                      26.3   37.3   22.0   41.6
+    8  (использована)      24.8   36.7   20.7   39.3
+    без обрезки            20.5   35.3   17.0   32.8
+
+**The weights already sit at the bound.** The unclipped column is the honest one and it is the
+lowest; clipping buys apparent ESS by biasing the ratio, which is a trade and not an improvement.
+Per-enzyme numbers straddle the 26.1 per cent because that figure is the divergence over all rows
+and each enzyme's subset has its own overlap — CYP3A4's rows are already the most test-like and
+CYP2D6's the least, which is the same ordering everything else in this group produces.
+
+So the wording in item 113 was wrong in a way worth naming. The one-third rule is a rule about
+when a reweighted estimate can be trusted; here it **cannot be satisfied by any method**, because
+the test set sits where our cross-validation has almost no mass. That is not a shortfall of the
+measurement — it is the measurement. The right statement is that any test-regime estimate on
+CYP1A2 and CYP2D6 carries about four times the variance of the unweighted one and always will, and
+that is a fact about the challenge rather than about our arithmetic.
+
+It also closes a line of work before it starts. A smoother ratio — logistic discrimination between
+the two sets instead of histogram bins — would reduce binning variance and cannot move the bound.
+Not worth the afternoon.
