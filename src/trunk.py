@@ -202,7 +202,30 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
     # Seeded on (seed, fold) and NOT on lam, so both arms start from the same weights.
     torch.manual_seed(hash((seed, f)) % (2 ** 31))
     net = Net(X.shape[1]).to(device)
-    opt = torch.optim.Adam(net.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+    params = list(net.parameters())
+
+    # calfit: the instrument constants become parameters. `calibrated` carries E and h in from
+    # section 4, where they were fitted on the compounds that *have* curves -- that is, on the
+    # activity-selected third of the matrix -- and then applies them to the whole population.
+    # That is the same two-step calibration outside its own population which item 83 used to
+    # kill the pseudo-label route, so the objection applies to the fixed-constant arm as much
+    # as it did there. Estimating them jointly answers it from inside rather than around it.
+    #
+    # Both are reparameterised to stay in range: E through a scaled sigmoid, since the depth of
+    # suppression is bounded, and h through softplus, since a Hill slope is positive. An
+    # unconstrained E can cross 1 and make log2(1 - E/...) undefined, which is a silent nan
+    # rather than an error.
+    cal_p = None
+    if mode == "calfit":
+        e0 = torch.as_tensor(CAL_E, dtype=torch.float32).clamp(1e-3, 1.499)
+        h0 = torch.as_tensor(CAL_H, dtype=torch.float32).clamp(min=1e-3)
+        a0 = torch.log(e0 / (1.5 - e0))                 # sigmoid^-1(E / 1.5)
+        b0 = torch.log(torch.expm1(h0))                 # softplus^-1(h)
+        cal_a = torch.nn.Parameter(a0.clone().to(device))
+        cal_b = torch.nn.Parameter(b0.clone().to(device))
+        cal_p = (cal_a, cal_b)
+        params += [cal_a, cal_b]
+    opt = torch.optim.Adam(params, lr=LR, weight_decay=WEIGHT_DECAY)
 
     idx = np.where(trn)[0]
     g = np.random.default_rng(1000 + seed * 10 + f)
@@ -220,11 +243,23 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
                     # Standardised on the same statistics as the observed screen so that
                     # lambda keeps the same meaning across modes.
                     pi = p * yst + ymt
+                    if cal_p is None:
+                        e_, h_ = cal_e, cal_h
+                    else:
+                        e_ = torch.sigmoid(cal_p[0]) * 1.5
+                        h_ = torch.nn.functional.softplus(cal_p[1])
                     loss = loss + lam * masked_mse(
-                        (g_of_pi(pi, cal_e, cal_h) - smt) / sst, st[bt], mst[bt])
+                        (g_of_pi(pi, e_, h_) - smt) / sst, st[bt], mst[bt])
             opt.zero_grad(); loss.backward(); opt.step()
 
     net.eval()
+    if cal_p is not None:
+        with torch.no_grad():
+            e_ = (torch.sigmoid(cal_p[0]) * 1.5).cpu().numpy()
+            h_ = torch.nn.functional.softplus(cal_p[1]).cpu().numpy()
+        print(f"      калибровка ушла: E " + " ".join(f"{a:.3f}->{b:.3f}"
+              for a, b in zip(CAL_E, e_))
+              + " | h " + " ".join(f"{a:.3f}->{b:.3f}" for a, b in zip(CAL_H, h_)), flush=True)
     with torch.no_grad():
         p, _ = net(Xt[t(np.where(te)[0])])
     return p.cpu().numpy() * ys + ym
@@ -328,8 +363,12 @@ def main():
     ap.add_argument("--noise", type=float, default=0.0,
                     help="eta: порча скринингового канала в его же ско, ранг падает в "
                          "sqrt(1+eta^2) раз, масштаб сохраняется")
-    ap.add_argument("--mode", default="twohead", choices=["twohead", "calibrated"],
-                    help="twohead: free second head. calibrated: screen via g(pi), one latent")
+    ap.add_argument("--mode", default="twohead",
+                    choices=["twohead", "calibrated", "calfit"],
+                    help="twohead: free second head. calibrated: screen via g(pi) with the "
+                         "instrument constants held fixed. calfit: the same g(pi), but E and h "
+                         "are estimated jointly with the model instead of being carried in "
+                         "from section 4")
     ap.add_argument("--check-test-path", action="store_true",
                     help="проверить, что путь на тест --- это тот же run_fold, и выйти")
     a = ap.parse_args()
