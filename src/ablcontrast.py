@@ -29,8 +29,17 @@ Four arms, with the control that makes the claim falsifiable:
                          simply "some screening information".
     + оба                both, to see whether they are additive.
 
-Pre-registered reading. The gain should be larger where the curve labels are most single-enzyme,
-because that is where the contrast is least recoverable from the labels themselves. It must also
+Pre-registered reading, and one conflict inside it that is recorded before the run finishes. The
+gain should be larger where the curve labels are most single-enzyme, because that is where the
+contrast is least recoverable from the labels themselves. Measured, those shares are CYP1A2 45.9,
+CYP2C9 43.4, CYP2D6 54.6 and CYP3A4 67.5 per cent, which points at CYP3A4.
+
+But item 129 found CYP3A4's single-enzyme excess *is* the 530-compound analog campaign, and those
+compounds are outside the screening library entirely -- their contrast is filled with zero because
+there is nothing to predict it from. So the enzyme the prediction favours is the one where 23 per
+cent of the rows cannot receive the channel at all. On CYP3A4 the prediction therefore applies to
+its 1805 screen compounds and not to the enzyme as a whole, and a flat result there is not evidence
+against the channel. It must also
 survive the affine pair, since this is a *feature* and not a post-hoc correction -- item 128 has
 since bounded that whole class at 0.0076, which is a further reason a feature is the right shape
 for this.
@@ -74,7 +83,10 @@ def screen_channels(X, S, fold):
     lvl = np.full(n, np.nan)
     con = np.full((n, 4), np.nan)
     have = ~np.isnan(S).any(axis=1)
-    level = np.where(have, np.nanmean(S, axis=1), np.nan)
+    # Считать среднее только там, где есть все четыре: np.nanmean по пустой строке
+    # предупреждает и всё равно даёт NaN, так что маска дешевле и честнее.
+    level = np.full(len(S), np.nan)
+    level[have] = S[have].mean(axis=1)
     contrast = S - level[:, None]
     for f in np.unique(fold):
         te, trn = fold == f, (fold != f) & have
