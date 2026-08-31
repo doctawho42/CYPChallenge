@@ -96,6 +96,36 @@ verify-regime: data/feats.npz  ## k20-k27: is our regime the test's, and what it
 	done
 	@echo "logs in results/logs/"
 
+verify-bounds: data/feats.npz  ## k28-k35: what is provably out of reach, and the anchor split (~50 min)
+	@mkdir -p results/logs
+	@for f in k28_ess k29_positivity k30_oracle k31_campaign k32_anchor k33_lbident \
+	          k34_series k35_plate; do \
+	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
+	done
+	@echo "logs in results/logs/"
+
+verify-ceiling: data/feats.npz  ## k36-k42: the gap to the screen, the criterion, the learner (~60 min)
+	@mkdir -p results/logs
+	@for f in k36_ceiling k37_gap k38_trunc k39_splits k40_topk k41_earlystop \
+	          k42_visiblerank; do \
+	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
+	done
+	@echo "logs in results/logs/"
+
+ncgc:  ## fetch, merge and featurise the NCGC panel (~25 min, network on first run)
+	$(UV) python src/fetch1851.py
+	$(UV) python src/ncgcmerge.py
+	$(UV) python src/ncgcfeats.py
+
+aux: data/feats.npz  ## the screening table as a training target — SLOW (~4 h)
+	$(UV) python src/ablaux.py --seeds 0
+
+ncgc-ablate: data/feats.npz  ## the NCGC panel as extra training rows — SLOW (~10 h)
+	$(UV) python src/ablncgc.py --seeds 0
+
+deadpair: data/feats.npz  ## do the dead zone and the pairwise loss add, or overlap (~80 min)
+	$(UV) python src/abldeadpair.py --seeds 0,1,2,3
+
 doc:  ## rebuild docs/CYP — модель и данные.pdf (needs XeLaTeX + ParaType)
 	bash docs/build.sh
 
