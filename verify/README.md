@@ -2879,3 +2879,46 @@ It is worth noting what the same discipline bought when it was applied. Items 10
 each settled a multi-day proposal in under an hour by measuring a precondition first, and none of
 them has needed correcting. The failures and the successes of the day differ by exactly one thing:
 whether the number was finished before it was believed.
+
+**120. The trunk is stranded no longer: as a fifth ensemble member it is worth more than the
+ridge.** `verify/k27_trunkens.py`. Item 118 left the screening channel in an awkward place — worth
+-0.0264 as an intervention (item 79), sign holding on four seeds, but carried by a model that only
+ties with the boosting, so the vehicle was shelved and the channel with it.
+
+A tie is exactly the situation item 100 was about. The ridge is *worse* than the boosting alone
+and improves the ensemble anyway, because it errs smoothly where the boosting errs locally. A
+model that ties while coming from a different family is a stronger prior for that than the ridge
+was, and every prediction needed was already on disk. Four seeds, the two-head trunk at
+lambda = 3, clipped to the enzyme's label range plus or minus two units exactly as
+`src/trunkdose.py` does:
+
+    состав          пара      ранг
+    четыре        0.6819    0.6009
+    пять          0.6758    0.6063
+    ствол один    0.7153    0.5646
+
+    добавление ствола   пара -0.0061  (t = -17.68, p < 0.001, знаков 4/4)
+                        ранг +0.0054  (t = +16.06, p = 0.001,  знаков 4/4)
+
+**And it helps every enzyme, four seeds out of four in each:** CYP1A2 +0.0062, CYP2C9 +0.0097,
+CYP2D6 +0.0029, CYP3A4 +0.0030. No other member in this log improves all four.
+
+The size is the point. Item 100 admitted the ridge to the submission at -0.0026 with p = 0.0005;
+**the trunk is 2.3 times that and equally consistent**, and its pair gain of -0.0061 sits just
+under the 0.007 floor while its per-enzyme signs are unanimous. By the rule item 100 set — that
+membership is settled by measurement — the trunk belongs in the ensemble.
+
+Two things make this trustworthy rather than merely large. `trunk.py` calls `butina_folds` from
+`cypsplit.py` with the same seed, so the trunk's out-of-fold predictions, the boosting's, and the
+affine pair are all on one split; nothing is being averaged across incompatible partitions. And
+the clip is not a thumb on the scale — item 79 records that without it seed 0 is one compound
+predicted at -360, and the document's own model comparison clips for that reason.
+
+What this costs to act on is the honest caveat. The four current members are all fitted inside
+`src/submit.py`; the trunk is a torch model that would have to be trained on the full training set
+and run on the 750 test structures, which is new plumbing rather than a new average. The
+measurement says it is worth building; the building is not done.
+
+It also answers the question item 118 was left holding. The channel does transfer, and it
+transfers by averaging rather than by concatenation — so the remaining unexplored route from that
+item, the trunk's latent as a feature block, is no longer the only one and is no longer urgent.
