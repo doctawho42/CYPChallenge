@@ -98,7 +98,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostin
 from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_error as strae
 
 import feats as F
-from cypsplit import butina_folds
+from cypsplit import butina_folds, fold_digest
 from gp import prepare as gp_prepare, gp_predict
 from sklearn.linear_model import RidgeCV
 from reweight import tilt
@@ -226,7 +226,7 @@ def oof_predictions(X, y, mask, fold, mode):
             parts.append(_oof_gp(X, y, mask, fold))
             parts.append(_oof_ridge(X, y, mask, fold))
         if mode == "ансамбль5":
-            parts.append(_oof_trunk(y, mask))
+            parts.append(_oof_trunk(y, mask, fold))
         return [np.mean([p[e] for p in parts], axis=0) for e in range(len(CYPS))]
 
 
@@ -280,7 +280,10 @@ def _trunk_clip(p, y_e):
     return np.clip(p, np.nanmin(y_e) - 2.0, np.nanmax(y_e) + 2.0)
 
 
-def _oof_trunk(y, mask):
+TRUNK_FOLD_DIGEST = "2d93c19815e14261"   # то же золотое значение, что в tests/test_split.py
+
+
+def _oof_trunk(y, mask, fold):
     """Предсказания ствола вне фолда --- из results/preds/trunk_twohead.json.
 
     Читаются, а не пересчитываются, ровно по той же причине, по какой читается oof.json:
@@ -292,6 +295,16 @@ def _oof_trunk(y, mask):
     четырёх ферментов --- больше вдвое, чем даёт гребневая, и единственный член, который
     помогает всем четырём.
     """
+    # Сторож. Этот член --- единственный, который не пересчитывается здесь, а читается из
+    # файла, посчитанного на сиде 0. Если разбиение когда-нибудь сдвинется, все остальные
+    # члены поедут за ним, а этот молча останется на старых фолдах, и предсказания вне
+    # фолда перестанут быть вне фолда. Digest ловит это на месте.
+    d = fold_digest(fold)
+    if d != TRUNK_FOLD_DIGEST:
+        raise SystemExit(
+            f"разбиение сдвинулось: {d} вместо {TRUNK_FOLD_DIGEST}. Предсказания ствола в "
+            f"trunk_twohead.json посчитаны на старых фолдах и вне фолда больше не лежат. "
+            f"Перезапустите src/trunk.py или снимите режим ансамбль5.")
     J = json.load(open(RES + "preds/trunk_twohead.json"))
     T = J.get("preds", J)
     key = f"{TRUNK_MODE}|0|{TRUNK_LAM}"
