@@ -3371,3 +3371,48 @@ curiosity into a designed control. And the tau proposal that started this: the s
 usable pairs per enzyme, not the ~475 an independence assumption predicts, which is still 2.8 to
 5.6 times what the curves give on CYP1A2, CYP2C9 and CYP2D6 — and *fewer* than the 510 CYP3A4
 already has, because those 510 are the campaign.
+
+**130. The leaderboard identifies delta, but only as well as the test's label spread is pinned —
+and that ties the delta programme to the series parameter.** Checked before the 24 September
+submission, because it decides what that submission should be chosen for.
+
+The claim under test: the intermediate leaderboard returns four numbers, ST-RAE is sensitive to a
+global shift, so knowing our own prediction distribution the shift is recoverable per enzyme. That
+would be worth a great deal — item 94 measured the model-choice systematic in delta at 0.11 to
+0.51, wider than the entire bootstrap interval, and nothing local has narrowed it.
+
+ST-RAE is a ratio, so there are two ways to be wrong about it: the numerator depends on prediction
+quality as well as on the shift, and the denominator depends on the spread of the **test** labels,
+which nobody has.
+
+**Quality is not the problem.** Degrading the predictions until the rank falls by 0.01 — one and a
+half noise floors — changes the score by as much as a shift of 0.041 / 0.035 / 0.010 / 0.061 does.
+Against a current delta uncertainty near 0.5 that is a contamination of 2 to 12 per cent. On this
+axis the claim is right and the margin is eightfold at worst.
+
+**The denominator is the problem.** It enters multiplicatively, so an error in it converts to an
+error in the recovered shift through the same slope:
+
+    фермент     счёт    наклон   ошибка знаменателя 10 %   20 %
+    CYP1A2    0.7987   -0.2473                     0.323  0.646
+    CYP2C9    0.6252   -0.3989                     0.157  0.313
+    CYP2D6    0.8796   -0.1685                     0.522  1.044
+    CYP3A4    0.4880   -0.3026                     0.161  0.322
+
+Between our own folds the denominator varies by 2.5 to 5.4 per cent, but the test is a different
+population — analog series, a different batch, and on CYP3A4 a different campaign again (item 129)
+— so ten per cent is the optimistic figure rather than the pessimistic one.
+
+So delta is recoverable on CYP2C9 and CYP3A4 at about 0.16, marginally on CYP1A2 at 0.32, and
+**not on CYP2D6**, where the slope is flattest and a ten per cent error costs 0.52 — the whole of
+the current uncertainty. CYP2D6 is, as usual, the enzyme where it matters most.
+
+The useful part is what pins the denominator. It is the mean absolute deviation of the test
+labels, and the test is series of analogs around anchors that sit in our training set. Its spread
+therefore decomposes into the spread of the anchor labels, which we have, and the within-series
+spread, which is **tau** — the parameter the series layer needs and item 129 found 84 screening
+pairs per enzyme to estimate.
+
+**Measuring tau is what makes the leaderboard readable.** The two programmes are one piece of work,
+not two, and that promotes tau above the selection layer in the order: without it, 24 September
+returns four numbers we cannot convert into the quantity we most need.
