@@ -29,16 +29,23 @@ screen on the same library and published it as AID 411, covering 8422 of the 130
 the CYP3A4 assay. So interference stops being a hypothesis to reason around and becomes a column:
 excluded, or carried as a covariate, and either choice is checkable.
 
-What is fetched per assay: the fitted `Fit_LogAC50`, the curve class and description, the activity
-outcome and score. `Fit_CurveClass` matters as much as the potency -- NCGC's classes distinguish a
-complete sigmoid from a partial or single-point response, and pooling those without the
-distinction is how a qHTS set poisons a model.
+What is fetched per assay: the fitted AC50 and its logarithm, the Hill coefficient, the curve R2
+and the curve fit model, the activity outcome and score, and NCGC's own QC flags. **The column
+names in the component assays are not the ones in the summary AID 1851** -- there it is
+`Fit_LogAC50` and `Fit_CurveClass`, here `Log of AC50` and `Curve Fit Model` -- so both spellings
+are requested and whichever exists is kept. A run that finds neither stops rather than silently
+saving three columns, which is what the first version of this script did.
+
+The curve model matters as much as the potency: NCGC's classes distinguish a complete sigmoid from
+a partial or single-point response, and pooling those without the distinction is how a qHTS set
+poisons a model.
 
 Nothing is merged here. This script only downloads and caches; the join, the source indicator and
 the interference handling belong to a separate ablation, because item 63's lesson is that the
 merge is where external data goes wrong.
 
-Writes data/ncgc/aid_<id>.csv and data/ncgc/cid_smiles.csv.
+Writes data/ncgc/aid_<id>.csv. Structures come with the assay records in
+`PUBCHEM_EXT_DATASOURCE_SMILES`, so no separate compound lookup is needed.
 """
 import argparse
 import pathlib
@@ -52,9 +59,16 @@ D = ROOT / "data" / "ncgc"
 BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
 ASSAYS = {410: "CYP1A2", 883: "CYP2C9", 891: "CYP2D6", 899: "CYP2C19",
           884: "CYP3A4", 411: "luciferase"}
-KEEP = ["PUBCHEM_CID", "PUBCHEM_ACTIVITY_OUTCOME", "PUBCHEM_ACTIVITY_SCORE",
-        "Fit_LogAC50", "Fit_HillSlope", "Fit_R2", "Fit_CurveClass",
-        "Curve_Description", "Fit_InfiniteActivity", "Potency"]
+# Имена колонок в компонентных AID НЕ такие, как в сводном 1851: там Fit_LogAC50 и
+# Fit_CurveClass, здесь "Log of AC50" и "Curve Fit Model". Список собран по фактической
+# шапке AID 410, и берутся оба варианта, чтобы скрипт пережил обе схемы.
+KEEP = ["PUBCHEM_SID", "PUBCHEM_CID", "PUBCHEM_EXT_DATASOURCE_SMILES",
+        "PUBCHEM_ACTIVITY_OUTCOME", "PUBCHEM_ACTIVITY_SCORE",
+        "Activity Direction", "Activity Qualifier", "Qualified AC50", "Log of AC50",
+        "Hill Coefficient", "Curve R2", "Curve Fit Model", "Compound QC",
+        "Data Analysis QC", "NCGC Comment", "Compound Type",
+        "Fit_LogAC50", "Fit_HillSlope", "Fit_R2", "Fit_CurveClass", "Curve_Description"]
+SID_CHUNK = 8000        # PUG отдаёт 400 при запросе больше 10000 SID за раз
 
 
 def get(url, tries=4, pause=3.0):
@@ -71,49 +85,46 @@ def get(url, tries=4, pause=3.0):
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--skip-smiles", action="store_true")
-    a = ap.parse_args()
+    argparse.ArgumentParser().parse_args()
     D.mkdir(parents=True, exist_ok=True)
 
     cids = set()
     for aid, name in ASSAYS.items():
         out = D / f"aid_{aid}.csv"
         if out.exists():
-            df = pd.read_csv(out)
+            df = pd.read_csv(out, low_memory=False)
             print(f"AID {aid} ({name}): уже есть, {len(df)} строк")
         else:
             t0 = time.time()
-            txt = get(f"{BASE}/assay/aid/{aid}/CSV")
+            sids = [x for x in get(f"{BASE}/assay/aid/{aid}/sids/TXT").split() if x.strip()]
+            print(f"AID {aid} ({name}): {len(sids)} SID, качаю кусками по {SID_CHUNK}",
+                  flush=True)
             import io
-            df = pd.read_csv(io.StringIO(txt), low_memory=False)
+            parts = []
+            for i in range(0, len(sids), SID_CHUNK):
+                ch = ",".join(sids[i:i + SID_CHUNK])
+                txt = get(f"{BASE}/assay/aid/{aid}/CSV?sid={ch}")
+                parts.append(pd.read_csv(io.StringIO(txt), low_memory=False))
+                print(f"    {min(i+SID_CHUNK, len(sids))}/{len(sids)}", flush=True)
+                time.sleep(0.4)
+            df = pd.concat(parts, ignore_index=True)
             # Первые строки CSV PubChem --- служебные описания типов, у них нет CID.
             df = df[pd.to_numeric(df.get("PUBCHEM_CID"), errors="coerce").notna()]
             cols = [c for c in KEEP if c in df.columns]
+            missing = [c for c in ("Log of AC50", "Fit_LogAC50") if c not in df.columns]
+            if len(missing) == 2:
+                raise SystemExit(f"AID {aid}: ни одной колонки с AC50; шапка = "
+                                 f"{list(df.columns)[:12]}")
             df = df[cols]
             df.to_csv(out, index=False)
-            print(f"AID {aid} ({name}): {len(df)} строк, {len(cols)} колонок, "
+            print(f"AID {aid} ({name}): {len(df)} строк, колонки {cols}, "
                   f"{time.time()-t0:.0f} с", flush=True)
         if aid != 411:
             cids |= set(pd.to_numeric(df.PUBCHEM_CID, errors="coerce").dropna().astype(int))
 
     print(f"\nуникальных соединений по пяти изоформам: {len(cids)}")
-    sm = D / "cid_smiles.csv"
-    if a.skip_smiles or sm.exists():
-        print("SMILES пропущены" if a.skip_smiles else f"SMILES уже есть: {sm}")
-        return
-    ids = sorted(cids)
-    rows, step = [], 200
-    for i in range(0, len(ids), step):
-        chunk = ",".join(str(x) for x in ids[i:i + step])
-        txt = get(f"{BASE}/compound/cid/{chunk}/property/CanonicalSMILES/CSV")
-        import io
-        rows.append(pd.read_csv(io.StringIO(txt)))
-        if (i // step) % 10 == 0:
-            print(f"  SMILES {i+len(rows[-1])}/{len(ids)}", flush=True)
-        time.sleep(0.25)          # PubChem просит не больше пяти запросов в секунду
-    pd.concat(rows, ignore_index=True).to_csv(sm, index=False)
-    print(f"сохранено: {sm}")
+    print("SMILES берутся из колонки PUBCHEM_EXT_DATASOURCE_SMILES в самих файлах --- "
+          "отдельный обход за структурами не нужен.")
 
 
 if __name__ == "__main__":
