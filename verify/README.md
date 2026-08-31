@@ -3508,3 +3508,50 @@ model never sees the same molecule on two enzymes — which is a strong constrai
 latent built later. And it is the argument for the screening channel in `src/ablcontrast.py`: the
 screen is the one place where the same molecule is measured on all four enzymes, 4376 times over,
 so it is the only source of within-molecule contrast the dataset contains.
+
+**133. The series layer would make things worse, and this is decidable without a single label.**
+`verify/k34_series.py`. Half an hour, nothing built, and it closes a bet that item 130 had already
+promoted in the queue.
+
+The series layer shrinks a test compound's prediction toward the level of its analog series. Item
+129 established that its benefit cannot be measured locally except on CYP3A4, so it looked like a
+bet to be taken on faith. It is not: the *direction* is checkable on the test predictions we
+already have, with no test labels at all.
+
+Two quantities. **tau** is how much chemistry allows members of a series to differ — the standard
+deviation of the label difference across training pairs in the 0.60-0.85 similarity band, divided
+by root two. **The model's within-series spread** is the standard deviation of our own predictions
+across the members of each of the 132 test series. If the model spreads a series more than
+chemistry does, shrinking is justified and its coefficient follows; if it spreads it less, the
+model is already over-smoothed and shrinking will compound the error.
+
+    фермент     пар   tau (химия)   sd модели   отношение
+    CYP1A2       30         0.659       0.231        0.35
+    CYP2C9       15         1.006       0.288        0.29
+    CYP2D6       23         0.398       0.162        0.41
+    CYP3A4      510         0.669       0.390        0.58
+
+**The model is already two to three times over-smoothed inside series on every enzyme.** The layer
+is closed.
+
+The obvious objection is that these predictions are post-affine-pair, and the pair shrinks by
+lambda = 0.52 to 0.76, so some of the smoothing is the pair's rather than the model's. Dividing it
+out gives pre-pair spreads of 0.398, 0.379, 0.312 and 0.527 against the same taus — ratios of 0.60,
+0.38, 0.78 and 0.79. **The pair makes it worse but does not create it**; the boosting is already
+under-spread within series before any post-processing touches it.
+
+That is worth stating on its own, because it is a property of the model nobody had measured: on
+near-neighbour molecules a gradient boosting interpolates, and the label does not. It is the same
+fact item 107 met from the other side, where kNN's deficit *widened* as neighbours got closer, and
+item 99's activity cliffs are the extreme case of it. Three observations, one phenomenon: **near
+neighbours in this data disagree more than any smooth model of structure will predict.**
+
+One correction to the proposal that prompted this, repeated because it changes the cost of the
+remaining route. The suggestion was to estimate tau from the screen instead of the curves, gaining
+"about 475 pairs per enzyme instead of 15 to 30". That figure assumes screening membership is
+independent of pair membership, and item 129 measured that it is not: of the 601 pairs in the
+0.60-0.85 band, **84** have both members in the screening library, not 475. The similar pairs are
+overwhelmingly the CYP3A4 analog campaign, which has no screening data at all. Eighty-four is still
+2.8 to 5.6 times what the curves give on CYP1A2, CYP2C9 and CYP2D6, so the route is worth having
+— but it does not deliver a measured tau, only a better-estimated one, and the layer it was meant
+to de-risk is closed on other grounds anyway.
