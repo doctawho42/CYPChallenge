@@ -90,6 +90,8 @@ from cyppaths import D, RES, tutorial
 TUT = tutorial()
 
 import argparse
+import json
+
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
@@ -218,12 +220,63 @@ def oof_predictions(X, y, mask, fold, mode):
     за неё возьмётся усадка. По критерию пункта 80 это относится к тем вмешательствам,
     которые постобработка не поглощает, --- и проверено, что не поглощает.
     """
-    if mode in ("ансамбль", "ансамбль-без-GP"):
+    if mode in ("ансамбль", "ансамбль-без-GP", "ансамбль5"):
         parts = [_oof_one(X, y, mask, fold, False), _oof_one(X, y, mask, fold, True)]
-        if mode == "ансамбль":
+        if mode in ("ансамбль", "ансамбль5"):
             parts.append(_oof_gp(X, y, mask, fold))
             parts.append(_oof_ridge(X, y, mask, fold))
+        if mode == "ансамбль5":
+            parts.append(_oof_trunk(y, mask))
         return [np.mean([p[e] for p in parts], axis=0) for e in range(len(CYPS))]
+
+
+TRUNK_LAM = "3.0"      # значение, на котором пункт 79 мерил канал
+TRUNK_MODE = "twohead"
+
+
+def _trunk_blocks(Xall):
+    """Разрезать общую матрицу обратно на FP / DESC / MECH.
+
+    src/trunk.py принимает блоки по отдельности, потому что кладёт FP под log1p, а здесь
+    матрица уже склеена. Ширины берутся из feats.npz, а не зашиваются числом: их три, и
+    ошибка в любой сдвинет весь блок молча.
+    """
+    z = np.load(D + "feats.npz")
+    n_fp, n_de, n_me = z["FP"].shape[1], z["DESC"].shape[1], z["MECH"].shape[1]
+    if n_fp + n_de + n_me != Xall.shape[1]:
+        raise SystemExit(f"ширины блоков {n_fp}+{n_de}+{n_me} не дают {Xall.shape[1]}")
+    return (Xall[:, :n_fp], Xall[:, n_fp:n_fp + n_de], Xall[:, n_fp + n_de:])
+
+
+def _trunk_clip(p, y_e):
+    """Диапазон меток фермента плюс-минус две единицы, как в src/trunkdose.py.
+
+    Не косметика: на сиде 0 ствол выдаёт одно соединение на -360 (пункт 42), и аффинная
+    пара, в отличие от изотоники, такой выброс не поглощает. Без обрезки весь замер стал бы
+    замером одной молекулы.
+    """
+    return np.clip(p, np.nanmin(y_e) - 2.0, np.nanmax(y_e) + 2.0)
+
+
+def _oof_trunk(y, mask):
+    """Предсказания ствола вне фолда --- из results/preds/trunk_twohead.json.
+
+    Читаются, а не пересчитываются, ровно по той же причине, по какой читается oof.json:
+    прогон занимает часы, файл закоммичен и его происхождение записано. Разбиение то же ---
+    src/trunk.py зовёт butina_folds из cypsplit.py с тем же сидом, так что усреднять его
+    предсказания с бустинговыми законно, и аффинная пара подгоняется по тем же фолдам.
+
+    Пятый член принят по пункту 120: -0.0061 пары и +0.0054 ранга, знак 4/4 на каждом из
+    четырёх ферментов --- больше вдвое, чем даёт гребневая, и единственный член, который
+    помогает всем четырём.
+    """
+    T = json.load(open(RES + "preds/trunk_twohead.json"))
+    T = T.get("preds", T)
+    key = f"{TRUNK_MODE}|0|{TRUNK_LAM}"
+    if key not in T:
+        raise SystemExit(f"нет ключа {key} в trunk_twohead.json; запустите src/trunk.py")
+    A = np.asarray(T[key], float)
+    return [_trunk_clip(A[mask[:, e], e], y[mask[:, e], e]) for e in range(len(CYPS))]
 
 
 def _desc_scaled(X):
@@ -330,8 +383,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--shrink", action="store_true", help="применить усадку (см. docstring)")
     ap.add_argument("--mode", default="ансамбль",
-                    choices=["раздельно", "пул", "ансамбль", "ансамбль-без-GP"],
-                    help="раздельно воспроизводит поведение до пункта 84; ансамбль включает GP")
+                    choices=["раздельно", "пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"],
+                    help="раздельно воспроизводит поведение до пункта 84; ансамбль включает GP; "
+                         "ансамбль5 добавляет пятым членом ствол со скрининговой головой "
+                         "(пункт 120: -0.0061 пары, +0.0054 ранга, знак 4/4 на каждом "
+                         "ферменте). Умолчание не переключено: пятый член требует torch на "
+                         "машине, где собирается сабмит, и решение о составе принимает команда")
     ap.add_argument("--delta", default="0,0.5,-0.7,0.8",
                     help="предполагаемый сдвиг средней активности теста относительно нашей "
                          "выборки. Пара (off, lambda) подбирается под ЭТО предположение. "
@@ -384,7 +441,14 @@ def main():
     print(f"обучаю на всей выборке (режим: {a.mode}) и предсказываю тест", flush=True)
     act = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})
     shared = None
-    if a.mode in ("пул", "ансамбль", "ансамбль-без-GP"):
+    trunk_te = None
+    if a.mode == "ансамбль5":
+        import trunk as TR
+        print("    обучаю ствол на всей выборке и предсказываю тест", flush=True)
+        fp_te, de_te, me_te = _trunk_blocks(Xte)
+        trunk_te = TR.fit_predict_test(fp_te, de_te, me_te, lam=float(TRUNK_LAM),
+                                       seed=0, mode=TRUNK_MODE)
+    if a.mode in ("пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
         Xs = [pooled_design(X[mask[:, e]], e) for e in range(len(CYPS))]
         ys = [y[mask[:, e], e] for e in range(len(CYPS))]
         shared = gbm_reg().fit(np.vstack(Xs), np.concatenate(ys))
@@ -393,17 +457,19 @@ def main():
     for e, c in enumerate(CYPS):
         m = mask[:, e]
         parts = []
-        if a.mode in ("раздельно", "ансамбль", "ансамбль-без-GP"):
+        if a.mode in ("раздельно", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
             parts.append(gbm_reg().fit(X[m], y[m, e]).predict(Xte))
-        if a.mode in ("пул", "ансамбль", "ансамбль-без-GP"):
+        if a.mode in ("пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
             parts.append(shared.predict(pooled_design(Xte, e)))
-        if a.mode == "ансамбль":
+        if a.mode in ("ансамбль", "ансамбль5"):
             tf = gp_prepare(X[m])
             parts.append(gp_predict(tf(X[m]), y[m, e], tf(Xte)))
             B = _desc_scaled(np.vstack([X[m], Xte]))
             nb = int(m.sum())
             parts.append(RidgeCV(alphas=np.logspace(-1, 4, 12))
                          .fit(B[:nb], y[m, e]).predict(B[nb:]))
+        if a.mode == "ансамбль5":
+            parts.append(_trunk_clip(trunk_te[:, e], y[m, e]))
         p = np.mean(parts, axis=0)
         if lams is not None:
             L, mu_tr, sh = lams[e]
