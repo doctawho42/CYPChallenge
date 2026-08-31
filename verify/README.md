@@ -3309,3 +3309,65 @@ The procedure, for future use: a proposal that adds a per-compound correction on
 predictions is checked here **before** it is built, against magnitude rather than against class
 membership. If the monotone budget is at the floor and the oracle correction tracks the residual,
 the proposal is closed regardless of how it is motivated.
+
+**129. CYP3A4 is not one dataset. It is two, and that explains most of the ways CYP3A4 has
+behaved oddly in this log.** Found while checking a proposal to estimate the series parameter tau
+from the screen instead of from the curves.
+
+The check was arithmetic. The screen covers 4375 of 4905 rows, so if membership were independent
+of structure, a similar pair would have both members in it 0.892^2 = 79.6 per cent of the time.
+Measured, by similarity band:
+
+    сходство     пар   обе в скрине   ожидалось
+    0.60-0.85    601         14.0 %      79.6 %
+    0.50-0.60   1734         34.5 %      79.6 %
+    0.45-0.50   1321         58.7 %      79.6 %
+    0.35-0.45   6850         79.9 %      79.6 %
+
+At low similarity the assumption is exactly right; as similarity rises, screen membership
+collapses to 14 per cent. The analog pairs in our training set are systematically **not** from the
+diversity screen.
+
+Following that gives the composition:
+
+    группа                молекул   близкий сосед >= 0.587
+    в скрининговой библиотеке  4375                    4.9 %
+    вне её                      530                   68.1 %
+
+    размечены вне скрина:  CYP1A2 0,  CYP2C9 0,  CYP2D6 0,  CYP3A4 530 из 2335
+
+**All 530 compounds outside the screen carry exactly one label, and it is CYP3A4.** Their names
+form a block (OCNT-049xxxx and up), their pIC50 distribution is different — median 4.45 against
+4.20, interquartile range 1.19 against 1.64 — and their bands are narrower, 0.315 against 0.412.
+Compound-ID medians order as diversity screen 2313565, campaign 2395534, test 2535312, with only
+11 of 750 test compounds inside the campaign's range; if the identifiers are sequential these are
+three successive batches and the test set is the newest.
+
+So the training set is a diversity screen of 4375 singletons assayed on all four enzymes, glued to
+a **CYP3A4-only analog campaign of 530 compounds** with no screening data, two thirds of which
+have a close neighbour.
+
+This retro-explains a long list of CYP3A4 anomalies that had been recorded separately:
+
+- 2335 labels against 1285 to 1493 for the others — 530 of them are a different campaign;
+- item 22's stratum landing 267 of 328 compounds on CYP3A4, and this session's anchor-split counts
+  coming out 79 / 72 / 69 / **448**;
+- item 127's selection propensity having the **opposite sign** on CYP3A4, +0.151 against -0.642
+  and -0.821 — the campaign compounds were never selected by screening activity at all, they were
+  designed;
+- CYP3A4 being the enzyme where pooling hurts (item 111), where the dead zone hurts (item 122),
+  where the aggregator flag does nothing (item 102), and where item 128's monotone budget is
+  0.0002 against about 0.010 elsewhere.
+
+Split by campaign, the model itself behaves differently: rank 0.798 on the 530 against 0.752 on
+the 1805, and the mechanistic block is worth +0.0043 on the campaign against +0.0004 on the
+screen. **Every CYP3A4 number in this log is an average over two populations** that differ in
+geometry, in label distribution and in band width.
+
+Two consequences worth acting on. The analog-series validation this session declared
+unconstructible is constructible after all — on those 530, for CYP3A4 only. That is precisely the
+stratum item 22 found empirically without knowing what it was, and knowing what it is turns a
+curiosity into a designed control. And the tau proposal that started this: the screen yields 84
+usable pairs per enzyme, not the ~475 an independence assumption predicts, which is still 2.8 to
+5.6 times what the curves give on CYP1A2, CYP2C9 and CYP2D6 — and *fewer* than the 510 CYP3A4
+already has, because those 510 are the campaign.
