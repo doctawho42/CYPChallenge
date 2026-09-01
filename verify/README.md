@@ -4092,11 +4092,14 @@ and keeping the top k:
     все 2048     0.7150      0.5651                     100.0 %
 
 **Fifty bits out of 2048 carry four fifths of the effect, and twenty carry seven tenths.** The
-fingerprint is not working in bulk. It is a short list of specific substructures repairing specific
-chemotypes the descriptors get wrong, and the list is now enumerable: decode those fifty and the
-answer is a set of structural alerts with an account of what MolLogP and its neighbours miss. Of
-everything in this file that is the only thread that ends in chemistry rather than a fourth
-decimal, and it is now cheap to pull.
+fingerprint is not working in bulk.
+
+**[ДВЕ ПОПРАВКИ ИЗ ПУНКТА 156, обе сужают заявление.** Во-первых, `k40_topk` отбирает
+пятьдесят битов НА ФЕРМЕНТ и внутри каждого фолда, а не пятьдесят на всю задачу; списки
+ферментов пересекаются на 7-11 битов, общих у всех четырёх --- три, так что объединение
+около ста семидесяти. Во-вторых, «подструктуры» --- преувеличение: тринадцать из полусотни
+имеют радиус 0, то есть это типы атомов на трёх с половиной тысячах молекул, а не алерты.
+Расшифровка в пункте 156.**]
 
 **151. Pooling reverses on a depth-5 tree with 30 per cent column subsampling, which is a warning
 about the submission and not yet a result.** `src/ablaux.py` ran a pooled arm on the own booster of
@@ -4211,3 +4214,72 @@ Both are small and the rank figures are inside the floor, so this is not a refut
 the first time the file can *see* rather than infer that a number depends on the protocol, and the
 direction is the uncomfortable one: the more test-like the split, the smaller the mechanistic
 block's contribution.
+
+**156. The fifty bits decoded: about five nameable fragments, and they are the textbook CYP
+pharmacophore.** `verify/k44_bits.py`. Item 150 promised a chemical sentence; this is the sentence,
+and getting to it required withdrawing two thirds of the promise first.
+
+**What the top fifty actually consist of.** Morgan environments are hashed into 2048 buckets, so
+before any chemistry two things had to be counted: how many distinct environments land on each bit,
+and what radius they are.
+
+    радиус   битов   медиана молекул   чистых (главное окружение >= 0.8)
+    0           13              3538                                 10
+    1           26               618                                 17
+    2           11               147                                  4
+
+**Thirteen of the fifty are radius zero** -- a single atom with its invariants, carried by three and
+a half thousand molecules out of 4905. On a *count* fingerprint that is an atom census, not an
+alert, and it duplicates what MolWt, NumAromaticRings and the heteroatom counts already give the
+descriptor block. Twenty-six more are radius one, a single atom and its bonded neighbours: `c(c)c`
+is the interior of a benzene ring, present in 4430 molecules. **Only eleven are radius-two
+fragments and only four or five of those are clean enough to name.** The median bit collects eleven
+distinct environments.
+
+Two further limits, measured rather than assumed. The ranking agrees with the fold-wise ranking on
+**36 of 50** bits, so the list itself is about seventy per cent stable. And the enzymes barely
+share it: pairwise overlap is 7 to 11 bits and **three** are common to all four, which is what
+forces the correction to item 150 above.
+
+**The chemistry, controlled.** A raw difference in mean pIC50 between carriers and non-carriers
+would confound the fragment with the size and lipophilicity of the molecules that carry it, so each
+is also measured on the residual after linearly removing MolWt, MolLogP, NumAromaticRings, TPSA,
+NumHAcceptors and FractionCSP3. Raw / residual:
+
+    фрагмент                       молекул      1A2          2C9          2D6          3A4
+    c(cn)nc   пиримидин, C2 между
+              двумя кольцевыми N       150   +.78/+.67    +.57/+.65    +.66/+.68    +.80/+.66
+    c(nc)n(-c)c  N-арил-азол            74   +.64/+.61    +.50/+.62    +.77/+.84    +.88/+.97
+    n(c)c     пиридиновый N            624   +.57/+.42    +.42/+.38    +.33/+.37    +.75/+.72
+    c(cc)nc   углерод азина            222   +.32/+.13    +.52/+.46    +.19/+.23    +.60/+.62
+    c(OC)(cc)cc  метоксиарил           147   +.09/+.00    +.19/+.19    +.51/+.53    +.50/+.34
+    C(CC)N(C)C  трет. алифат. амин     328   -.85/-.58    +.10/+.12    +.00/-.12    -.09/-.06
+    C(C)N     алифатический амин      2104   -.51/-.23    -.23/-.05    +.08/-.09    -.20/-.09
+    C(C)O     алифатический гидроксил  588   -.35/-.11    -.26/-.08    +.16/+.05    -.30/-.20
+    c(cc)c(-c)c  биарил                344   +.43/+.21    +.24/+.02    -.15/-.03    +.23/-.15
+
+**Every fragment that survives the control is a ring nitrogen with a lone pair available to the
+haem iron.** Pyrimidine, N-aryl azole, pyridine, azine -- the classical coordinating pharmacophore,
+and the azole's effect *grows* under the control on CYP2D6 and CYP3A4 (+0.77 to +0.84, +0.88 to
++0.97). The most used bit in the whole fingerprint, 126 splits against the runner-up's 37, is the
+pyridine nitrogen. The single largest effect belongs to the pyrimidine C2 at +0.66 to +0.68 on all
+four enzymes at once.
+
+**Everything that collapses under the control was a size marker.** The biaryl bit goes from +0.43
+to +0.21 on CYP1A2 and from +0.23 to -0.15 on CYP3A4 -- it was measuring how large the molecule is.
+The aliphatic hydroxyl and the generic aliphatic amine lose half to two thirds. Had the raw column
+been read alone, three of nine fragments would have been over-read as chemistry.
+
+**One enzyme-specific statement survives, and it is CYP1A2's.** The tertiary aliphatic amine costs
+**-0.58 of pIC50 after the control**, on CYP1A2 alone -- the other three enzymes are flat. That is
+the sp3, basic, non-planar character being rejected by a narrow planar site, which is the shape
+argument item 134 tried to test on the residue and could not settle. It is settled here in the
+opposite place: not among the compounds where the screen beats the model, but across the labels
+themselves.
+
+**What this is worth.** Not a feature: the model already has these bits and is already using them,
+so nothing here raises a score. What it is worth is that a 2048-column block whose contribution was
+a number is now a mechanism -- the fingerprint's job is to carry haem-coordinating ring nitrogen
+and sp3 basicity, two things no descriptor in the 217-column block encodes directly. That also
+explains item 138's shape: the trees consult the fingerprint rarely because only a handful of its
+columns say anything, and they cannot drop it because nothing else says that.
