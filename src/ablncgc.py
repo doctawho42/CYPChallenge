@@ -184,11 +184,42 @@ def main():
             # вынужден отыгрывать это из меньшинства. Пункт 153.
             w_pan = float(arm.split("w")[1].split()[0]) if " w" in arm else 1.0
             enz_list = ALL5 if with_c19 else CYPS
+            # Поферментная рука: ни пула, ни индикатора фермента --- только своя кривая
+            # плюс своя же панель. Пункт 158 намерил, что скрининг работает так, а не в
+            # пуле; у панели нет причин вести себя иначе, и макро-усреднение прячет то,
+            # что панель помогает 1A2 при любом весе и вредит 2D6 (пункт 157).
+            per_enz = arm.startswith("поферментно")
             p_all = {c: np.zeros(len(rows)) for c in CYPS}
 
             for f in range(5):
                 trn_mol, te_mol = fold != f, fold == f
                 rng = np.random.default_rng(seed * 100 + f)
+                if per_enz:
+                    for e, c in enumerate(CYPS):
+                        trn, te = M[c] & trn_mol, M[c] & te_mol
+                        if not te.any():
+                            continue
+                        Xa = [np.hstack([X[trn], np.zeros((int(trn.sum()), 1), np.float32)])]
+                        ya, wa = [Y[c][trn]], [np.ones(int(trn.sum()))]
+                        if use:
+                            d = panel[panel.enzyme == c]
+                            if not with_cens:
+                                d = d[d.pAC50.notna()]
+                            held = d.ourid.notna() & d.ourid.map(
+                                lambda i: te_mol[int(i)] if i == i else False)
+                            d = d[~held]
+                            if not d.empty:
+                                t = d.target.to_numpy(float)
+                                if shuffle:
+                                    t = t[rng.permutation(len(t))]
+                                Xa.append(np.hstack([XN[d.row.to_numpy()],
+                                                     np.ones((len(d), 1), np.float32)]))
+                                ya.append(t); wa.append(np.full(len(d), w_pan))
+                        p_all[c][te] = boost(
+                            np.vstack(Xa), np.concatenate(ya),
+                            np.hstack([X[te], np.zeros((int(te.sum()), 1), np.float32)]),
+                            seed * 10 + f, np.concatenate(wa))
+                    continue
                 Xs, ys = [], []
                 ws = []
                 for e, c in enumerate(CYPS):

@@ -1,5 +1,68 @@
 # Verification
 
+## Табло
+
+Этот файл --- журнал дефектов, и читается он соответственно: верная идея получает один пункт,
+неверная получает три (выдвижение, опровержение, поправка к опровержению). Соотношение при
+чтении выходит три к одному в пользу провалов при положительном итоге. Табло существует, чтобы
+состояние проекта не приходилось складывать в голове из ста шестидесяти пунктов.
+
+**Где мы.** Ранг --- Спирмен с истиной, пара --- ST-RAE после аффинной пары. Больше ранг лучше,
+меньше пара лучше.
+
+    конфигурация                                 пара      ранг   прирост   сидов   пункт
+    база FP+DESC+MECH, поферментно, HistGB     0.7150    0.5651         —       1     эталон
+    ансамбль из четырёх членов                 0.6819    0.6009   +0.0358       4       120
+    ансамбль из пяти (ЧТО ПОДАЁТСЯ СЕЙЧАС)     0.6824    0.6063   +0.0412       4   120, 121
+    пять, мёртвая зона в четырёх членах        0.6653    0.6230   +0.0579       4       164
+                                                                                 (нижняя оценка)
+
+**Итого траектория: +0.058 ранга и -0.050 пары от базовой модели.** Шум одного счёта лидерборда
+на 750 молекулах --- 0.08 пары (пункт 147), так что по паре проект пока внутри него; по рангу
+--- вне, но ранг на лидерборде не показывают.
+
+**Что стоит в конвейере и сколько стоит.**
+
+    вклад                                  прирост ранга   сидов   пункт   статус
+    мёртвая зона во всех членах                  +0.0167       4     164   в подаче нет
+    ствол пятым членом                           +0.0054       4     120   в подаче есть
+    механистический блок                         +0.0163       4      81   в подаче есть
+                        он же в режиме теста     +0.0313       4     119
+    пулирование контрастом                       +0.0141       4  84,132   в подаче есть
+    GP и гребневая как члены                  своя ошибка      4  92,100   в подаче есть
+    скрининг как мишень, поферментно             +0.0245       1     158   НЕ в подаче
+    панель NCGC, поферментно                  считается        —     157   НЕ в подаче
+    пятьдесят битов = 80 % фингерпринта                —       1 150,156   интерпретация
+
+**Шумовые полы.** Макро 0.007 при фиксированном сиде (пункт 70); посидовый разброс макро 0.016
+(f3). Поферментные полы **больше макро** и до сих пор нигде не были записаны (пункт 165):
+
+    фермент   sd по сидам при неизменной руке
+    CYP1A2                             0.0061
+    CYP2C9                             0.0071
+    CYP2D6                             0.0049
+    CYP3A4                             0.0033
+    МАКРО                              0.0036
+
+Макро усредняет четыре фермента и потому тише каждого из них. **Поферментное заявление нельзя
+мерить макро-полом.**
+
+**Три главных открытых вопроса.**
+
+  почему пулирование выигрывает на HistGB и разворачивается на обычных деревьях (158, 166);
+  переносится ли что-либо из этого в тестовый режим --- проверить нечем (123, 129, 147);
+  скрининг поферментно даёт +0.0245 на одном сиде и ждёт остальных.
+
+**Что закрыто и переоткрывать не надо.** Постобработка сверх аффинной пары (77, 128 --- потолок
+0.0076), предобученные представления (61, 117, 154 --- три чекпойнта), FCFP (101), kNN (107),
+краевая регрессия (114), точное байесово действие (126), серийный слой (133), координата фермента
+(154), logD и LipE (154), хи-квадрат-DRO (154), ChEMBL как внешний источник (77 --- все три
+способа обращения), CYP2C19 как пятая изоформа (153).
+
+**Не запущено, а не закрыто.** Квантовый блок: `src/quantum.py` падает на разрешении
+зависимостей, `xtb-python` нет в реестре. Это не результат.
+
+
 Forty-three scripts in four groups. `f*` was a sweep over everything that had been computed
 and written by that point; `g*` answers four questions raised against the document; `h*`
 tests two claims the document made about geometry and about reactivity; `k*` began as a
@@ -4464,3 +4527,93 @@ after being worth +0.0079 at w = 1.0, so "not active up to the top concentration
 both weights. Per enzyme it buys CYP1A2 +0.025 and CYP2C9 +0.015 and costs CYP2D6 -0.028, the same
 CYP2D6 sensitivity item 157 found. Still below the base on the macro; still the arm to keep if the
 panel is used at all.
+
+**164. The dead zone had been measured on four members while five are submitted, and on five it is
+worth +0.0167.** `verify/k46_five.py`. Caught by reading rather than by running: `src/abldzens.py`
+reads `oof_pool_all`, `oof_gp` and `oof_weak`, so its ensemble is the per-enzyme boosting, the
+pooled boosting, the Gaussian process and the ridge -- **four**. Item 121 wired the joint-likelihood
+trunk in as a fifth behind `--mode ансамбль5`, and that is what `src/submit.py` builds. So item
+162's 0.6196, the best number in this file, belonged to a configuration that is not submitted.
+
+Both `submit.py` (line 230) and `abldzens.py` combine members by an unweighted mean, so the five-
+member ensemble is `(4 * четыре + ствол) / 5` exactly and can be composed from saved predictions in
+minutes rather than recomputed in hours. The composition check passes: the plain five-member arm
+reproduces item 120's rank of **0.6063** to the fourth decimal.
+
+    состав                        пара      ранг
+    четыре, базовый ансамбль    0.6819    0.6009
+    пять, обычный (подаётся)    0.6824    0.6063
+    четыре, мёртвая зона везде  0.6611    0.6198
+    пять, МЗ в четырёх членах   0.6653    0.6230
+
+**+0.0167 of rank in the configuration that is actually submitted**, on four seeds. Two things
+follow. The trunk still adds +0.0032 on top of the dead zone, against +0.0054 without it, so the
+pass takes a little of what the trunk was contributing but not most of it. And the number is a
+**lower bound**: the trunk is not reprojected here, and every other member gained from the pass --
++0.0435, +0.0462, +0.0188, +0.0174 -- so a fully reprojected five-member ensemble should score
+better than 0.6230. Doing that means re-running `src/trunk.py` under torch against the projected
+target, which is the obvious next build.
+
+**165. The per-enzyme noise floor is larger than the macro floor, and it had never been written
+down.** Item 70 measured 0.007 macro at fixed seed, and that number has been used ever since to
+judge per-enzyme claims. It cannot be: the macro averages four enzymes and therefore has less
+variance than any one of them. Measured as the spread across four seeds at a fixed arm, on the
+saved own-boosting sweep:
+
+    фермент   sd по сидам
+    CYP1A2         0.0061
+    CYP2C9         0.0071
+    CYP2D6         0.0049
+    CYP3A4         0.0033
+    МАКРО          0.0036
+
+**The macro is quieter than three of the four enzymes**, and CYP2C9 is twice as noisy as CYP3A4.
+Two consequences, both retroactive. A single-enzyme gain has to clear roughly 0.006 to 0.007 for
+CYP1A2 and CYP2C9 and only about 0.003 for CYP3A4 -- so the same number means different things on
+different enzymes, and this file has been treating them alike. And item 157's +0.023 for the NCGC
+panel on CYP1A2 is about **four times that enzyme's own spread**, which is the check it was waiting
+for: the claim survives, and the queued seed replication now tests reproducibility rather than
+significance.
+
+Differences between arms at the same seed share the fold structure, so their noise is smaller than
+the spread of a single arm. The figures above are therefore conservative when used on paired
+comparisons, which is the usual case here.
+
+**166. "New information survives, rearrangement dies" is nearly the rule and breaks in two places
+worth naming.** An outside reading sorted the log by what an arm *does* and proposed that
+interventions supplying new information or a new function class survive while those permuting what
+the model already has do not. Sorted against the file it is close, and the two exceptions are the
+informative part.
+
+**It fails on new observations.** The NCGC panel is new information by any definition -- 13126
+structures, a different laboratory, measurements we did not have -- and it costs 0.0176 of rank at
+weight 1.0 and clears zero only at weight 0.1 (item 157). ChEMBL was new information too and all
+three handlings die under the affine pair (item 77). Meanwhile the screening table, which is also
+new observations, is worth +0.0245 (item 158). The discriminator is not novelty, it is
+**protocol**: the screen is the same laboratory, the same assay and the same compounds, the panel
+is a different protocol with an offset of +0.44 to +0.87, and ChEMBL is selected by publishability.
+
+**It fails on new columns.** The mechanistic block is not new information in the observational
+sense -- every one of its thirty columns is computed from the same SMILES the descriptors are
+computed from -- and it is worth +0.0163, up to +0.0313 in the test regime. Meanwhile FCFP,
+chemprop, MoLFormer-XL and ChemBERTa are also computed from the same SMILES and all four die. The
+discriminator here is not novelty either: it is whether the column encodes a quantity **not
+derivable from the block already present**. Protonation state at pH 7.4 and salt-bridge geometry
+are not in the 217 RDKit descriptors; a different fingerprint or a learned embedding is the same
+structural information in another basis, and a tree ensemble that already has Morgan counts plus
+descriptors gains nothing from a change of basis. Four re-encodings tried, zero survivors.
+
+So the rule that fits the file is one step narrower, and it is a single idea in three costumes:
+
+    новые НАБЛЮДЕНИЯ   выживают, если тот же протокол
+    новые КОЛОНКИ      выживают, если величина не выводится из уже имеющегося блока
+    новые ЦЕЛИ         выживают, если несут ПОСОЕДИНЕНИЕВУЮ структуру, которой нет у
+                       аффинной пары --- ширина полосы, различимость пары, тождество фермента
+
+Everything in the dead column is a monotone re-expression of what the model already outputs
+(heteroscedastic layer 93, band edges 114, exact Bayes action 126, rank averaging 106) or a change
+of basis (101, 117, 154), and item 77 explains why: the affine pair is a shrinkage fitted per fold
+directly to the metric, so it already performs every monotone repair. **The prior for the remaining
+five weeks is therefore not "prefer new data" but "prefer quantities the affine pair cannot
+manufacture and the existing block cannot derive"** -- which is why the band width was worth more
+than four external datasets.
