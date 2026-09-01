@@ -5672,3 +5672,42 @@ One exception is worth keeping. On CYP3A4 the dead-zone ensemble with Free-Wilso
 the highest figure for that enzyme anywhere in this file. CYP3A4 has now responded to three separate
 structural interventions -- the two-site instrument (178), the mode divergence (184) and additivity
 here -- while clearing its floor on no ordinary feature block in 190 items.
+
+**192. The layer disagreement does not predict where the model errs, so the UQ line closes.**
+`verify/k57_uq.py`. The award's third axis is novel uncertainty quantification, and this file's
+material for it was one finding plus one candidate. The candidate is now measured.
+
+The finding stands and is about the benchmark rather than about a model: the shipped credible
+interval is 3.92 sigma and sigma is a function of the label at R-squared 0.93 to 0.98 (item 114), so
+what looks like a per-compound uncertainty is a deterministic function of the answer. ST-RAE is
+therefore a potency-weighted absolute error (114) with a U-shaped penalty (115), and any team
+calibrating uncertainty against these bands is calibrating against the label.
+
+The candidate replacement was the disagreement between the curve and the single screening point
+under the instrument equation -- the one quantity in the dataset rooted in an independent
+measurement rather than in the answer, and item 170 measured its spread at 2.9 to 5.8 times its own
+propagated error, so it is real. Item 179 closed it as a training weight; whether it **predicts
+model error** is a different question and was never asked.
+
+    фермент   сырое   после снятия метки   децили |ост.Хилла| -> |ост.модели|, д5/д1
+    CYP1A2   +0.117               +0.003                                       1.26
+    CYP2C9   +0.034               -0.007                                       1.05
+    CYP2D6   +0.098               +0.016                                       1.54
+    CYP3A4   -0.074               +0.036                                       0.78
+
+**Zero after the control on all four.** The raw correlations are small and inconsistent in sign, and
+removing the label isotonically -- with `increasing="auto"`, since the default silently fitted a
+near-constant in item 171 and left the correlation unchanged -- takes them to +0.003, -0.007, +0.016
+and +0.036. The quintile view agrees without assuming monotonicity: CYP3A4 runs the **wrong way** at
+0.78, and CYP2D6's 1.54 rests on its last quintile alone and is not monotone.
+
+So item 179's null generalises from weights to uncertainty and the line is closed. It also resolves
+item 179's reading, which cut both ways: the disagreeing compounds carry signal the model **already
+takes**, which is why they can neither be down-weighted (worse than shuffled) nor used as a risk
+flag (no relation to the error).
+
+**What this leaves for the third axis is a closure rather than a gap.** The benchmark ships an
+interval that is a function of the label, and the only independent measurement in the dataset does
+not supply a replacement -- measured, with the confounder removed, on four enzymes. That is a
+complete statement about uncertainty quantification on this benchmark, and it is negative in both
+halves, which is what makes it a statement rather than a proposal.
