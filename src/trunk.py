@@ -52,6 +52,20 @@ PC0 = 4.305
 CAL_E = np.array([0.728, 0.621, 0.867, 0.931], dtype=np.float32)
 CAL_H = np.array([1.261, 1.112, 1.243, 1.968], dtype=np.float32)
 
+# Двухсайтовая форма прибора, подогнанная в verify/k52_twosite.py на тех же парных ячейках:
+#   I = E [ f/(1 + 10^{h(pC0-pi)}) + (1-f)/(1 + 10^{h(pC0-pi-D)}) ]
+# Пункт 178: перекрёстно проверенный остаток улучшается на всех четырёх, но параметры
+# различают. На CYP3A4 это настоящая смесь --- доля 0.481 при разделении 0.978, обе величины
+# внутренние, остаток падает на 26 %. На CYP2C9 и CYP2D6 разделение УПИРАЕТСЯ В ГРАНИЦУ 3.0,
+# то есть второй сигмоид работает переменной-заглушкой для хвоста, а не вторым сайтом.
+# Константы внесены как измерены; рука «только 3A4» существует ровно потому, что на двух
+# ферментах они не описывают физику.
+CAL_F = np.array([0.8641, 0.8554, 0.6725, 0.4813], dtype=np.float32)
+CAL_D2 = np.array([1.6739, 3.0000, 3.0000, 0.9781], dtype=np.float32)
+CAL_E2 = np.array([0.7211, 0.5864, 0.8638, 0.9288], dtype=np.float32)
+CAL_H2 = np.array([1.2635, 1.3984, 0.9518, 1.4735], dtype=np.float32)
+TWO_ONLY_3A4 = np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)
+
 # Сдвиг между слоями измерений, намеренный алгебраически в пункте 171 при ПОДОГНАННОМ E.
 # Здесь он ни во что не подаётся --- только печатается рядом с найденным, чтобы сравнение
 # двух независимых маршрутов было видно в логе, а не выводилось потом из головы.
@@ -131,7 +145,7 @@ class Net(nn.Module):
         return self.head_pic(h), self.head_scr(h)
 
 
-def g_of_pi(pi, e_, h_, d_=None, b_=None):
+def g_of_pi(pi, e_, h_, d_=None, b_=None, two_=None):
     """log2fc predicted from pIC50 through the fitted instrument calibration.
 
     g(pi) = log2(1 - E / (1 + 10^{h (pC0 - pi - d)})). Differentiable in pi, so the screening
@@ -170,6 +184,15 @@ def g_of_pi(pi, e_, h_, d_=None, b_=None):
     eff = pi if b_ is None else b_ * pi
     arg = PC0 - eff if d_ is None else PC0 - eff - d_
     inh = e_ / (1.0 + torch.pow(10.0, torch.clamp(h_ * arg, min=-30.0, max=30.0)))
+    if two_ is not None:
+        # Второй сайт: та же кривая, сдвинутая на D, смешанная с долей f. Клампы те же и по
+        # той же причине --- через переполнение градиент становится nan, и прогон умирает.
+        f_, dd_, w_ = two_
+        a1 = 1.0 / (1.0 + torch.pow(10.0, torch.clamp(h_ * arg, min=-30.0, max=30.0)))
+        a2 = 1.0 / (1.0 + torch.pow(10.0, torch.clamp(h_ * (arg - dd_), min=-30.0, max=30.0)))
+        inh2 = e_ * (f_ * a1 + (1.0 - f_) * a2)
+        # w_ выбирает, какие ферменты идут по двухсайтовой форме: 1 --- две, 0 --- одна.
+        inh = w_ * inh2 + (1.0 - w_) * inh
     return torch.log2(torch.clamp(1.0 - inh, min=1e-3))
 
 
@@ -246,6 +269,20 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
     cal_p = None
     cal_d = None
     cal_b = None
+    two = None
+    if mode in ("caltwo", "caltwo3a4", "caltwoshift"):
+        # Константы второго сайта вносятся, а не оцениваются: они подогнаны на МЕТКАХ в
+        # k52_twosite, и оценивать их заново внутри модели значило бы дать им подгоняться
+        # под pi_hat, что пункты 173 и 175 уже показали как источник путаницы.
+        w = TWO_ONLY_3A4 if mode == "caltwo3a4" else np.ones(len(CYPS), dtype=np.float32)
+        two = (torch.as_tensor(CAL_F, device=device),
+               torch.as_tensor(CAL_D2, device=device),
+               torch.as_tensor(w, device=device))
+        cal_e = torch.as_tensor(CAL_E2, device=device)
+        cal_h = torch.as_tensor(CAL_H2, device=device)
+    if mode == "caltwoshift":
+        cal_d = torch.nn.Parameter(torch.zeros(len(CYPS), device=device))
+        params += [cal_d]
     if mode == "calaff":
         # Аффинная замена постоянному сдвигу: g(a + b*pi) вместо g(pi - d).
         #
@@ -307,7 +344,7 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
                     d_ = None if cal_d is None else 2.0 * torch.tanh(cal_d)
                     b_ = None if cal_b is None else 1.0 + torch.tanh(cal_b)
                     loss = loss + lam * masked_mse(
-                        (g_of_pi(pi, e_, h_, d_, b_) - smt) / sst, st[bt], mst[bt])
+                        (g_of_pi(pi, e_, h_, d_, b_, two) - smt) / sst, st[bt], mst[bt])
             opt.zero_grad(); loss.backward(); opt.step()
 
     net.eval()
@@ -435,7 +472,8 @@ def main():
                     help="eta: порча скринингового канала в его же ско, ранг падает в "
                          "sqrt(1+eta^2) раз, масштаб сохраняется")
     ap.add_argument("--mode", default="twohead",
-                    choices=["twohead", "calibrated", "calfit", "calshift", "calaff"],
+                    choices=["twohead", "calibrated", "calfit", "calshift", "calaff",
+                             "caltwo", "caltwo3a4", "caltwoshift"],
                     help="twohead: free second head. calibrated: screen via g(pi) with the "
                          "instrument constants held fixed. calfit: the same g(pi), but E and h "
                          "are estimated jointly with the model instead of being carried in "

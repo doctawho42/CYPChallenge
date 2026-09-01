@@ -5286,3 +5286,40 @@ sixty per cent is not. They are not the same intervention and they are not indep
 The practical answer is unambiguous: **`квадрат + МЗ` at 0.5966 is the best of the four**, so the
 submission carries the dead zone on the squared loss and the pairwise objective adds nothing on top
 of it.
+
+**182. The screening arm does not reach the ensemble either, and now the reason is measured.**
+`verify/k53_screns.py`, four seeds, composition only.
+
+Item 177 measured the per-enzyme screening arm at +0.029 of rank standalone. Item 176 established
+that a standalone gain need not transfer. Adding the arm as a fifth member:
+
+    состав                            пара     ранг   прирост
+    базовый ансамбль                0.6819   0.6009         —
+    базовый ансамбль + скрининг     0.6755   0.6067   +0.0058
+    мёртвая зона везде              0.6611   0.6198         —
+    мёртвая зона везде + скрининг   0.6583   0.6212   +0.0014
+
+**+0.029 standalone becomes +0.0058 in the plain ensemble and +0.0014 in the best one** -- the
+second below the macro floor of 0.0036, the first marginally above it.
+
+And unlike item 176 this one comes with its diagnostic. Correlation between the arm's errors and
+the ensemble's, per enzyme:
+
+    CYP1A2 0.963   CYP2C9 0.935   CYP2D6 0.969   CYP3A4 0.945
+
+**The arm errs where the ensemble errs**, on the same compounds, at 0.94 to 0.97. An average pays
+for disagreement and there is almost none to pay for. That is now the second consecutive transfer
+failure with the same shape -- the trunk in item 176, this arm here -- and the two together say
+something the file should act on: **the ensemble is saturated.** Members that get better by fitting
+the target better do not help it, because the four existing members already fit the target the same
+way. What would help is a member that is wrong differently, and nothing in the queue is built to be.
+
+The screening measurements remain worth +0.029 to a single model, which matters for any use of a
+single model, and the document's account of the screen should say both numbers.
+
+**A bug in my own scaffolding, recorded because it failed silently and fast.** The sequential queue
+runner passed job arguments as an unquoted `$2`, so word splitting cut `--arms a|b|c` at the spaces
+inside the arm names. All three queued jobs died in argparse within one minute and the wrapper
+exited **code 0**, so the status file read as three successful completions. Only reading the logs
+showed two `unrecognized arguments` errors. The runner now takes arguments as an array. A queue
+whose failures look like successes is worse than no queue.
