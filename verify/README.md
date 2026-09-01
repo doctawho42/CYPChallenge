@@ -5575,3 +5575,41 @@ ligand, and overlaying molecules on it measures ligand-to-ligand similarity -- p
 that returned zero six times above. So the stage requires fetching ligand coordinates from the PDB
 (2HI4, 1R9O, 4WNV, 4NY4 or their equivalents), and without that download it should not be run at
 all rather than run in a weakened form.
+
+**190. The mode split fails on four seeds, and it fails for the reason its own docstring named in
+advance.** `src/ablmode.py`, against item 184's per-enzyme licence.
+
+    рука                       MACRO      1A2 (нет)   2C9 (полов.)   2D6 (ДА)   3A4 (ДА)
+    один                      0.5615              —              —          —          —
+    +индикатор                0.5597        +0.0002        -0.0054   -0.0050*   +0.0029
+    по модам                  0.5414       -0.0258*       -0.0289*   -0.0172*   -0.0084*
+    по модам, перемешанным    0.5314       -0.0286*       -0.0346*   -0.0364*   -0.0205*
+
+Three readings, and they do not contradict the gate.
+
+**The real mode beats the shuffled one on every enzyme** -- +0.003, +0.006, +0.019, +0.012 -- so the
+SAR divergence item 184 measured is real and the partition is not arbitrary.
+
+**The ordering of the damage matches the licence.** The two licensed enzymes lose least (-0.0172 and
+-0.0084), the unlicensed ones most (-0.0258 and -0.0289). The gate ranked them correctly.
+
+**And every arm is still negative.** The gate measured transfer at **matched** training size,
+deliberately, because that is what separates divergence from sample size. Splitting the fit
+reintroduces the sample-size cost: the minority mode gets 278 to 707 rows instead of the whole
+table, and losing 60 to 75 per cent of the training rows costs more than a divergence of 0.04 to
+0.18 is worth. The script's docstring stated this trade before the run -- "the gate measured
+transfer at matched sizes; this measures whether the divergence is worth the rows it costs" -- and
+the answer is no.
+
+**Neither layer of the outside argument survives, and for different measured reasons.** The
+representational layer said the coordinating mode is a disjunction of four columns costing an
+axis-aligned tree up to four splits, so precomputing it should help: `+индикатор` is -0.0018 on the
+macro and inside the floor on three enzymes, so it does not. The myopia layer said greedy will not
+take a root split whose immediate gain is small: splitting by hand does take it, and loses.
+
+**What the result does license is a softer form**, and it is the obvious one: the divergence is real
+but cannot be paid for with rows, so it has to be captured without partitioning the data. That is
+multi-task trees with the mode as the task rather than the enzyme -- shared split structure, two
+values per leaf -- which is item 188's machinery pointed at a different grouping and costs no rows
+at all. Item 188 measured that construction at +0.0069 of macro rank when the grouping was the
+enzyme.
