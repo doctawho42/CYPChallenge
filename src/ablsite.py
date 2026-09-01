@@ -191,6 +191,10 @@ def main():
     z = np.load(D + "feats.npz")
     X = np.hstack([z["FP"], z["DESC"], z["MECH"]]).astype(np.float32)
     shape = np.load(D + "shape3d.npz")["train"].astype(np.float64)
+    QUANT = None
+    if _pl.Path(D + "quantum.npz").exists():
+        _q = np.load(D + "quantum.npz", allow_pickle=True)
+        QUANT = np.nan_to_num(_q["train"], nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
     SCYP = None
     if _pl.Path(D + "smartcyp.npz").exists():
         _z = np.load(D + "smartcyp.npz", allow_pickle=True)
@@ -228,6 +232,20 @@ def main():
                     Xi = X[m]
                 elif arm == "+форма целиком":
                     Xi = np.hstack([X[m], SHAPE_ALL[m]])
+                elif arm.startswith("+квант"):
+                    # Электронная структура из GFN2-xTB: HOMO, LUMO, щель, диполь, заряд на
+                    # основном и ароматическом азоте, функция Фукуи f-, свободный конус.
+                    # Проходит ворота пункта 166: ни одна из этих величин не выводится из
+                    # 217 дескрипторов RDKit. И пункт 156 даёт острую предрегистрацию ---
+                    # все выжившие фрагменты фингерпринта суть sp2-азот, координирующий
+                    # железо гема, а f- и заряд на азоте это ровно та электроника, которая
+                    # должна предсказывать силу координации.
+                    if QUANT is None:
+                        raise SystemExit("нет data/quantum.npz")
+                    B = QUANT[m]
+                    if "перемешанный" in arm:
+                        B = B[np.random.default_rng(seed * 23 + 7).permutation(len(B))]
+                    Xi = np.hstack([X[m], B])
                 elif arm.startswith("+SMARTCyp"):
                     if SCYP is None:
                         raise SystemExit("нет data/smartcyp.npz --- сначала src/smartcyp.py")
