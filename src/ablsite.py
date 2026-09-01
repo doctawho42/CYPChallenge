@@ -191,6 +191,10 @@ def main():
     z = np.load(D + "feats.npz")
     X = np.hstack([z["FP"], z["DESC"], z["MECH"]]).astype(np.float32)
     shape = np.load(D + "shape3d.npz")["train"].astype(np.float64)
+    SCYP = None
+    if _pl.Path(D + "smartcyp.npz").exists():
+        _z = np.load(D + "smartcyp.npz", allow_pickle=True)
+        SCYP = np.nan_to_num(_z["train"], nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
     sh_names = [l.strip() for l in open(D + "shape_names.csv")]
     acid = np.load(D + "acid.npz")["A"].astype(np.float64)
     SB = site_blocks(list(rows.SMILES), shape, sh_names, acid)
@@ -224,6 +228,13 @@ def main():
                     Xi = X[m]
                 elif arm == "+форма целиком":
                     Xi = np.hstack([X[m], SHAPE_ALL[m]])
+                elif arm.startswith("+SMARTCyp"):
+                    if SCYP is None:
+                        raise SystemExit("нет data/smartcyp.npz --- сначала src/smartcyp.py")
+                    B = SCYP[m]
+                    if "перемешанный" in arm:
+                        B = B[np.random.default_rng(seed * 13 + 5).permutation(len(B))]
+                    Xi = np.hstack([X[m], B])
                 else:
                     B = np.nan_to_num(SB[c][0], posinf=0.0, neginf=0.0)[m]
                     if "перемешанный" in arm:
