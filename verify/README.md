@@ -5161,3 +5161,128 @@ variable in `for tag in ("пара", "rho")`. After the first seed the trunk key
 every later seed was silently skipped as "no trunk", and the printed table -- computed on seed 0
 alone -- looked entirely normal at 0.7001 against the correct 0.6824. Caught only by comparing
 against the previously published number.
+
+**177. The screening table works as a per-enzyme target and is worth +0.029 of rank on four seeds.
+The pooled frame was what was killing it.** `src/ablaux.py`, the arm item 152 said should have been
+in the first design.
+
+    сиды 1,2,3          пара      ранг      1A2      2C9      2D6      3A4
+    независимо        0.7219    0.5592   0.4857   0.5961   0.3992   0.7555
+    независимо+скрининг 0.6904  0.5898   0.5046   0.6560   0.4201   0.7787
+    прирост           -0.0315   +0.0307  +0.0188  +0.0599  +0.0209  +0.0232
+
+    сид 0
+    независимо        0.7125    0.5684   0.4966   0.6052   0.4116   0.7601
+    независимо+скрининг 0.6865  0.5929   0.5087   0.6634   0.4177   0.7818
+    прирост           -0.0260   +0.0245  +0.0121  +0.0582  +0.0061  +0.0217
+
+**Every enzyme clears its own floor on both runs, and the metric improves at the same time** --
++0.029 of rank and -0.029 of pair averaged over four seeds, which is rare in this file: almost
+everything that moves rank costs metric or is neutral on it.
+
+CYP2C9 gains **+0.058 to +0.060**, an order of magnitude above its floor of 0.0071 and the largest
+single-enzyme effect recorded here. It is also the enzyme with the most screening rows relative to
+its own curves (3090 against 1285, a ratio of 2.4), which is what item 152 pre-registered.
+
+Item 152 measured the same measurements inside the pooled frame at +0.0040 against the per-enzyme
+reference and could not tell whether the screen or the pooling was at fault. It was the pooling.
+
+**And item 151's explanation for that is refuted by the same run.** The hypothesis was that the
+enzyme indicator, being one column in 2300, is starved at `max_features=0.3`. At
+`max_features=1.0`, where it is always available, the pooled arm scores **0.5416 against the
+per-enzyme 0.5684** -- it does not recover. Column subsampling was not the cause.
+
+**178. CYP3A4 needs a two-site dose-response and the other three do not, though all four fit better
+with one.** `verify/k52_twosite.py`. The nested comparison is scored on a five-fold cross-validated
+residual rather than in-sample, so extra parameters cannot win for free.
+
+    фермент      n   односайт CV   двухсайт CV   разность   доля 1-го сайта   разделение D
+    CYP1A2    1412        0.2319        0.2245    -0.0073             0.864          1.674
+    CYP2C9    1285        0.1879        0.1776    -0.0103             0.855      3.000 (граница)
+    CYP2D6    1493        0.5190        0.4485    -0.0705             0.673      3.000 (граница)
+    CYP3A4    1805        0.6911        0.5146    **-0.1766**         0.481          0.978
+
+The pre-registration offered "better everywhere -> just more parameters, closed", and that branch
+was **mis-specified by me**: cross-validation is precisely the statistic that charges for extra
+parameters, so winning on held-out folds everywhere means the two-site form is genuinely better
+everywhere, not that it is over-fitting. The guard I chose refutes the reading I attached to it.
+
+**The parameters discriminate where the residual does not.** On CYP3A4 the fit is a real two-site
+fit: a 48/52 mixture separated by 0.98 of a log unit, both interior. On CYP2C9 and CYP2D6 the
+separation runs to the bound of 3.0 with 86 and 67 per cent of the weight on the first site -- the
+second sigmoid is a slack variable absorbing the tail, not a second binding site. And CYP3A4's
+improvement is **26 per cent of its residual** against 3, 5 and 14 elsewhere.
+
+So the cooperativity reading survives on CYP3A4 specifically, arrived at from five independent
+measurements rather than proposed, and it is the first mechanistic statement in this file with a
+named enzyme, a named phenomenon and a fitted separation.
+
+**179. Three builds, three nulls: the hand-built site blocks, the Hill-residual weight, and
+SMARTCyp.** All four seeds, all with permutation controls, all read against the per-enzyme floors.
+
+**`src/ablsite.py` -- active-site blocks for CYP1A2 and CYP3A4.**
+
+    рука                    MACRO      1A2      2C9      2D6      3A4
+    база                   0.5615   0.4861   0.6008   0.4051   0.7540
+    +сайт                  0.5614   +0.0079* +0.0001  -0.0094* +0.0009
+    +сайт перемешанный     0.5605   +0.0037  -0.0012  -0.0058* -0.0006
+    +форма целиком         0.5646   +0.0054  -0.0015  +0.0069* +0.0014
+
+CYP1A2's targeted block clears its floor, but **its own permutation control supplies half of it**,
+leaving +0.0042 for the content. CYP3A4's cavity block gives +0.0009. CYP2D6's own salt-bridge
+angles make it worse. And the pre-registered cheap rival -- all sixteen shape columns handed to
+every enzyme undirected -- has the best macro of the four arms. **Targeting bought nothing**, which
+was the falsification written into the script before it ran.
+
+**`src/ablhill.py` -- the Hill residual as a training weight.** Item 171 argued this survives
+regardless of what the residual means, since its size measures disagreement without attributing it.
+
+    база               0.5615
+    вес по остатку     0.5516     -0.0099
+    вес перемешанный   0.5588     -0.0027
+    вес обратный       0.5492     -0.0123
+
+The weighted arm loses to the base **and to its own shuffled control**, which was the
+pre-registered failure condition. The ordering is informative: shuffled beats weighted beats
+inverted, so the sign is right -- down-weighting disagreement is better than up-weighting it -- but
+any non-uniform weighting hurts and content-based weighting hurts more than random weighting of the
+same distribution. The compounds where the two measurements disagree are carrying signal, not noise.
+
+**`verify/k53` path, SMARTCyp block.** +0.0031, -0.0023, +0.0024, +0.0001 per enzyme, macro
++0.0009, and +0.0035 macro over its permutation control. **No enzyme clears its own floor.** The
+tool builds and runs (see the build recipe in item 176's neighbourhood), the per-enzyme models are
+not a rescaling of the general one -- 67 per cent of molecules get a different top-ranked atom --
+and it still adds nothing to this matrix.
+
+**180. Pooling reverses on plain trees because of depth, not column subsampling.**
+`src/ablpoolwhy.py` and its capacity follow-up. Item 151 blamed `max_features`; item 177 refuted
+that at `max_features=1.0`. The measurement that fits:
+
+    рука                        ранг    против независимо   индик. на пути   глубина листа
+    пул, глубина 5            0.5416              -0.0268             0.34            4.80
+    пул, глубина 8            0.5652              -0.0035             0.59            7.37
+    пул, листья 31            0.5630              -0.0057             0.38            8.05
+    пул, глубина 5, 400 дер.  0.5479              -0.0208             0.30            4.72
+    пул, глубина 5, 800 дер.  0.5511              -0.0176             0.30            4.67
+
+**At depth 8 pooling recovers to level with the per-enzyme model**, and the diagnostic explains
+why: the share of root-to-leaf paths that pass through the enzyme indicator goes from 0.34 to 0.59.
+A pooled model has to spend depth isolating the enzyme before it can model anything conditional on
+it, and depth 5 does not leave enough. More trees do not substitute -- 400 and 800 recover only a
+quarter of the gap -- because the constraint is per-tree expressiveness, not ensemble size.
+
+**181. The dead zone and the pairwise loss are one idea about sixty per cent shared.**
+`src/abldeadpair.py`, four seeds, the two-by-two item 148 asked for.
+
+    квадрат             0.5646
+    попарно             0.5714     эффект попарного        +0.0068
+    квадрат + МЗ x1     0.5966     эффект МЗ на квадрате   +0.0320
+    попарно + МЗ x1     0.5910     эффект МЗ на попарном   +0.0195
+
+Addition predicted 0.6035 and 0.5910 was measured: **a shortfall of 0.0125 against a 0.0320
+effect**, so about forty per cent of the dead zone's value is already taken by the pairwise loss and
+sixty per cent is not. They are not the same intervention and they are not independent either.
+
+The practical answer is unambiguous: **`квадрат + МЗ` at 0.5966 is the best of the four**, so the
+submission carries the dead zone on the squared loss and the pairwise objective adds nothing on top
+of it.
