@@ -5364,3 +5364,39 @@ This is also not item 126 rediscovered. That measured a post-hoc per-compound co
 posterior and lost to the affine pair. This changed the operator upstream of the pair, which the
 pair cannot reproduce, and lost anyway -- for a different reason, estimator variance rather than
 insufficient dependence.
+
+**184. The greedy split criterion is myopic about the coordinating mode on exactly the two enzymes
+where the mode is invisible at the root.** `verify/k56_modes.py`, a gate proposed from outside and
+run before anything was built.
+
+The mode is drawn where the chemistry is sharp: `[nX2]` is a pyridine-type aromatic nitrogen with
+its lone pair in the ring plane and available to the haem iron; `[nX3;H1]` is pyrrole-type and its
+pair is in the pi system and does not coordinate. So "coordinating mode" is a mechanism, not a
+count -- 3505 of 4905 molecules, 71.5 per cent, with 162 carrying only the pyrrole type.
+
+Both halves were pre-registered: a small level difference (else a greedy criterion would already
+take the split) together with a large transfer gap (the divergence greedy cannot see one step
+ahead) proves myopia; both small closes the question; both large says greedy handles it.
+
+    фермент   (а) станд. разница уровня   (б) разрыв, коорд   (б) разрыв, прочие      sd
+    CYP2D6                       -0.031              +0.063              +0.175   0.026 / 0.022
+    CYP3A4                       +0.089              +0.067              +0.040   0.006 / 0.004
+    CYP2C9                       +0.096              -0.016              +0.110   0.002 / 0.013
+    CYP1A2                       +0.262              +0.006              -0.120   0.012 / 0.057
+
+**The two halves are inversely related across the four enzymes, which is the signature rather than
+the result.** CYP2D6 has the smallest level difference of the four and the largest SAR divergence;
+CYP1A2 has the largest level difference and no divergence at all. Where greedy *can* see the split
+it does not need help, and where it cannot the divergence is waiting one step further down. Had all
+four passed, the right response would have been to look for an artefact.
+
+**The confounder that had to be removed first, because without it the table said the opposite.**
+The modes are 71.5 to 28.5, so "own mode against other mode" is confounded with training-set size
+wherever they are unequal. Unmatched, CYP1A2's minority mode showed -0.140, which reads as transfer
+and was four times the training rows. Both training sets are now cut to their common minimum and
+averaged over three independent draws; the spread of the gap across draws is reported beside it.
+
+So the forced mode split is justified by measurement on **CYP2D6 and CYP3A4**, half-justified on
+CYP2C9's minority mode, and refuted on CYP1A2. That is a per-enzyme licence, not a general one, and
+item 167 makes it interesting: CYP3A4 is the enzyme that has cleared its floor on nothing at all,
+and this is the second structure found in it after the two-site instrument of item 178.
