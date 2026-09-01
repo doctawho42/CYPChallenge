@@ -4766,3 +4766,89 @@ screening channel (item 79, -0.0264 of pair), the band model the dead zone repro
 minimise residual over the whole screened set and remain the best single pair --- but every one of
 them inherits a map with a 0.612 residual sd on CYP3A4, the worst of the four enzymes by a factor
 of at least 1.2, and now with a named reason.
+
+**170. The Hill slope is identifiable per compound, and the argument that it carries an inter-assay
+shift fails on the amplitude it assumed.** `verify/k49_hill.py`.
+
+The algebra arrived from outside and is correct. With `I = E/(1 + 10^{h(pC0-pi)})` and the screen
+reporting `log2fc = log2(1-I)`, residual activity `a = 2^log2fc` gives
+`10^{h(pC0-pi)} = (E-1+a)/(1-a)`. The label supplies `pi`, the Emax column supplies `E`, and the
+screen supplies one point of the curve at exactly pC0 = 4.305. One equation, one unknown, evaluated
+only where `pi` was measured -- so unlike item 83's concern nothing is extrapolated. **Item 72 read
+"Emax has no dynamic range" as closing a proposal; it is also the condition that makes this
+solvable.** Emax medians run -0.994 to -1.027 with an IQR of 0.02 to 0.11.
+
+**Identifiability survives a second error source the proposal did not include.** It propagated
+`log2fc_std_error` only, but `h = u/(pC0-pi)` so the label's own `_std` enters multiplied by
+`h/(pC0-pi)`, which at the 0.5 filter is a factor near 1.5.
+
+    фермент      n   покрытие   sd(h)   ош.скрин   ош.метки   полная   отн.скрин   отн.ПОЛНОЕ
+    CYP1A2    1137     80.5 %   0.218      0.036      0.025    0.045        6.08         4.85
+    CYP2C9     664     51.7 %   0.408      0.066      0.016    0.070        6.18         5.83
+    CYP2D6     797     53.4 %   0.308      0.051      0.030    0.061        5.98         5.01
+    CYP3A4    1093     60.6 %   0.456      0.105      0.105    0.156        4.36         2.92
+
+The ratio falls from 4.4-6.2 to **2.9-5.8** and stays far above one. The quantity is real. CYP3A4 is
+weakest, and it is the one enzyme where the label error equals the screening error exactly.
+
+**The interpretation is where it breaks.** The proposal argued that a median slope of 0.17 to 0.71
+is physically impossible for reversible competitive inhibition, where it is 1, and concluded that
+`h` had absorbed a shift between two assays -- Cheng-Prusoff, different substrate concentrations,
+a constant offset per enzyme. But that median is computed at **E = 1**, and this repository fits E
+itself:
+
+    фермент   медиана h при E=1   сдвиг к h=1   промах   непредставимо   медиана h при подогнанном E
+    CYP1A2                0.328        -0.588    0.414          14.7 %                         1.102
+    CYP2C9                0.160        -0.648    0.638           6.6 %                         0.949
+    CYP2D6                0.517        -0.505    0.000          11.3 %                         1.000
+    CYP3A4                0.695        +0.453    0.278          12.1 %                         0.641
+
+**Under the fitted E the median slope is 1.00 on three enzymes out of four** -- exactly the value
+whose absence was the evidence. The impossibility was an artefact of setting E = 1, and with it goes
+the main support for the shift reading. The proposal flagged this risk itself and asked for it to be
+checked before an item was written; it was, and it is the half that did not survive.
+
+Two smaller corrections in the same table. The shift **exists** in magnitude and sign pattern --
+0.588, 0.648, 0.505 and, with the sign reversed, 0.453 on CYP3A4, against the proposal's 0.644,
+0.626, 0.390 and -0.325 under the opposite convention, so the structure reproduces including
+CYP3A4's reversal. But the "промах" column says no shift brings the median to 1 on CYP1A2 or CYP2C9
+at all: the best the grid achieves is 0.414 and 0.638 away. And 6.6 to 14.7 per cent of cells are
+**unrepresentable** under the fitted E -- `(E - 1 + a)` is not positive, so an instrument with that
+amplitude cannot produce the observed reading at any slope. The fitted E and the Emax column are
+describing different things.
+
+**The decisive experiment was run and per-compound structure survives it.** Fitting a pair
+(shift, slope) per enzyme against all paired cells:
+
+    фермент      d       h   ско остатка   ошибка измерения   отношение
+    CYP1A2   -0.227   0.222         0.296              0.084        3.51
+    CYP2C9   +0.716   0.249         0.250              0.086        2.88
+    CYP2D6   -2.070   0.193         0.386              0.143        2.70
+    CYP3A4   -0.662   0.560         0.627              0.142        4.41
+
+Two numbers per enzyme do not absorb it: the residual stays **2.7 to 4.4 times** the measurement
+error. So there is a real per-compound quantity in the disagreement between the curve and the point.
+
+**What it is cannot be settled from this data, and saying so is the finding.** One equation and one
+point on the curve identify exactly one parameter. Solve for the slope with the amplitude fixed and
+it reads as kinetics; solve for the amplitude with the slope fixed at 1 and the identical numbers
+read as an Emax that varies per compound. Nothing here picks between them, and the median landing on
+1.00 under the fitted E is precisely what one expects if the varying quantity is the amplitude. The
+kinetic reading -- 28.6 per cent of CYP3A4 cells above h = 1 against 2.8 per cent on CYP1A2, which
+would be the signature of cooperativity in the enzyme famous for it -- remains suggestive and
+unproven.
+
+**What survives to be useful needs neither reading.** The band is 3.92 times `_std` and `_std` is a
+function of the label at R-squared 0.93 to 0.98, so every per-compound quality signal now in the
+training set is a function of potency. The Hill residual is by construction the part of the
+screening reading the label does not explain, and its **size** measures disagreement without
+attributing it. As a training weight that is new information about label reliability, not derivable
+from the existing block, and not something the affine pair can manufacture -- item 166's three
+conditions. `src/ablhill.py` is queued with the weighted arm against a shuffled control and an
+inverted one, read per enzyme against item 165's floors.
+
+Two errors of mine in the first version of the script, recorded because both produced plausible
+output. The shift was solved by bisection, and the median of `u/(gap - s)` is discontinuous where
+the denominator changes sign, so every enzyme returned the bracket bound of -3.000 -- a number that
+looks like an answer. And the measurement-error column of the third table was left as dead code
+printing a placeholder. Both are fixed above.
