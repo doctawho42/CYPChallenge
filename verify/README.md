@@ -4287,3 +4287,41 @@ a number is now a mechanism -- the fingerprint's job is to carry haem-coordinati
 and sp3 basicity, two things no descriptor in the 217-column block encodes directly. That also
 explains item 138's shape: the trees consult the fingerprint rarely because only a handful of its
 columns say anything, and they cannot drop it because nothing else says that.
+
+**157. The NCGC panel's harm was its weight, its gain is CYP1A2 and nothing else, and the macro is
+back to zero rather than positive.** `src/ablncgc.py` with a row weight, which item 153 named as the
+design error without fixing it. The base reproduces exactly (0.5462 in both runs), so the ladder is
+comparable throughout.
+
+    вес панели   доля таблицы   MACRO rho   против базы      1A2      2C9      2D6      3A4
+    нет                    0 %     0.5462       +0.0000   +0.000   +0.000   +0.000   +0.000
+    w = 1.0               74 %     0.5286       -0.0176   +0.010   -0.012   -0.048   -0.020
+    w = 0.3               46 %     0.5392       -0.0070   +0.013   -0.011   -0.026   -0.005
+    w = 0.1               22 %     0.5510       +0.0048   +0.023   -0.001   +0.000   -0.003
+
+**Monotone in the weight on the macro and on three of the four enzymes.** The pre-registered branch
+fired: an arm above 0.5462 says the weight was a cause, and w = 0.1 is above it. Item 153's reading
+-- that a foreign protocol at 74 per cent of the table dominates the objective while the source
+indicator has to undo it from a minority position -- is confirmed by the ladder rather than argued.
+
+What may not be claimed, and it is the larger half. **+0.0048 macro is below the 0.007 floor.**
+Correcting the weight moved the panel from clearly harmful to indistinguishable from not using it.
+That is a repair, not a result.
+
+The structure underneath is sharper than the macro. **CYP1A2 gains at every weight and is the only
+enzyme that never loses** (+0.010, +0.013, +0.023), while **CYP2D6 is the largest casualty** at
+-0.048 and its damage disappears exactly as the weight falls. At w = 0.1 three enzymes sit within
+0.003 of the base and one is +0.023 -- so whatever the panel is worth, it is worth it on CYP1A2
+alone.
+
+Two hypotheses for that, both post-hoc and neither tested here. CYP1A2 has the thinnest own labels
+relative to what NCGC supplies (1412 against 5169, a ratio of 3.7 against 2.4 to 2.9 for the
+others) and the largest untapped gap in item 139 at 0.502. CYP2D6 is the enzyme whose signal is the
+most mechanistically specific -- the Glu216 salt bridge and the basic amines -- which is exactly the
+kind of structure a different protocol would scramble. Written down as candidates, not as findings.
+
+**The macro floor is not the right floor for a single-enzyme claim.** 0.007 was measured on the
+macro, which averages four enzymes and therefore has less variance than any one of them, so +0.023
+on CYP1A2 is not automatically above its own noise. `--seeds 1,2,3` on the base and the w = 0.1 arm
+is queued and is what settles it. Until it returns the honest summary is: the weight explained the
+damage, and the only surviving candidate for a gain is one enzyme awaiting replication.
