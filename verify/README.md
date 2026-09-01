@@ -5323,3 +5323,44 @@ inside the arm names. All three queued jobs died in argparse within one minute a
 exited **code 0**, so the status file read as three successful completions. Only reading the logs
 showed two `unrecognized arguments` errors. The runner now takes arguments as an array. A queue
 whose failures look like successes is worse than no queue.
+**183. The ensemble is combined by a mean, the metric is not minimised by a mean, and the mean wins
+anyway.** `verify/k55_combine.py`. `src/submit.py` line 230 and `src/abldzens.py` line 147 both use
+`np.mean`, and in 182 items nothing else had been tried, so the operator was worth one measurement.
+
+The mathematics says it should not be a mean. The loss is the distance from a point to an interval,
+and differentiating an expected distance-to-a-set gives `-P(lo > p) + P(hi < p)`, so the minimiser
+is the point where the mass of bands lying entirely above equals the mass lying entirely below --
+a generalised median of the band structure, not a centre of mass.
+
+Two preconditions were checked before building. On a symmetric predictive distribution with
+symmetric bands the balancing point **coincides with the mean** to four decimals, verified
+numerically, so the idea has content only through asymmetry. The training bands are asymmetric in
+54 to 72 per cent of compounds but average to nothing (-0.021 to +0.006): per-compound asymmetry
+with no systematic direction.
+
+Measured on the four real members, bands taken from item 114's relationship fitted on training
+folds and evaluated at each member's own prediction:
+
+    правило         пара     ранг   среднее |правило - среднее|
+    среднее       0.6819   0.6009                       0.000
+    медиана       0.6859   0.5960                       0.039
+    баланс полос  0.6891   0.5933                       0.165
+
+**The mean wins on every enzyme** (0.5314 / 0.6393 / 0.4557 / 0.7770 against the balancing point's
+0.5220 / 0.6292 / 0.4521 / 0.7697), and the loss is **monotone in how far the rule moves**: 0.039
+of displacement costs 0.0049 of rank, 0.165 costs 0.0076.
+
+That monotonicity is the mechanism and it is worth stating, because it is a property of ensembles
+this size rather than of this metric. With four members, any order-statistic combination is a
+coarse, high-variance functional; the mean is the minimum-variance one. The variance penalty scales
+with displacement and swamps whatever the per-compound asymmetry offers. **An asymmetry with no
+systematic direction cannot be exploited by a four-point estimator** -- it would need enough members
+for the balancing point to be estimated precisely, and four is not enough.
+
+So `np.mean` is right, and now it is right for a reason rather than by default. The line of
+questioning closes; the same question would be open again with twenty members.
+
+This is also not item 126 rediscovered. That measured a post-hoc per-compound correction under a
+posterior and lost to the affine pair. This changed the operator upstream of the pair, which the
+pair cannot reproduce, and lost anyway -- for a different reason, estimator variance rather than
+insufficient dependence.
