@@ -100,15 +100,15 @@ def canon(s):
     return Chem.MolToSmiles(m)
 
 
-def boost(Xtr, ytr, Xte, seed):
+def boost(Xtr, ytr, Xte, seed, wtr=None):
     rng = np.random.default_rng(seed)
-    base = float(ytr.mean())
+    base = float(ytr.mean() if wtr is None else np.average(ytr, weights=wtr))
     s = np.full(len(ytr), base)
     pred = np.full(len(Xte), base)
     for _ in range(NTREE):
         t = DecisionTreeRegressor(max_depth=DEPTH, max_features=MAXFEAT,
                                   random_state=int(rng.integers(1 << 30)))
-        t.fit(Xtr, ytr - s)
+        t.fit(Xtr, ytr - s, sample_weight=wtr)
         s = s + LR * t.predict(Xtr)
         pred = pred + LR * t.predict(Xte)
     return pred
@@ -179,6 +179,10 @@ def main():
             shuffle = "перемешанный" in arm
             with_c19 = "2C19" in arm
             with_cens = "цензурой" in arm
+            # Вес строк панели. При 1.0 панель --- 74 % обучающей таблицы, и чужой протокол
+            # со сдвигом +0.44..+0.87 доминирует над функцией потерь, а индикатор источника
+            # вынужден отыгрывать это из меньшинства. Пункт 153.
+            w_pan = float(arm.split("w")[1].split()[0]) if " w" in arm else 1.0
             enz_list = ALL5 if with_c19 else CYPS
             p_all = {c: np.zeros(len(rows)) for c in CYPS}
 
@@ -186,12 +190,14 @@ def main():
                 trn_mol, te_mol = fold != f, fold == f
                 rng = np.random.default_rng(seed * 100 + f)
                 Xs, ys = [], []
+                ws = []
                 for e, c in enumerate(CYPS):
                     sel = M[c] & trn_mol
                     ind = np.zeros((int(sel.sum()), 6), np.float32)
                     ind[:, e] = 1.0
                     Xs.append(np.hstack([X[sel], ind]))
                     ys.append(Y[c][sel])
+                    ws.append(np.ones(int(sel.sum())))
 
                 if use:
                     for e, c in enumerate(enz_list):
@@ -212,15 +218,17 @@ def main():
                         ind[:, 5] = 1.0                     # источник: панель
                         Xs.append(np.hstack([XN[d.row.to_numpy()], ind]))
                         ys.append(t)
+                        ws.append(np.full(len(d), w_pan))
 
-                Xtr, ytr = np.vstack(Xs), np.concatenate(ys)
+                Xtr, ytr, wtr = np.vstack(Xs), np.concatenate(ys), np.concatenate(ws)
                 for e, c in enumerate(CYPS):
                     te = M[c] & te_mol
                     if not te.any():
                         continue
                     ind = np.zeros((int(te.sum()), 6), np.float32)
                     ind[:, e] = 1.0
-                    p_all[c][te] = boost(Xtr, ytr, np.hstack([X[te], ind]), seed * 10 + f)
+                    p_all[c][te] = boost(Xtr, ytr, np.hstack([X[te], ind]),
+                                         seed * 10 + f, wtr)
 
             for c in CYPS:
                 m = M[c]
