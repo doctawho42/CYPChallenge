@@ -5400,3 +5400,84 @@ So the forced mode split is justified by measurement on **CYP2D6 and CYP3A4**, h
 CYP2C9's minority mode, and refuted on CYP1A2. That is a per-enzyme licence, not a general one, and
 item 167 makes it interesting: CYP3A4 is the enzyme that has cleared its floor on nothing at all,
 and this is the second structure found in it after the two-site instrument of item 178.
+
+**185. What band-aware training actually keys on: the fraction of the model's error that is
+irreducible.** `verify/k54_synth.py`. The dead zone is the largest reproducible effect in this file
+and its mechanism rested on four enzymes; this generates the band structure so the controlling
+quantity can be swept. It took **three constructions**, and the first two were wrong in ways that
+were only visible by measuring the real data and comparing.
+
+**First construction: band as an independent tolerance.** Width drawn as `kappa * sigma * u` with
+`u` independent of the label's own noise, kappa swept over eight values. Pre-registered as
+single-peaked. Measured: **negative at every kappa** (-0.037 to -0.051 of rank), flat across all
+four sub-conditions, and the dead-zone arm scored level with plain L1. Refuted.
+
+**Why it was the wrong object.** In the real data `rho(полоса, std метки) = 0.994..0.999` -- the
+band **is** 3.92 times the label's own standard error, not an arbitrary tolerance. Its correlation
+with the model's residual is only 0.087 to 0.176. So clipping to a band means "do not chase the
+label closer than it was measured", and a band unlinked to label noise is a different thing
+entirely: clipping to it discards signal.
+
+**Second construction: band as the label's own error**, `y = f + N(0, s_i)`, band `3.92 s_i`,
+`spread` of `log s` swept 0 to 1 against the real 0.70 to 1.13. Still negative, but now with a
+monotone trend in the predicted direction: -0.0768, -0.0749, -0.0691, **-0.0420**. Better and still
+wrong, and the second mismatch was found the same way -- by measuring the regime instead of assuming
+it:
+
+    величина                              реально        конструкция 2
+    доля предсказаний ВНЕ полосы        60 - 81 %          10 - 27 %
+    остаток модели / полуполоса          2.4 - 6.2               ~0.5
+    медиана std метки                0.069 - 0.137                0.6
+
+The synthetic model was far too good. Real model error (0.62 to 0.91) is **an order of magnitude
+larger than the label's measurement error** (0.069 to 0.137), because it is dominated by chemistry
+the features do not carry, not by instrument noise.
+
+**Third construction adds that**: a hidden signal component absent from `X`, so the residual is set
+by unlearnable structure while the band stays at the measurement error. Sweeping its size:
+
+    скрытая   доля вне   остаток/полуполоса   L2 ранг   выигрыш МЗ
+    0.0          0.548                 2.05    0.9466      -0.0713
+    0.5          0.706                 3.43    0.8186      -0.0400
+    1.0          0.821                 5.82    0.6007      -0.0012
+    2.0          0.902                11.05    0.3021      +0.0312
+
+**The gain is monotone in the irreducible fraction of the model's error and crosses zero at a ratio
+near six.** That is the mechanism, and it is a general statement rather than a fact about four
+enzymes: clipping the target to the measurement band removes residual that is pure instrument noise
+and cannot be fitted, and discards real signal when the model could have fitted it. Which one
+dominates is decided by how much of the error is unlearnable.
+
+**And it does not account for the whole real effect, which has to be said plainly.** The four
+enzymes sit at ratios 2.37 to 6.23 and fractions 0.60 to 0.81 -- straddling the crossing -- where
+the synthetic predicts -0.040 to -0.001, while the measured gain is +0.033. The per-enzyme ordering
+does not track the ratio either: CYP2C9 has the lowest ratio (2.37) and a high gain (+0.043),
+CYP3A4 has 3.68 and almost none (+0.006), Spearman about 0.4 on four points. So a real mechanism is
+identified and a residual of about 0.034 is unexplained.
+
+For the method's standing that is a better position than the alternative. A named controlling
+variable, a measured crossing point, and an acknowledged gap is a characterised method; "it worked
+on this competition" is not.
+
+**186. The quantum block is computed, measured and null.** `data/quantum.npz` -- HOMO, LUMO, gap,
+dipole, charge on the basic and aromatic nitrogen, Fukui f-minus, cone-free volume -- had been built
+and never ablated. Four seeds with a permutation control:
+
+    рука                    MACRO      1A2      2C9      2D6      3A4
+    база                   0.5615   0.4861   0.6008   0.4051   0.7540
+    +квант                 0.5605   -0.0029  -0.0005  -0.0025  +0.0020
+    +квант перемешанный    0.5605   +0.0008  -0.0020  -0.0042  +0.0013
+
+**No enzyme clears its own floor and the real block is indistinguishable from its shuffle.** It
+passed item 166's gate on paper -- electronic structure is not derivable from the 217 RDKit
+descriptors -- and item 156 gave it a sharp pre-registration, since every surviving fingerprint
+fragment is sp2 nitrogen coordinating the haem iron and `f-minus` with the nitrogen charge are
+exactly the electronic quantities that should predict coordination strength. They do not. That the
+gate can be passed on paper and fail in measurement is worth keeping: the gate is necessary, not
+sufficient.
+
+**187. A parser of my own cost three runs.** `src/ablncgc.py` read the panel weight out of the arm
+name with `arm.split("w")[1].split()[0]`, which on `"поферментно+NCGC w0.1, перемешанный"` returns
+`"0.1,"` and fails in `float()`. The per-enzyme NCGC arm therefore died instantly three separate
+times, twice inside a queue whose wrapper reported success. Replaced with a regular expression.
+Both failures of the day were in scaffolding rather than in method, and both were silent.
