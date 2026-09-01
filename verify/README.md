@@ -4938,3 +4938,72 @@ disagreement measures that two measurements contradict each other without attrib
 and it is the only per-compound reliability signal in the set that is not a function of potency,
 since the band is 3.92 times `_std` and `_std` tracks the label at R-squared 0.93 to 0.98.
 `src/ablhill.py` is queued and is unaffected by everything above.
+
+**172. The per-enzyme offset repairs the scale damage the coupling causes, and the offset it finds
+is not the offset the algebra predicts.** `src/trunk.py --mode calshift`.
+
+**Half the proposal was already built, and the file should have been read first.** The outside
+reading proposed making the screening prediction a deterministic function of the pIC50 prediction
+through the instrument equation instead of a free second head. That is `--mode calibrated`, present
+since the trunk was written, measured on four seeds and four lambdas, and saved in
+`trunk_calibrated.json`. The genuinely new part is only the learnable per-enzyme offset.
+
+**And the built mode has exactly the pathology the offset was proposed to fix.** With E and h
+carried in as constants there is no free parameter between `pi_hat` and the reading, so the only
+way to satisfy a screening constraint is to distort the potency scale:
+
+    сид 0   lambda 0     пара 0.7672   ранг 0.530
+            lambda 0.3   пара 0.9547   ранг 0.562      CYP2D6: 0.963 -> 1.630
+            lambda 3.0   пара 1.0640   ранг 0.554
+
+Rank rises and the metric goes past 1.0, which is worse than predicting the mean. One offset per
+enzyme is the smallest thing that separates "match the screen" from "keep pIC50 on scale".
+
+**Two guards before the result.** `--mode calibrated` re-run after the change reproduces 1.0640 and
+0.554 to four decimals, so no existing mode moved. And `calshift` at lambda 0 is identical to
+`calibrated` at lambda 0 (0.7672/0.530 and 0.7837/0.528) with the offset staying at exactly zero in
+all ten folds -- with the screening term off there is no gradient to it, and it does not drift.
+
+**The offset does what it was predicted to do.**
+
+    сид  lambda   calibrated пара/ранг   calshift пара/ранг   CYP2D6 пара
+      0     0.3      0.9547 / 0.562       0.7939 / 0.559      1.630 -> 1.098
+      0     3.0      1.0640 / 0.554       0.9479 / 0.552      1.904 -> 1.578
+      1     0.3      0.8337 / 0.565       0.7643 / 0.561      1.156 -> 0.994
+      1     3.0      0.9712 / 0.559       0.9005 / 0.561      1.559 -> 1.404
+
+**The metric improves by 0.161 and 0.069 at lambda 0.3 while rank moves by -0.003 and -0.004**,
+inside the floor. The damage was the missing parameter, exactly as argued. Against lambda 0 the
+channel with the offset is worth **+0.029 and +0.033 of rank**, at a metric cost of +0.027 on seed 0
+and a metric gain of -0.019 on seed 1 -- consistent on rank, mixed on the metric.
+
+**The pre-registration was mis-specified, and that is the finding.** It said the fitted offsets
+should land near item 171's algebraic values, +0.103, -0.081, +0.000, +0.556, and that running to
+the bound would mean the parameter was absorbing something else. Neither happened. The offsets
+converge tightly across folds and sit far from the +-2 bound:
+
+    фермент   найдено моделью   алгебраически (171)
+    CYP1A2             -0.40                +0.103      противоположный знак
+    CYP2C9             -0.05                -0.081      совпадает
+    CYP2D6             -0.46                +0.000      велико там, где алгебра даёт ноль
+    CYP3A4             +0.21                +0.556      тот же знак, втрое меньше
+
+Two of four disagree, and the reason is that **they are not the same quantity and I should not have
+expected them to be.** Item 171's offset is fitted against the *labels*: it is the shift that makes
+the observed Hill slope one. The model's offset is fitted against `pi_hat`, which is a shrunk,
+regularised estimate of the label. The instrument map is nonlinear, so any systematic gap between
+`pi_hat` and `pi` has to be absorbed somewhere, and the offset is the only place it can go. The
+fitted `d` is therefore assay offset **plus** shrinkage compensation, and this experiment cannot
+separate them.
+
+There is a signature consistent with that reading and it is not conclusive. The two enzymes with the
+largest offsets are the two the model predicts worst -- CYP2D6 at rank 0.394 has |d| 0.46 and CYP1A2
+at 0.484 has 0.40 -- which is the order shrinkage would produce. But CYP2C9 at rank 0.612 has the
+*smallest* offset (0.05) while CYP3A4 at 0.746 has 0.21, and pure shrinkage does not predict that.
+Written as a candidate. The clean test is whether |d| tracks the affine pair's fitted shrinkage per
+enzyme, which is cheap and not run here.
+
+**What can be said without settling it.** The coupling plus offset is a better construction than
+the coupling alone by 0.07 to 0.16 of metric at equal rank, and better than no screening channel by
+about 0.03 of rank. It is not evidence for an inter-assay shift, because the parameter it fits is
+not the one item 171 measured.

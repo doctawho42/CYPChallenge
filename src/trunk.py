@@ -52,6 +52,11 @@ PC0 = 4.305
 CAL_E = np.array([0.728, 0.621, 0.867, 0.931], dtype=np.float32)
 CAL_H = np.array([1.261, 1.112, 1.243, 1.968], dtype=np.float32)
 
+# Сдвиг между слоями измерений, намеренный алгебраически в пункте 171 при ПОДОГНАННОМ E.
+# Здесь он ни во что не подаётся --- только печатается рядом с найденным, чтобы сравнение
+# двух независимых маршрутов было видно в логе, а не выводилось потом из головы.
+ALG_SHIFT = np.array([0.103, -0.081, 0.000, 0.556], dtype=np.float32)
+
 # Chosen on the lambda_scr = 0 arm alone, never looking at an arm with the screening
 # term on, so the choice cannot favour the experiment. It moves the absolute level; it
 # cannot move the comparison, which is between two arms sharing these settings exactly.
@@ -126,13 +131,32 @@ class Net(nn.Module):
         return self.head_pic(h), self.head_scr(h)
 
 
-def g_of_pi(pi, e_, h_):
+def g_of_pi(pi, e_, h_, d_=None):
     """log2fc predicted from pIC50 through the fitted instrument calibration.
 
-    g(pi) = log2(1 - E / (1 + 10^{h (pC0 - pi)})). Differentiable in pi, so the screening
+    g(pi) = log2(1 - E / (1 + 10^{h (pC0 - pi - d)})). Differentiable in pi, so the screening
     residual sends gradient back into the same latent the pIC50 head reads - which is what
     "shared latent curve" in the document actually means, as opposed to two free heads
     that are under no obligation to agree about anything.
+
+    `d_` is the per-enzyme offset between the two measurement layers, and it is None for every
+    mode that existed before `calshift`, so their arithmetic is unchanged to the bit.
+
+    Why the offset is worth a parameter at all. The `calibrated` mode as built raises rank
+    (macro 0.530 to 0.562 at lambda 0.3 on seed 0) and wrecks the metric (0.767 to 0.955, and
+    CYP2D6 from 0.963 to 1.630, which is worse than predicting the mean). That is the signature
+    of a model forced to distort the potency scale in order to satisfy a screening constraint it
+    cannot otherwise meet: with E and h carried in as constants there is no free parameter
+    between pi_hat and the reading. One offset per enzyme is the smallest thing that separates
+    "match the screen" from "keep pIC50 on scale".
+
+    Item 171 measured what those offsets should be, algebraically and independently of any
+    model: +0.103, -0.081, +0.000 and +0.556 under the fitted amplitude. **If the fitted d_e
+    lands near those numbers, two unrelated routes agree; if it runs to the bound, the offset is
+    absorbing something else and the arm says nothing.** That is the pre-registration, and it is
+    the reason d is bounded rather than free -- an unbounded offset can push the predicted
+    inhibition into saturation and switch the screening term off altogether, which would look
+    like a clean run and mean nothing.
     """
     # The exponent has to be bounded. Unbounded, 10^(h(pC0 - pi)) overflows to inf as soon
     # as the predicted potency wanders far below pC0, and although the forward value stays
@@ -141,7 +165,8 @@ def g_of_pi(pi, e_, h_):
     # eta = 0.5 and eta = 1 to exactly this. Clamping at +-30 changes nothing that was
     # already finite - 10^30 and inf give the same inhibited fraction to float precision -
     # and only replaces nan gradients with finite ones.
-    inh = e_ / (1.0 + torch.pow(10.0, torch.clamp(h_ * (PC0 - pi), min=-30.0, max=30.0)))
+    arg = PC0 - pi if d_ is None else PC0 - pi - d_
+    inh = e_ / (1.0 + torch.pow(10.0, torch.clamp(h_ * arg, min=-30.0, max=30.0)))
     return torch.log2(torch.clamp(1.0 - inh, min=1e-3))
 
 
@@ -216,6 +241,14 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
     # unconstrained E can cross 1 and make log2(1 - E/...) undefined, which is a silent nan
     # rather than an error.
     cal_p = None
+    cal_d = None
+    if mode == "calshift":
+        # Инициализация нулём: на первом шаге calshift ТОЖДЕСТВЕН calibrated, поэтому всё,
+        # что он выигрывает, выиграно сдвигом, а не другой отправной точкой. Ограничение
+        # 2*tanh держит смещение в пределах двух логарифмических единиц --- вчетверо больше
+        # самого крупного, который пункт 171 намерил алгебраически (+0.556 на CYP3A4).
+        cal_d = torch.nn.Parameter(torch.zeros(len(CYPS), device=device))
+        params += [cal_d]
     if mode == "calfit":
         e0 = torch.as_tensor(CAL_E, dtype=torch.float32).clamp(1e-3, 1.499)
         h0 = torch.as_tensor(CAL_H, dtype=torch.float32).clamp(min=1e-3)
@@ -248,8 +281,9 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
                     else:
                         e_ = torch.sigmoid(cal_p[0]) * 1.5
                         h_ = torch.nn.functional.softplus(cal_p[1])
+                    d_ = None if cal_d is None else 2.0 * torch.tanh(cal_d)
                     loss = loss + lam * masked_mse(
-                        (g_of_pi(pi, e_, h_) - smt) / sst, st[bt], mst[bt])
+                        (g_of_pi(pi, e_, h_, d_) - smt) / sst, st[bt], mst[bt])
             opt.zero_grad(); loss.backward(); opt.step()
 
     net.eval()
@@ -260,6 +294,12 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
         print(f"      калибровка ушла: E " + " ".join(f"{a:.3f}->{b:.3f}"
               for a, b in zip(CAL_E, e_))
               + " | h " + " ".join(f"{a:.3f}->{b:.3f}" for a, b in zip(CAL_H, h_)), flush=True)
+    if cal_d is not None:
+        with torch.no_grad():
+            dd = (2.0 * torch.tanh(cal_d)).cpu().numpy()
+        print("      сдвиг найден: " + " ".join(f"{c[3:]} {v:+.3f}" for c, v in zip(CYPS, dd))
+              + " | алгебраически (пункт 171): "
+              + " ".join(f"{v:+.3f}" for v in ALG_SHIFT), flush=True)
     with torch.no_grad():
         p, _ = net(Xt[t(np.where(te)[0])])
     return p.cpu().numpy() * ys + ym
@@ -364,7 +404,7 @@ def main():
                     help="eta: порча скринингового канала в его же ско, ранг падает в "
                          "sqrt(1+eta^2) раз, масштаб сохраняется")
     ap.add_argument("--mode", default="twohead",
-                    choices=["twohead", "calibrated", "calfit"],
+                    choices=["twohead", "calibrated", "calfit", "calshift"],
                     help="twohead: free second head. calibrated: screen via g(pi) with the "
                          "instrument constants held fixed. calfit: the same g(pi), but E and h "
                          "are estimated jointly with the model instead of being carried in "
