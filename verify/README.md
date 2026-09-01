@@ -4195,8 +4195,12 @@ bases is **0.00**, which is why: at pH 7.4 our bases are mostly not protonated e
 differ from logP, so the new column is nearly the old one.
 
 `src/ablrobust.py` -- chi-square DRO over similarity strata costs rank as soon as it is switched
-on: 0.5651 at radius 0 against 0.5574 at 0.25, and it costs it under the test-weighted rank too
-(0.5963 against 0.5866). The stratum shares are the striking part: out of five quantile strata the
+on, and keeps costing it: **0.5651, 0.5574, 0.5456 at radii 0, 0.25 and 0.5**, and it costs rank
+under the test-weighted criterion too (0.5963, 0.5866, 0.5599). The run was stopped after three of
+its five radii, with 1.0 and the measured 2.155 unrun: the decline is monotone in both criteria and
+a larger ball can only widen the worst case it optimises against, so the remaining radii could
+confirm the conclusion but not reverse it, and the machine was needed for the NCGC re-weighting.
+Recorded as a truncation rather than left to be inferred from a short log. The stratum shares are the striking part: out of five quantile strata the
 test puts **77.1 per cent of its mass in the highest-similarity one** against our uniform 20 per
 cent, and the radius measured for this partition is 2.155. Robustness to the whole ball is the
 wrong ask when the shift is that concentrated in one direction.
