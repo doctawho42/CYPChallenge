@@ -59,8 +59,10 @@
 (154), logD и LipE (154), хи-квадрат-DRO (154), ChEMBL как внешний источник (77 --- все три
 способа обращения), CYP2C19 как пятая изоформа (153).
 
-**Не запущено, а не закрыто.** Квантовый блок: `src/quantum.py` падает на разрешении
-зависимостей, `xtb-python` нет в реестре. Это не результат.
+**Не запущено, а не закрыто.** Квантовый блок: признаки ПОСЧИТАНЫ (`data/quantum.npz`, 4905x10,
+homo/lumo/gap/dipole/q_basicN/q_aromN_min/fukui_minus/cone_free/n_arom_N/has_donor, ноль NaN), а
+абляция никогда не запускалась. Отдельно `src/quantum.py` падает на `xtb-python`, которого нет в
+реестре, но файл от более раннего прогона на месте. Это не результат ни в какую сторону.
 
 
 Forty-three scripts in four groups. `f*` was a sweep over everything that had been computed
@@ -4617,3 +4619,86 @@ directly to the metric, so it already performs every monotone repair. **The prio
 five weeks is therefore not "prefer new data" but "prefer quantities the affine pair cannot
 manufacture and the existing block cannot derive"** -- which is why the band width was worth more
 than four external datasets.
+
+**167. Every feature intervention that has ever worked here works on CYP2D6, and CYP3A4 has never
+been helped by anything.** `verify/k47_perenzyme.py`. Item 165 measured the per-enzyme floor and
+observed that this file had been judging per-enzyme claims by the macro figure. This is the audit
+that follows from it: every ablation whose predictions are on disk, re-read per enzyme against that
+enzyme's own floor. It computes nothing new.
+
+Only the four-seed rows are trustworthy -- a single-seed per-enzyme difference has a spread of
+0.005 to 0.007, so anything under about 0.015 on one seed says nothing.
+
+    вмешательство            сидов      1A2      2C9      2D6      3A4
+    механистический блок (81)    4  -0.0019  +0.0148  +0.0454  +0.0008
+    пулирование                  4  +0.0157  +0.0071  +0.0374  -0.0057
+    блок формы                   4  +0.0060  -0.0003  +0.0087  -0.0008
+    блок кислот                  4  +0.0012  -0.0023  -0.0025  -0.0006
+    пол этого фермента (165)        0.0061   0.0071   0.0049   0.0033
+
+**CYP3A4 clears its floor on nothing and is pushed below it by pooling.** CYP1A2 clears it on
+pooling alone. CYP2D6 clears it on three interventions out of four and by margins seven times its
+floor. This is not a new measurement; it is the same measurements read against the right yardstick,
+and the pattern was invisible while every one of them was reported as a macro.
+
+Three specific consequences.
+
+**The shape block is a CYP2D6 effect and item 119 closed it as a macro null.** +0.0087 on CYP2D6
+against a floor of 0.0049, four seeds, while the macro is +0.0034 and reads as nothing. The
+mechanism is in the block itself and was never used to read it: `shape3d.npz` carries
+`bN_arom_ang_min` and `bN_arom_ang_mean`, the **angles of the basic nitrogen to the aromatic
+system** -- that is the Glu216 salt-bridge geometry in three dimensions, and CYP2D6 is the only
+enzyme it describes. The block was thrown in globally and scored globally.
+
+**The acid block is null even per enzyme, and that refutes a hypothesis before it was built.** The
+obvious next mechanistic block was CYP2C9's, whose site has Arg108 binding anionic ligands, so acid
+strength and anionic fraction at pH 7.4 should pay there. Measured: **-0.0023 on CYP2C9 over four
+seeds**, inside the floor, and nothing on the other three. The hypothesis is not refuted in general
+-- the mechanistic block already carries `n_acid`, `n_tetrazole`, `n_sulfonamide` and `ph74_n_anion`,
+so what is measured is the *marginal* value of six more acid columns -- but the cheap version of
+"build CYP2C9's site block" is already done and already negative.
+
+**The attention is inverted with respect to the headroom.** Item 139 measured the distance from our
+model to a single calibrated screening column: CYP1A2 0.502, CYP2C9 0.340, CYP2D6 0.306, CYP3A4
+0.289. So the enzyme that receives every working intervention is the one with the **second smallest**
+gap, and the enzyme with the largest gap has received one. Item 134 said this in prose and was half
+retracted; here it is arithmetic over four seeds.
+
+**168. Proteochemometrics: the coordinate form is closed by arithmetic, the interaction form is
+three-quarters unbuilt, and item 153 conflated them.** Item 153 wrote that the CYP2C19 arm was "the
+only testable form of a proteochemometric enzyme coordinate available here". That was too strong
+and the two halves need separating.
+
+**The coordinate form is closed, and not by measurement.** With four enzymes, all four seen in
+training, a one-hot indicator is a *sufficient statistic* for enzyme identity: any per-enzyme
+function is exactly representable, so a vector of protein descriptors is a four-row lookup table --
+a change of basis on the one-hot. Item 166 puts changes of basis in the column with four attempts
+and zero survivors, and `src/ablcoord.py` measured this exact case: a two-column coordinate from the
+measured screening correlations against the four-column one-hot, **+0.0007**. Protein descriptors
+pay when the number of targets is large enough that sharing beats fitting each, or when a target
+must be predicted that was never trained on. We have four targets and no zero-shot requirement.
+Sequence, structure or cavity descriptors *of the enzyme* cannot add information the indicator does
+not already carry.
+
+**The interaction form is the thing that works, and it exists for one enzyme.** `src/feats.py`
+opens with a docstring reading `Mechanistic feature block for CYP2D6`, and its geometric columns --
+`topo_bN_to_arom_min`, `topo_bN_to_arom_mean`, `n_bN_geom`, `pharm_2d6`, `pharm_2d6_x_prot` -- are
+Glu216 pharmacophore descriptors. They are ligand columns conditioned on a known active site, which
+is what proteochemometrics is for when the protein set is small: not "which enzyme is this" but
+"which ligand property matters for this enzyme". That block is worth +0.0454 on the enzyme it was
+built for, and item 167 shows nothing else in this repository comes close.
+
+CYP2C9's +0.0148 from the same block is an **accident**: `n_acid`, `n_tetrazole` and `ph74_n_anion`
+are there for generic reasons and CYP2C9's site has Arg108. Nobody designed it and it clears the
+floor twice over. That is the strongest available evidence that the deliberate version, for the two
+enzymes that have nothing, is worth building -- and item 156 already supplies CYP1A2's recipe from
+the data rather than from the literature: the tertiary aliphatic amine costs **-0.58 of pIC50 after
+controlling for size, lipophilicity and aromaticity, on CYP1A2 and on no other enzyme.** A narrow
+planar slot rejecting sp3 basicity is a testable feature specification, not an analogy.
+
+What is genuinely untried and passes item 166's gate: a **docking score into the four crystal
+structures**. A score for the pair (ligand, enzyme) is not derivable from the ligand block, because
+it depends on the cavity -- unlike a fingerprint, an embedding or a protein coordinate, all of which
+are functions of things we already have. There is not one mention of docking, SMARTCyp or a PDB
+identifier in 167 items. It is also the largest compute commitment yet proposed: 4905 molecules by
+four structures is about twenty thousand runs.
