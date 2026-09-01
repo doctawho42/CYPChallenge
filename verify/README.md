@@ -5513,3 +5513,65 @@ The scaled variant, which normalises each output's residual so the widest-residu
 dominate the shared split criterion, is indistinguishable from the plain one (0.5679 against
 0.5684). That sub-question closes: the sparse label matrix's zero residuals do bias the criterion,
 but not enough to matter once the Gauss-Newton weighting is in place.
+
+**189. Physics enters through the measurement model and not through the feature matrix, and the
+pattern now rests on six measurements rather than an intuition.** Collected because it predicts, and
+because the two next proposals divide on it.
+
+    вошло через модель измерения
+      мёртвая зона --- структура МЕТРИКИ в потере                     +0.033 ранга (148)
+      calshift --- уравнение ПРИБОРА связывает скрининговую голову    +0.0308, 4/4 (174)
+
+    не вошло через матрицу признаков
+      SMARTCyp, оборот из предпосчитанных DFT-энергий                 +0.0009 (179)
+      ручные блоки активного центра                                  таргет = 0 (179)
+      квантовый блок, HOMO/LUMO/Фукуи                                 0, неотличим от перестановки (186)
+      остаток Хилла как вес                                          хуже перемешанного (179)
+
+    не вошло и как БОЛЬШАЯ ГИБКОСТЬ модели измерения
+      двухсайтовая форма в стволе                                    пара 0.89 против 0.78 (178)
+
+The third block is the correction to the obvious reading. The two-site form **describes the
+instrument better** -- cross-validated residual down 26 per cent on CYP3A4, with a genuine 48/52
+mixture at a separation of 0.98 -- and **makes the model worse** when it replaces the single-site
+link in the trunk. The reason was given when it was measured: the trunk transfers information from
+the screen to `pi_hat` *through* the link, and a more flexible link transfers less, because it has
+more ways to satisfy the reading without moving the prediction.
+
+So the rule is narrower than "physics helps". **Physics helps as a constraint on the loss or the
+link; it does not help as columns, and it does not help as extra freedom in the link.** The feature
+channel is saturated -- 2295 columns, of which DESC takes 58 to 66 per cent of splits (item 138) --
+and one more function of the ligand drowns in it. The measurement channel is not saturated because
+almost nothing has been put there.
+
+**And this is exactly why item 168 singled out docking.** A docking score is a function of the pair
+(ligand, cavity), so it is not derivable from the ligand block -- unlike a fingerprint, an
+embedding, a protein-descriptor coordinate, SMARTCyp, a site block or a quantum column, every one of
+which is a function of what is already present and every one of which returned zero. It is the only
+proposal on the table outside that class.
+
+Three design points, from an outside reading and worth recording before anything is built, because
+they decide whether twenty thousand runs produce a cavity feature or one more shape descriptor.
+
+  **Признак --- РАЗНОСТИ оценок между полостями, не сами оценки.** The common part -- how big and
+  how greasy the ligand is -- cancels between four cavities, and what survives is complementarity to
+  a particular one, which is the part the ligand block cannot contain by construction. It is also a
+  contrast feature, and item 132 established that contrast is what pooling exploits.
+
+  **Контроль --- чужая изоформа, не перестановка.** A permutation breaks the molecule-to-score
+  correspondence but does not answer whether the score is a disguised volume descriptor. Docking
+  into the *wrong* cavity does: if the block works as well with the substituted enzyme, it carries
+  no cavity information.
+
+  **Дешёвая первая ступень.** All four isoforms have co-crystallised ligands; overlaying each
+  molecule on each isoform's co-crystal ligand by shape and pharmacophore is also a function of the
+  pair, without sampling the receptor. Hours instead of a night, four numbers per molecule, the same
+  differences and the same wrong-isoform control.
+
+**The dependency that decides whether the cheap stage is worth running at all**, and it is not
+optional: the overlay must use the **bound** conformation of the co-crystal ligand, because that
+pose is the cast of the cavity. A freely generated conformer of alpha-naphthoflavone is just another
+ligand, and overlaying molecules on it measures ligand-to-ligand similarity -- precisely the class
+that returned zero six times above. So the stage requires fetching ligand coordinates from the PDB
+(2HI4, 1R9O, 4WNV, 4NY4 or their equivalents), and without that download it should not be run at
+all rather than run in a weakened form.
