@@ -94,7 +94,7 @@ def boost(Xtr, ytr, lotr, hitr, Xte, mode, seed):
         if mode == "sq":
             resid = ytr - s
         elif mode == "l1":
-            resid = np.sign(ytr - s)
+            resid = ytr - s
         else:
             resid = -pairwise_grad(s, ytr, lotr, hitr)
             nrm = np.abs(resid).max()
@@ -103,6 +103,14 @@ def boost(Xtr, ytr, lotr, hitr, Xte, mode, seed):
         t = DecisionTreeRegressor(max_depth=DEPTH, max_features=MAXFEAT,
                                   random_state=int(rng.integers(1 << 30)))
         t.fit(Xtr, resid)
+        if mode == "l1":
+            # LAD-бустинг Фридмана: дерево строится по остаткам, но значение листа
+            # заменяется МЕДИАНОЙ остатков в нём --- это и есть шаг под абсолютную
+            # потерю. Без этой замены получается бустинг по знаку, другой оценщик,
+            # и сравнивать его с HistGB(loss="absolute_error") нельзя.
+            leaf = t.apply(Xtr)
+            for lv in np.unique(leaf):
+                t.tree_.value[lv, 0, 0] = np.median(resid[leaf == lv])
         s = s + LR * t.predict(Xtr)
         pred = pred + LR * t.predict(Xte)
     return s, pred
@@ -138,7 +146,10 @@ def main():
     z = np.load(D + "feats.npz")
     X = np.hstack([z["FP"], z["DESC"], z["MECH"]]).astype(np.float32)
 
-    NAMES = ["квадрат", "попарно", "квадрат + МЗ x1", "попарно + МЗ x1"]
+    # «L1 по метке» --- обязательный контроль: он отделяет «мёртвая зона не работает на
+    # этом учителе» от «мой L1 плох». Без него разности внизу нечитаемы (пункт про
+    # отозванный прогон).
+    NAMES = ["квадрат", "L1 по метке", "попарно", "квадрат + МЗ x1", "попарно + МЗ x1"]
     out, table = {}, []
     for seed in seeds:
         fold, _ = butina_folds(list(rows.SMILES), seed=seed)
@@ -157,6 +168,8 @@ def main():
             preds = {}
             t0 = time.time(); preds["квадрат"] = cv(Xi, y, lo, hi, fi, "sq", seed)
             clock["квадрат"] += time.time() - t0
+            t0 = time.time(); preds["L1 по метке"] = cv(Xi, y, lo, hi, fi, "l1", seed)
+            clock["L1 по метке"] += time.time() - t0
             t0 = time.time(); preds["попарно"] = cv(Xi, y, lo, hi, fi, "pair", seed)
             clock["попарно"] += time.time() - t0
             # Шаг мажорирования поверх каждого угла: проекция ЧЕСТНЫХ OOF на полосу,

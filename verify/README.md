@@ -4325,3 +4325,142 @@ macro, which averages four enzymes and therefore has less variance than any one 
 on CYP1A2 is not automatically above its own noise. `--seeds 1,2,3` on the base and the w = 0.1 arm
 is queued and is what settles it. Until it returns the honest summary is: the weight explained the
 damage, and the only surviving candidate for a gain is one enzyme awaiting replication.
+
+**158. Pooling's reversal is not column subsampling, and the screen works better with no pooling at
+all.** `src/ablaux.py` with two arms the first design should have had. Both answers are large and
+one of them is the best data-side result in this file.
+
+    рука                      MACRO пара   MACRO rho     1A2     2C9     2D6     3A4
+    независимо                    0.7125      0.5684  0.4966  0.6052  0.4116  0.7601
+    независимо+скрининг           0.6865      0.5929  0.5087  0.6634  0.4177  0.7818
+    пул mf1.0                     0.7379      0.5416  0.4807  0.5736  0.3821  0.7301
+    пул+скрининг mf1.0            0.7150      0.5644  0.4803  0.6013  0.4226  0.7532
+
+**Item 151's hypothesis is refuted.** The enzyme indicator being starved by `max_features=0.3` was
+mechanical and testable, and at `max_features=1.0`, where the indicator is available at every split,
+pooling gives **0.5416 against 0.5420** at 0.3 -- identical, and still 0.027 below the per-enzyme
+model. Column subsampling has nothing to do with it.
+
+What is left is the uncomfortable reading. **Pooling gains +0.0141 on HistGradientBoostingRegressor
+and loses 0.027 on plain depth-5 trees, at either subsampling.** The submission is built around an
+effect that survives one learner and reverses on the other, and its mechanism (item 132, contrast
+through the enzyme indicator) does not explain why a different tree ensemble cannot use the same
+indicator. That is now the largest open question in this file and it outranks anything queued.
+
+**The screen, isolated from pooling, is worth +0.0245 of rank.** Screening rows added to a
+per-enzyme model -- no indicator, no pooled table, just that enzyme's own curves plus its own
+screening readings on compounds it has no curve for -- take 0.5684 to **0.5929**, and ST-RAE from
+0.7125 to **0.6865**. Three and a half times the noise floor. Per enzyme: **CYP2C9 +0.058**, CYP3A4
++0.022, CYP1A2 +0.012, CYP2D6 +0.006, so CYP2C9 dominates exactly as item 152 pre-registered it
+would (2.4 times more screening than curves, the highest ratio of the four).
+
+Compare the four ways the screen has now been given to a model:
+
+    пул+скрининг mf0.3           0.5727
+    пул+скрининг mf1.0           0.5644
+    независимо+скрининг          0.5929
+
+**Every pooled variant is worse than the per-enzyme one.** Item 152 tied the screen to the pooled
+table because item 132's contrast mechanism made that look natural, and that decision cost most of
+the effect. The screen does not need pooling; it needed only to be a target instead of a feature.
+Seeds 1-3 are queued.
+
+**159. Early stopping was armed on `пул+TDI` and never fired, so item 125 is confounded only
+mildly.** `verify/k41_earlystop.py`, one fold:
+
+    рука       early_stopping   обучающих   do_early_stopping_   n_iter_        rho
+    пул                  auto        5154                False   300/300     0.5730
+    пул                 False        5154                False   300/300     0.5730
+    пул+TDI              auto       10318                 True   300/300     0.5781
+    пул+TDI             False       10318                False   300/300     0.5756
+
+The threshold crossing of item 142 is confirmed -- `do_early_stopping_` is True on `пул+TDI` and
+False on `пул`, exactly as the row counts predicted. But **`n_iter_` is 300 of 300**: the stopping
+criterion was armed and never triggered, so the arm was not truncated.
+
+The difference that remains is not truncation but the holdout: with early stopping armed,
+scikit-learn reserves ten per cent of the rows as a validation set and trains on the other ninety.
+That is worth **0.0025 of rank on this fold** -- real, in the direction that flatters the TDI arm,
+and far too small to overturn item 125's null. Item 142 should be read as "the comparison had a
+defect worth about 0.0025" rather than "the comparison was between two learners".
+
+Setting `early_stopping=False` explicitly in every new arm stays right for a different reason: the
+defect is small here and there is no guarantee it stays small on a table of 14424 or 60702 rows,
+where the ten per cent held out is a much larger absolute number of molecules.
+
+A defect in the check itself, recorded rather than quietly fixed: `k41` computes its ST-RAE column
+by calling `fit_apply` with every row assigned to fold 0, which leaves the affine pair no training
+folds and returns NaN. The rank column is unaffected and is what the item rests on.
+
+**160. The screening level channel is chemistry on three enzymes and plate systematics on CYP3A4.**
+`verify/k35_plate.py` re-runs item 13's channel contribution under a split blocked by assay plate
+instead of by Butina cluster.
+
+    фермент     протокол      без уровня   с уровнем     вклад
+    CYP1A2      кластерный        0.4957      0.8626   +0.3669
+    CYP1A2    по планшетам        0.5070      0.8555   +0.3485
+    CYP2C9      кластерный        0.5972      0.8925   +0.2952
+    CYP2C9    по планшетам        0.5649      0.8799   +0.3150
+    CYP2D6      кластерный        0.4027      0.8283   +0.4256
+    CYP2D6    по планшетам        0.3806      0.8210   +0.4404
+    CYP3A4      кластерный        0.7646      0.9083   +0.1437
+    CYP3A4    по планшетам        0.7482      0.6012   **-0.1470**
+
+On CYP1A2, CYP2C9 and CYP2D6 the contribution holds within 0.02 of itself, so the channel carries
+chemistry and item 13 survives a harder test than it was originally given. **On CYP3A4 it reverses
+by 0.29**: block the plates and the level channel becomes actively harmful.
+
+The explanation is item 129 and it is specific. CYP3A4 is the only enzyme whose training set
+contains a separate analog campaign -- 530 compounds, run apart from the diversity screen -- and
+compounds run together sit on the same plates. A Butina split leaks plate identity through
+structural similarity, so the level channel on CYP3A4 has been partly reading which plate a
+compound came from. That is the first measured instance of the plate confound this file has
+suspected since item 35, and it is confined to one enzyme.
+
+**161. The dead-zone-by-pairwise run is retracted: it lacked the control that would make it
+readable, and its L1 was the wrong estimator.** `src/abldeadpair.py` returned the dead-zone pass
+*costing* 0.027 to 0.031 of rank on the own booster, where `abldead` measured it gaining 0.027 to
+0.036 on HistGradientBoostingRegressor. A sign reversal between learners is a finding only if the
+alternative explanations are excluded, and two were not.
+
+**No `L1 по метке` arm.** `abldead` has one and it matters: without it there is no way to tell "the
+dead zone fails on this learner" from "this script's L1 is bad", and the whole comparison rests on
+the L1 step.
+
+**The L1 was bad.** `abldead` uses the pinned scikit-learn's `loss="absolute_error"`, which does the
+line search that absolute-loss boosting requires. This script fitted trees to `sign(y - s)` under a
+squared criterion, which is a different estimator: the leaf then holds the mean of a set of plus and
+minus ones, the magnitude of the residual is discarded entirely, and the step size is arbitrary.
+Friedman's LAD boosting fits the tree to the residuals and replaces each leaf value with the
+**median** of the residuals in it; that is now implemented, the control arm is added, and the run is
+requeued on two seeds. Nothing from the first run is carried forward, including its additivity
+arithmetic.
+
+**162. The dead zone in every ensemble member holds on four seeds, and it is worth most to the
+members the submission weights least.** `src/abldzens.py`, seeds 1-3 against seed 0:
+
+    рука                       MACRO пара   MACRO rho
+    базовый ансамбль               0.6828      0.6002
+    мёртвая зона в бустингах       0.6804      0.6007
+    мёртвая зона везде             0.6615      0.6196
+
+Seed 0 gave 0.6029 and 0.6203, so **+0.019 on all four seeds**, and applying the pass to the
+boosters alone remains worth nothing. Per member, averaged over seeds 1-3:
+
+    поферментно   0.5623 -> 0.6059   (+0.0435)
+    GP            0.5535 -> 0.5997   (+0.0462)
+    гребневая     0.5601 -> 0.5789   (+0.0188)
+    пул           0.5758 -> 0.5932   (+0.0174)
+
+**The two members that gain most are the per-enzyme booster and the Gaussian process**, and the two
+that gain least are the pooled booster and the ridge. Read next to item 158 that is a pattern rather
+than a coincidence: the per-enzyme model gains +0.0435 from the dead zone and +0.0245 from the
+screening rows, both independently, while the pooled model gains little from either.
+
+**163. The NCGC censored rows survive the re-weighting.** Fourth arm of item 157's ladder: all
+54177 rows including the censored ones at w = 0.3 gives **0.5483**, against 0.5392 for the fitted-AC50
+rows alone at the same weight and 0.5462 for the base. The censored rows are worth +0.0091 at w = 0.3
+after being worth +0.0079 at w = 1.0, so "not active up to the top concentration" is information at
+both weights. Per enzyme it buys CYP1A2 +0.025 and CYP2C9 +0.015 and costs CYP2D6 -0.028, the same
+CYP2D6 sensitivity item 157 found. Still below the base on the macro; still the arm to keep if the
+panel is used at all.
