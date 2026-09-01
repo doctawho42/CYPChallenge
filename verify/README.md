@@ -4017,3 +4017,197 @@ wrong for the right-looking reason. The fallback is now gone and the cluster cou
 against the split's own: 4703. That the correction moved the interval so little is itself the
 composition result of item 129 showing through -- 93.6 per cent of clusters are singletons, so
 clusters and molecules are nearly the same unit here.
+
+**148. The dead zone reproduces on all four seeds at +0.033 of rank, and its pre-registered
+mechanism is refuted by its own numbers.** `src/abldead.py`, seeds 1, 2 and 3 against seed 0's
++0.0272:
+
+    рука               MACRO пара   MACRO rho     1A2     2C9     2D6     3A4
+    L2 по метке            0.7157      0.5623   0.4956  0.5899  0.4038  0.7602
+    L1 по метке            0.7137      0.5655   0.5073  0.5851  0.4093  0.7603
+    мёртвая зона x1        0.6872      0.5985   0.5364  0.6330  0.4590  0.7657
+
+**+0.0362 over the squared loss on seeds 1-3, +0.0272 on seed 0**, four seeds agreeing in sign and
+roughly in size, against a floor of 0.007. It is the largest reproducible single-model effect in
+this file, larger than pooling's +0.0141.
+
+And the mechanism story is wrong. `abldead` pre-registered: "the gain must be uneven across
+enzymes: the share of wide bands runs from 9.9 per cent on CYP2D6 to 29.4 per cent on CYP3A4, so
+CYP3A4 must gain most." Measured:
+
+    фермент   доля полос шире 1.0   прирост ранга
+    CYP2D6                  9.9 %         +0.0552   <- меньше всех полос, больше всех прирост
+    CYP1A2                 14.6 %         +0.0407
+    CYP2C9                 17.0 %         +0.0431
+    CYP3A4                 29.4 %         +0.0056   <- больше всех полос, почти ноль
+
+**The ordering is inverted, not merely different.** The explanation is in `abldead`'s own docstring
+two paragraphs above the prediction, unused: on CYP3A4 **73.9 per cent of the predictions on
+wide-banded rows already land inside the band**. Where that is true, `clip(p, lo, hi)` equals `p`,
+the majorised target is the current prediction, the gradient is zero and the pass does nothing. A
+wide band means the error is already free -- so there is nothing there to win. The gain comes from
+**narrow** bands, where the model sits outside and reprojection actually moves the target.
+
+The intervention is unaffected and the reading of it is inverted: the dead zone is not a way to
+stop wasting effort on wide bands, it is a way to stop paying for the last tenth of a pIC50 on
+narrow ones.
+
+**149. The dead zone applied to every ensemble member gives 0.6203 macro rank -- the best number in
+this file -- and applying it to the boosters alone makes things worse.** `src/abldzens.py`:
+
+    рука                          MACRO пара   MACRO rho     1A2     2C9     2D6     3A4
+    базовый ансамбль                  0.6793      0.6029  0.5341  0.6407  0.4561  0.7807
+    мёртвая зона в бустингах          0.6799      0.6001  0.5310  0.6439  0.4474  0.7781
+    мёртвая зона везде                0.6599      0.6203  0.5463  0.6661  0.4710  0.7978
+
+The arm was split because the majorise-minimise reduction is exact only under an absolute loss: on
+the boosters it is L1 against the reprojected target, while the Gaussian process and the ridge get
+a dead zone with a *square* outside it, a different estimator. The pre-registered question was
+whether that approximation survives. It does, and by a margin:
+
+    пул          0.5792 -> 0.5916   (+0.0124)
+    GP           0.5534 -> 0.6044   (+0.0511)
+    гребневая    0.5595 -> 0.5778   (+0.0183)
+
+**The member with the inexact reduction gains four times what the exact one gains.** So the split
+was worth making and the answer is the opposite of the caution that motivated it.
+
+Members gain +0.027 on average while the ensemble gains +0.0174, which is the diversity cost the
+script warned about, measured: reprojecting every member onto the same bands does make them err
+more alike, and it costs about a third of the per-member gain. It is still the largest ensemble
+number here. Seeds 1-3 are queued.
+
+**150. The fingerprint reduces to about fifty substructures, and that is the first chemical
+sentence this file can say.** `verify/k40_topk.py`. Item 96 measured the whole fingerprint block at
++0.032 of rank; item 138 measured that the trees spend only 30 to 38 per cent of their splits on 89
+per cent of the columns. Ranking bits by how often they are chosen **on the training folds only**
+and keeping the top k:
+
+    k        MACRO пара   MACRO rho   доля эффекта фингерпринта
+    без FP       0.7411      0.5330                          --
+    top-20       0.7290      0.5554                      69.8 %
+    top-50       0.7228      0.5589                      80.7 %
+    top-100      0.7182      0.5624                      91.6 %
+    top-200      0.7176      0.5633                      94.4 %
+    все 2048     0.7150      0.5651                     100.0 %
+
+**Fifty bits out of 2048 carry four fifths of the effect, and twenty carry seven tenths.** The
+fingerprint is not working in bulk. It is a short list of specific substructures repairing specific
+chemotypes the descriptors get wrong, and the list is now enumerable: decode those fifty and the
+answer is a set of structural alerts with an account of what MolLogP and its neighbours miss. Of
+everything in this file that is the only thread that ends in chemistry rather than a fourth
+decimal, and it is now cheap to pull.
+
+**151. Pooling reverses on a depth-5 tree with 30 per cent column subsampling, which is a warning
+about the submission and not yet a result.** `src/ablaux.py` ran a pooled arm on the own booster of
+item 140 and got **0.5420 against the per-enzyme 0.5687** -- pooling *losing* 0.0267, where on
+HistGradientBoostingRegressor it wins 0.0141.
+
+The gate was pre-registered ("if pooling does not reproduce on this learner there is nothing
+further to read") and it failed, so the rest of that run is read below only in its internally
+controlled comparisons.
+
+There is a mechanical hypothesis and it is sharp. The enzyme indicator is **one column out of
+2300**. At `max_features=0.3` it is absent from seventy per cent of split decisions. A pooled model
+whose entire mechanism is conditioning on that indicator (item 132) is therefore starved of it,
+while a per-enzyme model has no indicator to lose -- and item 140 measured that the same
+subsampling is worth **+0.0123** to per-enzyme models. The two findings interact: column
+subsampling helps every model that does not need a specific column and cripples the one that does.
+Queued at `max_features=1.0`, where the indicator is always available. If pooling returns there,
+the reversal is the learner; if it does not, pooling's gain is HistGB-specific and the submission
+rests on something that survives one learner out of two.
+
+**152. The screening measurements carry real information -- the permutation control says so by
++0.036 -- but on this learner it only buys back what pooling lost.** The three pooled arms of
+`src/ablaux.py` share a learner and are comparable to each other whatever item 151 says:
+
+    рука                          MACRO rho     1A2     2C9     2D6     3A4
+    независимо                       0.5687  0.4965  0.6103  0.4078  0.7604
+    пул                              0.5420  0.4754  0.5655  0.3901  0.7371
+    пул+скрининг                     0.5727  0.5049  0.6207  0.4047  0.7605
+    пул+скрининг, перемешанный       0.5365  0.4895  0.5500  0.3859  0.7204
+    пул+скрининг w0.3                0.5688  0.4973  0.6178  0.4045  0.7557
+
+**The decisive comparison is +0.0362**: the same 11505 rows, the same target marginal, the
+molecule-to-measurement link broken, and the score falls by that much. The regularisation
+explanation is dead -- extra rows with broken links are *worse* than no extra rows at all
+(0.5365 against 0.5420). What the screen adds is measurement.
+
+The per-enzyme ordering was pre-registered as 2C9 (2.4x more screening than curves) > 1A2 (2.1) >
+2D6 (1.9) > 3A4 (1.1), with a gain concentrated on 3A4 as the falsifier. Measured gain over the
+pooled arm: **2C9 +0.055, 1A2 +0.030, 3A4 +0.023, 2D6 +0.015.** The first two land as predicted,
+the last two swap while both stay small, and the falsifier does not fire.
+
+What cannot be claimed. Against the *per-enzyme* reference the screen is worth **+0.0040**, below
+the floor -- it recovers pooling's loss and a hair. Whether it adds anything to a model that is
+not paying pooling's penalty is exactly what the queued `независимо+скрининг` arm asks, and it is
+the arm that should have been in the first design.
+
+**153. The NCGC panel hurts as a source of rows, its measurements are real, and its censored rows
+are the half worth keeping.** `src/ablncgc.py`, 18711 fitted-AC50 rows against our 6525:
+
+    рука                          MACRO rho     1A2     2C9     2D6     3A4
+    база (пулированные кривые)       0.5462  0.4811  0.5669  0.3933  0.7435
+    +NCGC активные                   0.5286  0.4905  0.5550  0.3447  0.7243
+    +NCGC активные, перемешанный     0.5141  0.4799  0.5364  0.3209  0.7193
+    +NCGC активные+2C19              0.5204  0.4856  0.5412  0.3324  0.7225
+    +NCGC всё, с цензурой            0.5365  0.4854  0.5781  0.3511  0.7315
+
+Every arm is below the base, so as built the panel is a cost. Three things are nonetheless
+measured rather than guessed.
+
+**The measurements are real**: +0.0145 over the permutation control, the same test that vindicated
+the screen. The panel knows something; it is the merge that is wrong, not the data.
+
+**The censored rows help, by +0.0079 over the fitted-only arm.** Keeping "not active up to the top
+concentration" as a row was the right call, and dropping them -- the obvious tidy-up -- would have
+rebuilt ChEMBL's selection bias by hand and cost more than it saved.
+
+**CYP2C19 teaches nothing transferable**: adding the fifth isoform is 0.0082 *worse* than not. That
+is the only testable form of a proteochemometric enzyme coordinate available here, and it is
+negative.
+
+The design error is visible in hindsight and is mine: at weight 1.0 the panel is 74 per cent of the
+training rows, so a foreign protocol with an offset of +0.44 to +0.87 dominates the objective and
+the source indicator has to undo it from a minority position. The screen arm above had a w0.3
+control and this did not.
+
+**154. Four ideas close, and one of them saves three days.**
+
+`src/ablcoord.py` -- the enzyme as a two-column MDS coordinate of the measured screening
+correlation matrix, against the four-column one-hot: **0.5799 against 0.5792**, and both together
+0.5830. Seven ten-thousandths, an eighth of the floor. Geometry is not what the indicator carries.
+The pre-registered consequence was explicit: the sequence-based variant, three to four days of
+assembling external isoforms, **should not be started**. It will not be.
+
+`src/ablpre.py` with MoLFormer-XL -- база 0.5651, embedding alone 0.4370, base + embedding 0.5386,
+base + embedding through a 64-component PCA fitted inside each fold **0.5637**. The width story
+from ChemBERTa reproduces: the full embedding hurts and PCA-64 restores the baseline, but restores
+is all it does. Pretrained SMILES representations add nothing to this matrix, on two checkpoints
+now, and that is the first clean answer to a question the file had left open three times.
+
+`src/abllipo.py` -- logD at pH 7.4 as a feature is +0.0051, below the floor; LipE as a target is
+-0.0174. The basic centre exists in 81.8 per cent of molecules and the median logD shift among
+bases is **0.00**, which is why: at pH 7.4 our bases are mostly not protonated enough for logD to
+differ from logP, so the new column is nearly the old one.
+
+`src/ablrobust.py` -- chi-square DRO over similarity strata costs rank as soon as it is switched
+on: 0.5651 at radius 0 against 0.5574 at 0.25, and it costs it under the test-weighted rank too
+(0.5963 against 0.5866). The stratum shares are the striking part: out of five quantile strata the
+test puts **77.1 per cent of its mass in the highest-similarity one** against our uniform 20 per
+cent, and the radius measured for this partition is 2.155. Robustness to the whole ball is the
+wrong ask when the shift is that concentrated in one direction.
+
+**155. Under the anchor protocol the mechanistic block's gain is a third of what the cluster
+protocol reports.** `verify/k32_anchor.py` on item 129's 530-compound CYP3A4 campaign, the one
+place a test-like split is constructible. The construction check passes: median similarity of the
+held-out set to training rises to 0.61-0.62 across three rotations.
+
+    выигрыш мех. блока    кластерный    якорный
+    ST-RAE                   -0.0262    -0.0172
+    ранг                     +0.0056    +0.0018
+
+Both are small and the rank figures are inside the floor, so this is not a refutation. But it is
+the first time the file can *see* rather than infer that a number depends on the protocol, and the
+direction is the uncomfortable one: the more test-like the split, the smaller the mechanistic
+block's contribution.

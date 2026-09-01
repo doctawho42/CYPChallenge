@@ -106,14 +106,14 @@ CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 NTREE, LR, DEPTH, MAXFEAT = 200, 0.06, 5, 0.3
 
 
-def boost(Xtr, ytr, wtr, Xte, seed):
+def boost(Xtr, ytr, wtr, Xte, seed, maxfeat=MAXFEAT):
     """Бустинг над обычными деревьями, квадратичная потеря, с весами строк."""
     rng = np.random.default_rng(seed)
     base = float(np.average(ytr, weights=wtr))
     s = np.full(len(ytr), base)
     pred = np.full(len(Xte), base)
     for _ in range(NTREE):
-        tree = DecisionTreeRegressor(max_depth=DEPTH, max_features=MAXFEAT,
+        tree = DecisionTreeRegressor(max_depth=DEPTH, max_features=maxfeat,
                                      random_state=int(rng.integers(1 << 30)))
         tree.fit(Xtr, ytr - s, sample_weight=wtr)
         s = s + LR * tree.predict(Xtr)
@@ -168,7 +168,12 @@ def main():
             w_scr = 0.3 if "w0.3" in arm else 1.0
             use_scr = "скрининг" in arm
             shuffle = "перемешанный" in arm
-            pooled = arm != "независимо"
+            pooled = "пул" in arm
+            # mf<x> в имени руки переопределяет подвыборку колонок. Нужно потому, что
+            # индикатор фермента --- ОДНА колонка из 2300, и при max_features=0.3 он
+            # отсутствует в 70 % решений о сплите. Для пулированной модели, весь механизм
+            # которой в обусловливании по индикатору, это может быть решающим.
+            mf = float(arm.split("mf")[1].split()[0]) if "mf" in arm else MAXFEAT
             p_all = {c: np.zeros(n) for c in CYPS}
 
             for f in range(5):
@@ -215,15 +220,35 @@ def main():
                         ind = np.zeros((int(te.sum()), 5), np.float32)
                         ind[:, e] = 1.0                       # предсказываем как кривую
                         p_all[c][te] = boost(Xtr, ytr, wtr,
-                                             np.hstack([X[te], ind]), seed * 10 + f)
+                                             np.hstack([X[te], ind]), seed * 10 + f, mf)
                 else:
-                    # Независимая рука: по модели на фермент, без индикатора и скрининга.
+                    # Поферментная рука. Со скринингом --- строки скрининга ТОГО ЖЕ фермента,
+                    # без индикатора фермента (он был бы константой), но с колонкой источника.
+                    # Это отделяет вклад скрининга от пулированной конструкции целиком.
                     for e, c in enumerate(CYPS):
                         trn, te = M[c] & trn_mol, M[c] & te_mol
                         if not te.any():
                             continue
-                        p_all[c][te] = boost(X[trn], Y[c][trn], np.ones(int(trn.sum())),
-                                             X[te], seed * 10 + f)
+                        Xa = [np.hstack([X[trn], np.zeros((int(trn.sum()), 1), np.float32)])]
+                        ya = [Y[c][trn]]
+                        wa = [np.ones(int(trn.sum()))]
+                        if use_scr:
+                            fitm = M[c] & S[c] & trn_mol
+                            addm = S[c] & ~M[c] & trn_mol
+                            if fitm.sum() >= 50 and addm.sum() > 0:
+                                iso = IsotonicRegression(increasing=False, out_of_bounds="clip")
+                                iso.fit(L2[c][fitm], Y[c][fitm])
+                                t = iso.predict(L2[c][addm])
+                                if shuffle:
+                                    t = t[rng.permutation(len(t))]
+                                Xa.append(np.hstack([X[addm],
+                                                     np.ones((int(addm.sum()), 1), np.float32)]))
+                                ya.append(t)
+                                wa.append(np.full(int(addm.sum()), w_scr))
+                        p_all[c][te] = boost(
+                            np.vstack(Xa), np.concatenate(ya), np.concatenate(wa),
+                            np.hstack([X[te], np.zeros((int(te.sum()), 1), np.float32)]),
+                            seed * 10 + f, mf)
 
             for c in CYPS:
                 m = M[c]
