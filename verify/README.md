@@ -4852,3 +4852,89 @@ output. The shift was solved by bisection, and the median of `u/(gap - s)` is di
 the denominator changes sign, so every enzyme returned the bracket bound of -3.000 -- a number that
 looks like an answer. And the measurement-error column of the third table was left as dead code
 printing a placeholder. Both are fixed above.
+
+**171. Microsomal binding is refuted with the sign reversed, and the layer disagreement it was
+meant to explain exists on one enzyme rather than four.** `verify/k50_fumic.py`.
+
+**The hypothesis and its refutation, confirmed exactly.** Free concentration at the enzyme is below
+nominal because of non-specific binding to microsomal protein and lipid, the free fraction falls
+with lipophilicity (Hallifax-Houston), so lipophilic compounds should appear weaker and the
+distortion should grow with logP. Tested against `d`, the shift returning the Hill slope to one.
+The confounder was named by the proposer before the test: `d` contains `-pIC50` by construction and
+pIC50 rises with logP, so a raw correlation is guaranteed. Removing potency isotonically:
+
+    фермент   rho(d, logP) сырое   rho(pIC50, logP)   rho(остаток, logP)
+    CYP1A2               -0.158             +0.173               +0.113
+    CYP2C9               -0.506             +0.532               +0.194
+    CYP2D6               +0.071             -0.020               +0.184
+    CYP3A4               -0.457             +0.650               +0.088
+
+Signs here are mirrored against the proposal's because of the opposite shift convention; every
+figure reproduces to three decimals. **The sign reverses and the magnitude collapses from 0.16-0.51
+to 0.09-0.19.** At equal potency the more lipophilic compounds disagree *less*, which is the
+opposite of what non-specific binding predicts. It holds under the fitted amplitude too (+0.041,
++0.169, +0.137, +0.085), so it is not a parameterisation artefact. Recorded as a refutation rather
+than a null: the prediction was directional and came back with the wrong sign.
+
+One methodological note, because the bug produced output that looked like an answer.
+`IsotonicRegression()` defaults to `increasing=True`, and `d` **decreases** in pIC50 by
+construction, so the default fits a near-constant and the residual is `d` shifted -- leaving the
+Spearman with logP numerically identical to the raw one, in all four rows. `increasing="auto"` is
+required. A control that returns exactly the uncontrolled number is not a control.
+
+**What the refutation was defending does not survive item 170.** The proposal listed the layer
+disagreement as the first thing standing independently of the fallen hypothesis: shifts of +0.644,
++0.626, +0.390 and -0.325, "medians, not correlations, so a confounder cannot explain them." True
+about confounders, and beside the point, because those medians are computed at `E = 1`. Item 170
+measured that under this repository's own fitted E the median slope is already one. Recomputing the
+shift in both parameterisations:
+
+    фермент   мед h при E=1   сдвиг при E=1   мед h при подогн. E   сдвиг при подогн. E   промах
+    CYP1A2            0.328          -0.588                 1.102                +0.103    0.000
+    CYP2C9            0.160          -0.648                 0.949                -0.081    0.001
+    CYP2D6            0.517          -0.505                 1.000                +0.000    0.000
+    CYP3A4            0.695          +0.453                 0.641                +0.556    0.155
+
+**On three enzymes the disagreement collapses by a factor of six to eight, and on CYP2D6 to
+exactly zero.** What looked like two assay layers differing by a third to two thirds of a log unit
+is, on CYP1A2, CYP2C9 and CYP2D6, the amplitude assumption. There is nothing there to model, name
+after Cheng-Prusoff, or put into the trunk.
+
+**CYP3A4 keeps it, and that is now the fifth independent measurement pointing at the same enzyme.**
+Its shift stays at +0.556 and its median slope at 0.641, and it is the only enzyme whose grid cannot
+reach one at all (miss 0.155). Collected:
+
+    129   единственный фермент с двумя популяциями: 1805 скринированных и 530 из кампании
+    167   единственный, ни разу не перешедший свой пол ни от одного вмешательства
+    169   перенос калибровки между половинами стоит +1.365 против +0.019..+0.205 у прочих;
+          наклон 0.503 на нижней половине меток против 2.516 на верхней
+    170   единственный, у кого медианный наклон при подогнанном E не равен единице
+    171   единственный, у кого сдвиг между слоями переживает смену параметризации
+
+Five measurements, five different questions, one enzyme. **The instrument model fails on CYP3A4 and
+nowhere else**, and every downstream quantity that passes through it -- the trunk's screening
+channel, the band the dead zone reprojects onto, the estimate of delta -- inherits that failure on
+that enzyme alone. This is a sharper statement than any of the five separately and it was not
+visible from any of them.
+
+**Consequences for the proposed model change, which splits in two.** The proposal was to make the
+screening prediction a deterministic function of the pIC50 prediction through the instrument
+equation, with a learnable per-enzyme shift, instead of two free heads sharing a trunk. The two
+halves now have very different standing.
+
+  **The coupling survives and is worth building.** Constraining the screening head to
+  `1/(1 + 10^{h(pC0 - pi_hat - d)})` makes 11509 readings constrain the target itself rather than a
+  neighbouring representation, and it does so without inverting the calibration, so item 83's
+  objection does not arise. That argument does not depend on `d` being non-zero.
+
+  **The shift has almost nothing to estimate.** Three enzymes need 0.10, 0.08 and 0.00. Only CYP3A4
+  needs 0.556, and CYP3A4 is exactly the enzyme where a single (E, h) is known not to describe the
+  data at all (item 169), so a single `d` will not repair it either. The parameter should be kept --
+  four numbers cost nothing and will find zero where there is nothing -- but the gain, if any, will
+  come from the coupling and will land on CYP3A4, and the pre-registration should say so.
+
+**What survives untouched is the application that never needed a mechanism.** The size of the
+disagreement measures that two measurements contradict each other without attributing the fault,
+and it is the only per-compound reliability signal in the set that is not a function of potency,
+since the band is 3.92 times `_std` and `_std` tracks the label at R-squared 0.93 to 0.98.
+`src/ablhill.py` is queued and is unaffected by everything above.
