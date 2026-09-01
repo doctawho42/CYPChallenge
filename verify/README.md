@@ -5084,3 +5084,80 @@ member the trunk was worth +0.0054 of rank (item 120), so +0.031 to the trunk it
 transfer one-for-one. Composing the five-member ensemble with the improved trunk is cheap --
 `verify/k46_five.py` does exactly that arithmetic from saved predictions -- and until it is run the
 number above is about a component and not about the submission.
+
+**175. The affine offset says the compensation is not shrinkage, and the two separators disagree.**
+`src/trunk.py --mode calaff`, four seeds by two lambdas. The identity control passes: `calshift`
+re-run after the change reproduces 0.9479 and 0.552.
+
+The proposal was that a constant offset can correct a shrunk `pi_hat` at exactly one point, since
+the shrinkage error `(1 - beta)(pi_bar - pi)` is zero on average and grows linearly toward the
+edges, so replacing `g(pi_hat - d)` with `g(a + b*pi_hat)` separates the two: shrinkage predicts
+`b` well above one, an external assay offset predicts `b` near one with only `a` working.
+
+    фермент   найденный b   найденный a   постоянный d (172)   алгебраический (171)
+    CYP1A2          0.972        -0.086               -0.398                 +0.103
+    CYP2C9          1.002        -0.037               -0.049                 -0.081
+    CYP2D6          1.066        -0.440               -0.457                 +0.000
+    CYP3A4          0.972        +0.370               +0.213                 +0.556
+
+**All four slopes are within seven per cent of one and two of them are below it**, with a
+fold-to-fold spread under 0.004. That is the second branch of the pre-registration, and by it the
+compensation is not shrinkage.
+
+The extra parameter also buys nothing:
+
+    lambda 0.3   пара 0.7796 -> 0.8020  (+0.0225)  p = 0.514  знаков 2/4
+                 ранг 0.5600 -> 0.5613  (+0.0012)  p = 0.504  знаков 2/4
+    lambda 3.0   пара 0.9206 -> 0.9944  (+0.0738)  p = 0.382  знаков 3/4
+                 ранг 0.5530 -> 0.5520  (-0.0010)  p = 0.092  знаков 3/4
+
+and CYP2D6 gets worse by it, 1.041 to 1.138 and 1.461 to 1.742.
+
+**The two separators point different ways and both are sound.** Item 173 measured that the constant
+offset moves with lambda by up to twenty-five times its own spread, 4/4 on every enzyme, which no
+property of two fixed assays can do. This item measures that a free slope does not move from one,
+which is what a linear shrinkage correction would have needed. Together they say the offset is a
+property of the fit and the fit-dependence is **not linear in `pi_hat`**, so both the assay reading
+and the shrinkage reading are wrong.
+
+A third mechanism fits both and is written as a candidate. `g` is nonlinear, so
+`E[g(pi_hat)] != g(E[pi_hat])`: the gap is a Jensen term that depends on the *variance* of the
+prediction, not on its scale. That variance falls as lambda rises, which produces exactly item 173's
+lambda dependence; and rescaling `pi_hat` by `b` does not change the residual variance, which is why
+a slope does not help. Testing it needs the per-compound predictive variance, which the trunk does
+not currently expose.
+
+**One thing does line up across three independent routes, and it is CYP3A4 again.** Under the affine
+form its offset moves from +0.213 to **+0.370**, toward item 171's algebraic +0.556; it is also the
+enzyme whose offset moves least with lambda (27 per cent against CYP2D6's 67). Two hints that its
+offset has a real lambda-independent component on top of the fit-dependent one. Neither is decisive
+and both point the same way.
+
+**176. The trunk's +0.031 does not reach the ensemble.** `verify/k46_five.py --trunk
+trunk_calshift.json`, which composes the five-member ensemble from saved predictions. Item 174
+recorded the caveat; this is it cashed out.
+
+    состав                        ствол twohead      ствол calshift 0.3
+    пять, обычный               0.6824 / 0.6063       0.6784 / 0.6055
+    пять, МЗ в четырёх          0.6653 / 0.6230       0.6602 / 0.6226
+    четыре, базовый             0.6819 / 0.6009                     --
+    четыре, мёртвая зона        0.6611 / 0.6198                     --
+
+**Rank moves -0.0008 and -0.0004** -- nothing, an eighth of the macro floor. The metric improves by
+0.0040 and 0.0051, consistently in sign but small.
+
+So a member that improves by 0.031 on its own contributes nothing to the average of five. The
+reading that fits is the ordinary one about ensembles and is worth stating because the file will
+meet it again: **the trunk improved by being pulled toward the target the other four already fit
+well**, and an ensemble pays for disagreement, not for agreement. Item 92 recorded the same shape
+from the other side -- the Gaussian process is worse alone and better in the ensemble.
+
+Item 174's number stands as written and is about a component. The submission is unchanged at
+0.6230.
+
+A bug of mine, recorded because its output was a full and plausible table. Adding `--trunk` to
+`k46_five.py` introduced a variable named `tag`, and the file already used `tag` as the loop
+variable in `for tag in ("пара", "rho")`. After the first seed the trunk key became `rho|1|3.0`,
+every later seed was silently skipped as "no trunk", and the printed table -- computed on seed 0
+alone -- looked entirely normal at 0.7001 against the correct 0.6824. Caught only by comparing
+against the previously published number.

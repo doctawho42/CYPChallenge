@@ -54,13 +54,26 @@ from shrinkchoice import fit_apply
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 LAM = "3.0"        # принятая настройка ствола, пункт 120
+TRUNK_DEFAULT = "trunk_twohead.json"
 
 
 def main():
     rows = pd.read_csv(D + "rows.csv")
     tr = (pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
             .set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index())
-    T = json.load(open(RES + "preds/trunk_twohead.json"))["preds"]
+    import argparse as _ap
+    _p = _ap.ArgumentParser()
+    _p.add_argument("--trunk", default=TRUNK_DEFAULT,
+                    help="какой файл ствола подставлять пятым членом")
+    _p.add_argument("--lam", default=LAM)
+    _a = _p.parse_args()
+    lam = _a.lam
+    T = json.load(open(RES + "preds/" + _a.trunk))["preds"]
+    # ВНИМАНИЕ: имя `tag` в этом файле уже занято циклом по именам метрик
+    # (`for tag in ("пара", "rho")`), и переиспользование молча роняло все сиды
+    # кроме первого --- таблица при этом печаталась как ни в чём не бывало.
+    mode_tag = _a.trunk.replace("trunk_", "").replace(".json", "")
+    print(f"ствол: {_a.trunk}, режим {mode_tag}, lambda {lam}")
 
     P = {}
     for fn in ("oof_dzens.json", "oof_dzens123.json"):
@@ -72,7 +85,7 @@ def main():
 
     rec = []
     for seed in seeds:
-        tk = f"twohead|{seed}|{LAM}"
+        tk = f"{mode_tag}|{seed}|{lam}"
         if tk not in T:
             print(f"(нет ствола для сида {seed}, пропускаю)")
             continue
