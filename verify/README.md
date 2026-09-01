@@ -5481,3 +5481,35 @@ name with `arm.split("w")[1].split()[0]`, which on `"поферментно+NCGC
 `"0.1,"` and fails in `float()`. The per-enzyme NCGC arm therefore died instantly three separate
 times, twice inside a queue whose wrapper reported success. Replaced with a regular expression.
 Both failures of the day were in scaffolding rather than in method, and both were silent.
+
+**188. Multi-task trees recover what pooling loses and add on top, which confirms item 180's
+diagnosis.** `src/ablmulti.py`, four seeds.
+
+Item 180 measured that pooling reverses on depth-5 trees and recovers at depth 8, and gave the
+reason: the share of root-to-leaf paths through the enzyme indicator goes from 0.34 to 0.59, so a
+pooled model spends depth isolating the enzyme before it can model anything conditional on it. The
+prediction that follows is sharp -- a tree that carries four values in every leaf gets the same
+conditioning at **no depth cost**, so it must beat the per-enzyme model at depth 5, where pooling
+loses.
+
+    рука                     MACRO пара   MACRO ранг      1A2      2C9      2D6      3A4
+    независимо                   0.7204       0.5615        —        —        —        —
+    пул                          0.7378       0.5411  -0.0033  -0.0410* -0.0175* -0.0197*
+    многозадачно                 0.7268       0.5684  +0.0208* +0.0075* +0.0166* -0.0171*
+    многозадачно, масштаб        0.7275       0.5679  +0.0234* +0.0053  +0.0167* -0.0200*
+
+**+0.0069 of macro rank over the per-enzyme reference and +0.0273 over pooling**, with three
+enzymes above their own floors. The diagnosis holds: the same enzyme conditioning that costs
+pooling 0.020 of rank when bought with depth is worth +0.007 when it is free.
+
+**CYP3A4 is the exception and it is the expected one.** It loses 0.0171, five times its floor, and
+it is the enzyme with the most labels -- 2335 against 1285 to 1493. Sharing structure helps the
+tasks with least data and can cost the task with most, which is ordinary negative transfer on the
+data-rich task rather than anything specific to this problem. It also means the arm is not a
+drop-in replacement: the honest form is multi-task for CYP1A2, CYP2C9 and CYP2D6 with CYP3A4 fitted
+alone, which is a per-enzyme choice like item 184's.
+
+The scaled variant, which normalises each output's residual so the widest-residual enzyme cannot
+dominate the shared split criterion, is indistinguishable from the plain one (0.5679 against
+0.5684). That sub-question closes: the sparse label matrix's zero residuals do bias the criterion,
+but not enough to matter once the Gauss-Newton weighting is in place.
