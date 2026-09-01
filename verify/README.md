@@ -4702,3 +4702,67 @@ it depends on the cavity -- unlike a fingerprint, an embedding or a protein coor
 are functions of things we already have. There is not one mention of docking, SMARTCyp or a PDB
 identifier in 167 items. It is also the largest compute commitment yet proposed: 4905 molecules by
 four structures is about twenty thousand runs.
+
+**169. One (E, h) does not describe CYP3A4 at all -- and the 530 unscreened compounds, where the
+defect was expected, are not where it lives.** `verify/k48_calpop.py`.
+
+The concern arrived from outside and was well aimed: `verify/g1_calib.py` fits the instrument
+constants on the mask "has a curve AND has a screening reading", and item 129 established that
+CYP3A4's training set is 1805 screened library compounds plus a 530-compound analog campaign that
+was never screened. So on CYP3A4 the calibration is fitted on 1805 rows and applied to 2335, which
+is item 83's error class. The other three enzymes have **zero** labelled compounds without a
+reading, so this is a CYP3A4 question only.
+
+    группа        n   медиана y     IQR   медиана полосы   доля y < pC0
+    в скрине   1805       4.203   1.635            0.412         53.6 %
+    кампания    530       4.454   1.189            0.315         44.0 %
+
+**The proposed test cannot be run, and the reason is the concern itself.** The calibration residual
+needs a screening reading to exist; the 530 have none. There is no population on which to measure
+the misfit, because the missing reading is what defines the population.
+
+So the question was asked one step back: how population-dependent is (E, h) at all? Split the
+screened set at the median of the axes the campaign actually differs on, refit each half, and
+transport the constants across. The bench reproduces the published constants first --- 0.728/1.260,
+0.621/1.112, 0.867/1.242, 0.931/1.967, identical to `CAL_E` and `CAL_H` in `src/trunk.py`.
+
+    фермент   раскол по полосе    раскол по уровню метки
+    CYP1A2              +0.030                    +0.036
+    CYP2C9              +0.035                    +0.019
+    CYP2D6              +0.205                    +0.067
+    CYP3A4              +0.141                    **+1.365**
+
+**On CYP3A4 the Hill slope fitted on the lower half of the labels is 0.503 and on the upper half
+2.516 --- a factor of five inside one enzyme's own screened population.** Transporting the low
+half's constants to the high half gives a residual sd of 2.100 against that half's own 0.736, a
+2.9-fold blow-up. That is not an instrument constant being applied to the wrong population. **It is
+a single pair of constants failing to describe the population it was fitted on**, which is a worse
+and more general defect than the one suspected, and it was never recorded.
+
+**And the campaign is not where it bites.** Measured in units of the split just performed, the 530
+sit 0.15 of a split away on label level and 0.05 on band width --- an order of magnitude closer to
+the screened set than the halves are to each other. So "fitted on 1805, applied to 2335" is true
+and is the *least* important instance of the problem. Extrapolating to the campaign is a small step
+inside a map that is already wrong across its own domain.
+
+**The biochemistry the outside reading offered turns out to be the explanation, in a different
+place than proposed.** CYP3A4 is the textbook homotropic cooperative CYP: a large cavity that binds
+two ligands, with a Hill slope that varies with occupancy rather than sitting at one value. That is
+visible in our own published constant --- `CAL_H` is 1.968 on CYP3A4 against 1.261, 1.112 and 1.243
+elsewhere, the outlier of the four --- and the 0.503-to-2.516 swing measured here is that
+cooperativity resolved across the label range. CYP2D6's +0.205 on the band axis says it is not
+purely a CYP3A4 phenomenon, but CYP3A4's is an order of magnitude larger.
+
+**What this promotes.** A tree whose leaves carry local (E, h) instead of a constant --- proposed
+from outside as the one unclosed form of informed boosting, at a medium prior --- is no longer a
+speculative form. It is the direct fix for a defect now measured: the split by structure defines a
+chemotype and the instrument physics is fitted inside it, which is exactly what a calibration whose
+parameters swing five-fold across a population requires. The prior on it should be raised
+accordingly.
+
+**What this puts at risk.** Three things on CYP3A4 pass through these constants: the trunk's
+screening channel (item 79, -0.0264 of pair), the band model the dead zone reprojects onto (items
+148, 164), and the estimate of delta. None is invalidated by this --- the constants were fitted to
+minimise residual over the whole screened set and remain the best single pair --- but every one of
+them inherits a map with a 0.612 residual sd on CYP3A4, the worst of the four enzymes by a factor
+of at least 1.2, and now with a named reason.

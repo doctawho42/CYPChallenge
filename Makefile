@@ -104,10 +104,11 @@ verify-bounds: data/feats.npz  ## k28-k35: what is provably out of reach, and th
 	done
 	@echo "logs in results/logs/"
 
-verify-ceiling: data/feats.npz  ## k36-k44: the gap to the screen, the criterion, the learner (~60 min)
+verify-ceiling: data/feats.npz  ## k36-k48: the gap to the screen, the criterion, the learner (~60 min)
 	@mkdir -p results/logs
 	@for f in k36_ceiling k37_gap k38_trunc k39_splits k40_topk k41_earlystop \
-	          k42_visiblerank k43_lbpredict k44_bits; do \
+	          k42_visiblerank k43_lbpredict k44_bits \
+	          k46_five k47_perenzyme k48_calpop; do \
 	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
 	done
 	@echo "logs in results/logs/"
