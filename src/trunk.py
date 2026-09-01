@@ -131,7 +131,7 @@ class Net(nn.Module):
         return self.head_pic(h), self.head_scr(h)
 
 
-def g_of_pi(pi, e_, h_, d_=None):
+def g_of_pi(pi, e_, h_, d_=None, b_=None):
     """log2fc predicted from pIC50 through the fitted instrument calibration.
 
     g(pi) = log2(1 - E / (1 + 10^{h (pC0 - pi - d)})). Differentiable in pi, so the screening
@@ -165,7 +165,10 @@ def g_of_pi(pi, e_, h_, d_=None):
     # eta = 0.5 and eta = 1 to exactly this. Clamping at +-30 changes nothing that was
     # already finite - 10^30 and inf give the same inhibited fraction to float precision -
     # and only replaces nan gradients with finite ones.
-    arg = PC0 - pi if d_ is None else PC0 - pi - d_
+    # Эффективная потенция: b*pi + d. b_=None означает b=1, d_=None означает d=0,
+    # поэтому режимы до calshift и сам calshift идут по прежней арифметике.
+    eff = pi if b_ is None else b_ * pi
+    arg = PC0 - eff if d_ is None else PC0 - eff - d_
     inh = e_ / (1.0 + torch.pow(10.0, torch.clamp(h_ * arg, min=-30.0, max=30.0)))
     return torch.log2(torch.clamp(1.0 - inh, min=1e-3))
 
@@ -242,6 +245,26 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
     # rather than an error.
     cal_p = None
     cal_d = None
+    cal_b = None
+    if mode == "calaff":
+        # Аффинная замена постоянному сдвигу: g(a + b*pi) вместо g(pi - d).
+        #
+        # Зачем. Если pi_hat усажен, то E[pi_hat | pi] = pi_bar + beta*(pi - pi_bar) при
+        # beta < 1, а прибор ждёт pi. Ошибка равна (1 - beta)*(pi_bar - pi): она ноль в
+        # среднем и растёт ЛИНЕЙНО к краям, поэтому одна константа исправляет её ровно в
+        # одной точке. Разделитель 1 (пункт 173) уже показал, что найденный сдвиг зависит
+        # от lambda и значит держится за шкалу модели; здесь проверяется, разожмёт ли
+        # свободный наклон эту усадку обратно.
+        #
+        # Предрегистрация. Усадка -> b_e заметно больше единицы. Внешний межанализовый
+        # сдвиг -> b_e около единицы, работает только a_e. Разделение жёсткое, потому что
+        # два числа на фермент разделяют то, что одно смешивает.
+        #
+        # b = 1 + tanh(raw) в (0, 2), a = 2*tanh(raw) в (-2, 2), оба нулевых raw дают
+        # b = 1 и a = 0, то есть в точке инициализации calaff ТОЖДЕСТВЕН calibrated.
+        cal_d = torch.nn.Parameter(torch.zeros(len(CYPS), device=device))
+        cal_b = torch.nn.Parameter(torch.zeros(len(CYPS), device=device))
+        params += [cal_d, cal_b]
     if mode == "calshift":
         # Инициализация нулём: на первом шаге calshift ТОЖДЕСТВЕН calibrated, поэтому всё,
         # что он выигрывает, выиграно сдвигом, а не другой отправной точкой. Ограничение
@@ -282,8 +305,9 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
                         e_ = torch.sigmoid(cal_p[0]) * 1.5
                         h_ = torch.nn.functional.softplus(cal_p[1])
                     d_ = None if cal_d is None else 2.0 * torch.tanh(cal_d)
+                    b_ = None if cal_b is None else 1.0 + torch.tanh(cal_b)
                     loss = loss + lam * masked_mse(
-                        (g_of_pi(pi, e_, h_, d_) - smt) / sst, st[bt], mst[bt])
+                        (g_of_pi(pi, e_, h_, d_, b_) - smt) / sst, st[bt], mst[bt])
             opt.zero_grad(); loss.backward(); opt.step()
 
     net.eval()
@@ -297,9 +321,16 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
     if cal_d is not None:
         with torch.no_grad():
             dd = (2.0 * torch.tanh(cal_d)).cpu().numpy()
-        print("      сдвиг найден: " + " ".join(f"{c[3:]} {v:+.3f}" for c, v in zip(CYPS, dd))
-              + " | алгебраически (пункт 171): "
-              + " ".join(f"{v:+.3f}" for v in ALG_SHIFT), flush=True)
+            bb = None if cal_b is None else (1.0 + torch.tanh(cal_b)).cpu().numpy()
+        if bb is None:
+            print("      сдвиг найден: "
+                  + " ".join(f"{c[3:]} {v:+.3f}" for c, v in zip(CYPS, dd))
+                  + " | алгебраически (пункт 171): "
+                  + " ".join(f"{v:+.3f}" for v in ALG_SHIFT), flush=True)
+        else:
+            print("      аффинно: " + " ".join(f"{c[3:]} a{v:+.3f} b{w:.3f}"
+                                               for c, v, w in zip(CYPS, dd, bb)),
+                  flush=True)
     with torch.no_grad():
         p, _ = net(Xt[t(np.where(te)[0])])
     return p.cpu().numpy() * ys + ym
@@ -404,7 +435,7 @@ def main():
                     help="eta: порча скринингового канала в его же ско, ранг падает в "
                          "sqrt(1+eta^2) раз, масштаб сохраняется")
     ap.add_argument("--mode", default="twohead",
-                    choices=["twohead", "calibrated", "calfit", "calshift"],
+                    choices=["twohead", "calibrated", "calfit", "calshift", "calaff"],
                     help="twohead: free second head. calibrated: screen via g(pi) with the "
                          "instrument constants held fixed. calfit: the same g(pi), but E and h "
                          "are estimated jointly with the model instead of being carried in "

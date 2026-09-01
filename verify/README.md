@@ -5007,3 +5007,80 @@ enzyme, which is cheap and not run here.
 the coupling alone by 0.07 to 0.16 of metric at equal rank, and better than no screening channel by
 about 0.03 of rank. It is not evidence for an inter-assay shift, because the parameter it fits is
 not the one item 171 measured.
+
+**173. The trunk's fitted offset depends on lambda, so it is a property of the fit and not of the
+assay.** A separator that cost nothing: both runs already existed and the answer was in their logs.
+
+Item 172 could not say whether the per-enzyme offset was absorbing an inter-assay difference or
+compensating the shrinkage of `pi_hat`, and proposed correlating it against the affine pair's
+shrinkage. There is a cheaper test. **Shrinkage depends on how much weight the screening term
+carries; a physical offset between two assays does not depend on lambda at all.** The offsets are
+printed per fold, so four seeds by three lambdas by five folds were already on disk.
+
+    lambda 0.0   1A2 +0.000  2C9 +0.000  2D6 +0.000  3A4 +0.000   (n = 20)
+    lambda 0.3   1A2 -0.398  2C9 -0.049  2D6 -0.457  3A4 +0.213   (n = 20, sd 0.007-0.013)
+    lambda 3.0   1A2 -0.223  2C9 -0.030  2D6 -0.149  3A4 +0.270   (n = 20, sd 0.006-0.009)
+
+    фермент   разность 3.0 - 0.3   знаков   в единицах собственного sd
+    CYP1A2               +0.175      4/4                        ~25
+    CYP2C9               +0.019      4/4                         ~3
+    CYP2D6               +0.307      4/4                        ~24
+    CYP3A4               +0.057      4/4                         ~6
+
+**The offset moves on all four enzymes with 4/4 signs, by up to twenty-five times its own
+estimation spread.** A quantity describing two fixed assays cannot do that. The offset is tracking
+the model's scale, so item 172's reading is settled: what it fits is shrinkage compensation, and any
+inter-assay component is buried inside it and not separable by a constant.
+
+The relative movement is 44, 39, 67 and 27 per cent of the value at lambda 0.3. **CYP3A4 moves
+least in relative terms and is the enzyme whose algebraic offset (item 171) was largest**, which is
+what a real lambda-independent component on top of the fit-dependent one would look like. Two
+lambdas is not enough to claim it and it is written as a candidate.
+
+A method note, because this is the third time. `--mode calibrated` was proposed from outside as a
+new construction and had existed since the trunk was written; item 118 was the same failure and the
+decorrelation criterion was a third. The search that would have caught all three is by **mechanism,
+not by name**: `calibrated` contains no word resembling "coupling", it contains
+`log2(1 - E/(1 + 10^{h(pC0 - pi)}))`, and the formula is what should have been searched for.
+
+**174. The coupled screening channel with a free offset is worth +0.031 of rank on four seeds, and
+CYP3A4 clears its floor for the first time in the file.** `verify/k51_calshift.py`, paired across
+seeds because seeds are the repeated measure and pairing removes the split variance item 165
+measured.
+
+The identity control passes exactly: at lambda 0 `calshift` and `calibrated` agree to 0.000000 on
+both metrics, so the offset does nothing without a screening term and the comparison is between one
+parameter vector and its absence.
+
+**Is the channel worth having, now that the offset exists** -- lambda 0.3 against lambda 0 inside
+`calshift`:
+
+    ранг макро   +0.0308   t = +18.61   p = 0.0003   знаков 4/4
+    пара макро   -0.0012                p = 0.9190   знаков 2/4
+
+    CYP1A2  +0.0335   4/4        пол 0.0061
+    CYP2C9  +0.0325   4/4        пол 0.0071
+    CYP2D6  +0.0453   4/4        пол 0.0049
+    CYP3A4  +0.0113   4/4        пол 0.0033
+
+**Every enzyme clears its own floor and every sign is 4/4**, at a metric cost indistinguishable
+from zero. Among them is CYP3A4, which item 167 recorded as clearing its floor on nothing at all
+across 167 items and being pushed below it by pooling. This is the first intervention to move it.
+
+**What the offset itself buys** -- `calshift` against `calibrated` at equal lambda:
+
+    lambda 0.3   пара -0.0907   t = -3.75   p = 0.0331   знаков 4/4
+                 ранг -0.0022               p = 0.0780   знаков 3/4
+    lambda 3.0   пара -0.0796   t = -6.47   p = 0.0075   знаков 4/4
+                 ранг -0.0005               p = 0.6376   знаков 2/4
+
+Metric repaired by 0.08 to 0.09 with rank unmoved, which is the shape item 172 predicted: the
+offset fixes scale, not order. Per enzyme at lambda 0.3 the repair lands on CYP1A2 (-0.124) and
+CYP2D6 (-0.246) -- exactly the two whose fitted offsets are largest -- and CYP3A4 moves +0.014 the
+wrong way.
+
+**The caveat that has to travel with the headline.** This is the trunk alone. As a fifth ensemble
+member the trunk was worth +0.0054 of rank (item 120), so +0.031 to the trunk itself does not
+transfer one-for-one. Composing the five-member ensemble with the improved trunk is cheap --
+`verify/k46_five.py` does exactly that arithmetic from saved predictions -- and until it is run the
+number above is about a component and not about the submission.
