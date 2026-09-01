@@ -46,6 +46,11 @@ from shrinkchoice import fit_apply
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 ARM = "независимо+скрининг"
+# Второй кандидат в члены: аддитивная модель Фри-Вилсона на всех битах. Пункт 191 намерил
+# у неё профиль по стратам, ОБРАТНЫЙ профилю GP из пункта 97 --- она вредит на дальних
+# соседях и помогает на ближних. Именно противоположность профилей и есть та
+# дополнительность, которой ансамблю не хватает по пунктам 176 и 182.
+FW = ("oof_fw.json", "Фри-Вилсон, все 2048")
 
 
 def main():
@@ -54,6 +59,9 @@ def main():
             .set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index())
 
     S = {}
+    if os.path.exists(RES + "preds/" + FW[0]):
+        _f = json.load(open(RES + "preds/" + FW[0]))["preds"]
+        S.update({k: v for k, v in _f.items() if FW[1] in k})
     for fn in ("oof_aux.json", "oof_aux2.json", "oof_aux123.json"):
         p = RES + "preds/" + fn
         if os.path.exists(p):
@@ -74,12 +82,15 @@ def main():
     for seed in seeds:
         fold, _ = butina_folds(list(rows.SMILES), seed=seed)
         for ens in ("базовый ансамбль", "мёртвая зона везде"):
-            for add in (False, True):
-                r = {"seed": seed, "состав": ens + (" + скрининг" if add else "")}
+            for add in (None, ARM, FW[1]):
+                r = {"seed": seed,
+                     "состав": ens + ("" if add is None else
+                                      " + скрининг" if add == ARM else " + Фри-Вилсон")}
                 ok = True
                 for c in CYPS:
-                    ke, ks = f"{seed}|{ens}|{c}", f"{seed}|{ARM}|{c}"
-                    if ke not in E or (add and ks not in S):
+                    ke = f"{seed}|{ens}|{c}"
+                    ks = None if add is None else f"{seed}|{add}|{c}"
+                    if ke not in E or (add is not None and ks not in S):
                         ok = False
                         break
                     col = f"{c}_pIC50_direct_inhibition"
@@ -91,7 +102,7 @@ def main():
                     if len(a) != int(m.sum()):
                         ok = False
                         break
-                    if add:
+                    if add is not None:
                         b = np.asarray(S[ks], float)
                         # Ансамбль --- невзвешенное среднее ЧЕТЫРЁХ членов, поэтому
                         # пятый добавляется как (4a + b)/5.

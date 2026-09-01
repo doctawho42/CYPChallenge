@@ -5613,3 +5613,62 @@ multi-task trees with the mode as the task rather than the enzyme -- shared spli
 values per leaf -- which is item 188's machinery pointed at a different grouping and costs no rows
 at all. Item 188 measured that construction at +0.0069 of macro rank when the grouping was the
 enzyme.
+
+**191. Free-Wilson: the stratum profile came out as predicted, the compact basis did not exist, and
+the member still does not transfer.** `src/ablfw.py` and `verify/k53_screns.py`, four seeds.
+
+The proposal was well aimed at the data: the test set is 132 congeneric series, which is the shape
+Free-Wilson was devised for, and substituent contributions are estimated across the whole training
+table rather than within series, so "there are no series in training" is not an objection. It is not
+the classical method -- 4520 Murcko scaffolds over 4905 molecules leave no scaffold term to fit --
+so the model is additive in fragment indicators with the intercept absorbing the scaffold.
+
+**The stratum prediction holds on three strata of four.** The honest objection was that additivity
+holds within a series and breaks between scaffolds, so cluster cross-validation is its worst regime
+and the test its best, which is the shape of a convenient excuse and had to be measured. Difference
+against the ridge member by nearest-neighbour similarity:
+
+    рука                   <0.35   0.35-0.45   0.45-0.55    >0.55
+    Фри-Вилсон, top-50   -0.1503     -0.0994     -0.1085  -0.1274
+    Фри-Вилсон, top-200  -0.0753     -0.0520     -0.0381  -0.0380
+    Фри-Вилсон, все 2048 -0.0198     -0.0002     +0.0108  +0.0105
+
+The full model rises from the far stratum, crosses zero between 0.35-0.45 and 0.45-0.55, and then
+**plateaus** instead of continuing to rise. A monotone increase was predicted; three strata of four
+delivered it. And the profile is **opposite to the GP's**: item 97 measured the GP contributing most
+in the far stratum, this member contributes only in the near ones. The test sits at median
+similarity 0.587, inside the last stratum.
+
+**The proposal's premise is refuted, and more clearly on four seeds than on one.** The top-50 basis
+is flat-negative at every stratum, -0.15 to -0.13, with rank 0.4358; top-200 rises but stays below
+zero throughout. Item 150's fifty bits are the basis for **boosting**, where they carry 80.7 per cent
+of the block's effect through splits. They are not a basis for an additive model, and the reason is
+item 156: the head of the bit ranking is the shared coordinating pharmacophore, which is what
+analogues have **in common**. Free-Wilson needs what distinguishes them, and that lives in the tail.
+
+**And the member does not transfer, which refutes my own argument rather than the proposal's.**
+
+    состав                             пара     ранг      1A2      2C9      2D6      3A4
+    базовый ансамбль                 0.6819   0.6009   0.5314   0.6393   0.4557   0.7770
+    + скрининг                       0.6755   0.6067   0.5346   0.6524   0.4567   0.7830
+    + Фри-Вилсон                     0.6754   0.6059   0.5336   0.6438   0.4584   0.7880
+    мёртвая зона везде               0.6611   0.6198   0.5473   0.6645   0.4710   0.7963
+    + скрининг                       0.6583   0.6212   0.5464   0.6728   0.4674   0.7981
+    + Фри-Вилсон                     0.6626   0.6173   0.5416   0.6593   0.4678   0.8004
+
+**+0.0050 on the plain ensemble, -0.0025 on the best one** -- the same shape as items 176 and 182,
+a third consecutive transfer failure. I had argued that an opposite stratum profile is the
+complementarity this ensemble lacks and should therefore help. The profile is opposite and it does
+not help, so **an opposite stratum profile is not sufficient**.
+
+Two independent lines now say the same thing. `src/ablncl.py`, partial at three arms of eight on
+seed 0, drives the members' error correlation from 0.9385 down to 0.7138 and the ensemble declines
+monotonically with it -- 0.5698, 0.5683, 0.5611 -- while the individual member falls from 0.5436 to
+0.4703. Diversity can be manufactured and it does not pay. **Diversity is not this ensemble's
+binding constraint**, and the search for members that are wrong differently should stop until
+something says otherwise.
+
+One exception is worth keeping. On CYP3A4 the dead-zone ensemble with Free-Wilson reaches **0.8004**,
+the highest figure for that enzyme anywhere in this file. CYP3A4 has now responded to three separate
+structural interventions -- the two-site instrument (178), the mode divergence (184) and additivity
+here -- while clearing its floor on no ordinary feature block in 190 items.
