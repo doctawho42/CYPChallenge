@@ -6438,3 +6438,53 @@ another size column; an effect concentrated on coordinators reads the mechanism 
 **And one correction to the order it proposed.** `Delta >= 0` was listed as the working channel to
 do second. It was built and measured the same day: item 196, the constraint **hurts** and the free
 version is neutral. That step is closed, not pending.
+
+**209. The kinetic link is negative, and the pre-registration attached to it fired correctly --
+which makes this the most informative null in the mechanistic line.** `src/ablkinet.py`, seed 0.
+
+The steady state of the scheme where an inhibitor is also a substrate gives
+`pIC50_obs = pKi - log10(1 + kcat_I/koff) - log10(1 + [S]/Km)`. The third term is per enzyme and
+already absorbed by `calshift`'s `d_e`; the second is per compound and is what was built.
+
+**The direction matters and the obvious version is arithmetic nonsense.** Our labels are the
+OBSERVED potency, with turnover already inside them, so subtracting delta from a model trained on
+them removes it twice. The scheme says the latent is pKi and the label is its corrupted image, so
+the correction runs the other way: train on `y + delta`, predict, report `f(x) - delta`. The gain
+then exists exactly when pKi is a smoother function of structure than pIC50 is. With a perfect
+learner it would change nothing, since delta is itself a function of structure -- **the whole
+effect is learnability**, which is what makes it falsifiable rather than tautological.
+
+**Pinning, and a correction to the constant proposed.** Pinning the Bell-Evans-Polanyi slope at
+`1/(RT ln10)` assumes the entire barrier reaches the rate, which over SMARTCyp's 2.5-to-75 kJ/mol
+span gives deltas up to nine log units against a pIC50 range of five. The BEP slope for hydrogen
+abstraction is nearer 0.4. So the shape is pinned and one global amplitude is left free:
+`delta = A log10(1 + 10^{-(E - 49.83)/14.3})`, and **A is swept rather than fitted**, with `A = 0`
+as a paired control on the same folds -- fitting it and reporting the best would be the result.
+
+    рука            MACRO пара  MACRO rho     1A2     2C9     2D6     3A4
+    A=0.0 все           0.7150     0.5651  0.4957  0.5972  0.4027  0.7646   контроль
+    A=0.3 все           0.7257     0.5551  0.4865  0.5830  0.3966  0.7544
+    A=0.6 все           0.7397     0.5384  0.4816  0.5589  0.3697  0.7436
+    A=0.3 некоорд       0.7192     0.5641  0.4973  0.5885  0.4127  0.7577
+    A=0.6 некоорд       0.7315     0.5527  0.4747  0.5766  0.4125  0.7472
+
+**Every amplitude hurts, monotonically in A, on both criteria.** The fixed functional form was the
+only route by which this could have beaten item 179's SMARTCyp null -- a fixed form is more
+sample-efficient than a free one, and item 189 says removing freedom is what pays here. It did not.
+So the turnover channel is now closed in both of its forms, as a column and as a link.
+
+**And the pre-registration fired, which is the part worth keeping.** Zeroing delta on the 3505
+compounds carrying `[nX2]` -- haem coordinators, which sit on the iron and do not turn over, so
+their turnover branch is empty -- is better than correcting everything at **both** amplitudes,
+by +0.0090 at A = 0.3 and +0.0143 at A = 0.6. The chemical reading is therefore right about *where*
+a turnover correction does not belong; there simply is no correction that belongs anywhere. A
+mechanism can be correctly identified and still carry no usable signal, and this file has not had a
+clean example of that before.
+
+**One cell is under-powered rather than negative and is being run properly.** CYP2D6 at A = 0.3 on
+the non-coordinator arm gives 0.4127 against the control's 0.4027, +0.0100 against a floor of
+0.0049. Item 167 sets the standard that kills it for now: a single-seed per-enzyme difference has a
+spread of 0.005 to 0.007, so anything under about 0.015 on one seed says nothing. Seeds 1 to 3 and a
+permutation control on delta are queued. CYP2D6 is also the enzyme item 167 found that *every*
+feature intervention which has ever worked here works on, so a prior exists -- which is a reason to
+measure it, not to believe it.
