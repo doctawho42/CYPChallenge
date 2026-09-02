@@ -37,6 +37,8 @@ tutorial()
 import argparse
 import time
 
+import json
+
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
@@ -67,6 +69,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--mode", default="ансамбль5")
+    ap.add_argument("--cache", default="", help="куда сложить/откуда взять предсказания членов")
+    ap.add_argument("--trunk-dead", default="",
+                    help="файл ствола, обученного против спроецированной мишени "
+                         "(src/trunk.py --dead). Даёт третью руку: проход во ВСЕХ пяти.")
     a = ap.parse_args()
 
     rows = pd.read_csv(D + "rows.csv")
@@ -81,19 +87,58 @@ def main():
     fold, _ = butina_folds(list(rows.SMILES), seed=a.seed)
 
     print(f"сид {a.seed}, режим {a.mode}\n", flush=True)
-    t0 = time.time()
-    parts = SB.oof_members(X, y, mask, fold, a.mode)
-    print(f"члены посчитаны за {time.time()-t0:.0f} с: "
-          + ", ".join(k for k, _ in parts), flush=True)
+
+    def load_cache():
+        if not a.cache or not _pl.Path(a.cache).exists():
+            return None
+        C = json.load(open(a.cache))
+        if C.get("seed") != a.seed or C.get("mode") != a.mode:
+            return None
+        return ([(k, [np.asarray(v, float) for v in P]) for k, P in C["parts"]],
+                [(k, [np.asarray(v, float) for v in P]) for k, P in C["dzp"]])
+
+    got = load_cache()
+    if got is not None:
+        parts, dzp = got
+        print(f"члены и проход взяты из {a.cache}", flush=True)
+    else:
+        t0 = time.time()
+        parts = SB.oof_members(X, y, mask, fold, a.mode)
+        print(f"члены посчитаны за {time.time()-t0:.0f} с: "
+              + ", ".join(k for k, _ in parts), flush=True)
+        t0 = time.time()
+        dzp = SB.dz_pass(parts, X, mask, fold, (LO, HI))
+        print(f"проход мёртвой зоны за {time.time()-t0:.0f} с", flush=True)
+        if a.cache:
+            json.dump({"seed": a.seed, "mode": a.mode,
+                       "parts": [(k, [v.tolist() for v in P]) for k, P in parts],
+                       "dzp": [(k, [v.tolist() for v in P]) for k, P in dzp]},
+                      open(a.cache, "w"))
+            print(f"сложено в {a.cache}", flush=True)
 
     plain = [np.mean([P[e] for _, P in parts], axis=0) for e in range(len(CYPS))]
-    t0 = time.time()
-    dzp = SB.dz_pass(parts, X, mask, fold, (LO, HI))
-    print(f"проход мёртвой зоны за {time.time()-t0:.0f} с", flush=True)
     dz = [np.mean([P[e] for _, P in dzp], axis=0) for e in range(len(CYPS))]
 
+    arms = [("без прохода", plain), ("проход в четырёх", dz)]
+
+    if a.trunk_dead:
+        # Ствол, обученный против спроецированной мишени, подставляется НА МЕСТО обычного.
+        # Обрезка применяется, потому что её применяет src/submit.py, и потому что проход
+        # выброс не убрал, а переселил: на CYP2D6 минимум -360.26 стал максимумом 76.82.
+        J = json.load(open(a.trunk_dead))["preds"]
+        key = f"{SB.TRUNK_MODE}|{a.seed}|{SB.TRUNK_LAM}"
+        if key not in J:
+            raise SystemExit(f"нет ключа {key} в {a.trunk_dead}")
+        A = np.asarray(J[key], float)
+        td = [SB._trunk_clip(A[mask[:, e], e], y[mask[:, e], e]) for e in range(len(CYPS))]
+        five = []
+        for e in range(len(CYPS)):
+            other = [P[e] for k, P in dzp if k != "ствол"]
+            five.append(np.mean(other + [td[e]], axis=0))
+        arms.append(("проход во всех пяти", five))
+
     rows_out = []
-    for nm, P in (("без прохода", plain), ("проход в четырёх", dz)):
+    for nm, P in arms:
         r = score(P, y, LO, HI, mask, fold)
         r["рука"] = nm
         rows_out.append(r)
@@ -102,9 +147,12 @@ def main():
     cols = ["MACRO пара", "MACRO rho"] + [f"{c} rho" for c in CYPS]
     print()
     print(df[cols].round(4).to_string())
-    d_rho = df.loc["проход в четырёх", "MACRO rho"] - df.loc["без прохода", "MACRO rho"]
-    d_pair = df.loc["проход в четырёх", "MACRO пара"] - df.loc["без прохода", "MACRO пара"]
-    print(f"\nприрост ранга {d_rho:+.4f}, пары {d_pair:+.4f}")
+    base = df.loc["без прохода"]
+    for nm in df.index:
+        if nm == "без прохода":
+            continue
+        print(f"\n{nm}: прирост ранга {df.loc[nm, 'MACRO rho'] - base['MACRO rho']:+.4f}, "
+              f"пары {df.loc[nm, 'MACRO пара'] - base['MACRO пара']:+.4f}")
     print(f"пункт 164 на четырёх сидах: ранг +0.0167, пара -0.0171 "
           f"(0.6063 -> 0.6230, 0.6824 -> 0.6653)")
     print("""

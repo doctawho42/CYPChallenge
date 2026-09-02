@@ -40,7 +40,7 @@ import torch.nn as nn
 from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_error as strae
 from scipy.stats import spearmanr
 
-from cypsplit import butina_folds
+from cypsplit import butina_folds, fold_digest
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 
@@ -208,8 +208,50 @@ def masked_mse(pred, target, mask):
     return (d * d).mean()
 
 
-def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta=0.0):
-    """Train one fold and return held-out pIC50 predictions in original units."""
+def masked_mae(pred, target, mask):
+    """Mean ABSOLUTE error over observed cells only; zero if nothing is observed.
+
+    Not a cosmetic variant of `masked_mse`: it is a different ESTIMATOR. Squared error
+    estimates the conditional mean, absolute error the conditional median, and item 198 is
+    the standing reminder of what happens when that distinction is treated as a detail --
+    there a booster fitted on `sign(y - s)` with mean-valued leaves was compared against
+    Friedman's LAD as though the two were the same thing, and the resulting table looked
+    entirely plausible for a day.
+
+    It is here because the dead-zone pass needs the gradient of the metric. The metric is
+    L(p) = max(0, lo - p, p - hi), whose derivative is sign(p - clip(p, lo, hi)) -- exactly
+    the derivative of |p - t| at t = clip(p, lo, hi). So absolute error against the projected
+    target IS the metric's own gradient, and squared error against it is not.
+
+    Normalised by observed cells, identically to `masked_mse`, so that `lambda_scr` keeps
+    meaning the same thing when the two are swapped.
+    """
+    if mask.sum() == 0:
+        return pred.sum() * 0.0
+    return (pred - target)[mask].abs().mean()
+
+
+def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta=0.0,
+             target=None, l1=False):
+    """Train one fold and return held-out pIC50 predictions in original units.
+
+    `target` and `l1` are the dead-zone pass (item 164, and item 204 for the other four
+    members). `target` is the band-projected version of `y`, clip(p_oof, lo, hi), supplied by
+    the caller in ORIGINAL pIC50 units; `l1` switches the pIC50 head to absolute error.
+    Both default to the previous behaviour, so every existing number is unchanged to the bit.
+
+    THREE THINGS STAY ON `y` AND NOT ON `target`, and each would fail silently:
+
+      the observed-cell mask (`my`) --- it defines which cells are supervised at all;
+      the standardisation statistics `ym`, `ys` --- fitted on the LABEL, so that the
+        projected target is expressed in the label's units rather than its own;
+      the de-standardisation on return --- predictions must come back in label units.
+
+    Projecting in original units and standardising afterwards is equivalent to projecting in
+    standardised units, because standardisation is monotone for ys > 0:
+    clip((p-ym)/ys, (lo-ym)/ys, (hi-ym)/ys) == (clip(p,lo,hi)-ym)/ys. Original units are used
+    because the band arrives in them and two fewer matrices need converting.
+    """
     te = fold == f
     trn = ~te
 
@@ -231,7 +273,10 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
         b = ms[:, e] & trn
         if b.sum() > 1:
             sm[e], ss[e] = scr[b, e].mean(), max(scr[b, e].std(), 1e-6)
-    yn = (np.nan_to_num(y) - ym) / ys
+    # Мишень обучения: метка либо её проекция на полосу. ym/ys выше подогнаны по МЕТКЕ и
+    # только по обучающим фолдам --- это верно и здесь: проекция выражается в единицах
+    # метки, а не в своих собственных.
+    yn = (np.nan_to_num(y if target is None else target) - ym) / ys
     sn = (np.nan_to_num(scr) - sm) / ss
 
     # Degrading the screening channel by a known amount. The division by sqrt(1 + eta^2)
@@ -327,7 +372,7 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
         for b in np.array_split(g.permutation(idx), max(1, len(idx) // BATCH)):
             bt = t(b)
             p, s = net(Xt[bt])
-            loss = masked_mse(p, yt[bt], myt[bt])
+            loss = (masked_mae if l1 else masked_mse)(p, yt[bt], myt[bt])
             if lam > 0:
                 if mode == "twohead":
                     loss = loss + lam * masked_mse(s, st[bt], mst[bt])
@@ -468,6 +513,12 @@ def main():
                     help="обменять (E, h) между двумя ферментами, например CYP2D6,CYP3A4 - "
                          "единственное вмешательство, которое двигает карту прибора, "
                          "оставляя данные, метки, полосы, разбиение и информативность теми же")
+    ap.add_argument("--dead", default="",
+                    help="проход мёртвой зоны: путь к файлу предсказаний ВНЕ ФОЛДА, которые "
+                         "будут спроецированы на полосу и станут мишенью, плюс absolute_error "
+                         "на голове pIC50. Обычно results/preds/trunk_twohead.json. Ключ "
+                         "строится из ТЕКУЩИХ mode|seed|lam цикла, а не из константы: чужой "
+                         "сид сделал бы мишень не-вне-фолда и схема выродилась бы в тождество.")
     ap.add_argument("--noise", type=float, default=0.0,
                     help="eta: порча скринингового канала в его же ско, ранг падает в "
                          "sqrt(1+eta^2) раз, масштаб сохраняется")
@@ -506,12 +557,28 @@ def main():
               f"E {CAL_E.tolist()}, h {CAL_H.tolist()}", flush=True)
 
     if a.out is None:
-        tag = ("" if a.noise == 0 else f"_noise{a.noise:g}") + swap
+        tag = ("" if a.noise == 0 else f"_noise{a.noise:g}") + swap \
+              + ("_dead" if a.dead else "")
         a.out = RES + f"preds/trunk_{a.mode}{tag}.json"
     lams = [float(v) for v in a.lams.split(",")]
     seeds = [int(v) for v in a.seeds.split(",")]
     X, y, lo, hi, scr, smiles = load(a.blocks)
     print(f"X {X.shape} ({a.blocks}) | устройство {a.device}", flush=True)
+
+    dead = None
+    if a.dead:
+        dead = json.load(open(a.dead))
+        dead = dead.get("preds", dead)
+        meta = json.load(open(a.dead)).get("meta", {}) if a.dead else {}
+        print(f"мёртвая зона: мишень из {a.dead}"
+              + (f" (посчитан на {meta.get('device')}, torch {meta.get('torch')})"
+                 if meta else ""), flush=True)
+        if meta.get("device") and meta["device"] != a.device:
+            # Не педантизм: проекция берётся у предсказаний, посчитанных на другом
+            # вычислителе, и если он даёт другие числа, мишень построена не той моделью,
+            # которую мы перепроецируем. Тот же довод, что в submit._trunk_device.
+            print(f"  ВНИМАНИЕ: файл посчитан на {meta['device']}, а считаем на {a.device}",
+                  flush=True)
 
     saved, table = {}, []
     for seed in seeds:
@@ -519,15 +586,54 @@ def main():
         # One draw per split seed, reused at every eta and in both modes: the ladder is
         # nested rather than independent, which takes the noise draw out of the comparison.
         zn = np.random.default_rng(90000 + seed).standard_normal(scr.shape).astype(np.float32)
+        if dead is not None and seed == 0:
+            # Сторож на фолды. Мишень честна только если файл-источник посчитан на ЭТИХ
+            # фолдах; иначе его предсказания видели строки, которые здесь отложены, и
+            # проход становится дистилляцией собственных ответов. Золотое значение то же,
+            # что пинит tests/test_split.py и проверяет submit._oof_trunk.
+            d = fold_digest(fold)
+            if d != "2d93c19815e14261":
+                raise SystemExit(f"дайджест фолдов {d}, ожидался 2d93c19815e14261: "
+                                 f"сплит сдвинулся, мишень мёртвой зоны больше не вне фолда")
         for lam in lams:
             t0 = time.time()
+            tgt = None
+            if dead is not None:
+                key = f"{a.mode}|{seed}|{lam}"
+                if key not in dead:
+                    raise SystemExit(f"нет ключа {key} в {a.dead}; "
+                                     f"есть: {sorted(dead)[:8]}")
+                A = np.asarray(dead[key], float)
+                if A.shape != y.shape:
+                    raise SystemExit(f"форма {A.shape} против {y.shape}: файл посчитан на "
+                                     f"другом порядке строк или другой сборке признаков")
+                if not np.array_equal(np.isnan(A), np.isnan(y)):
+                    raise SystemExit("маска NaN источника не совпадает с маской меток")
+                # Проекция в ИСХОДНОЙ шкале pIC50: полоса задана в ней, а нормировка
+                # происходит внутри run_fold по статистикам, подогнанным по МЕТКЕ.
+                # np.clip сохраняет NaN, поэтому маска мишени бит в бит равна маске меток.
+                # astype обязателен: np.clip возвращает float64, а MPS float64 не берёт
+                # и падает уже внутри run_fold, далеко от места ошибки.
+                tgt = np.clip(A, lo, hi).astype(y.dtype)
+                # Доля считается ПО НАБЛЮДАЕМЫМ ячейкам: в матрице 4905x4 меток только
+                # 6525 из 19620, и деление на все ячейки занизило бы её втрое.
+                obs = ~np.isnan(y)
+                ins = ((A >= lo) & (A <= hi))[obs]
+                print(f"  мишень {key}: уже внутри полосы {ins.mean():.1%}, "
+                      f"на краю {1-ins.mean():.1%} (по {int(obs.sum())} наблюдаемым)",
+                      flush=True)
+                for e, c in enumerate(CYPS):
+                    o = obs[:, e]
+                    print(f"      {c} {((A[:, e] >= lo[:, e]) & (A[:, e] <= hi[:, e]))[o].mean():.1%}",
+                          flush=True)
             pred = np.full_like(y, np.nan)
             for f in range(5):
                 te = fold == f
                 if te.sum() == 0:
                     continue
                 pred[te] = run_fold(X, y, scr, fold, f, lam, seed, a.device, a.mode,
-                                    zn=zn, eta=a.noise)
+                                    zn=zn, eta=a.noise,
+                                    target=tgt, l1=dead is not None)
             r = evaluate(y, lo, hi, pred)
             r["seed"], r["lambda"], r["mode"], r["noise"] = seed, lam, a.mode, a.noise
             table.append(r)

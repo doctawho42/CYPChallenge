@@ -6210,3 +6210,96 @@ to absolute, and the target from the label to its projection -- and `src/abldzen
 has that arm, and item 77 measured its entire gain dying under the affine pair, while item 164's
 +0.0167 is measured *after* the pair. Worth an arm anyway, because the argument currently spans two
 files and one of them is three months old.
+
+**205. The dead zone is now in all five members, and the reprojected trunk adds +0.0045 on top --
+item 164's lower bound was a lower bound.** `verify/k58_dzsubmit.py --trunk-dead`, seed 0.
+
+    рука                     MACRO пара  MACRO rho     1A2     2C9     2D6     3A4
+    без прохода                  0.6633     0.6164  0.5458  0.6597  0.4665  0.7936
+    проход в четырёх             0.6475     0.6300  0.5574  0.6820  0.4748  0.8057
+    проход во всех пяти          0.6457     0.6344  0.5618  0.6872  0.4800  0.8088
+
+`src/trunk.py --dead` trains the trunk against `clip(p_oof, lo, hi)` under absolute error. Item 164
+named this "the obvious next build" and predicted the direction, because every other member gained
+from the pass while the trunk had not had it.
+
+**Standalone the trunk gains more from the pass than any other member: +0.0350 of rank and -0.1602
+of pair** (0.560 to 0.595, 0.9192 to 0.7590), with all four enzymes up. **In the ensemble that
+arrives as +0.0045.** Sign holds on four enzymes of four (+0.0044 / +0.0052 / +0.0052 / +0.0031),
+but the macro figure sits just above the fixed-seed floor of 0.0036 on a single seed, so the
+consistent sign is worth more here than the magnitude.
+
+That is still a change from items 176 and 182, where a standalone +0.031 and +0.029 arrived as
+-0.0008 and +0.0014. The difference worth naming: those added a *member* to an ensemble that already
+fitted the target the same way, while this improves a member that was already there, along the one
+axis the other four had already moved.
+
+**Two implementation facts, both of which would have failed silently.**
+
+`np.clip` returns float64 and MPS refuses it, failing inside `run_fold` far from the cause. And the
+diagnostic that reports what fraction of predictions already sit inside their band divided by all
+19620 cells of the 4905x4 matrix rather than the 6525 observed ones, printing 10.3 per cent for a
+true 31.0 per cent. After the fix the per-enzyme figures are 23.3 / 43.2 / 20.6 / 35.5, reproducing
+an independent calculation exactly -- which is the check that the projection is built correctly.
+
+**The outlier did not go away, it changed sign.** The plain trunk's CYP2D6 predictions run to
+**-360.26** at the low end, which is why `submit._trunk_clip` exists; the reprojected trunk runs to
+**+76.82** at the high end instead. `_trunk_clip` is therefore still required, `src/submit.py`
+applies it and `verify/k46_five.py` does not -- so defect 3 of item 202 is less cosmetic than it
+looked, since composing without the clip averages a number near 77 into one member of five.
+
+**In `masked_mae` the docstring calls it an ESTIMATOR rather than a variant of `masked_mse`,**
+deliberately: squared error estimates the conditional mean and absolute error the conditional
+median, and item 198 is what happens when that is treated as a detail.
+
+**206. How much rank exchange is available, and why cross-validation cannot see the one axis that
+might carry it.** `verify/k59_rankoracle.py`. Item 128's procedure -- bound a whole class with one
+oracle before building any member of it -- applied for the first time to *rank* rather than to the
+metric numerator.
+
+The decomposition is arithmetic rather than empirical. The affine pair is strictly increasing, so it
+preserves Spearman exactly; a correction monotone *within* a group preserves order inside that group
+and can only move rank *between* groups. So every achievable rank gain splits into a within-group
+part and a between-group part, and each can be bounded by substituting the truth into one and
+leaving the model in the other.
+
+    фермент      n   в сериях     база   оракул A   A-база   sd_ист/sd_мод   rho внутри    beta
+    CYP1A2    1412         48   0.4957     0.4975  +0.0018           2.572        0.378   0.971
+    CYP2C9    1285         30   0.5972     0.5993  +0.0020           2.599        0.677   1.760
+    CYP2D6    1493         36   0.4027     0.4037  +0.0010           3.359        0.188   0.632
+    CYP3A4    2335        373   0.7646     0.7495  -0.0150           1.250        0.666   0.833
+
+**Perfect ordering inside analog series is worth -0.0026 of macro rank.** Not small: zero, and
+negative on the one enzyme with enough series to measure.
+
+**But the reason is a property of the training set, not of the mechanism, and that is the finding.**
+
+    сходство 0.60      серий   молекул в сериях
+    обучение (4905)     4565     500  = 10.2 %
+    тест      (750)      352     518  = 69.1 %
+
+**The test set is seven times more analog than the training set.** The organisers described it as an
+analog expansion and it is; our training data is not. So oracle A, computed where series barely
+exist, **bounds nothing about the test**, and this is the sharper statement: the series axis is one
+our cross-validation is structurally blind to. It is the same fact item 129 met from the other side
+in finding 93.6 per cent Butina singletons when it tried to build a test-like split.
+
+**What can still be decided, and it decides against.** Expansion inside a series by a factor k is
+monotone within the group, so it cannot change within-series order at all; its entire effect is
+between series, and it pays only if the model's within-series deviations are *informative* rather
+than merely compressed. Item 133 measured the compression -- spreads of 0.29 to 0.58 of what
+chemistry allows -- and read it as closing shrinkage. **A scale ratio cannot tell a compressed
+signal from noise:** pure noise gives the same ratio. The quantity that separates them is the
+attenuation slope `beta = rho_within * sd_true / sd_model`, and expansion is licensed only where
+`beta > 1`.
+
+On CYP3A4, the only enzyme with enough analog structure to estimate it (373 molecules against 30 to
+48 elsewhere), **beta = 0.833**. Below one. The deviations are noisier than they are compressed, and
+expanding them would amplify noise into the global ordering. Item 133 closed the series layer for
+the right reason by a different argument than it gave.
+
+**One oracle here is mine and is broken, recorded rather than reported.** Oracle B -- true group
+levels, model order inside -- returns +0.4277 of macro rank, and that number means nothing: with
+4565 groups over 4905 molecules almost every group is a singleton, so "the true group level" is the
+true label and the oracle degenerates into substituting it. A between-group oracle needs groups, and
+at this threshold the training set does not have them. The construction is at fault, not the data.
