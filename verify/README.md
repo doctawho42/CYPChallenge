@@ -5940,3 +5940,38 @@ its cavity is the largest of the four and its reference ligand is ritonavir at 9
 to 48 for the others, so overlap with it remains partly a measure of bulk. The ablation is therefore
 worth running, with the caveat that on CYP3A4 the feature is partly volume and the wrong-isoform
 control -- not a permutation -- is the one that can tell them apart.
+
+**200. The split-normal likelihood is negative, and with it all three unimplemented members of the
+document are measured.** `src/ablsplit.py`, four seeds, on the third attempt at a working harness.
+
+The control now reproduces: the dead zone on the squared corner gives **+0.0340** against the +0.032
+of items 148 and 181, so the table is readable for the first time.
+
+    рука                    пара     ранг      1A2      2C9      2D6      3A4
+    квадрат               0.7204   0.5615        —        —        —        —
+    расщ. нормаль         0.8106   0.5098  -0.0561  -0.0805  -0.0070  -0.0631
+    квадрат + МЗ          0.6835   0.5955  +0.0429  +0.0360  +0.0407  +0.0165
+    расщ. нормаль + МЗ    0.7252   0.5680  +0.0121  -0.0004  +0.0113  +0.0030
+
+**Negative both ways**: -0.0517 alone and -0.0275 on top of the dead zone. Section 4 specifies the
+split normal because the bands are asymmetric and averaging their edges loses that, which is true as
+a description of the data; as a training objective it costs rank on every enzyme.
+
+The two-by-two was built precisely because measuring the split normal against the squared loss alone
+could not separate "the asymmetry helps" from "the band helps", and the answer is neither: the hard
+tolerance carries the band's information and the graded weight adds nothing to it and something
+negative on its own.
+
+**So all three members of sections 4 and 10 that had never reached the code are now measured, and
+all three are negative** -- the split normal here, `Delta >= 0` in item 196, the jointly integrated
+TDI rule in item 197. That is worth stating plainly against the reading that prompted them, which
+was that the two interventions that worked were the two places where the code stopped being an MSE
+and became the document. The reading was right about those two and does not generalise: bringing the
+remaining specification into the code costs rank three times out of three.
+
+What survives of it is narrower and still useful. Physics enters through the measurement model
+(item 189, seven measurements) -- but as a **constraint that removes freedom the metric does not
+reward**, not as any faithful transcription of the generative story. The dead zone removes the
+freedom to chase inside the band; `calshift` removes the freedom of a second head to disagree with
+the instrument. The split normal, the monotone offset and the exact rule each *add* structure
+instead, and none pays.
