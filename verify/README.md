@@ -5869,7 +5869,8 @@ separately" -- is not supported. Breaking the residual pairs changes MCC by 0.00
 AUC by 0.004 and 0.003, on arms that differ in nothing else. The correlation is real and worth
 nothing here.
 
-**198. An unpinned initialisation broke a control, and only the control showed it.** `src/ablsplit.py`
+**198. [ДИАГНОЗ ИСПРАВЛЕН, см. ниже.] A control was broken, and the cause was not what this item
+first said.** `src/ablsplit.py`
 was written to test section 4's split-normal likelihood in a two-by-two against the dead zone, and
 its control arm -- squared plus dead zone, which must reproduce the +0.032 of items 148 and 181 --
 returned **-0.036** instead.
@@ -5885,9 +5886,36 @@ two hundred trees do not travel far from it; the trajectories diverge from the f
 booster is immune because its residual is continuous and a constant offset simply subtracts, which
 is exactly why the base arms matched to the bit while the dead-zone arms did not.
 
-The pins in these files cover `NTREE`, `LR`, `DEPTH` and `MAXFEAT` and did not cover initialisation.
-They do now. The wider point is the one this file keeps relearning: **the table looked entirely
-plausible**, and nothing but the requirement that a known number be reproduced would have caught it.
+**That diagnosis was wrong, and the correction is the more useful half.** Pinning the
+initialisation moved the control from -0.036 to -0.027 and did not close it, so the comparison was
+repeated across all four enzymes: the squared arms are bit-identical everywhere (0.000000) and the
+dead-zone arms differ by 1.11 to 1.40 on every one. The start was a real difference and a minor one.
+
+The actual cause is that the two files implement **different estimators**. `src/abldeadpair.py` does
+Friedman's LAD boosting -- the tree is grown on the ordinary residuals and then each leaf value is
+**replaced by the median of the residuals in it**, which is the gradient step for absolute loss and
+what matches `HistGradientBoostingRegressor(loss="absolute_error")`. `src/ablsplit.py` fitted
+`sign(y - s)` with mean leaf values, which is sign boosting: a different and much weaker estimator.
+
+And the fix already existed. `abldeadpair` carries a comment saying exactly this --
+
+    LAD-бустинг Фридмана: дерево строится по остаткам, но значение листа заменяется МЕДИАНОЙ
+    остатков в нём [...] Без этой замены получается бустинг по знаку, другой оценщик, и
+    сравнивать его с HistGB(loss="absolute_error") нельзя.
+
+-- so the defect had been found, fixed and documented in a sibling file, and a new `boost()` written
+from scratch reproduced precisely what the comment warns against. With Friedman's step the two
+implementations agree to **0.00000000**.
+
+Two lessons, and the second is the one worth carrying. The pins in these files cover `NTREE`, `LR`,
+`DEPTH` and `MAXFEAT` and cover neither the initialisation nor the leaf rule; they should name the
+estimator, not its hyper-parameters. And a debugged function should be reused rather than rewritten
+-- this is the same failure as searching the repository by the name of an idea instead of by its
+formula, which items 173 and 189 recorded twice before.
+
+The wider point stands and is now doubly earned: **the table looked entirely plausible at both
+attempts**, and nothing but the requirement that a known number be reproduced would have caught
+either.
 
 **199. The co-crystal overlay passes its design check on three enzymes and fails it on the fourth,
 for a readable reason.** `src/overlay.py`. Ligand coordinates in their **bound** poses were taken

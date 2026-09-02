@@ -75,17 +75,11 @@ EPS = 1e-3
 def boost(Xtr, ytr, Xte, seed, sm=None, sp=None, l1=False):
     """sm, sp --- сигмы вниз и вверх; заданы -> расщеплённая нормаль, иначе квадрат или L1."""
     rng = np.random.default_rng(seed)
-    # Старт --- СРЕДНЕЕ и для L1 тоже, как в src/abldeadpair.py. Медиана кажется
-    # естественнее для абсолютной потери, но для бустинга по ЗНАКОВЫМ остаткам стартовая
-    # точка задаёт, какие строки дают +1, а какие -1, и при шаге 0.06 модель за 200 деревьев
-    # от неё далеко не уходит. Первая версия стартовала с медианы, и рука "квадрат + МЗ"
-    # вместо известных +0.032 дала -0.036: числа выглядели правдоподобно, а таблица была
-    # нечитаема. Пинить надо и инициализацию, а не только NTREE/LR/DEPTH/MAXFEAT.
     s = np.full(len(ytr), float(ytr.mean()))
     pred = np.full(len(Xte), s[0])
     for _ in range(NTREE):
         if l1:
-            r = np.sign(ytr - s)
+            r = ytr - s
         elif sm is None:
             r = ytr - s
         else:
@@ -96,6 +90,16 @@ def boost(Xtr, ytr, Xte, seed, sm=None, sp=None, l1=False):
         t = DecisionTreeRegressor(max_depth=DEPTH, max_features=MAXFEAT,
                                   random_state=int(rng.integers(1 << 30)))
         t.fit(Xtr, r)
+        if l1:
+            # LAD-бустинг Фридмана: дерево строится по ОБЫЧНЫМ остаткам, а значение листа
+            # заменяется медианой остатков в нём. Это и есть шаг под абсолютную потерю.
+            # Первая версия фитила sign(y-s) со средними в листьях --- это бустинг по знаку,
+            # ДРУГОЙ оценщик, и он давал -0.027 там, где мёртвая зона стоит +0.032.
+            # Тот же комментарий уже стоял в src/abldeadpair.py; функцию надо было
+            # переиспользовать, а не писать заново.
+            leaf = t.apply(Xtr)
+            for lv in np.unique(leaf):
+                t.tree_.value[lv, 0, 0] = np.median(r[leaf == lv])
         s = s + LR * t.predict(Xtr)
         pred = pred + LR * t.predict(Xte)
     return s, pred
