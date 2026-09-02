@@ -172,6 +172,62 @@ def pooled_design(X, e):
     return np.hstack([X, ind])
 
 
+# Проход мёртвой зоны. Пины --- КОПИЯ gbm_reg() плюс absolute_error, ровно как в
+# src/abldzens.py:KW. Копия, а не ссылка: если gbm_reg когда-нибудь изменится, числа
+# пункта 164 должны перестать воспроизводиться ЗАМЕТНО, а не тихо разъехаться.
+DZ_KW = dict(max_iter=300, learning_rate=0.06, max_leaf_nodes=31,
+             l2_regularization=1.0, random_state=0, loss="absolute_error")
+
+
+def _dz_design(kind, X, e, Xte=None):
+    """Матрица признаков одного члена. Одна функция на путь вне фолда и на тестовый путь,
+    потому что дефект 2 пункта 202 --- ровно расхождение этих двух путей у гребневой.
+
+    Возвращает (Xtr, Xte_преобразованный). Преобразование, где оно есть, подгоняется НА
+    ОБУЧАЮЩИХ СТРОКАХ и применяется к тесту --- никогда на объединении.
+    """
+    if kind == "GP":
+        tf = gp_prepare(X)
+        return tf(X), (None if Xte is None else tf(Xte))
+    if kind == "гребневая":
+        A = np.nan_to_num(X[:, -DESC_MECH:].astype(np.float64), posinf=0.0, neginf=0.0)
+        mu, sd = A.mean(0), A.std(0) + 1e-9
+        f = lambda B: np.clip((np.nan_to_num(B[:, -DESC_MECH:].astype(np.float64),
+                                             posinf=0.0, neginf=0.0) - mu) / sd, -5.0, 5.0)
+        return f(X), (None if Xte is None else f(Xte))
+    if kind == "пул":
+        return pooled_design(X, e), (None if Xte is None else pooled_design(Xte, e))
+    return X, Xte
+
+
+def _dz_fit(kind, Xtr, target, Xte):
+    """Подгонка одного члена под спроецированную мишень. Зеркало src/abldzens.py:refit."""
+    if kind == "GP":
+        return gp_predict(Xtr, target, Xte)
+    if kind == "гребневая":
+        return RidgeCV(alphas=np.logspace(-1, 4, 12)).fit(Xtr, target).predict(Xte)
+    return HistGradientBoostingRegressor(**DZ_KW).fit(Xtr, target).predict(Xte)
+
+
+def _dz_oof(kind, X, target, fold, e):
+    """Один проход мажорирования вне фолда: та же модель, спроецированная мишень.
+
+    Мишень строится вызывающим как clip(p_oof, lo, hi), и p_oof обязано быть предсказанием
+    ВНЕ ФОЛДА. Проекция предсказаний модели на её же обучающих строках схлопывает схему в
+    тождество: переобученная модель кладёт каждую обучающую строку внутрь её полосы, мишень
+    становится равна предсказанию, градиент зануляется, и прогон отрабатывает чисто, ничего
+    не сделав. Разбор в докстринге src/abldead.py.
+    """
+    Xi, _ = _dz_design(kind, X, e)
+    p = np.zeros(len(target))
+    for f in range(5):
+        trn, te = fold != f, fold == f
+        if te.sum() == 0:
+            continue
+        p[te] = _dz_fit(kind, Xi[trn], target[trn], Xi[te])
+    return p
+
+
 def load_screen(rows):
     """Показания одноточечного скрининга в порядке rows.csv: (log2fc, есть_показание).
 
@@ -271,7 +327,48 @@ def _oof_one(X, y, mask, fold, pool, scr=None):
     return P
 
 
-def oof_predictions(X, y, mask, fold, mode, scr=None):
+def oof_members(X, y, mask, fold, mode, scr=None):
+    """Предсказания вне фолда КАЖДОГО члена по отдельности, как (вид, по ферментам).
+
+    Существует потому, что проход мёртвой зоны применяется к членам поодиночке: каждому
+    нужна своя спроецированная мишень и своя переподгонка. Порядок членов зафиксирован ---
+    он определяет, что именно усредняется, а среднее невзвешенное.
+    """
+    parts = [("поферментно", _oof_one(X, y, mask, fold, False, scr)),
+             ("пул", _oof_one(X, y, mask, fold, True))]
+    if mode in ("ансамбль", "ансамбль5"):
+        parts.append(("GP", _oof_gp(X, y, mask, fold)))
+        parts.append(("гребневая", _oof_ridge(X, y, mask, fold)))
+    if mode == "ансамбль5":
+        parts.append(("ствол", _oof_trunk(y, mask, fold)))
+    return parts
+
+
+def dz_pass(parts, X, mask, fold, bands):
+    """Проход мёртвой зоны по всем членам, у которых он определён.
+
+    Пункт 164: +0.0167 ранга на подаваемой пятичленной конфигурации, четыре сида, при
+    проходе в ЧЕТЫРЁХ членах. Ствол там не перепроецирован, отчего 0.6230 объявлено нижней
+    оценкой; здесь он пропускается по той же причине --- его переподгонка живёт в
+    src/trunk.py под torch, а не здесь.
+    """
+    LO, HI = bands
+    out = []
+    for kind, P in parts:
+        if kind == "ствол":
+            out.append((kind, P))
+            continue
+        Q = []
+        for e in range(len(CYPS)):
+            m = mask[:, e]
+            t = np.clip(P[e], LO[m, e], HI[m, e])
+            Q.append(_dz_oof(kind, X[m], t, fold[m], e))
+        out.append((kind, Q))
+        print(f"    мёртвая зона: {kind} перепод.", flush=True)
+    return out
+
+
+def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None):
     """Предсказания вне фолда в одном из трёх режимов.
 
     Ансамбль --- среднее двух базовых. Он выигрывает больше каждой из них: -0.0234 макро
@@ -282,13 +379,10 @@ def oof_predictions(X, y, mask, fold, mode, scr=None):
     которые постобработка не поглощает, --- и проверено, что не поглощает.
     """
     if mode in ("ансамбль", "ансамбль-без-GP", "ансамбль5"):
-        parts = [_oof_one(X, y, mask, fold, False, scr), _oof_one(X, y, mask, fold, True)]
-        if mode in ("ансамбль", "ансамбль5"):
-            parts.append(_oof_gp(X, y, mask, fold))
-            parts.append(_oof_ridge(X, y, mask, fold))
-        if mode == "ансамбль5":
-            parts.append(_oof_trunk(y, mask, fold))
-        return [np.mean([p[e] for p in parts], axis=0) for e in range(len(CYPS))]
+        parts = oof_members(X, y, mask, fold, mode, scr)
+        if bands is not None:
+            parts = dz_pass(parts, X, mask, fold, bands)
+        return [np.mean([P[e] for _, P in parts], axis=0) for e in range(len(CYPS))]
 
 
 TRUNK_LAM = "3.0"      # значение, на котором пункт 79 мерил канал
@@ -497,6 +591,13 @@ def main():
                          "порядке CYPS. Умолчание --- принятое правило: по среднему "
                          "апостериорному, с нулём на CYP1A2, см. docstring")
     ap.add_argument("--outdir", default=RES + "submission/")
+    ap.add_argument("--deadzone", action="store_true",
+                    help="проход мёртвой зоны во всех членах, где он определён. Пункт 164: "
+                         "+0.0167 ранга на подаваемой пятичленной конфигурации, четыре сида. "
+                         "Мишень --- clip(предсказание ВНЕ ФОЛДА, lo, hi), модель та же, у "
+                         "бустингов под absolute_error. Стоит одного полного прохода вне фолда "
+                         "поверх обычного счёта, потому что мишень нельзя строить из "
+                         "предсказаний на собственных обучающих строках.")
     ap.add_argument("--screen", action="store_true",
                     help="добавить строки скрининга в поферментный член. ВЫКЛЮЧЕНО по умолчанию: "
                          "пункт 177 даёт +0.029 ранга ОДИНОЧНОЙ модели, но пункт 182 померил тот "
@@ -555,8 +656,26 @@ def main():
             raise SystemExit(f"--delta: нужно одно число или четыре через запятую, дано {len(d)}")
         print(f"предполагаемый сдвиг по ферментам: "
               + ", ".join(f"{c} {v:+.2f}" for c, v in zip(CYPS, d)), flush=True)
-        P = oof_predictions(X, y, mask, fold, a.mode, scr)
+        P = oof_predictions(X, y, mask, fold, a.mode, scr,
+                            (LO, HI) if a.deadzone else None)
         lams = fit_shrinkage(P, y, mask, d)
+
+    dz_targets = None
+    if a.deadzone:
+        # Мишень тестового пути строится из предсказаний ВНЕ ФОЛДА на обучающих строках.
+        # Иначе схема вырождается: модель, спрошенная про свои же обучающие строки, кладёт
+        # их внутрь полос, мишень совпадает с предсказанием, переподгонка ничего не меняет,
+        # и прогон отрабатывает чисто (докстринг src/abldead.py). Это отдельный полный
+        # проход вне фолда, и он стоит примерно столько же, сколько всё остальное вместе.
+        print("проход вне фолда для мишеней мёртвой зоны", flush=True)
+        dzfold, _ = butina_folds(list(rows.SMILES))
+        dz_targets = []
+        for kind, P in oof_members(X, y, mask, dzfold, a.mode, scr):
+            if kind == "ствол":
+                continue
+            dz_targets.append((kind, [np.clip(P[e], LO[mask[:, e], e], HI[mask[:, e], e])
+                                      for e in range(len(CYPS))]))
+        print(f"    мишени готовы для {len(dz_targets)} членов", flush=True)
 
     print(f"обучаю на всей выборке (режим: {a.mode}) и предсказываю тест", flush=True)
     act = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})
@@ -573,7 +692,7 @@ def main():
         trunk_te = TR.fit_predict_test(fp_te, de_te, me_te, lam=float(TRUNK_LAM),
                                        seed=0, mode=TRUNK_MODE,
                                        blocks=meta.get("blocks"), device=dev)
-    if a.mode in ("пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
+    if dz_targets is None and a.mode in ("пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
         Xs = [pooled_design(X[mask[:, e]], e) for e in range(len(CYPS))]
         ys = [y[mask[:, e], e] for e in range(len(CYPS))]
         shared = gbm_reg().fit(np.vstack(Xs), np.concatenate(ys))
@@ -582,7 +701,15 @@ def main():
     for e, c in enumerate(CYPS):
         m = mask[:, e]
         parts = []
-        if a.mode in ("раздельно", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
+        if dz_targets is not None:
+            # Мёртвая зона: все члены строятся ОДИНАКОВО --- та же модель, спроецированная
+            # мишень, признаки через _dz_design, который подгоняет преобразование на
+            # обучающих строках и применяет к тесту. Это же снимает дефект 2 пункта 202:
+            # гребневая больше не стандартизуется на объединении обучения с тестом.
+            for kind, T in dz_targets:
+                Xtr_d, Xte_d = _dz_design(kind, X[m], e, Xte)
+                parts.append(_dz_fit(kind, Xtr_d, T[e], Xte_d))
+        elif a.mode in ("раздельно", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
             if scr is None:
                 parts.append(gbm_reg().fit(X[m], y[m, e]).predict(Xte))
             else:
@@ -592,9 +719,10 @@ def main():
                 Xa, ya = _screen_train(X, y, mask, scr[0], scr[1], e,
                                        np.ones(len(X), bool))
                 parts.append(gbm_reg().fit(Xa, ya).predict(_src0(Xte)))
-        if a.mode in ("пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
+        if dz_targets is None and a.mode in ("пул", "ансамбль", "ансамбль-без-GP",
+                                            "ансамбль5"):
             parts.append(shared.predict(pooled_design(Xte, e)))
-        if a.mode in ("ансамбль", "ансамбль5"):
+        if dz_targets is None and a.mode in ("ансамбль", "ансамбль5"):
             tf = gp_prepare(X[m])
             parts.append(gp_predict(tf(X[m]), y[m, e], tf(Xte)))
             B = _desc_scaled(np.vstack([X[m], Xte]))
