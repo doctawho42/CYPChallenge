@@ -6303,3 +6303,63 @@ levels, model order inside -- returns +0.4277 of macro rank, and that number mea
 4565 groups over 4905 molecules almost every group is a singleton, so "the true group level" is the
 true label and the oracle degenerates into substituting it. A between-group oracle needs groups, and
 at this threshold the training set does not have them. The construction is at fault, not the data.
+
+**207. Member disagreement does locate the ensemble's pairwise error -- and contains no better
+answer to it.** `verify/k60_contested.py`, on the five dead-zone members cached by `k58`, seed 0.
+
+Over two hundred items this file has measured ensemble spread per *compound* and never per *pair*:
+how often the five members disagree about which of two compounds is the stronger inhibitor. That is
+a different object, and it is the one the metric pays for, because the affine pair is strictly
+increasing and preserves every pairwise comparison exactly.
+
+**Measured in Kendall rather than Spearman, and the choice is forced.** "Impose the true order on
+contested pairs" is ill-posed on Spearman -- fixing an arbitrary subset of comparisons need not
+yield a consistent total order, and cycles are not hypothetical when members disagree. Kendall *is*
+a sum over pairs, so repairing a set of them is arithmetic with no ordering to construct. The affine
+pair preserves both, so nothing about the criterion is given up.
+
+    фермент       пар   спорных   несогл.   доля несогл. на спорных   ПОДЪЁМ   потолок tau
+    CYP1A2    996 166    0.3712    0.3035                    0.5111    1.377        +0.3102
+    CYP2C9    824 970    0.3355    0.2507                    0.5369    1.600        +0.2692
+    CYP2D6  1 113 778    0.4026    0.3359                    0.5175    1.286        +0.3477
+    CYP3A4  2 724 945    0.2784    0.1933                    0.5488    1.971        +0.2121
+
+**The target exists.** Contested pairs are 35 per cent of all pairs and carry 52 per cent of the
+discordance, a lift of **1.56**. Member disagreement is not decoration: it knows where the ensemble
+is wrong. The split is sharp in absolute terms too -- where the members agree the ensemble orders
+correctly 73 to 88 per cent of the time, where they argue, 57 to 62.
+
+**And the ensemble has nothing better to put there.** On contested pairs:
+
+    фермент   среднее   большинство   пофермент     пул      GP   гребневая   ствол
+    CYP1A2     0.5822        0.5780      0.5602  0.5509  0.5638      0.5124  0.5127
+    CYP2C9     0.5989        0.5893      0.5560  0.5246  0.5997      0.5366  0.5146
+    CYP2D6     0.5682        0.5641      0.5516  0.5437  0.5596      0.5236  0.4956
+    CYP3A4     0.6190        0.6110      0.5534  0.5392  0.6447      0.5319  0.5031
+
+**Majority vote loses to the mean on four enzymes of four**, and no member beats the mean
+consistently. The Gaussian process is the best member on all four but exceeds the mean only on
+CYP3A4, by 0.026, and loses on CYP1A2 and CYP2D6 -- one cell of twenty, chosen after seeing the
+table, which is the multiple-comparison trap this file writes pre-registrations to avoid. **So
+routing or reweighting among the members we have is closed**: the mean is already the best available
+combination exactly where the members argue.
+
+**The trunk sits at 0.4956 to 0.5146 on contested pairs -- a coin, on every enzyme.** It takes no
+part in pairwise ordering wherever the members disagree. That is an independent mechanism for item
+176's finding that the trunk's standalone gain does not reach the ensemble, arrived at from a
+direction item 176 did not look in.
+
+**How to read the ceiling, which is large and misleading.** Repairing every contested discordant
+pair is worth +0.2848 of Kendall on macro. It is an oracle with the truth substituted, and the
+lesson of items 126 and 128 is that the achievable fraction is small. Here the reason is visible
+rather than assumed: the mean already scores 0.58 on contested pairs, well above a coin, so those
+pairs are not systematically mis-ordered -- they are *hard*. A cascade would have to be right where
+five diverse models jointly are not, which is a demand for new information, not a rearrangement of
+what is present. Item 194 already measured that the ensemble is limited by data rather than by model
+diversity, and this is the same wall met per-pair instead of per-compound.
+
+**What survives.** Not the cascade, but the diagnostic: contested-pair rate is a cheap, label-free
+statistic computable **on the test set**, where 750 molecules give 280 875 pairs and no labels are
+needed to know which are contested. It is the only quantity found so far that measures where the
+submission is unreliable using the test set itself, and it does not require the analog structure
+that item 206 showed our cross-validation cannot see.
