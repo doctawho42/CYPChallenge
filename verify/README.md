@@ -6363,3 +6363,78 @@ statistic computable **on the test set**, where 750 molecules give 280 875 pairs
 needed to know which are contested. It is the only quantity found so far that measures where the
 submission is unreliable using the test set itself, and it does not require the analog structure
 that item 206 showed our cross-validation cannot see.
+
+**208. The test meets the ensemble in the same regime of internal consistency, and SMARTCyp's
+absolute scale was never lost -- so the quantum route closes for the second time.** Two
+measurements, `verify/k61_testcontested.py` and a five-minute read of `data/smartcyp.npz`.
+
+**The contested-pair rate transfers.** Item 207's statistic needs no labels, so it is the only
+diagnostic in this file computable on the 750 blinded molecules directly. Four sklearn members on
+both sides -- the trunk is excluded because item 207 measured it at 0.4956 to 0.5146 on contested
+pairs, a coin, so it inflates the rate with a random vote rather than a disagreeing opinion.
+
+    фермент   обуч. пар   спорных обуч.   тест пар   спорных тест   отношение
+    CYP1A2      996 166          0.2820    280 875         0.2835      1.0052
+    CYP2C9      824 970          0.2683    280 875         0.2431      0.9062
+    CYP2D6    1 113 778          0.3139    280 875         0.3580      1.1404
+    CYP3A4    2 724 945          0.2319    280 875         0.2310      0.9961
+    макро                        0.2740                    0.2789      1.012
+
+**Macro 1.012.** The submission is exactly as internally consistent on the test as out of fold, so
+item 207's 57-to-62-per-cent accuracy on contested pairs transfers as measured and the out-of-fold
+rank estimate is not optimistic for this reason. CYP2D6 is the one enzyme above -- 1.14 -- which is
+the same enzyme item 129 and item 144 keep finding on the wrong side of a composition question.
+
+This is a **negative result about a worry**, not a gain, and it is worth having as one: after item
+206 showed that cross-validation is structurally blind to the test's analog structure, a
+label-free statement about the test is worth more here than usual, and this one says the regime is
+the same.
+
+**And the quantum route is closed again, on the check proposed to rescue it.** An outside reading
+proposed predicting bond dissociation energies (ALFABET) as a turnover term, with the correct
+observation that item 179's SMARTCyp null would not settle it if the SMARTCyp block had been built
+from *rankings* -- which order atoms within a molecule -- rather than from an absolute
+inter-molecular energy scale. The block was read rather than assumed:
+
+    колонка          мин   медиана     макс
+    Score_min       2.47     49.83    74.98      кДж/моль, абсолютная шкала
+    2D6score_min   16.17     64.67   112.14
+    2Cscore_min    15.37     63.41   111.32
+
+`Score` is SMARTCyp's activation energy for hydrogen abstraction, on an absolute scale, aggregated
+by minimum, mean and count-below-threshold. The tool's `Ranking` output enters the block **only** as
+the binary `2D6_top_differs` / `2C_top_differs`. So the between-molecule absolute component was
+present, a free-form learner had it, and item 179 measured +0.0009 with no enzyme clearing its own
+floor. By the proposing argument's own criterion, ALFABET is the same measurement in different
+clothes.
+
+**The one narrow gap, stated because it is real.** SMARTCyp emits `Energy` and `Score` separately,
+and only `Score` was carried through; `Score` is the activation energy with an accessibility
+correction folded in. The pure barrier is therefore not in the block. The gap is narrow -- `Score`
+is dominated by the energy term and is on the same units -- but it is not nothing.
+
+**What the same reading got right, and where the disagreement actually lies.** The proposal is not
+to add a column but to replace the Hill link with the steady-state solution of the kinetic scheme,
+in which an inhibitor that is also a substrate has its apparent potency reduced by a turnover term:
+
+    pIC50_набл = pKi - log10(1 + kcat,I/koff) - log10(1 + [S]/Km)
+
+The algebra is right, the third term is already absorbed by `calshift`'s per-enzyme `d_e`, and the
+second is per-compound. But the net effect on the prediction is `f(structure) - delta_i(BDE)`, which
+is **an additive per-compound term derived from a barrier estimate with a fixed coefficient.** The
+difference from a feature column is the fixed functional form, not the channel it enters through.
+
+That difference is exactly what item 189 says should matter, so the proposal is not refuted by the
+null. But the prior is poor rather than neutral: a free-form learner with the absolute-scale column
+in hand found +0.0009. A fixed form beats a free one when data is scarce, and that is the only way
+this wins.
+
+**The pre-registration attached to it is the sharpest proposed in this file** and should be kept
+whoever builds it: the turnover branch is empty for haem coordinators, which sit on the iron and do
+not turn over, so the effect must live on the roughly 1400 non-coordinating compounds and be near
+zero on the 3505 carrying `[nX2]` (item 184's population split). A uniform effect across both is
+another size column; an effect concentrated on coordinators reads the mechanism backwards.
+
+**And one correction to the order it proposed.** `Delta >= 0` was listed as the working channel to
+do second. It was built and measured the same day: item 196, the constraint **hurts** and the free
+version is neutral. That step is closed, not pending.
