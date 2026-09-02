@@ -5975,3 +5975,63 @@ reward**, not as any faithful transcription of the generative story. The dead zo
 freedom to chase inside the band; `calshift` removes the freedom of a second head to disagree with
 the instrument. The split normal, the monotone offset and the exact rule each *add* structure
 instead, and none pays.
+
+**201. The organisers' own second CYP release is unusable, and it fails on the precondition item
+144 named rather than on anything new.** `openadmet/Octant_CYP_inhibition_reactivity_blog_release`
+on HuggingFace, CC-BY-4.0, released 6 August 2026. Found while searching for external sources under
+the rule item 166 extracted: new observations survive if the protocol is the same, and the same
+protocol only ever comes from the same laboratory. This is the same laboratory -- OpenADMET
+consortium, measured by Octant Bio, the people who make this challenge -- so it is the strongest
+prior any external source has had here.
+
+It still fails, and the counting takes ten minutes:
+
+    множество                                    молекул
+    Octant inhibition.tsv                           1340
+    пересечение с нашими обучающими                   14
+    из них с нашей меткой CYP3A4                        4
+    пересечение с 750 закрытыми тестовыми               1
+
+**Four molecules.** Item 144 rejected the NCGC panel at 32 / 11 / 48 / 21 because the offset's
+standard error came to 0.21 against a quantity of 0.45; this is an order of magnitude below the
+count that already failed. Nothing can be calibrated on four points, and the arm is not built for
+the same reason item 144 did not build its own.
+
+Three further defects, and the first two are fatal without any counting at all:
+
+- **Wrong arm.** The README states it plainly: a 30-minute active-enzyme pre-incubation, so the
+  fitted IC50 carries reversible *plus* time-dependent inhibition. Our target is
+  `_pIC50_direct_inhibition`. The one enzyme that matches is matched to the wrong column.
+- **One enzyme of four.** CYP3A4 only. CYP2J2 is present but is an isoform we are not graded on
+  and a different measurement entirely -- substrate depletion, not inhibition.
+- **A diversity library, not drugs.** Identifiers are `OCNT-...`, structures are combinatorial.
+  Our set is drug-like. That is *why* the overlap is 14 and not 400, and it is the general lesson:
+  **overlap is a property of the library, not of the size.** 1340 compounds of the wrong kind beat
+  none of 4905.
+
+**What the four points do say, stated as anecdote and not as measurement.** rho 1.000, offset
+Octant minus ours **+0.314**, sd of the difference **0.087** -- against NCGC's 0.48 to 0.84. The
+protocols look far more compatible than NCGC's did, and the sign is what pre-incubation should give
+(time-dependent inhibition makes a compound look more potent). On four molecules that is a
+coincidence with a plausible story, not a result, and it is recorded here only so that a future
+reader does not re-derive it and mistake it for one.
+
+**One test molecule is present.** Not a practical problem at n = 1, and it never reaches a model
+because the source is not used -- but stated, because item 144 checked the same thing for NCGC and
+the answer there was zero.
+
+**The screening rule this produces, which was implicit and is now explicit.** A foreign protocol is
+in principle repairable by subtracting an offset; the offset is estimable only from molecules
+measured on both sides; therefore **count the overlap before downloading anything**. It is ten
+minutes against a day. NCGC was chosen for its size (13126 structures) and died of its overlap;
+this one was chosen for its provenance and died of the same thing.
+
+**What survives, and it is not a leaderboard result.** `inhibition_wells.tsv` carries 16931
+well-level rows -- raw fluorescence, concentration, plate, row and column, outlier flag -- which is
+a layer *below* anything we hold. Item 114 established that our own confidence band is 3.92 sigma
+with sigma a deterministic function of the label at R^2 0.93 to 0.98, so the band is derived rather
+than independently measured, and that nothing in our data supplies a replacement. Well-level data
+with replicates and plate positions is exactly such a replacement, and **it needs no overlap at
+all**: how much of the observed variance is plate, position and replicate noise is a statement
+about the assay, not about which compounds went through it. That is the uncertainty line, not the
+rank line, and it is the only reason to keep this dataset in view.
