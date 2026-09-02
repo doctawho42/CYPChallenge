@@ -100,6 +100,7 @@ from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_erro
 import feats as F
 from cypsplit import butina_folds, fold_digest
 from gp import prepare as gp_prepare, gp_predict
+from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import RidgeCV
 from reweight import tilt
 
@@ -171,7 +172,62 @@ def pooled_design(X, e):
     return np.hstack([X, ind])
 
 
-def _oof_one(X, y, mask, fold, pool):
+def load_screen(rows):
+    """Показания одноточечного скрининга в порядке rows.csv: (log2fc, есть_показание).
+
+    Длинная таблица со столбцами enzyme и log2fc_estimate разворачивается в четыре вектора
+    длины n, выровненные по data/rows.csv --- как того требует CLAUDE.md: порядок строк
+    матрицы признаков задаёт rows.csv, и всякий, кто читает свою таблицу, обязан
+    переиндексироваться по ней, иначе признаки и метки молча разъезжаются.
+    """
+    sc = pd.read_csv(D + "cyp-challenge-single-concentration-TRAIN.csv")
+    L2 = np.full((len(rows), len(CYPS)), np.nan)
+    for e, c in enumerate(CYPS):
+        sub = sc[sc.enzyme == c].set_index("Molecule_Name")["log2fc_estimate"]
+        L2[:, e] = sub.reindex(rows.Molecule_Name).to_numpy(float)
+    return L2, ~np.isnan(L2)
+
+
+def _screen_train(X, y, mask, L2, has, e, trn):
+    """Обучающая таблица одного фермента: строки кривых плюс строки скрининга.
+
+    Возвращает (Xa, ya) с ОДНОЙ добавленной колонкой источника: 0 --- кривая, 1 --- скрининг.
+
+    Механизм пункта 177. Показание скрининга --- это log2fc при одной концентрации, не pIC50,
+    поэтому подмешать его как метку напрямую нельзя. Изотоническая регрессия log2fc -> pIC50
+    подгоняется на молекулах, у которых есть И кривая, И показание, и переносит показание в
+    шкалу метки. Связь убывающая: сильнее ингибирует --- ниже log2fc, отсюда increasing=False.
+
+    Строки добавляются ТОЛЬКО там, где у этого фермента кривой нет, так что ни одна ячейка
+    не получает две конкурирующие мишени, и добавленное --- новая супервизия, а не
+    перевзвешивание уже имеющегося. Таких строк 11505 против 6525 кривых.
+
+    `trn` --- булев вектор обучающих МОЛЕКУЛ. Изотоника подгоняется только по ним, потому что
+    подгонка по всему занесла бы отложенные метки в обучающие мишени через отображение ---
+    тихая версия утечки, которую этот файл ловил дважды.
+    """
+    sel = mask[:, e] & trn
+    Xa = [np.hstack([X[sel], np.zeros((int(sel.sum()), 1), np.float32)])]
+    ya = [y[sel, e]]
+
+    fitm = mask[:, e] & has[:, e] & trn
+    addm = has[:, e] & ~mask[:, e] & trn
+    # Порог 50 --- из src/ablaux.py: ниже него изотоника подгоняется по шуму. При отказе
+    # рука молча вырождается в обычную поферментную, что и есть правильное поведение.
+    if fitm.sum() >= 50 and addm.sum() > 0:
+        iso = IsotonicRegression(increasing=False, out_of_bounds="clip")
+        iso.fit(L2[fitm, e], y[fitm, e])
+        Xa.append(np.hstack([X[addm], np.ones((int(addm.sum()), 1), np.float32)]))
+        ya.append(iso.predict(L2[addm, e]))
+    return np.vstack(Xa), np.concatenate(ya)
+
+
+def _src0(Xb):
+    """Матрица предсказания с колонкой источника 0: спрашиваем как про кривую."""
+    return np.hstack([Xb, np.zeros((len(Xb), 1), np.float32)])
+
+
+def _oof_one(X, y, mask, fold, pool, scr=None):
     """Предсказания вне фолда одной из двух базовых моделей: раздельной или пулированной.
 
     Пул складывает все четыре набора меток в одну таблицу с индикатором фермента, так что
@@ -192,7 +248,12 @@ def _oof_one(X, y, mask, fold, pool):
                 a, b = fi != f, fi == f
                 if b.sum() == 0:
                     continue
-                P[e][b] = gbm_reg().fit(Xi[a], yy[a]).predict(Xi[b])
+                if scr is None:
+                    P[e][b] = gbm_reg().fit(Xi[a], yy[a]).predict(Xi[b])
+                else:
+                    L2, has = scr
+                    Xa, ya = _screen_train(X, y, mask, L2, has, e, fold != f)
+                    P[e][b] = gbm_reg().fit(Xa, ya).predict(_src0(Xi[b]))
             continue
         Xs, ys = [], []
         for e in range(len(CYPS)):
@@ -210,7 +271,7 @@ def _oof_one(X, y, mask, fold, pool):
     return P
 
 
-def oof_predictions(X, y, mask, fold, mode):
+def oof_predictions(X, y, mask, fold, mode, scr=None):
     """Предсказания вне фолда в одном из трёх режимов.
 
     Ансамбль --- среднее двух базовых. Он выигрывает больше каждой из них: -0.0234 макро
@@ -221,7 +282,7 @@ def oof_predictions(X, y, mask, fold, mode):
     которые постобработка не поглощает, --- и проверено, что не поглощает.
     """
     if mode in ("ансамбль", "ансамбль-без-GP", "ансамбль5"):
-        parts = [_oof_one(X, y, mask, fold, False), _oof_one(X, y, mask, fold, True)]
+        parts = [_oof_one(X, y, mask, fold, False, scr), _oof_one(X, y, mask, fold, True)]
         if mode in ("ансамбль", "ансамбль5"):
             parts.append(_oof_gp(X, y, mask, fold))
             parts.append(_oof_ridge(X, y, mask, fold))
@@ -436,6 +497,16 @@ def main():
                          "порядке CYPS. Умолчание --- принятое правило: по среднему "
                          "апостериорному, с нулём на CYP1A2, см. docstring")
     ap.add_argument("--outdir", default=RES + "submission/")
+    ap.add_argument("--screen", action="store_true",
+                    help="добавить строки скрининга в поферментный член. ВЫКЛЮЧЕНО по умолчанию: "
+                         "пункт 177 даёт +0.029 ранга ОДИНОЧНОЙ модели, но пункт 182 померил тот "
+                         "же арм в ансамбле и получил +0.0058 на базовом и +0.0014 на лучшем, то "
+                         "есть НИЖЕ макро-пола 0.0036. Диагноз там же: корреляция ошибок арма с "
+                         "ансамблем 0.935--0.969, он ошибается на тех же соединениях, а среднее "
+                         "платит за несогласие. Код оставлен, потому что для ОДИНОЧНОЙ модели "
+                         "+0.029 остаётся в силе, и потому что вариант ЗДЕСЬ иной: скрининг "
+                         "вставлен ВНУТРЬ поферментного члена, а не добавлен шестым. Механизм "
+                         "предсказывает тот же ноль, измерено это не было.")
     a = ap.parse_args()
 
     _pl.Path(a.outdir).mkdir(parents=True, exist_ok=True)
@@ -445,6 +516,7 @@ def main():
     z = np.load(D + "feats.npz")
     X = np.hstack([z["FP"], z["DESC"], z["MECH"]])
     rows = pd.read_csv(D + "rows.csv")
+    scr = None
     tr = (pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
             .set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index())
 
@@ -452,6 +524,19 @@ def main():
     LO = np.stack([tr[f"{c}_pIC50_direct_inhibition_conf_low"].to_numpy(float) for c in CYPS], 1)
     HI = np.stack([tr[f"{c}_pIC50_direct_inhibition_conf_high"].to_numpy(float) for c in CYPS], 1)
     mask = ~np.isnan(y)
+
+    if a.screen:
+        # Пункт 177: показания скрининга как МИШЕНЬ поферментной модели, +0.029 ранга на
+        # четырёх сидах, каждый фермент выше своего пола, и метрика улучшается одновременно.
+        # Только поферментный член: в пулированной рамке тот же скрининг давал +0.0040, и
+        # пункт 177 показал, что виновата была рамка, а не скрининг.
+        L2, has = load_screen(rows)
+        scr = (L2, has)
+        print("скрининг как мишень поферментного члена: "
+              + " ".join(f"{c[3:]} +{int((has[:, e] & ~mask[:, e]).sum())}"
+                         for e, c in enumerate(CYPS))
+              + f" строк (всего +{int((has & ~mask).sum())} к {int(mask.sum())} кривым)",
+              flush=True)
 
     print("строю признаки теста (переиндексация по именам, не пересчёт фильтра)", flush=True)
     te, Xte = test_features(desc_names, mech_names)
@@ -470,7 +555,7 @@ def main():
             raise SystemExit(f"--delta: нужно одно число или четыре через запятую, дано {len(d)}")
         print(f"предполагаемый сдвиг по ферментам: "
               + ", ".join(f"{c} {v:+.2f}" for c, v in zip(CYPS, d)), flush=True)
-        P = oof_predictions(X, y, mask, fold, a.mode)
+        P = oof_predictions(X, y, mask, fold, a.mode, scr)
         lams = fit_shrinkage(P, y, mask, d)
 
     print(f"обучаю на всей выборке (режим: {a.mode}) и предсказываю тест", flush=True)
@@ -498,7 +583,15 @@ def main():
         m = mask[:, e]
         parts = []
         if a.mode in ("раздельно", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
-            parts.append(gbm_reg().fit(X[m], y[m, e]).predict(Xte))
+            if scr is None:
+                parts.append(gbm_reg().fit(X[m], y[m, e]).predict(Xte))
+            else:
+                # На тесте обучающими являются ВСЕ молекулы, поэтому изотоника подгоняется
+                # по всей выборке. Это не утечка: отложенных меток здесь нет, отложен тест,
+                # а он в подгонке не участвует ни одной строкой.
+                Xa, ya = _screen_train(X, y, mask, scr[0], scr[1], e,
+                                       np.ones(len(X), bool))
+                parts.append(gbm_reg().fit(Xa, ya).predict(_src0(Xte)))
         if a.mode in ("пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
             parts.append(shared.predict(pooled_design(Xte, e)))
         if a.mode in ("ансамбль", "ансамбль5"):

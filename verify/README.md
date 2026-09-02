@@ -6035,3 +6035,59 @@ with replicates and plate positions is exactly such a replacement, and **it need
 all**: how much of the observed variance is plate, position and replicate noise is a statement
 about the assay, not about which compounds went through it. That is the uncertainty line, not the
 rank line, and it is the only reason to keep this dataset in view.
+
+**202. Three defects in `src/submit.py`, and a process failure of mine that produced none of them
+and cost more than all three.** An audit of every place the submitted model has a choice the metric
+does not pay for. The audit was worth running; what I did around it was not.
+
+**The process failure first, because it is the expensive one.** `CLAUDE.md` says in bold: *search
+`verify/README.md` for the idea before evaluating it.* Over this session I proposed or built four
+things that were already in the file:
+
+    предложено мной            уже было            что там сказано
+    цензурированные метки      пункт 105           "There is no censoring spike" -- дословно
+    монотонные ограничения     пункт 76            src/ablmono.py существует и прогнан
+    второй прибор для NCGC     пункт 144           калибровка невозможна, 11 общих молекул
+    скрининг в ансамбль        пункт 182           +0.0014, НИЖЕ макро-пола, с диагностикой
+
+The fourth is the costly one: I wired the screening arm into `submit.py`, added a learner switch to
+`src/ablaux.py`, and spent about three hours of wall clock measuring whether the +0.029 of item 177
+transfers from plain trees to HistGB -- while item 182 had already composed the same arm into the
+ensemble on four seeds and got **+0.0058 plain, +0.0014 on the best configuration**, against a macro
+floor of 0.0036, with the mechanism measured: error correlation 0.935 to 0.969, the arm is wrong
+where the ensemble is wrong. The learner question was real and is still unanswered; it is also
+irrelevant, because the transfer that fails is not between learners.
+
+The code is kept and the flag defaults to **off**, with the reason in the help text. Item 177's
++0.029 stands for any single model, and this build differs from item 182's in placing the screen
+*inside* the per-enzyme member instead of adding a sixth -- the mechanism predicts the same zero,
+and that variant has not been measured. It is not worth measuring first.
+
+**Defect 1: the default mode is four members, the scoreboard says five.** `--mode` defaults to
+`ансамбль`, and the fifth member is only reached through `ансамбль5`. `uv run python src/submit.py`
+with no flags therefore builds the four-member ensemble, while the scoreboard line reads "ансамбль
+из пяти (ЧТО ПОДАЁТСЯ СЕЙЧАС)". One of the two is wrong and it has to be decided rather than
+guessed, because item 120's +0.0054 for the trunk is the difference between them.
+
+**Defect 2: the ridge member that ships is not the ridge member that was measured.** `_oof_ridge`
+standardises on the training rows (`_desc_scaled(X[m])`, line 395); the test path standardises on
+training and test together (`_desc_scaled(np.vstack([X[m], Xte]))`, line 593). Two consequences and
+the second is worse than the first. The shipped member is a different estimator from the measured
+one, at per-enzyme floors of 0.0033 to 0.0071, so the difference is not free. And it is a
+transductive use of the test set: the test features enter the training-time scaling.
+
+**Defect 3: the composition study does not clip the trunk and the submission does.** `_trunk_clip`
+bounds the trunk's output to the enzyme's label range plus or minus two units, and `src/submit.py`
+applies it (lines 375 and 598). `verify/k46_five.py` contains no clip at all. Re-composed with the
+clip, seed 0 gives **0.6741 / 0.6077** against the published **0.6824 / 0.6063** -- 0.008 of pair,
+larger than the macro floor. The scoreboard's five-member row therefore describes a configuration
+adjacent to the submitted one rather than the submitted one.
+
+**What the audit says to do instead, and it is not a new idea.** Items 176 and 182 are two
+consecutive transfer failures with one shape: a standalone gain of +0.031 and +0.029 arriving at the
+ensemble as -0.0008 and +0.0014, at error correlations of 0.94 to 0.97. The single intervention that
+did reach the ensemble is the one applied to **every member at once** -- the dead zone, +0.0167 of
+rank on the submitted five-member configuration, four seeds, item 164. **It is in no member of
+`src/submit.py`.** That is not an idea awaiting evaluation, it is finished measurement awaiting a
+build, and it is four times anything the screening could have contributed. Searching for a sixth
+idea was the wrong activity; the file had already said so.

@@ -93,6 +93,7 @@ import time
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.isotonic import IsotonicRegression
 from sklearn.tree import DecisionTreeRegressor
 from evaluation.custom_scoring_functions import rae_soft_threshold_absolute_error as strae
@@ -106,8 +107,40 @@ CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 NTREE, LR, DEPTH, MAXFEAT = 200, 0.06, 5, 0.3
 
 
+# Какой учитель считает руки. Ставится в main() из --learner и НИКОГДА не меняется по ходу
+# прогона. Умолчание "plain" оставляет каждое число пунктов 158 и 177 побитово тем же:
+# на этом пути ни одна строка ниже не тронута.
+LEARNER = "plain"
+
+
+def boost_hist(Xtr, ytr, wtr, Xte):
+    """Учитель ПОДАЧИ --- копия gbm_reg() из src/submit.py, пины совпадают до цифры.
+
+    Зачем он здесь. Пункты 158 и 177 намерили +0.029 ранга у поферментного скрининга на
+    обычных деревьях, а подаётся HistGB. Пункт 158 в том же прогоне показал, что между этими
+    двумя учителями ЗНАК ПУЛИРОВАНИЯ РАЗВОРАЧИВАЕТСЯ: +0.0141 на HistGB и -0.027 на деревьях
+    глубины 5. Значит переносить результат с одного на другого без измерения нельзя, и эта
+    функция существует ровно для того, чтобы измерение было на том учителе, который подаётся.
+
+    early_stopping не задан НАМЕРЕННО: submit.py его не задаёт, а значит мерить надо так же.
+    Пин sklearn ставит его в 'auto', то есть включает выше 10000 строк --- поферментная
+    таблица со скринингом самое большее 4905 строк (CYP3A4: 2335 кривых плюс 2570 показаний),
+    так что порог не пересекается и подвоха пункта 159 здесь нет. Проверено, а не предположено.
+
+    max_features у HistGB нет, поэтому mf<x> в имени руки на этом пути НЕ ДЕЙСТВУЕТ. Руки с
+    mf на нём запускать бессмысленно --- это молча дало бы две одинаковые строки в таблице.
+    """
+    m = HistGradientBoostingRegressor(max_iter=300, learning_rate=0.06,
+                                      max_leaf_nodes=31, l2_regularization=1.0,
+                                      random_state=0)
+    m.fit(Xtr, ytr, sample_weight=wtr)
+    return m.predict(Xte)
+
+
 def boost(Xtr, ytr, wtr, Xte, seed, maxfeat=MAXFEAT):
     """Бустинг над обычными деревьями, квадратичная потеря, с весами строк."""
+    if LEARNER == "histgb":
+        return boost_hist(Xtr, ytr, wtr, Xte)
     rng = np.random.default_rng(seed)
     base = float(np.average(ytr, weights=wtr))
     s = np.full(len(ytr), base)
@@ -127,7 +160,12 @@ def main():
     ap.add_argument("--arms", default="независимо|пул|пул+скрининг|"
                                       "пул+скрининг, перемешанный|пул+скрининг w0.3")
     ap.add_argument("--out", default=RES + "preds/oof_aux.json")
+    ap.add_argument("--learner", default="plain", choices=["plain", "histgb"],
+                    help="plain: обычные деревья, как мерили пункты 158 и 177. "
+                         "histgb: учитель подачи, gbm_reg() из submit.py.")
     a = ap.parse_args()
+    global LEARNER
+    LEARNER = a.learner
     seeds = [int(x) for x in a.seeds.split(",")]
     arms = a.arms.split("|")
 
@@ -151,6 +189,7 @@ def main():
         L2[c] = sub.reindex(rows.Molecule_Name).to_numpy(float)
         S[c] = ~np.isnan(L2[c])
 
+    print(f"учитель: {a.learner}\n")
     print(f"{'фермент':8s} {'кривых':>8s} {'скрин':>8s} {'скрин без кривой':>18s} {'rho(log2fc, y)':>16s}")
     for c in CYPS:
         both = M[c] & S[c]
@@ -164,7 +203,7 @@ def main():
         fold, _ = butina_folds(list(rows.SMILES), seed=seed)
         for arm in arms:
             t0 = time.time()
-            r = {"seed": seed, "рука": arm}
+            r = {"seed": seed, "рука": arm, "учитель": a.learner}
             w_scr = 0.3 if "w0.3" in arm else 1.0
             use_scr = "скрининг" in arm
             shuffle = "перемешанный" in arm
@@ -255,7 +294,7 @@ def main():
                 y, lo, hi, fi = Y[c][m], LO[c][m], HI[c][m], fold[m]
                 p = p_all[c][m]
                 q = fit_apply(p, lo, hi, fi, np.ones(len(y)) / len(y))
-                out[f"{seed}|{arm}|{c}"] = p.tolist()
+                out[f"{seed}|{arm}|{c}|{a.learner}"] = p.tolist()
                 r[f"{c} пара"] = round(float(strae(y, q, y_true_upper=hi, y_true_lower=lo)), 4)
                 r[f"{c} rho"] = round(float(spearmanr(y, p).statistic), 4)
             for tag in ("пара", "rho"):
