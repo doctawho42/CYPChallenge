@@ -47,6 +47,22 @@
 Макро усредняет четыре фермента и потому тише каждого из них. **Поферментное заявление нельзя
 мерить макро-полом.**
 
+**Что закрыто за ночь 2 сентября, семь измерений подряд, все с контролями.** Ни одно не «не
+сработало» --- у каждого назван механизм, и два из них сходятся в одном утверждении.
+
+    193  низкий ранг из двух видов      -0.016 макро; +0.0227 на CYP2C9, где меток меньше всех
+    194  обучение на декорреляцию       корреляция 0.939 -> -0.302, ансамбль не растёт НИ ПРИ ЧЁМ
+    195  сплит по моде                  вредит и там, где гейт 184 дал лицензию: цена строк
+    196  ограничение Delta >= 0         вредит; свободная версия нейтральна (пункт 125 снова)
+    197  правило TDI по совместному     калибровка лучше втрое, AUC и MCC хуже
+    198  незапиненная инициализация     сломала контроль, таблица выглядела правдоподобной
+    199  наложение на со-кристаллы      контраст снял размер на трёх ферментах из четырёх
+
+**Ансамбль упирается в данные, а не в модель, и это измерено четырьмя независимыми способами:**
+пункты 176, 182 и 191 --- три одиночных выигрыша подряд, не дошедших до ансамбля при корреляции
+ошибок 0.90--0.97; пункт 194 --- члены можно развести до антикорреляции, и это не помогает. Все
+члены упираются в одни и те же 1285--2335 строк.
+
 **Три главных открытых вопроса.**
 
   почему пулирование выигрывает на HistGB и разворачивается на обычных деревьях (158, 166);
@@ -5711,3 +5727,188 @@ interval that is a function of the label, and the only independent measurement i
 not supply a replacement -- measured, with the confounder removed, on four enzymes. That is a
 complete statement about uncertainty quantification on this benchmark, and it is negative in both
 halves, which is what makes it a statement rather than a proposal.
+
+**193. Two-view low-rank completion: the restriction costs everywhere except the enzyme with the
+fewest labels, which is where it was pre-registered to help.** `src/ablrank.py`, four seeds. The
+potency matrix is observed sparsely and precisely by the curves and densely and noisily by the
+screen, so the dense view identifies the enzyme subspace and the sparse one the scale; `r` latent
+boosted models share a fixed 4-by-r decoder taken from the screen's right singular vectors.
+
+    рука                   пара     ранг      1A2      2C9      2D6      3A4
+    независимо           0.7204   0.5615        —        —        —        —
+    ранг 4 (контроль)    0.7194   0.5603  +0.0000  -0.0009  -0.0065  +0.0024
+    ранг 3, V скрининг   0.7304   0.5455  -0.0773  +0.0227  -0.0028  -0.0066
+    ранг 2, V скрининг   0.7702   0.4976  -0.1009  -0.0352  -0.0852  -0.0344
+    ранг 2, V случайная  3.5176   0.1050  -0.3321  -0.5907  -0.2785  -0.6248
+
+The harness control passes: rank 4 is unconstrained and reproduces the per-enzyme reference to
+0.0012. And the subspace is not arbitrary -- a random orthonormal decoder of the same rank costs
+**0.393 of macro rank** against the screen's, so what the dense view supplies is nearly the whole
+construction.
+
+The restriction nonetheless loses: -0.016 at rank 3 and -0.064 at rank 2. **The one enzyme that
+gains is CYP2C9, at +0.0227 against its floor of 0.0071 -- and CYP2C9 has the fewest labels of the
+four (1285), which is exactly where the pre-registration said a restriction should pay.** So the
+prediction is confirmed on the enzyme it named and refuted on the macro, which is a narrower result
+than either "it works" or "it does not".
+
+Three construction bugs were caught by that same rank-4 control before any of this could be read,
+and all three produced plausible tables: unobserved cells entering the split criterion as zeros
+(fixed with the Gauss-Newton diagonal as a sample weight, which at V = I reduces to the mask), an
+unequal tree budget (rank r received r/4 of the reference's trees), and centring the screen matrix
+before the SVD, which removes the (1,1,1,1) direction -- the overall potency level and the dominant
+component. With centring, rank 2 scored 0.3137 against 0.5320.
+
+**194. Negative correlation learning drives the members apart and the ensemble does not care.**
+`src/ablncl.py`, four penalties, members trained jointly round by round so the consensus is current.
+
+    lam    корр. ошибок   ранг члена   ранг ансамбля
+    0.00         0.9386       0.5412          0.5676
+    0.25         0.9078       0.5298          0.5677
+    0.50         0.7140       0.4690          0.5609
+    0.75        -0.3021       0.0461          0.3862
+
+**The penalty reaches the fit with room to spare** -- error correlation goes from 0.939 to
+**-0.302**, so the members end up anti-correlated -- and **at no value of lambda does the ensemble
+improve**: +0.0002, -0.0067, -0.1813. The first branch of the pre-registration (a penalty that does
+not reach the fit closes the implementation, not the idea) is excluded by the correlation column
+itself.
+
+That leaves the third branch, which was written down as **more valuable than a gain**: the
+ensemble's saturation is not in the diversity of its members. They can be driven arbitrarily far
+apart and it does not help.
+
+The implementation needed one fix that is worth keeping, because the first version was inert.
+Correlation stood at 0.9952 at lambda 0 and 0.9950 at 0.25: the penalty adds `2*lambda*(f_m - F)`,
+which is zero when the members nearly coincide, so NCL is positive feedback that needs an initial
+asymmetry to amplify, and a different `random_state` on column subsampling does not supply one. Each
+member now draws its own fixed 70 per cent row subsample.
+
+Read with items 176, 182 and 191 -- three consecutive standalone gains that did not transfer, with
+member-to-ensemble error correlations of 0.90 to 0.97 -- this says the same thing four independent
+ways: **the members are limited by the 1285 to 2335 rows they all share, not by a common inductive
+bias.** Model diversity does not cure a shortage of data.
+
+**195. The mode split loses on both enzymes that were licensed for it, and the licence was not
+wrong.** `src/ablmode.py`, four seeds, against item 184's per-enzyme gate.
+
+    рука                        1A2 (нет)   2C9 (полов.)   2D6 (ДА)   3A4 (ДА)
+    +индикатор                    +0.0002       -0.0054    -0.0050    +0.0029
+    по модам                      -0.0258       -0.0289    -0.0172    -0.0084
+    по модам, перемешанным        -0.0286       -0.0346    -0.0364    -0.0205
+
+Splitting the fit costs rank everywhere, including CYP2D6 and CYP3A4 where the gate licensed it.
+The real mode does beat its own permutation by 0.010 of macro rank, so the chemistry in it is real;
+what fails is the trade. **The minority model sees 278 to 707 rows instead of the full table, and
+the SAR divergence does not pay for them.**
+
+The gate measured transfer **at matched training size** and was correct in its own terms -- item
+184's inverse relation between the level difference and the transfer gap still holds. "Does the
+divergence exist" and "is it worth the rows" are different questions and only the first was gated.
+That distinction was written into `ablmode`'s docstring before the run, which is why this reads as a
+completed measurement rather than a surprise.
+
+The indicator arm settles the other half. If the cost had been representational -- the coordinating
+mode being a disjunction of four columns that an axis-aligned tree pays up to four splits for --
+then precomputing it as one column would have helped. It does not (+0.0002, -0.0054, -0.0050,
++0.0029), so that half of the outside argument is closed too.
+
+**196. The Delta >= 0 constraint the document specifies makes the model worse, and the free version
+is neutral.** `src/abldelta.py`, four seeds, against section 4's `pi_tdi = pi_dir + Delta,
+Delta >= 0`.
+
+The precondition held: violations beyond twice the propagated error are 0.0, 1.9, 1.1 and 0.7 per
+cent, so the inequality is true in the data and legitimate to impose.
+
+    рука                      пара     ранг      1A2      2C9      2D6      3A4
+    только прямое           0.7204   0.5615        —        —        —        —
+    два выхода свободно     0.7180   0.5623  +0.0065  -0.0036  -0.0017  +0.0020
+    Delta >= 0              0.7331   0.5399  -0.0184  -0.0220  -0.0425  -0.0035
+    Delta >= 0, перемешан   0.7781   0.4994  -0.0656  -0.0761  -0.0429  -0.0637
+
+**The pre-registration is refuted in its own terms.** It predicted the gain would be largest where
+the median offset is smallest -- CYP1A2 at 0.024 and CYP2C9 at 0.007, where the pre-incubation arm
+is nearly a repeat measurement -- and the loss is instead largest on CYP2D6 (-0.0425), whose offset
+is not small.
+
+The shuffled control is worse than the constraint everywhere, so the TDI labels do carry
+information; the hard inequality is what prevents the model from taking it. Sharing structure
+without the constraint is neutral (+0.0008 macro), which is item 125's null reproduced on a
+different learner.
+
+**197. The TDI rule integrated over the joint distribution is better calibrated and worse at
+ranking, and the document's warning about correlation does not hold.** `src/abltdi.py`, four seeds,
+against section 10's `eq:tdirule`.
+
+The precondition is exact: applying the rule to the measured labels reproduces `is_TDI` on **100.0
+per cent** of compounds with zero errors either way on both enzymes, so the flag is a deterministic
+function of (pi, Delta) and integrating the rule is the label probability rather than an
+approximation of it.
+
+    фермент   рука                    MCC     AUC   сред_p   доля_полож
+    CYP2D6    классификатор        0.129   0.586    0.079        0.217
+              правило, совместно   0.025   0.463    0.253
+              правило, независимо  0.026   0.467    0.252
+    CYP3A4    классификатор        0.356   0.745    0.256        0.326
+              правило, совместно   0.294   0.696    0.357
+              правило, независимо  0.295   0.693    0.367
+
+**Calibration reverses in the rule's favour and discrimination reverses against it.** The
+classifier predicts a mean probability of 0.079 against a true rate of 0.217 on CYP2D6 -- a
+threefold miss, and section 10 measured that miss as the source of a 0.033 loss of MCC -- while the
+rule gives 0.253. On AUC and MCC the classifier wins on both enzymes.
+
+That is not a paradox and the mechanism is the same one item 178 found from the other side. The
+rule converts (pi, Delta) into a probability **exactly**, but pi and Delta are predicted badly and
+the error passes through an exact rule undamped, while a classifier fitted to the flag can lean on
+features directly and bypass both quantities. **An exact composition of inexact estimates loses to a
+direct estimate of the composition.**
+
+And the document's insistence -- "pi and Delta are correlated, you cannot multiply the probabilities
+separately" -- is not supported. Breaking the residual pairs changes MCC by 0.0009 and 0.0002 and
+AUC by 0.004 and 0.003, on arms that differ in nothing else. The correlation is real and worth
+nothing here.
+
+**198. An unpinned initialisation broke a control, and only the control showed it.** `src/ablsplit.py`
+was written to test section 4's split-normal likelihood in a two-by-two against the dead zone, and
+its control arm -- squared plus dead zone, which must reproduce the +0.032 of items 148 and 181 --
+returned **-0.036** instead.
+
+Line-by-line comparison against `src/abldeadpair.py` on one seed and one enzyme: the squared arms
+are **bit-identical** (maximum absolute difference 0.0000) and the dead-zone arms differ by 1.30 in
+places, rank 0.5311 against 0.4737. The only difference between the two implementations is the
+starting value of the L1 boosting -- the mean in one file, the median in the other.
+
+That is not cosmetic for a booster fitted to **sign** residuals. The residual is plus or minus one,
+so the starting point decides which compounds contribute which sign, and at a learning rate of 0.06
+two hundred trees do not travel far from it; the trajectories diverge from the first tree. A squared
+booster is immune because its residual is continuous and a constant offset simply subtracts, which
+is exactly why the base arms matched to the bit while the dead-zone arms did not.
+
+The pins in these files cover `NTREE`, `LR`, `DEPTH` and `MAXFEAT` and did not cover initialisation.
+They do now. The wider point is the one this file keeps relearning: **the table looked entirely
+plausible**, and nothing but the requirement that a known number be reproduced would have caught it.
+
+**199. The co-crystal overlay passes its design check on three enzymes and fails it on the fourth,
+for a readable reason.** `src/overlay.py`. Ligand coordinates in their **bound** poses were taken
+from 2HI4 (alpha-naphthoflavone), 1R9O (flurbiprofen), 4WNV (quinine) and 3NXU (ritonavir) -- two
+of which corrected a misremembering, since 4WNV is quinine and not thioridazine and 3NXU is
+ritonavir and not ketoconazole. The bound pose is not optional: it is the cast of the cavity, and a
+freely generated conformer would make the overlay a ligand-to-ligand similarity, which is the class
+that returned zero six times in item 189.
+
+The design check asks whether the contrast -- the difference between the four scores -- removes
+molecular size, since a raw overlap score is mostly a size descriptor and size is already in the
+ligand block.
+
+    фермент   корр. с числом атомов, сырая   после центрирования
+    CYP1A2                           0.177                -0.073
+    CYP2C9                           0.205                -0.110
+    CYP2D6                           0.162                -0.104
+    CYP3A4                           0.539                +0.283
+
+**Three enzymes pass and CYP3A4 does not**, and the exception is mechanistic rather than technical:
+its cavity is the largest of the four and its reference ligand is ritonavir at 98 atoms against 31
+to 48 for the others, so overlap with it remains partly a measure of bulk. The ablation is therefore
+worth running, with the caveat that on CYP3A4 the feature is partly volume and the wrong-isoform
+control -- not a permutation -- is the one that can tell them apart.
