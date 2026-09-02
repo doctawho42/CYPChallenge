@@ -6149,3 +6149,64 @@ features already on disk, under an hour -- and it closes the question with a num
 
 Not started: item 164's dead-zone build outranks it and is finished measurement rather than a
 question.
+
+**204. The dead-zone pass is now inside `src/submit.py` and reproduces item 164 from the
+submission's own code.** `verify/k58_dzsubmit.py`, seed 0, mode `ансамбль5`.
+
+    рука                MACRO пара  MACRO rho     1A2     2C9     2D6     3A4
+    без прохода             0.6633     0.6164  0.5458  0.6597  0.4665  0.7936
+    проход в четырёх        0.6475     0.6300  0.5574  0.6820  0.4748  0.8057
+    прирост                -0.0158    +0.0136  +0.0116 +0.0223 +0.0083 +0.0121
+
+Item 164 measured +0.0167 of rank and -0.0171 of pair over four seeds. This is +0.0136 and -0.0158
+on one, from a second implementation: **same sign, same order, every enzyme up, and rank and metric
+improving together**, which item 177 noted is rare here.
+
+**Why the check existed at all.** Item 164 composed *saved* predictions from `ablate`, `ablpool` and
+`ablgp` inside `verify/k46_five.py`; `submit.py` recomputes every member from `feats.npz`. The pass
+in the submission is therefore a second implementation of a measured quantity, and item 198 is the
+standing reason not to trust one: there I rewrote a debugged booster instead of reusing it,
+reproduced exactly the defect its own comment warned against, and the resulting table looked
+entirely plausible. A new implementation is not trustworthy until it reproduces the number.
+
+**The baselines differ and the reason is named rather than unknown.** 0.6164 here against item 164's
+0.6063, because `k58` runs through `submit._oof_trunk`, which applies `_trunk_clip`, and
+`k46_five.py` does not (defect 3 of item 202). So this check measures the configuration that is
+*submitted*, and item 164 measured one adjacent to it. That is the right way round, and it means the
+two numbers are not expected to agree to the fourth decimal.
+
+**Three properties of the build worth recording, because each was a place to go wrong.**
+
+- `_dz_oof` mirrors `src/abldzens.py:refit` rather than reimplementing it, and `DZ_KW` is a copy of
+  `gbm_reg()`'s pins plus `absolute_error` -- a copy so that a future divergence in `gbm_reg` breaks
+  reproduction loudly instead of drifting quietly.
+- **The test path needs its own full out-of-fold pass, and there is no way around it.** The target
+  cannot be built from a model's predictions on its own training rows: an overfitted model puts
+  every training row inside its band, the target equals the prediction, the gradient vanishes, and
+  the run completes cleanly having done nothing (`src/abldead.py`). That doubles the cost of
+  producing a submission.
+- `_dz_design` fits every feature transform on the training rows and applies it to the test, which
+  closes **defect 2 of item 202** along this path: the ridge member no longer standardises on train
+  and test together, so the shipped estimator is the measured one and the test features no longer
+  enter training-time scaling.
+
+**The default is now on.** `--no-deadzone` turns it off. This changes what gets submitted, and is
+taken deliberately rather than as a side effect, on the strength of four seeds in item 164 plus this
+reproduction from the shipping code.
+
+**What is still missing, and it is the same thing item 164 named.** The trunk is not reprojected, so
+0.6300 remains a lower bound exactly as 0.6230 was. Every other member gained from the pass. The
+work is specified: `src/trunk.py` takes the target at one line (`yn = (y - ym) / ys`) and the pIC50
+loss at one more (`masked_mse`), none of the eight modes has an absolute loss, and the honest
+out-of-fold predictions to project already exist in `results/preds/trunk_twohead.json` under
+`twohead|0|3.0`, in the original pIC50 scale. The projection precondition is measured and passes:
+only 23.3 / 43.2 / 20.6 / 35.5 per cent of the trunk's predictions already sit inside their band, so
+57 to 79 per cent of targets land on an edge and the gradient does not vanish. The CYP2D6 outlier at
+-360.26 that `_trunk_clip` exists for is absorbed by the projection itself.
+
+**One control this file does not have.** The pass changes two things at once -- the loss from squared
+to absolute, and the target from the label to its projection -- and `src/abldzens.py` carries no
+"L1 against the raw label" arm. The attribution is closed elsewhere rather than here: `src/abloss.py`
+has that arm, and item 77 measured its entire gain dying under the affine pair, while item 164's
++0.0167 is measured *after* the pair. Worth an arm anyway, because the argument currently spans two
+files and one of them is three months old.
