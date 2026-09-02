@@ -6091,3 +6091,61 @@ rank on the submitted five-member configuration, four seeds, item 164. **It is i
 `src/submit.py`.** That is not an idea awaiting evaluation, it is finished measurement awaiting a
 build, and it is four times anything the screening could have contributed. Searching for a sixth
 idea was the wrong activity; the file had already said so.
+
+**203. There are 1238 CYP3A4 measurements in the organisers' own files that no script in this
+repository reads.** Found by an external sweep for data sources and verified here directly.
+
+    таблица                              строк
+    cyp-challenge-TRAIN_TDI.csv           6145
+    cyp-challenge-TRAIN_inhibition.csv    4905
+    имён, которых нет во второй           1240   из них 1238 несут CYP3A4_pIC50_TDI_condition
+                                                 и 2 несут CYP2D6; прямых меток НОЛЬ
+
+Every consumer -- `ablpool.py`, `abldelta.py`, `abltdi.py`, `tdiprob.py`, `submit.py` -- realigns
+its table against `data/rows.csv` by `Molecule_Name`, exactly as `CLAUDE.md` requires, and these
+1240 have no row there, so they drop out everywhere silently. `grep` for 1240, 1238 or 6145 in this
+file returns nothing: they have never been mentioned, let alone measured.
+
+**Why this is not item 125 again, and why it is not obviously worth anything either.** Item 125 fed
+the pre-incubation arm as supervision and got -0.0027 macro, -0.0040 on CYP3A4; item 196 reproduced
+the zero on a different learner. But 125 is explicitly about *redundancy* -- the same molecules on
+the same enzymes, maximally correlated rows. These 1238 are not in the table at all: zero structural
+overlap with our 4905, median maximum Tanimoto to the training set 0.350 against 0.449 within it,
+four molecules above 0.65 and none above 0.80. Extending 125's null to them is the over-generalisation
+item 118 exists to warn about.
+
+**The offset is the best-conditioned in this file.** The direct-minus-TDI shift is estimable on the
+2334 CYP3A4 molecules carrying both arms: **+0.3388, sd 0.3639, se 0.0075**. Against item 144's NCGC
+figure of +0.868 at se 0.21 on 21 molecules, that is 111 times the molecules and 28 times the
+precision. The overlap gate that killed NCGC (item 144) and Octant (item 201) is passed here with
+room to spare, and for the same reason both failed it: same laboratory, same assay, same scale.
+
+Three defects against it, all of them real:
+
+- **The label would be manufactured, and half of it is noise.** Best correction on observables
+  leaves residual sd 0.351; even an oracle knowing `is_TDI` leaves 0.322. Against CYP3A4's own OOF
+  RMSE of 0.698 that is fifty per cent.
+- **`CYP3A4_is_TDI` is `False` on all 1238 and is a placeholder, not a measurement.** The
+  organisers' rule (item 197) needs the direct arm to evaluate, and there isn't one. Projecting the
+  potency distribution gives roughly half of them positive.
+- **The shift is not constant.** Regressed on the TDI arm the slope is +0.085; these molecules sit
+  0.79 log units more potent than the paired ones, where the fitted shift is +0.406 rather than
+  +0.339. A constant would carry a systematic +0.067.
+
+**And a wiring trap that must not be walked into.** These molecules have no fold, and `butina_folds`
+clusters `rows.SMILES`; extending `rows.csv` reclusters and breaks the golden digest
+`2d93c19815e14261`, after which no table in the document describes the code. The only safe wiring is
+the one the TDI arm already uses in `ablpool.py`: the rows live in the training half of every fold
+and are never scored. Safe here precisely because four of the 1238 cross the Butina threshold, not
+hundreds.
+
+**Queued, and the precondition is a dry run rather than a build.** Take the 2334 CYP3A4 molecules
+where both arms exist, *discard their real direct labels*, replace them with manufactured ones from
+the TDI arm and the fitted shift, and measure what that costs. Pre-registered: if replacing a
+known-good label with a manufactured one on the molecules where manufacture is *best* conditioned
+costs more than CYP3A4's floor of 0.0033, then 1238 of them, on molecules where the shift
+extrapolates further and the TDI fraction is not computable, will not pay. One enzyme, one seed,
+features already on disk, under an hour -- and it closes the question with a number either way.
+
+Not started: item 164's dead-zone build outranks it and is finished measurement rather than a
+question.
