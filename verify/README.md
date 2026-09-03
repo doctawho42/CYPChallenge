@@ -6545,3 +6545,56 @@ and 0.5651 rank**, reproducing the scoreboard's reference row for `FP+DESC+MECH,
 HistGB` to the fourth decimal from an independently written harness. Item 198's lesson was that a
 second implementation is untrustworthy until it reproduces a known number; this one did, which is
 why the arms above can be read at all.
+
+**211. The kinetic line is closed, and what closes it is identifiability rather than any of the
+eight measurements.** A summary item: it computes nothing new and exists because the same proposal
+has now arrived three times in different clothes, and the reason to stop is not the one the
+measurements appear to give.
+
+Everything of this family that has been measured:
+
+    объект                                          пункт   итог
+    сигмоида Хилла, приколотые (E,h), сдвиг d_e   calshift  +0.031, РАБОТАЕТ
+    одна пара (E,h) на CYP3A4                        169    не описывает даже свою популяцию
+    двухсайтовая доза-эффект                         178    прибор лучше на 26 %, модель хуже
+    Delta свободная                             125, 196    нейтральна
+    Delta >= 0                                       196    вредит
+    точное правило TDI по совместному                197    калибровка втрое лучше, AUC хуже
+    расщеплённая нормаль                             200    -0.052 сама, -0.028 поверх МЗ
+    оборотный член из барьера                   209, 210    отрицателен, на полу на 2D6
+
+**Only the simplest kinetic object pays.** Every elaboration loses, and item 178 supplies the
+mechanism: a more flexible link transfers less, because flexibility finds ways to satisfy the
+screening reading without moving the prediction. Read as eight independent results this looks like
+bad luck; it is not.
+
+**The experiment carries two time conditions, and two conditions identify exactly one parameter
+beyond Ki.** That parameter is `Delta`, and it has now been measured three separate ways -- free
+(neutral, items 125 and 196), constrained to be non-negative as section 4 specifies (hurts, item
+196), and integrated exactly over the joint distribution as section 10 specifies (better calibrated,
+worse at discriminating, item 197). **The identifiability budget of this experiment is spent and it
+came back empty.**
+
+So the closing statement is not "no correct scheme was found". It is **"the data cannot support more
+scheme than the code already has"**. Any richer Markov model introduces parameters the two
+conditions cannot distinguish, and item 178 is the measurement of what happens then. This is worth
+stating as a bound rather than as a tally, because a tally invites a ninth attempt.
+
+**One thing survives, and it is not a rank result.** A kinetic scheme with parameter uncertainty
+propagated produces a *distribution* over pIC50 rather than a point. Item 114 established that our
+confidence band is 3.92 sigma with sigma a deterministic function of the label at R^2 0.93 to 0.98
+-- derived rather than measured -- and that nothing in our own data replaces it; item 208 found that
+well-level data does, and needs no compound overlap to be usable. That is the one place kinetic
+machinery supplies something the feature matrix cannot. **It belongs to the uncertainty line and not
+to the rank line**, and presenting it as the latter would be dishonest about what it does.
+
+**And the condition that would reopen the rank line, stated so it is not rediscovered by argument.**
+Three or more pre-incubation times would make the inactivation branch identifiable separately from
+binding, and a scheme would then have something to fit that the data can distinguish. That is a
+request to the organisers for a future round, not a modelling decision available now.
+
+**A note on how this item came to be written.** The proposal arrived as reaction phenotyping, then
+as bond dissociation energies, then as a Markov model over the kinetic scheme. Each time the
+specific form was refuted by a specific measurement -- items 179, 208 and 209 -- and each refutation
+invited the next form. Bounding the family by what the experiment can identify is what stops that,
+and it should have been written after item 197 rather than after item 210.

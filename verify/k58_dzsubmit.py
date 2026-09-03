@@ -89,6 +89,12 @@ def main():
     print(f"сид {a.seed}, режим {a.mode}\n", flush=True)
 
     def load_cache():
+        pp = a.cache + ".parts"
+        if a.cache and not _pl.Path(a.cache).exists() and _pl.Path(pp).exists():
+            C = json.load(open(pp))
+            if C.get("seed") == a.seed and C.get("mode") == a.mode:
+                print(f"члены взяты из {pp}, проход пересчитывается", flush=True)
+                return ([(k, [np.asarray(v, float) for v in P]) for k, P in C["parts"]], None)
         if not a.cache or not _pl.Path(a.cache).exists():
             return None
         C = json.load(open(a.cache))
@@ -98,14 +104,31 @@ def main():
                 [(k, [np.asarray(v, float) for v in P]) for k, P in C["dzp"]])
 
     got = load_cache()
-    if got is not None:
+    if got is not None and got[1] is not None:
         parts, dzp = got
         print(f"члены и проход взяты из {a.cache}", flush=True)
+    elif got is not None:
+        parts = got[0]
+        t0 = time.time()
+        dzp = SB.dz_pass(parts, X, mask, fold, (LO, HI))
+        print(f"проход мёртвой зоны за {time.time()-t0:.0f} с", flush=True)
+        if a.cache:
+            json.dump({"seed": a.seed, "mode": a.mode,
+                       "parts": [(k, [v.tolist() for v in P]) for k, P in parts],
+                       "dzp": [(k, [v.tolist() for v in P]) for k, P in dzp]},
+                      open(a.cache, "w"))
     else:
         t0 = time.time()
-        parts = SB.oof_members(X, y, mask, fold, a.mode)
+        parts = SB.oof_members(X, y, mask, fold, a.mode, seed=a.seed)
         print(f"члены посчитаны за {time.time()-t0:.0f} с: "
               + ", ".join(k for k, _ in parts), flush=True)
+        if a.cache:
+            # Члены складываются ДО прохода: он стоит вдвое дороже их, и падение в нём
+            # не должно уносить с собой сорок минут уже посчитанного. Ровно это и
+            # случилось, когда сторож ствола остановил сиды 1-3 после стадии членов.
+            json.dump({"seed": a.seed, "mode": a.mode, "частично": True,
+                       "parts": [(k, [v.tolist() for v in P]) for k, P in parts],
+                       "dzp": []}, open(a.cache + ".parts", "w"))
         t0 = time.time()
         dzp = SB.dz_pass(parts, X, mask, fold, (LO, HI))
         print(f"проход мёртвой зоны за {time.time()-t0:.0f} с", flush=True)
