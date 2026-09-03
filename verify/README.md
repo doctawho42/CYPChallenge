@@ -6686,3 +6686,33 @@ of pair over four seeds, sign 4/4 in all sixteen cells (item 205 measured this a
 +0.0320 standalone becomes +0.0045 in the ensemble -- a transfer ratio of about one in seven, which
 is worse than nothing only by comparison with the hope, and better than the -0.0008 and +0.0014 that
 preceded it.
+
+**214. The submission now builds the configuration item 213 measured, and defect 1 of item 202 is
+closed by measurement rather than by argument.** Three wiring changes, and an end-to-end run.
+
+Until now `--deadzone` reprojected four members and read the **plain** trunk, so what
+`src/submit.py` produced was the `проход в четырёх` row of item 213 (+0.0152) rather than the
+`проход во всех пяти` row (+0.0197). Closed on both paths:
+
+- out of fold, `_oof_trunk` reads `trunk_twohead_dead.json` when the pass is on;
+- on the test, `trunk.fit_predict_test` takes the projected target and the absolute loss, with the
+  same three guards as the cross-validation path -- key, shape, NaN mask -- plus the recorded fold
+  digest of item 212.
+
+**Defect 1 is closed by switching the default to `ансамбль5`.** The mode defaulted to `ансамбль`,
+four members, while the scoreboard read "ансамбль из пяти (ЧТО ПОДАЁТСЯ СЕЙЧАС)"; the stated reason
+for not switching was that the fifth member needs torch. Item 213 settles it: the five-member
+configuration under the pass is better with the sign holding on four seeds of four and in all
+sixteen per-enzyme cells. Failing loudly on a missing dependency is preferable to silently
+submitting a model the scoreboard does not describe.
+
+End-to-end run with the defaults: both validators accept, and the mean predictions are 5.007 /
+4.786 / 4.657 / 4.594, in scale. The TDI classifier fires 226 and 105 positives of 750 on CYP3A4 and
+CYP2D6.
+
+**Two defects of item 202 remain open, and neither is a wiring question.** Defect 3 -- that
+`verify/k46_five.py` does not apply `_trunk_clip` while the submission does -- is unfixed, and item
+205 showed it matters more than it looked, since the reprojected trunk's CYP2D6 outlier moved from
+-360.26 to +76.82 rather than disappearing. Defect 2 is closed along the dead-zone path only,
+because `_dz_design` fits every transform on the training rows; the non-dead-zone path still
+standardises the ridge on train and test together, and that path is no longer the default.

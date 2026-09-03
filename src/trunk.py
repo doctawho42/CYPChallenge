@@ -419,7 +419,7 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
 
 
 def fit_predict_test(FP_te, DESC_te, MECH_te, lam=3.0, seed=0, mode="twohead",
-                     blocks=None, device="cpu"):
+                     blocks=None, device="cpu", dead=""):
     """Train on the whole training set and predict the blinded test rows.
 
     Item 120 measured the trunk as a fifth ensemble member at -0.0061 of pair and +0.0054 of
@@ -452,7 +452,33 @@ def fit_predict_test(FP_te, DESC_te, MECH_te, lam=3.0, seed=0, mode="twohead",
     ya = np.vstack([y, np.full((n_te, 4), np.nan, np.float32)])
     sa = np.vstack([scr, np.full((n_te, 4), np.nan, np.float32)])
     fold = np.concatenate([np.zeros(n_tr, int), np.ones(n_te, int)])
-    return run_fold(Xa, ya, sa, fold, 1, lam, seed, device, mode=mode)
+
+    tgt = None
+    if dead:
+        # Проход мёртвой зоны на тестовом пути. Мишень --- проекция ЧЕСТНЫХ предсказаний
+        # вне фолда, взятых из `dead`, на полосу; тестовые строки получают NaN и потому не
+        # дают градиента, как и их метки. Обучающие фолды здесь все, так как отложен тест.
+        J = json.load(open(dead))
+        T = J.get("preds", J)
+        key = f"{mode}|{seed}|{lam}"
+        if key not in T:
+            raise SystemExit(f"нет ключа {key} в {dead}")
+        A = np.asarray(T[key], float)
+        if A.shape != y.shape:
+            raise SystemExit(f"форма {A.shape} против {y.shape} в {dead}")
+        if not np.array_equal(np.isnan(A), np.isnan(y)):
+            raise SystemExit(f"маска NaN в {dead} не совпадает с маской меток")
+        rec = (J.get("meta") or {}).get("fold_digests") or {}
+        d = fold_digest(butina_folds(smiles, seed=seed)[0])
+        if str(seed) in rec and rec[str(seed)] != d:
+            raise SystemExit(f"сид {seed}: дайджест {d}, а {dead} посчитан на {rec[str(seed)]}")
+        if str(seed) not in rec:
+            raise SystemExit(f"в {dead} нет записанных дайджестов фолдов; перезапустите trunk.py")
+        # astype обязателен: np.clip даёт float64, MPS его не берёт.
+        tgt = np.vstack([np.clip(A, lo, hi).astype(y.dtype),
+                         np.full((n_te, 4), np.nan, np.float32)])
+    return run_fold(Xa, ya, sa, fold, 1, lam, seed, device, mode=mode,
+                    target=tgt, l1=bool(dead))
 
 
 def check_test_path(seed=0, lam=3.0, mode="twohead", blocks=None, device="cpu"):

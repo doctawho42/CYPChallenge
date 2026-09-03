@@ -327,7 +327,7 @@ def _oof_one(X, y, mask, fold, pool, scr=None):
     return P
 
 
-def oof_members(X, y, mask, fold, mode, scr=None, seed=0):
+def oof_members(X, y, mask, fold, mode, scr=None, seed=0, dead=False):
     """Предсказания вне фолда КАЖДОГО члена по отдельности, как (вид, по ферментам).
 
     Существует потому, что проход мёртвой зоны применяется к членам поодиночке: каждому
@@ -340,7 +340,7 @@ def oof_members(X, y, mask, fold, mode, scr=None, seed=0):
         parts.append(("GP", _oof_gp(X, y, mask, fold)))
         parts.append(("гребневая", _oof_ridge(X, y, mask, fold)))
     if mode == "ансамбль5":
-        parts.append(("ствол", _oof_trunk(y, mask, fold, seed)))
+        parts.append(("ствол", _oof_trunk(y, mask, fold, seed, dead)))
     return parts
 
 
@@ -379,7 +379,7 @@ def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None):
     которые постобработка не поглощает, --- и проверено, что не поглощает.
     """
     if mode in ("ансамбль", "ансамбль-без-GP", "ансамбль5"):
-        parts = oof_members(X, y, mask, fold, mode, scr)
+        parts = oof_members(X, y, mask, fold, mode, scr, dead=bands is not None)
         if bands is not None:
             parts = dz_pass(parts, X, mask, fold, bands)
         return [np.mean([P[e] for _, P in parts], axis=0) for e in range(len(CYPS))]
@@ -438,7 +438,7 @@ def _trunk_clip(p, y_e):
 TRUNK_FOLD_DIGEST = "2d93c19815e14261"   # то же золотое значение, что в tests/test_split.py
 
 
-def _oof_trunk(y, mask, fold, seed=0):
+def _oof_trunk(y, mask, fold, seed=0, dead=False):
     """Предсказания ствола вне фолда --- из results/preds/trunk_twohead.json.
 
     Читаются, а не пересчитываются, ровно по той же причине, по какой читается oof.json:
@@ -455,14 +455,15 @@ def _oof_trunk(y, mask, fold, seed=0):
     # члены поедут за ним, а этот молча останется на старых фолдах, и предсказания вне
     # фолда перестанут быть вне фолда. Digest ловит это на месте.
     d = fold_digest(fold)
-    J = json.load(open(RES + "preds/trunk_twohead.json"))
+    src = RES + ("preds/trunk_twohead_dead.json" if dead else "preds/trunk_twohead.json")
+    J = json.load(open(src))
     T = J.get("preds", J)
     # Золотая константа существует ТОЛЬКО для сида 0 --- это то же значение, что пинит
     # tests/test_split.py. Подача всегда идёт на нём, поэтому проверка остаётся жёсткой.
     if seed == 0 and d != TRUNK_FOLD_DIGEST:
         raise SystemExit(
             f"разбиение сдвинулось: {d} вместо {TRUNK_FOLD_DIGEST}. Предсказания ствола в "
-            f"trunk_twohead.json посчитаны на старых фолдах и вне фолда больше не лежат. "
+            f"{src} посчитан на старых фолдах и вне фолда больше не лежат. "
             f"Перезапустите src/trunk.py или снимите режим ансамбль5.")
     # На прочих сидах золотого значения не существует нигде в репозитории, и раньше это
     # означало отсутствие сторожа вовсе. Теперь src/trunk.py записывает дайджест КАЖДОГО
@@ -587,7 +588,7 @@ def main():
     global LO, HI
     ap = argparse.ArgumentParser()
     ap.add_argument("--shrink", action="store_true", help="применить усадку (см. docstring)")
-    ap.add_argument("--mode", default="ансамбль",
+    ap.add_argument("--mode", default="ансамбль5",
                     choices=["раздельно", "пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"],
                     help="раздельно воспроизводит поведение до пункта 84; ансамбль включает GP; "
                          "ансамбль5 добавляет пятым членом ствол со скрининговой головой "
@@ -689,7 +690,7 @@ def main():
         print("проход вне фолда для мишеней мёртвой зоны", flush=True)
         dzfold, _ = butina_folds(list(rows.SMILES))
         dz_targets = []
-        for kind, P in oof_members(X, y, mask, dzfold, a.mode, scr):
+        for kind, P in oof_members(X, y, mask, dzfold, a.mode, scr, dead=True):
             if kind == "ствол":
                 continue
             dz_targets.append((kind, [np.clip(P[e], LO[mask[:, e], e], HI[mask[:, e], e])
@@ -710,7 +711,9 @@ def main():
         fp_te, de_te, me_te = _trunk_blocks(Xte)
         trunk_te = TR.fit_predict_test(fp_te, de_te, me_te, lam=float(TRUNK_LAM),
                                        seed=0, mode=TRUNK_MODE,
-                                       blocks=meta.get("blocks"), device=dev)
+                                       blocks=meta.get("blocks"), device=dev,
+                                       dead=(RES + "preds/trunk_twohead.json"
+                                             if a.deadzone else ""))
     if dz_targets is None and a.mode in ("пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
         Xs = [pooled_design(X[mask[:, e]], e) for e in range(len(CYPS))]
         ys = [y[mask[:, e], e] for e in range(len(CYPS))]
