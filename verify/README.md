@@ -17,6 +17,16 @@
     пять, мёртвая зона в четырёх членах        0.6653    0.6230   +0.0579       4       164
                                                                                  (нижняя оценка)
 
+**Мёртвая зона внесена в подачу и включена по умолчанию (пункты 204, 205).** Числа ниже сняты
+кодом самой подачи на сиде 0 и НЕ сравнимы построчно с таблицей выше: там складывались
+сохранённые предсказания из ablate/ablpool/ablgp, здесь члены пересчитываются, и вдобавок
+применяется `_trunk_clip`, которого нет в k46_five (дефект 3 пункта 202).
+
+    конфигурация (verify/k58_dzsubmit.py, сид 0)   пара      ранг   прирост   пункт
+    пять, без прохода                            0.6633    0.6164         —     204
+    пять, проход в четырёх членах                0.6475    0.6300   +0.0136     204
+    пять, проход во ВСЕХ пяти (подаётся)         0.6457    0.6344   +0.0181     205
+
 **Итого траектория: +0.058 ранга и -0.050 пары от базовой модели.** Шум одного счёта лидерборда
 на 750 молекулах --- 0.08 пары (пункт 147), так что по паре проект пока внутри него; по рангу
 --- вне, но ранг на лидерборде не показывают.
@@ -6488,3 +6498,50 @@ spread of 0.005 to 0.007, so anything under about 0.015 on one seed says nothing
 permutation control on delta are queued. CYP2D6 is also the enzyme item 167 found that *every*
 feature intervention which has ever worked here works on, so a prior exists -- which is a reason to
 measure it, not to believe it.
+
+**210. Four seeds and a permutation control: the kinetic link carries real per-compound information
+on CYP2D6 and still loses to doing nothing.** `src/ablkinet.py`, seeds 0 to 3 on the
+non-coordinator arm, plus a permutation control on delta.
+
+    A = 0.3 некоорд минус контроль, четыре сида
+    CYP1A2   -0.0005   знак 2/4
+    CYP2C9   -0.0091   знак 0/4
+    CYP2D6   +0.0052   знак 3/4     пол 0.0049
+    CYP3A4   -0.0055   знак 0/4
+    МАКРО    -0.0024   знак 1/4
+
+**Closed on macro and on three enzymes of four**, two of them consistently at 0/4. CYP2D6 sits at
++0.0052 against a floor of 0.0049 with the sign holding on three seeds of four -- exactly at the
+threshold, and this file's standard is a sign that holds, so it is not a result.
+
+**The permutation control is the informative half.** At seed 0 on CYP2D6:
+
+    контроль 0.4027   настоящая delta 0.4127   перемешанная delta 0.3930
+
+Real delta beats its own permutation by **+0.0197**, four times the enzyme's floor, and the
+permuted version is **worse than doing nothing** by -0.0097. The molecule-to-barrier link therefore
+carries genuine per-compound information on CYP2D6 -- this is not the marginal distribution of delta
+doing the work. On macro the same ordering holds more weakly: 0.5651 control, 0.5641 real, 0.5612
+permuted.
+
+So the closing statement is sharper than a null. **The correction carries real information and the
+information is worth less than the distortion it introduces.** Both halves are measured rather than
+assumed: the permutation control establishes the first, the four-seed comparison against A = 0 the
+second.
+
+That CYP2D6 is the enzyme where this happens is consistent rather than surprising -- item 167 found
+that every feature intervention which has ever worked in this file works on CYP2D6, and item 81's
+salt-bridge geometry lives there. A coherent chemical story exists (CYP2D6 substrates turn over
+quickly, so the turnover branch should be fullest there) and it is still below threshold.
+
+**What is deliberately not done.** The amplitude was swept on a coarse grid, 0 / 0.3 / 0.6, and
+CYP2D6's optimum may lie below 0.3. Finding it by sweeping and reporting the best is exactly the
+procedure this file's design ruled out before the run, and it would convert a pre-registered test
+into a fitted one. Testing it honestly means pre-registering a single amplitude and running four
+seeds, which is an hour, and the prior for it is a cell that reached its own floor and no more.
+
+**One control passed silently and is worth naming.** `ablkinet`'s `A = 0` arm scores **0.7150 pair
+and 0.5651 rank**, reproducing the scoreboard's reference row for `FP+DESC+MECH, поферментно,
+HistGB` to the fourth decimal from an independently written harness. Item 198's lesson was that a
+second implementation is untrustworthy until it reproduces a known number; this one did, which is
+why the arms above can be read at all.
