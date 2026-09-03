@@ -22,6 +22,10 @@ Derived files are built by `src/feats.py` and are not committed either:
 - `feats.npz` — the feature matrices `FP` (2048), `DESC` (217), `MECH` (30);
 - `rows.csv` — **the row order of the feature matrix**. `feats.py` drops molecules RDKit
   cannot parse, so every consumer realigns its table against this file;
+- `emb_*.npz` — pretrained encoder outputs, `train` in `rows.csv` order and `test` in the
+  blinded file's order. Written by `src/embed.py` (chemprop) and `src/embed2.py`
+  (SMILES transformers), both of which run in a **separate** environment so that their
+  dependencies stay out of the pipeline's pins;
 - `desc_names.csv`, `mech_names.csv` — feature names, for reading the tables;
 - `clusters_*.npz` — the Butina clustering cache written by `cypsplit.py`. The filename
   carries a hash of the SMILES and every clustering parameter, so a stale hit is not

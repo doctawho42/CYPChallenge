@@ -7,7 +7,8 @@
 UV := uv run
 
 .DEFAULT_GOAL := help
-.PHONY: help setup hooks features baseline ablate score submit reweight verify verify-extra test doc clean-cache
+.PHONY: help setup hooks features baseline ablate score submit reweight verify \
+        verify-extra verify-delta verify-regime test doc clean-cache
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
@@ -61,7 +62,7 @@ trunk-score: data/feats.npz  ## read the saved trunk predictions: lambda respons
 	uv run python src/trunkdose.py
 	uv run python src/trunknoise.py
 
-test:  ## golden-value guard on the cross-validation split
+test:  ## golden-value guard on the split, plus the fifth ensemble member's guards
 	$(UV) pytest
 
 verify: data/feats.npz  ## the quick verification scripts (skips f3, f12: ~70 min combined)
@@ -71,13 +72,60 @@ verify: data/feats.npz  ## the quick verification scripts (skips f3, f12: ~70 mi
 	  echo "=== $$f ==="; $(UV) python $$f || exit 1; \
 	done
 
-verify-extra: data/feats.npz  ## the h* and k* verification scripts (~25 min), logs into results/logs/
+verify-extra: data/feats.npz  ## h* and k1-k10: rescaling and how far the test sits (~25 min)
 	@mkdir -p results/logs
 	@for f in h1_geometry h2_tdi_alerts h3_alerts_delta k1_shrink k3_center k4_enrich \
 	          k5_shift k6_shift1d k7_2d6shift k8_kernel k9_shape k10_strat2d6; do \
 	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
 	done
 	@echo "logs in results/logs/"
+
+verify-delta: data/feats.npz  ## k11-k19: external data and the test label shift (~55 min)
+	@mkdir -p results/logs
+	@for f in k11_exttransfer k12_extneighbors k13_channels k14_design k15_pooldelta \
+	          k16_modelspread k17_ensdelta k18_nbspace k19_ens3delta; do \
+	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
+	done
+	@echo "logs in results/logs/"
+
+verify-regime: data/feats.npz  ## k20-k27: is our regime the test's, and what it costs (~40 min)
+	@mkdir -p results/logs
+	@for f in k20_strat k21_borda k22_layerboot k23_tilt k24_visible k25_reweight \
+	          k26_screen k27_trunkens; do \
+	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
+	done
+	@echo "logs in results/logs/"
+
+verify-bounds: data/feats.npz  ## k28-k35: what is provably out of reach, and the anchor split (~50 min)
+	@mkdir -p results/logs
+	@for f in k28_ess k29_positivity k30_oracle k31_campaign k32_anchor k33_lbident \
+	          k34_series k35_plate; do \
+	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
+	done
+	@echo "logs in results/logs/"
+
+verify-ceiling: data/feats.npz  ## k36-k51: the gap to the screen, the criterion, the learner (~60 min)
+	@mkdir -p results/logs
+	@for f in k36_ceiling k37_gap k38_trunc k39_splits k40_topk k41_earlystop \
+	          k42_visiblerank k43_lbpredict k44_bits \
+	          k46_five k47_perenzyme k48_calpop k49_hill k50_fumic k51_calshift; do \
+	  echo "=== $$f ==="; $(UV) python verify/$$f.py > results/logs/$$f.log 2>&1 || exit 1; \
+	done
+	@echo "logs in results/logs/"
+
+ncgc:  ## fetch, merge and featurise the NCGC panel (~25 min, network on first run)
+	$(UV) python src/fetch1851.py
+	$(UV) python src/ncgcmerge.py
+	$(UV) python src/ncgcfeats.py
+
+aux: data/feats.npz  ## the screening table as a training target — SLOW (~4 h)
+	$(UV) python src/ablaux.py --seeds 0
+
+ncgc-ablate: data/feats.npz  ## the NCGC panel as extra training rows — SLOW (~10 h)
+	$(UV) python src/ablncgc.py --seeds 0
+
+deadpair: data/feats.npz  ## do the dead zone and the pairwise loss add, or overlap (~80 min)
+	$(UV) python src/abldeadpair.py --seeds 0,1,2,3
 
 doc:  ## rebuild docs/CYP — модель и данные.pdf (needs XeLaTeX + ParaType)
 	bash docs/build.sh

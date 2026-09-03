@@ -43,7 +43,12 @@ for C, want in [(1e-4, 0.941), (6.31e-6, 0.500), (1e-6, 0.137)]:
     chk(f"  I при C={C:.1e} М", abs(v - want) < 2e-3, f"{v:.4f} (в тексте {want})")
 chk("монотонность по концентрации", np.all(np.diff(I(np.logspace(-9,-3,50),E,h,pi)) > 0),
     "выше концентрация -> сильнее ингибирование")
-chk("I -> E при C -> inf", abs(I(1e2,E,h,pi) - E) < 1e-9)
+# Предел берётся в конечной точке, поэтому точка обязана соответствовать допуску:
+# остаток равен 10^(h*(pC - pi)), и при C = 100 М это 6.3e-8, то есть больше 1e-9.
+# Формула верна, а проверка была невыполнима с первого коммита и этого никто не видел,
+# потому что скрипт падал раньше на np.trapezoid. Нужно pC - pi < -9, то есть C > 1e3.8.
+chk("I -> E при C -> inf", abs(I(1e6,E,h,pi) - E) < 1e-9,
+    f"остаток {abs(I(1e6,E,h,pi) - E):.2e} при C = 1e6 М")
 chk("I -> 0 при C -> 0",  abs(I(1e-15,E,h,pi)) < 1e-9)
 # неверный знак, который стоял в первых версиях
 def I_wrong(C,E,h,pi): return E/(1+10**(h*(pi+np.log10(C))))
@@ -73,7 +78,10 @@ def splitnorm_logpdf(y, mu, sm, sp):
     return -0.5*((y-mu)/s)**2 + np.log(2.0/(np.sqrt(2*np.pi)*(sm+sp)))
 mu, sm, sp = 4.6, 0.30, 0.55
 grid = np.linspace(mu-14*max(sm,sp), mu+14*max(sm,sp), 2_000_001)
-Z = np.trapezoid(np.exp(splitnorm_logpdf(grid,mu,sm,sp)), grid)
+# np.trapezoid --- имя из numpy 2; в 1.26 та же функция называется trapz. numpy здесь
+# намеренно не пинится (pyproject.toml), так что скрипт обязан работать в обеих.
+_trapz = getattr(np, "trapezoid", None) or np.trapz
+Z = _trapz(np.exp(splitnorm_logpdf(grid,mu,sm,sp)), grid)
 chk("плотность нормирована на 1", abs(Z-1) < 1e-6, f"интеграл = {Z:.9f}")
 cdf = np.concatenate([[0], np.cumsum(np.exp(splitnorm_logpdf(grid,mu,sm,sp))[1:]*np.diff(grid))])
 chk("P(Y<mu) = sm/(sm+sp)", abs(np.interp(mu,grid,cdf) - sm/(sm+sp)) < 1e-5,

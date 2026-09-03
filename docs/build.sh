@@ -21,6 +21,12 @@ fi
 uv run python docs/tex/figs.py
 
 cd "$ROOT/docs/tex"
+# Без этого XeLaTeX штампует в PDF время сборки, и закоммиченный артефакт меняется при
+# каждой пересборке, ничего не меняющей по существу. Файл бинарный и не мержится, а машин
+# четыре, так что каждый такой штамп --- заготовка конфликта на ровном месте. Дата взята
+# фиксированной, а не текущей: смысл в том, чтобы одинаковый источник давал одинаковый файл.
+export SOURCE_DATE_EPOCH=1700000000
+export FORCE_SOURCE_DATE=1
 for i in 1 2 3; do xelatex -interaction=nonstopmode main.tex >/dev/null; done
 mv main.pdf "../CYP — модель и данные.pdf"
 echo "done: docs/CYP — модель и данные.pdf"

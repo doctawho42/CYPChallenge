@@ -26,8 +26,9 @@ say("строк в TRAIN_TDI",        len(tdi), 6145)
 say("строк в TRAIN_Emax",       len(ema), 6146)
 say("строк в single-concentration", len(sc), 17504)
 say("уникальных соединений в скрине", sc.Molecule_Name.nunique(), 4376)
-say("концентрация скрина, М", f"{sc.concentration.iloc[0]:.2e}" if "concentration" in sc else "н/д", "4.95e-05",
-    note="" if "concentration" in sc else "(колонки concentration нет)")
+_col = next((c for c in ("concentration_M", "concentration") if c in sc), None)
+say("концентрация скрина, М", f"{sc[_col].iloc[0]:.2e}" if _col else "н/д", "4.95e-05",
+    note=f"(колонка {_col})" if _col else "(колонки концентрации нет)")
 
 print("\n=== число меток по ферментам (таблица базовой линии) ===")
 for c,want in zip(CYPS,[1412,1285,1493,2335]):
@@ -36,7 +37,10 @@ say("сумма меток", int(sum(inh[f'{c}_pIC50_direct_inhibition'].notna()
 
 print("\n=== межквартильный размах pIC50 ===")
 iqr={}
-for c,want in zip(CYPS,[0.83,0.92,1.00,1.50]):
+# Порядок CYPS: 1A2, 2C9, 2D6, 3A4. Раньше здесь стояло [0.83, 0.92, 1.00, 1.50], где
+# первое и третье переставлены относительно таблицы в docs/tex/s14.tex; документ и
+# данные согласны, отставал список. Проверка сообщала о двух расхождениях, которых нет.
+for c,want in zip(CYPS,[1.00,0.92,0.83,1.50]):
     y=inh[f"{c}_pIC50_direct_inhibition"].dropna().to_numpy()
     iqr[c]=np.percentile(y,75)-np.percentile(y,25)
     say(f"IQR {c}", round(iqr[c],2), want, tol=0.005)

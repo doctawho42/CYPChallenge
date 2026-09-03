@@ -105,15 +105,28 @@ CYP2D6 sits almost exactly there, and section three of the document is about why
 All of this comes from measurement rather than from first principles; the reasoning is in
 the document.
 
+- **Only rank survives.** An affine pair — a shrink and a shift, fitted to the metric per
+  fold — is applied before anything is written out, and being monotone it can undo any
+  intervention that only changed scale or location. Five measured gains vanished or
+  reversed when this was first checked, and a sixth later. Report the rank and the
+  post-pair score; a gain on raw ST-RAE is not evidence of anything.
 - Compare variants only on the same split and only with a paired bootstrap over
   compounds. A difference without an interval is not a result.
 - One split is not enough: changing the seed moves macro ST-RAE by 0.016, which is more
   than the typical effect being measured. Any decision about what to submit is taken over
-  at least four seeds.
-- Our cross-validation is 0.153 harder than the real test set, by median similarity to the
-  nearest training compound. Local numbers are a lower bound, but they also select for a
-  different skill than the leaderboard pays for.
-- Negative results are recorded and stay in the repository. There are four so far, and
-  they are some of the most useful content here.
+  at least four seeds — and **no result is written up from a run that has not printed its
+  aggregate table**. Three conclusions have been withdrawn for breaking that rule.
+- Our cross-validation is about 0.13 harder than the real test set, by median similarity
+  to the nearest training compound. Quote a size-matched pair: a held-out row's similarity
+  is a maximum over four fifths of the training set and a test row's over all of it, and a
+  maximum over a larger reference set is larger for free. Local numbers are a lower bound,
+  but they also select for a different skill than the leaderboard pays for — every saved
+  ablation has been re-scored under weights matching the test's regime, and six of seven
+  keep their ordering.
+- **Check the log before evaluating an idea, not after.** `verify/README.md` is 120
+  numbered items and several proposals have been re-derived from scratch that were already
+  built, run and measured in it.
+- Negative results are recorded and stay in the repository. They are now the majority of
+  that file and some of the most useful content here.
 - The environment is pinned for a reason: scikit-learn 1.3.2 through 1.8.0 reproduce
   `results/preds/oof.json` bit for bit, 1.9.0 does not. See the comment in `pyproject.toml`.

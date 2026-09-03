@@ -130,7 +130,13 @@ three lanes stand on — that is a pull request others read, not a quick push.
   right paths, but it needs `results/nn_seed0.npy` from `verify/f12_cvhard.py` (~10 min).
   `docs/build.sh` checks for it and tells you.
 - The PDF is committed and is a build artefact, so it conflicts like one. Rebuild it from
-  `docs/tex/` rather than merging it.
+  `docs/tex/` rather than merging it. **A rebuild that changes nothing now shows up as no
+  diff at all**: `docs/build.sh` pins `SOURCE_DATE_EPOCH` and `docs/tex/figs.py` writes
+  figures without a creation stamp, so identical sources give identical bytes. Before that,
+  every build rewrote all ten figure PDFs with nothing changed but a timestamp — ten
+  unmergeable binaries entering the diff carrying no information. If you find the PDF or a
+  figure dirty after a build you did not intend to change anything with, something real
+  moved; look at it rather than committing it.
 - The document has been through a correction pass: twenty-one discrepancies between its
   numbers and the code, listed in `verify/README.md`. Five scripts turned out never to
   have run at all. If a number looks odd, recompute it — that is the normal reaction here,
