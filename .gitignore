@@ -42,3 +42,6 @@ docs/tex/fig/*.png
 # Файлы отправки пересобираются скриптом; в git не нужны.
 results/submission/
 data/ncgc/
+
+# Побочный вывод jar-а SMARTCyp в корень: инструментальный мусор, не результат.
+SMARTCyp_Results_*.html
