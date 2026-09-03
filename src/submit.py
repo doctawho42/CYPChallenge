@@ -327,7 +327,7 @@ def _oof_one(X, y, mask, fold, pool, scr=None):
     return P
 
 
-def oof_members(X, y, mask, fold, mode, scr=None):
+def oof_members(X, y, mask, fold, mode, scr=None, seed=0):
     """Предсказания вне фолда КАЖДОГО члена по отдельности, как (вид, по ферментам).
 
     Существует потому, что проход мёртвой зоны применяется к членам поодиночке: каждому
@@ -340,7 +340,7 @@ def oof_members(X, y, mask, fold, mode, scr=None):
         parts.append(("GP", _oof_gp(X, y, mask, fold)))
         parts.append(("гребневая", _oof_ridge(X, y, mask, fold)))
     if mode == "ансамбль5":
-        parts.append(("ствол", _oof_trunk(y, mask, fold)))
+        parts.append(("ствол", _oof_trunk(y, mask, fold, seed)))
     return parts
 
 
@@ -438,7 +438,7 @@ def _trunk_clip(p, y_e):
 TRUNK_FOLD_DIGEST = "2d93c19815e14261"   # то же золотое значение, что в tests/test_split.py
 
 
-def _oof_trunk(y, mask, fold):
+def _oof_trunk(y, mask, fold, seed=0):
     """Предсказания ствола вне фолда --- из results/preds/trunk_twohead.json.
 
     Читаются, а не пересчитываются, ровно по той же причине, по какой читается oof.json:
@@ -455,16 +455,31 @@ def _oof_trunk(y, mask, fold):
     # члены поедут за ним, а этот молча останется на старых фолдах, и предсказания вне
     # фолда перестанут быть вне фолда. Digest ловит это на месте.
     d = fold_digest(fold)
-    if d != TRUNK_FOLD_DIGEST:
+    J = json.load(open(RES + "preds/trunk_twohead.json"))
+    T = J.get("preds", J)
+    # Золотая константа существует ТОЛЬКО для сида 0 --- это то же значение, что пинит
+    # tests/test_split.py. Подача всегда идёт на нём, поэтому проверка остаётся жёсткой.
+    if seed == 0 and d != TRUNK_FOLD_DIGEST:
         raise SystemExit(
             f"разбиение сдвинулось: {d} вместо {TRUNK_FOLD_DIGEST}. Предсказания ствола в "
             f"trunk_twohead.json посчитаны на старых фолдах и вне фолда больше не лежат. "
             f"Перезапустите src/trunk.py или снимите режим ансамбль5.")
-    J = json.load(open(RES + "preds/trunk_twohead.json"))
-    T = J.get("preds", J)
-    key = f"{TRUNK_MODE}|0|{TRUNK_LAM}"
+    # На прочих сидах золотого значения не существует нигде в репозитории, и раньше это
+    # означало отсутствие сторожа вовсе. Теперь src/trunk.py записывает дайджест КАЖДОГО
+    # сида в meta, так что проверка стала данными вместо константы и покрывает все сиды.
+    rec = (J.get("meta") or {}).get("fold_digests") or {}
+    if str(seed) in rec and rec[str(seed)] != d:
+        raise SystemExit(
+            f"сид {seed}: дайджест {d}, а ствол посчитан на {rec[str(seed)]}. "
+            f"Перезапустите src/trunk.py --seeds {seed}.")
+    if str(seed) not in rec and seed != 0:
+        raise SystemExit(
+            f"сид {seed}: в trunk_twohead.json нет записанного дайджеста фолдов, значит "
+            f"проверить, что предсказания ствола лежат вне ЭТИХ фолдов, нечем. "
+            f"Перезапустите src/trunk.py, чтобы он их записал.")
+    key = f"{TRUNK_MODE}|{seed}|{TRUNK_LAM}"
     if key not in T:
-        raise SystemExit(f"нет ключа {key} в trunk_twohead.json; запустите src/trunk.py")
+        raise SystemExit(f"нет ключа {key} в trunk_twohead.json; запустите src/trunk.py --seeds {seed}")
     A = np.asarray(T[key], float)
     return [_trunk_clip(A[mask[:, e], e], y[mask[:, e], e]) for e in range(len(CYPS))]
 

@@ -6598,3 +6598,46 @@ as bond dissociation energies, then as a Markov model over the kinetic scheme. E
 specific form was refuted by a specific measurement -- items 179, 208 and 209 -- and each refutation
 invited the next form. Bounding the family by what the experiment can identify is what stops that,
 and it should have been written after item 197 rather than after item 210.
+
+**212. The trunk's committed predictions reproduce bit for bit a month later, which is what makes
+the new fold guard a check rather than a tautology.** Found while fixing a defect of my own.
+
+**The defect.** `verify/k58_dzsubmit.py` was given a `--seed` flag but the function it calls was
+never made seed-aware: `submit._oof_trunk` compared the fold digest against `TRUNK_FOLD_DIGEST`,
+which is seed 0's golden value, and read the hardcoded key `twohead|0|3.0`. Correct for
+`src/submit.py`, which always runs on seed 0; wrong for anything else. Seeds 1 to 3 of the
+four-seed dead-zone queue therefore died with **exit code 1** after computing their four sklearn
+members, about ninety minutes of machine time.
+
+**The guard was right and the queue reported it.** It printed seed 1's digest as
+`b26e229cfaace213`, which the regeneration below confirms is genuinely seed 1's. Without that check
+the three seeds would have averaged a trunk sitting on seed 0's folds with four members sitting on
+their own -- a table that would have looked entirely plausible. The queue logged the return code of
+each step separately, which is item 182's lesson applied: logging completion instead would have read
+as four successes.
+
+**The fix, and why it required proving something first.** `src/trunk.py` now records
+`fold_digest(fold)` for every seed it runs into its output's `meta`, and `_oof_trunk` takes a seed,
+reads the matching key, keeps the golden-constant assertion at seed 0 and checks the recorded digest
+elsewhere -- refusing outright if no digest was recorded. Previously seeds other than 0 had **no
+guard at all**, since no golden value for them exists anywhere in the repository.
+
+But annotating a file computed a month ago with digests computed today proves nothing: the check
+would pass by construction. So the trunk was regenerated to a scratch path first and compared:
+
+    twohead|0|3.0   маски совпали   max|разн| 0.00000000
+    twohead|1|3.0   маски совпали   max|разн| 0.00000000
+    twohead|2|3.0   маски совпали   max|разн| 0.00000000
+    twohead|3|3.0   маски совпали   max|разн| 0.00000000
+
+**Zero on all four seeds.** A torch run on MPS, four folds of a 512-wide two-head network trained
+for 200 epochs, reproduces exactly a month later. That is a stronger reproducibility statement than
+this file has for anything else, and it is what licenses writing the digests into the committed file
+-- they now describe the folds the predictions were actually computed on, verified rather than
+assumed. Recorded digests: `2d93c19815e14261`, `b26e229cfaace213`, `14f485f315fd992c`,
+`1193b75ee907b239`.
+
+**One more thing changed as a result.** `k58` now writes its members to the cache **before** the
+dead-zone pass rather than after. The pass costs roughly twice what computing the members does, and
+a failure inside it should not discard forty minutes of finished work -- which is exactly what
+happened four times over.

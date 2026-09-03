@@ -581,8 +581,13 @@ def main():
                   flush=True)
 
     saved, table = {}, []
+    digests = {}
     for seed in seeds:
         fold, n_cl = butina_folds(smiles, seed=seed)
+        # Дайджест фолдов пишется В ФАЙЛ по каждому сиду. Раньше потребитель мог
+        # сверяться только с золотой константой сида 0, поэтому на прочих сидах
+        # сторожа не было вовсе. Записанный дайджест делает проверку данными.
+        digests[str(seed)] = fold_digest(fold)
         # One draw per split seed, reused at every eta and in both modes: the ladder is
         # nested rather than independent, which takes the noise draw out of the comparison.
         zn = np.random.default_rng(90000 + seed).standard_normal(scr.shape).astype(np.float32)
@@ -651,6 +656,7 @@ def main():
             "device": a.device,
             "pc0": PC0, "cal_e": CAL_E.tolist(), "cal_h": CAL_H.tolist(),
             "torch": torch.__version__, "numpy": np.__version__}
+    meta["fold_digests"] = digests
     json.dump({"table": table, "preds": saved, "meta": meta}, open(a.out, "w"))
     print(f"\nсохранено: {a.out}")
 
