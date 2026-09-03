@@ -747,10 +747,17 @@ def main():
         if dz_targets is None and a.mode in ("ансамбль", "ансамбль5"):
             tf = gp_prepare(X[m])
             parts.append(gp_predict(tf(X[m]), y[m, e], tf(Xte)))
-            B = _desc_scaled(np.vstack([X[m], Xte]))
-            nb = int(m.sum())
+            # Дефект 2 пункта 202: раньше здесь стояло
+            # _desc_scaled(np.vstack([X[m], Xte])) --- стандартизация по объединению
+            # обучения с тестом. Два следствия, и второе хуже первого. Подаваемый член
+            # переставал быть тем, который измерен в _oof_ridge (там масштаб берётся по
+            # X[m]), при поферментных полах 0.003--0.007. И тестовые признаки входили в
+            # обучающее преобразование, то есть это трансдуктивное использование теста.
+            # Путь мёртвой зоны это уже не задевало: _dz_design подгоняет любое
+            # преобразование на обучающих строках. Здесь то же самое.
+            Btr, Bte = _dz_design("гребневая", X[m], e, Xte)
             parts.append(RidgeCV(alphas=np.logspace(-1, 4, 12))
-                         .fit(B[:nb], y[m, e]).predict(B[nb:]))
+                         .fit(Btr, y[m, e]).predict(Bte))
         if a.mode == "ансамбль5":
             parts.append(_trunk_clip(trunk_te[:, e], y[m, e]))
         p = np.mean(parts, axis=0)
