@@ -6751,3 +6751,51 @@ here is to correct forward rather than to rewrite, as item 198 was handled -- an
 is untouched, because the +0.0167 it reports is a difference of two rows and rank does not move.
 
 `--no-clip` reproduces the old behaviour for anyone re-reading those items.
+
+**216. The 1238 unread measurements are closed by the test item 203 pre-registered for them: the
+manufactured label keeps 98.6 per cent of the rank and the missing 1.4 is three times the floor.**
+`src/abldry.py`, CYP3A4, four seeds.
+
+    рука                                пара      rho   ранг минус настоящие   знак
+    настоящие                         0.4900   0.7613                 0.0000      —
+    изготовленные, регрессия          0.5096   0.7505                -0.0108    4/4
+    изготовленные, константа          0.5094   0.7505                -0.0108    4/4
+    изготовленные у 35 %              0.4940   0.7582                -0.0030    3/4
+    изготовленные, плечо перемешано   0.9703  -0.0235                -0.7848    4/4
+
+The test was written before the run, in item 203: take the 2334 molecules carrying both arms --
+where the shift is estimated on exactly this population and manufacture is therefore as well
+conditioned as it will ever be -- throw the real labels away, and if the substitution costs more
+than CYP3A4's floor of 0.0033, then 1238 of the same labels on molecules sitting 0.79 log units more
+potent, where the TDI-positive fraction is not computable, will not pay.
+
+**It costs -0.0108, three and a third times the floor, with the sign holding four seeds of four.**
+
+**The interesting half is how good the manufactured label is.** It retains 0.7505 of 0.7613, ninety
+eight and a half per cent of the achievable rank. The pre-incubation arm is an excellent proxy for
+the direct label -- the permutation arm shows how much of that is real, since shuffling it takes
+rank from 0.75 to **-0.02**, so essentially all of the signal is molecule-specific rather than
+distributional. The source fails not because the label is bad but because **good is not good
+enough**: the shortfall is small in absolute terms and large against a floor of 0.0033.
+
+**The constant shift does exactly as well as the regressed one**, -0.0108 both. Item 203 worried
+that the slope of +0.0852 at correlation 0.265 mattered, and that a constant would carry a
+systematic +0.067 on a population 0.79 log units more potent. On this population it does not: the
+slope is noise, and anyone building this later has one fewer quantity to estimate.
+
+**Two honest limits on how far this closes it.**
+
+The dry run **replaces** while the real use would **add**. Replacing degrades a known-good label;
+adding brings new chemistry at the cost of a noisier one, and the two are not the same experiment.
+The 35 per cent arm is the nearest simulation and costs -0.0030, at the floor rather than above it,
+which is the weaker reading. What tips it is that sample size as such has been refuted three times
+in this file already (items 110, 111, 125), and item 125 specifically measured the pre-incubation
+arm added as rows at -0.0027.
+
+And the permutation arm did not do the job it was designed for. It was meant to separate "the
+reading carries nothing molecule-specific" from "the reading is informative and too noisy", but
+replacing **all** labels with noise is catastrophic by construction rather than discriminating -- it
+confirms the harness detects a destroyed signal and no more. The informative version would have
+shuffled inside the 35 per cent arm. Recorded as a design shortcoming rather than quietly dropped.
+
+**Closed: no features are built for the 1238.**
