@@ -13,8 +13,8 @@
     конфигурация                                 пара      ранг   прирост   сидов   пункт
     база FP+DESC+MECH, поферментно, HistGB     0.7150    0.5651         —       1     эталон
     ансамбль из четырёх членов                 0.6819    0.6009   +0.0358       4       120
-    ансамбль из пяти (ЧТО ПОДАЁТСЯ СЕЙЧАС)     0.6824    0.6063   +0.0412       4   120, 121
-    пять, мёртвая зона в четырёх членах        0.6653    0.6230   +0.0579       4       164
+    ансамбль из пяти                           0.6758    0.6063   +0.0412       4   120, 215
+    пять, мёртвая зона в четырёх членах        0.6567    0.6230   +0.0579       4  164, 215
                                                                                  (нижняя оценка)
 
 **Мёртвая зона внесена в подачу и включена по умолчанию (пункты 204, 205).** Числа ниже сняты
@@ -6716,3 +6716,38 @@ CYP2D6.
 -360.26 to +76.82 rather than disappearing. Defect 2 is closed along the dead-zone path only,
 because `_dz_design` fits every transform on the training rows; the non-dead-zone path still
 standardises the ridge on train and test together, and that path is no longer the default.
+
+**215. The scoreboard's headline metric was 0.0066 too high for two years' worth of a citation that
+says otherwise, because `verify/k46_five.py` never clipped the trunk.** Defect 3 of item 202, fixed
+and measured.
+
+`src/submit.py` bounds the trunk's output to the enzyme's label range plus or minus two units
+(`_trunk_clip`), and `verify/k46_five.py` -- which composes the five-member ensemble from saved
+predictions and is where the scoreboard's numbers come from -- did not. Both arms measured:
+
+    состав                        пара без обрезки   пара с обрезкой      ранг
+    пять, обычный                           0.6824            0.6758    0.6063
+    пять, МЗ в четырёх                      0.6653            0.6567    0.6230
+
+**Rank does not move by a single digit and the metric improves by 0.0066 to 0.0086**, twice the
+macro floor. The reason is visible: the trunk puts one CYP2D6 compound at **-360.26** (item 42), and
+ST-RAE sums absolute errors, so one catastrophic row costs the metric a great deal while costing
+Spearman one rank out of 1493.
+
+**The number was wrong on the scoreboard and right in the item it cited.** Item 120 records
+**0.6758** and says in its own text that the trunk is "clipped to the enzyme's label range plus or
+minus two units exactly as `src/trunkdose.py` does". The scoreboard carried 0.6824 attributed to
+"120, 121" -- a value that item does not contain. It entered later from the unclipped composition
+and was never reconciled.
+
+**And `k46_five.py`'s own self-check had been failing the whole time.** Its reading instructions say
+that "пять, обычный" must land near **0.6758 / 0.6063** or the composition is wrong and nothing else
+may be read. It landed on 0.6824 / 0.6063. The check passed inspection because **this file judges by
+rank**, rank was exact, and the pair half of the same sentence went unread. A self-check that is
+only half-read is a self-check that only half-works.
+
+Scoreboard corrected to 0.6758 and 0.6567. Items 120 and 164 are left as written -- the convention
+here is to correct forward rather than to rewrite, as item 198 was handled -- and 164's conclusion
+is untouched, because the +0.0167 it reports is a difference of two rows and rank does not move.
+
+`--no-clip` reproduces the old behaviour for anyone re-reading those items.
