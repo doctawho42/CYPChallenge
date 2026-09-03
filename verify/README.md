@@ -6799,3 +6799,59 @@ confirms the harness detects a destroyed signal and no more. The informative ver
 shuffled inside the 35 per cent arm. Recorded as a design shortcoming rather than quietly dropped.
 
 **Closed: no features are built for the 1238.**
+
+**217. Oracle C on four seeds, and it corrects my own dismissal: on CYP3A4 the ensemble is worse
+than one of its members.** `verify/k60_contested.py` over the four member caches.
+
+    фермент    спорных   ПОДЪЁМ | точн. среднего  большинства  лучшего члена   лучший > среднего
+    CYP1A2      0.3683    1.378 |         0.5809       0.5775         0.5655                 0/4
+    CYP2C9      0.3340    1.601 |         0.5985       0.5881         0.5926                 1/4
+    CYP2D6      0.4064    1.287 |         0.5673       0.5665         0.5613                 0/4
+    CYP3A4      0.2799    1.977 |         0.6177       0.6091         0.6352                 4/4
+
+Item 207's headline holds on four seeds: the lift is **1.561**, contested pairs carry half again
+their share of the discordance, and majority vote beats the mean in **one cell of sixteen**. Routing
+among members is closed as it was.
+
+**But item 207 dismissed CYP3A4 as "one cell of twenty, chosen after seeing the table", and four
+seeds say it is not.** The Gaussian process beats the ensemble mean on contested pairs there on all
+four, by +0.0175 of pairwise accuracy. Chasing it produced a finding that is not about contested
+pairs at all.
+
+    CYP3A4, GP один против пятичленного ансамбля, четыре сида
+    ранг  +0.0098   знак 4/4   (+0.0145 +0.0081 +0.0055 +0.0109)
+    пара  -0.0168   знак 4/4   (-0.0197 -0.0169 -0.0096 -0.0212)
+
+**On CYP3A4 the Gaussian process alone is better than the ensemble containing it**, on both criteria
+with the sign holding four seeds of four, by three times that enzyme's floor of 0.0033. The GP wins
+contested pairs there because it is simply the better model on that enzyme, not because disagreement
+carries routable information -- which also explains why upweighting it improves rank monotonically
+with no interior optimum: the sweep is walking toward the GP alone.
+
+    член            1A2      2C9      2D6      3A4
+    поферментно  0.5435   0.6464   0.4611   0.7717
+    пул          0.5346   0.6250   0.4476   0.7642
+    GP           0.5284   0.6777   0.4660   0.8153
+    гребневая    0.4918   0.6382   0.4262   0.7585
+    ствол        0.4908   0.6245   0.3972   0.7461
+    АНСАМБЛЬ     0.5568   0.6820   0.4744   0.8056
+
+**The ensemble's premise is that averaging beats its members. Read per enzyme -- which item 165
+established is the right granularity -- that is four tests, and it passes three and fails one.** On
+CYP1A2, CYP2C9 and CYP2D6 the ensemble beats every member; on CYP3A4 it loses to the GP. That is not
+a twenty-cell fishing expedition but a check of the submission's own assumption, and it had never
+been run.
+
+**Consistent with what was already known, which is why it is worth believing.** Item 167 found that
+CYP3A4 has never been helped by anything and that pooling actively hurts it (-0.0057); item 90
+measured that neighbours carry information in descriptor space, which is exactly where the GP's
+kernel lives, and that Morgan is the worst of four; item 92 measured the GP as worse than the
+boosting and helpful in the ensemble -- **on macro**, and nobody looked per enzyme.
+
+**Not acted on, deliberately.** Using the GP alone for CYP3A4 is worth +0.0024 of macro, below the
+macro floor of 0.0036 though three times CYP3A4's own. More to the point it is a structural change
+to what gets submitted, resting on a result an hour old, and the file's own standard is to
+pre-register such a decision rather than take it from the table that suggested it. What would settle
+it: the same comparison on the two seeds not yet used by anything, with the rule written down first
+-- adopt per-enzyme member selection only where the ensemble loses on both criteria with the sign
+holding, which at present is one enzyme of four.
