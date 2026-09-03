@@ -22,10 +22,14 @@
 сохранённые предсказания из ablate/ablpool/ablgp, здесь члены пересчитываются, и вдобавок
 применяется `_trunk_clip`, которого нет в k46_five (дефект 3 пункта 202).
 
-    конфигурация (verify/k58_dzsubmit.py, сид 0)   пара      ранг   прирост   пункт
-    пять, без прохода                            0.6633    0.6164         —     204
-    пять, проход в четырёх членах                0.6475    0.6300   +0.0136     204
-    пять, проход во ВСЕХ пяти (подаётся)         0.6457    0.6344   +0.0181     205
+    конфигурация (verify/k58_dzsubmit.py)          пара      ранг   прирост  сидов  пункт
+    пять, без прохода                            0.6658    0.6145         —      4    213
+    пять, проход в четырёх членах                0.6483    0.6297   +0.0152      4    213
+    пять, проход во ВСЕХ пяти (подаётся)         0.6459    0.6342   +0.0197      4    213
+
+Знак 4/4 в обеих руках и во всех шестнадцати поферментных ячейках; ранг и метрика растут
+одновременно. Вклад перепроецированного ствола +0.0045 при знаке 4/4 и макро-поле 0.0036 ---
+на грани, и цитировать его без пола нельзя.
 
 **Итого траектория: +0.058 ранга и -0.050 пары от базовой модели.** Шум одного счёта лидерборда
 на 750 молекулах --- 0.08 пары (пункт 147), так что по паре проект пока внутри него; по рангу
@@ -6641,3 +6645,44 @@ assumed. Recorded digests: `2d93c19815e14261`, `b26e229cfaace213`, `14f485f315fd
 dead-zone pass rather than after. The pass costs roughly twice what computing the members does, and
 a failure inside it should not discard forty minutes of finished work -- which is exactly what
 happened four times over.
+
+**213. Four seeds: the dead zone is worth +0.0197 of rank in all five members, and the trunk's share
+of it reaches the ensemble -- which two previous attempts on that member did not.**
+`verify/k58_dzsubmit.py`, seeds 0 to 3, the submission's own code.
+
+    рука                       пара     ранг      1A2      2C9      2D6      3A4
+    без прохода              0.6658   0.6145   0.5433   0.6586   0.4648   0.7911
+    проход в четырёх         0.6483   0.6297   0.5568   0.6820   0.4744   0.8056
+    проход во всех пяти      0.6459   0.6342   0.5615   0.6855   0.4820   0.8078
+
+    проход в четырёх      ранг +0.0152 знак 4/4    пара -0.0175 знак 4/4
+    проход во всех пяти   ранг +0.0197 знак 4/4    пара -0.0199 знак 4/4
+
+**All sixteen per-enzyme cells are positive with the sign holding on four seeds of four**: CYP1A2
++0.0181, CYP2C9 +0.0270, CYP2D6 +0.0172, CYP3A4 +0.0167. Rank and metric improve together, which
+item 177 noted is rare here -- almost everything that moves rank costs metric or is neutral on it.
+
+The four-member figure of +0.0152 sits against item 164's +0.0167 for the same intervention measured
+by composing saved predictions rather than recomputing members, and with an unclipped trunk. Two
+implementations of one quantity agreeing to 0.0015 is the reproduction this build needed.
+
+**The trunk's contribution is +0.0045 with the sign holding 4/4** (+0.0044, +0.0033, +0.0052,
++0.0050), against a macro floor of 0.0036 -- above it on three seeds individually and just below on
+one. The magnitude is marginal and is reported as marginal; **the consistent sign is what carries
+it**, and it should not be quoted as a number without the floor beside it.
+
+**That it reaches the ensemble at all is the finding.** Item 176 measured the trunk's standalone
++0.031 arriving as -0.0008, and item 182 the screening arm's +0.029 arriving as +0.0014, and
+together they concluded the ensemble was saturated: members that get better by fitting the target
+better do not help, because the others already fit it the same way. This is the first intervention
+on that member to survive composition, and the reason is visible in the design rather than
+speculative -- **the pass was applied to every member at once**, so it is not a better member added
+to an unchanged ensemble but the same ensemble under a different objective. Item 207's audit had
+already predicted this shape from the other side: the only intervention that ever reached the
+ensemble was the one applied to all members simultaneously.
+
+**Standalone the trunk gains more from the pass than any other member**: +0.0320 of rank and -0.0755
+of pair over four seeds, sign 4/4 in all sixteen cells (item 205 measured this at seed 0 only). So
++0.0320 standalone becomes +0.0045 in the ensemble -- a transfer ratio of about one in seven, which
+is worse than nothing only by comparison with the hope, and better than the -0.0008 and +0.0014 that
+preceded it.
