@@ -7403,3 +7403,42 @@ pharmacophore uses it" is a strong enough sentence to deserve four seeds before 
 **Control reproduces**: the sigma-zero arm gives 0.7150 and 0.5651, the scoreboard's reference row
 for `FP+DESC+MECH, поферментно, HistGB` to the fourth decimal, from a third independently written
 harness today.
+
+**228. Handing the classifier the regression track's own predictions gives nothing, and the number
+that matters is not the null.** `src/abltdif.py`, four seeds.
+
+Classification is a third of the leaderboard and the TDI track is one classifier on the feature
+matrix plus a threshold, while the regression track carries five members, the dead zone, pooling,
+per-enzyme selection and the affine pair. The most specific transfer available was to give the
+classifier what the regression track computes, since item 197 established that `is_TDI` is a
+**deterministic function** of the two potency arms -- verified again here at 1.0000 agreement with
+zero errors either way on both enzymes.
+
+    рука            MCC макро   2D6 MCC   2D6 AUC   3A4 MCC   3A4 AUC
+    структура          0.2162    0.1180    0.5922    0.3147    0.7483
+    + пи_прям          0.2132    0.1100    0.5877    0.3168    0.7502
+    + оба плеча        0.2116    0.1130    0.5892    0.3103    0.7455
+    + правило          0.2135    0.1165    0.5875    0.3105    0.7443
+    перемешан          0.2142    0.1137    0.5942    0.3148    0.7477
+
+**Every arm is within 0.005 of the control, the permutation sits among them rather than below, and
+AUC does not move** -- 0.588 to 0.594 on CYP2D6, 0.744 to 0.750 on CYP3A4. A complete null with its
+control passing.
+
+**The number worth taking from this run is CYP2D6's AUC of 0.59.** Against 0.5 for a coin, on 1493
+compounds with 324 positives, the classifier essentially cannot order CYP2D6's TDI label at all. The
+MCC of 0.118 follows from that rather than from a badly chosen threshold: there is little ordering
+for a threshold to exploit.
+
+**Why the transfer fails is not the usual reason and should be said carefully.** Item 166's rule is
+that a new column survives if it is not derivable from the block already present, and a prediction
+made *from* that block looks derivable. But this one is not quite: the regression model is trained on
+a **different label**, so its output carries information from the pIC50 measurements that the
+classifier's own labels do not contain. That is transfer between tasks rather than a re-encoding, and
+it was worth the run. The null therefore says something sharper -- **the pIC50 labels carry no
+information about the TDI flag beyond what structure already carries.**
+
+Which is a statement about the label rather than the model, and it points where item 229 looks: if
+the flag is a deterministic function of two arms we predict at RMSE near 0.7, and the first branch of
+the rule is a difference against a threshold of 0.301, then the ceiling may be arithmetic. That is
+measured next rather than assumed.
