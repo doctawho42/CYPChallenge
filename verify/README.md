@@ -6951,3 +6951,75 @@ enzyme identity by pooling. The feature channel has six controlled nulls, extern
 protocol and overlap (items 144, 166, 201), physics by identifiability (item 211), post-hoc
 correction is bounded at 0.0076 (item 128), and the ensemble is limited by data rather than by
 diversity (item 194). **The remaining work is not on the model.**
+
+**220. The band's level is measured at last: it is four times the assay's own curve-fit precision,
+and the chain that establishes it closes on the organisers' side rather than ours.**
+`verify/k63_wellnoise.py`, on the well-level release item 201 found.
+
+Item 114 left the uncertainty line stuck: our confidence band is 3.92 sigma with sigma a
+deterministic function of the label at R^2 0.93 to 0.98, so it is derived from the answer rather
+than measured, and nothing in our own data replaces it. Item 201 found the replacement outside and
+noted the property that makes it usable where the same release's labels were not: **well-level
+variance needs no compound overlap at all**, because how much of the spread is plate, position and
+replicate is a statement about the assay rather than about which molecules went through it.
+
+**Where the replication is.** Library compounds sit at one well per concentration and carry none.
+The controls carry it: 912 negative-control wells over 14 plates -- the assay measuring "no
+inhibition" repeatedly, which is a reproducibility estimate by construction.
+
+    разложение дисперсии отрицательного контроля, log2fc
+    полная             ско 0.1610
+    между планшетами   ско 0.0004   (0.0 %)
+    внутри планшета    ско 0.1627
+
+The between-plate share is zero **by construction** and says so: `fluorescence_norm` is normalised
+within each plate against that plate's own controls, so the plate is already removed. The number
+worth having is the within-plate one, **0.163 in log2fc** -- and our own single-concentration screen
+is in exactly those units.
+
+**The edge effect is real and is a bias rather than a spread.** Edge wells average -0.0787 against
++0.0513 inside, a systematic difference of **0.130** -- the same order as the noise itself.
+Averaging more wells does not remove it.
+
+**The chain, and it closes on their side.**
+
+    шум лунки, измерен здесь                    0.1610 log2fc
+    -> точность кривой, 12 точек, крутизна 1.5  ~0.0310 pIC50
+    их собственная se подгонки, медиана          0.0240 pIC50
+    их ширина CI / se                            3.901   (ожидается 3.92)
+
+Three of the four links are theirs and independent of anything we do, and they agree: the noise we
+measured, propagated through a twelve-point fit, lands on the standard error they publish, and their
+interval is built as 1.96 se exactly as ours is. **The chain is sound and our band is its only free
+end.**
+
+    наша подразумеваемая sigma (медиана по ферментам)   0.090 pIC50
+    их se подгонки                                      0.024 pIC50
+    отношение                                           3.8x
+
+**This does not mean our band is inflated, and the distinction matters.** A reproducibility band is
+legitimately wider than a fit-precision band -- repeating the whole experiment is not refitting the
+same twelve points -- and a factor of about four is plausible for that. What is now measured is the
+**level**: our band lives on the reproducibility scale rather than the precision scale, and the gap
+is a number instead of a guess.
+
+**What remains a defect is not the level but the label-dependence.** A width that is a function of
+the answer at R^2 0.93 to 0.98 is not per-compound measured uncertainty at any scale; it is a
+formula. This item measures that formula's scale, not its origin.
+
+**And one consequence for the metric, worth naming because it is not about our model.** The dead
+zone exploits the band, and the band is calibrated on the reproducibility scale. So the metric
+forgives distinctions the platform can actually resolve, by roughly a factor of four. That is a
+property of the scoring rule; we optimise it rather than choose it, and item 213's +0.0197 is
+earned against the rule as written.
+
+**Caveats stated rather than buried.** Octant's inhibition arm uses a 30-minute active-enzyme
+pre-incubation and covers CYP3A4 only (item 201), so this is the same laboratory and the same
+1536-well fluorescence format but not the same arm. The propagation is a `sqrt(n)/h` argument rather
+than a Fisher information calculation, and is used only to check that the chain closes to within a
+factor, which it does. Their se distribution is skewed -- 0.0156 at the tenth percentile against
+0.1162 at the ninetieth -- so the median understates the tail.
+
+**This is the uncertainty line, not the rank line.** Nothing here changes a prediction. It closes
+the question item 114 opened and item 93 failed to answer from inside: what the band would be if it
+were measured.
