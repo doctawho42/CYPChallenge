@@ -7132,3 +7132,71 @@ at the nominal 0.90 -- three quarters of the gap survives the best normaliser we
 statement for any use of these intervals is that the marginal guarantee holds exactly, the
 conditional one does not, and the residual failure is under-coverage on the weakest compounds, which
 is the direction that matters least for a screening application and most for a ranking one.
+
+**223. The fluorescence artefact is real, measured directly, and points the wrong way to explain
+what people would reach for it to explain.** `verify/k65_fluor.py` plus a direct test on the
+well-level release. The channel section 7 has carried unmeasured since the document was written, and
+the journal had zero mentions of fluorescence, chromophores or quenching before this.
+
+**The design supplies a control no other arm here has.** CYP1A2, CYP2C9 and CYP3A4 are read by
+fluorescence and CYP2D6 by mass spectrometry, so a readout artefact must appear on three endpoints
+and be absent from the fourth by construction.
+
+**Step one, in the labels.** Partial Spearman of the label with aromatic-ring count, after removing
+molecular weight, lipophilicity **and basic-nitrogen count** -- the last because CYP2D6 binds through
+a salt bridge to protonated nitrogen (item 81), so without it the control arm is not a control:
+
+    фермент   считывание   частная rho   перестановка
+    CYP1A2         флуор        +0.139          0.009
+    CYP2C9         флуор        +0.216          0.004
+    CYP3A4         флуор        +0.165         -0.003
+    CYP2D6       МАСС-СП        -0.009          0.006
+
+Exactly the pre-registered pattern. And a shape test designed to discriminate -- binding should be
+monotone in conjugation size while interference should peak where absorption meets the assay
+wavelength -- gives a peak on all three fluorescent enzymes and monotone growth on CYP2D6.
+
+**At which point the obvious conclusion is available and it is wrong.**
+
+**Step two, the direct measurement, and it reverses the reading.** The well-level release lets the
+artefact be measured without any model: take the 80 compounds the organisers themselves mark
+**inactive**, at the two highest concentrations where the compound is present at 50 micromolar and
+no inhibition is possible by their own curve fit.
+
+    средний сигнал                       +0.0641   (ожидается 0)
+    rho с числом ароматических колец       0.411 сырая, 0.163 частная
+    rho с крупнейшей сопряжённой системой  0.322 сырая, 0.224 частная
+
+    колец 1  (n=23)   +0.0052
+    колец 2  (n=26)   +0.0423
+    колец 3  (n=17)   +0.1325
+
+**Compounds that do not inhibit shift the readout, and the shift grows monotonically with aromatic
+content.** The artefact exists and is now a number.
+
+**But `fluorescence_norm` is negative under inhibition** -- in our own data the screening reading
+correlates with pIC50 at -0.83 to -0.94 -- so **+0.13 is an EXCESS of signal**. That is
+autofluorescence adding to the read, not quenching subtracting from it. Such a compound looks
+**less** inhibiting, and its fitted pIC50 is pushed **down**.
+
+The labels show aromatics as **more** potent on the fluorescent enzymes. **The measured artefact
+points the opposite way and therefore cannot explain the association.** What it can do is
+*attenuate* it: the true chemistry effect on those three enzymes is larger than the labels show, not
+smaller.
+
+**So the channel closes, and it closes better than a null would have.** The confounder the document
+has carried for two months is measured rather than assumed, at +0.13 log2fc for three-ring
+compounds; the pattern that would have been read as its fingerprint is not, because the sign is
+wrong; and the remaining explanation for the label pattern is ordinary chemistry, which is what
+CYP1A2's known preference for planar aromatics and CYP2D6's for basic amines would predict anyway.
+
+**Two caveats, and the first is real.** The direct measurement is Octant's assay -- same laboratory,
+same 1536-well fluorescence format, pre-incubation arm, CYP3A4 only (item 201) -- not the challenge's
+own plates, so the transfer is by platform rather than by identity. And 80 inactive compounds is a
+small population; the ring-count trend rests on 23, 26 and 17 molecules.
+
+**What this does not license.** Building the artefact feature into the model. Its measured direction
+would make the correction *increase* the model's aromatic signal, which is the opposite of a
+confounder correction, and item 189's rule about physics entering through the measurement model
+rather than the feature matrix applies with full force. The finding is about the benchmark's labels,
+not about our architecture.
