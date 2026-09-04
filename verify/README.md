@@ -7023,3 +7023,67 @@ factor, which it does. Their se distribution is skewed -- 0.0156 at the tenth pe
 **This is the uncertainty line, not the rank line.** Nothing here changes a prediction. It closes
 the question item 114 opened and item 93 failed to answer from inside: what the band would be if it
 were measured.
+
+**221. Conformal covers exactly on average and fails by activity zone, nothing we hold repairs it,
+and the uncertainty turns out to be 99.7 per cent epistemic.** `verify/k64_conformal.py`, four
+seeds. This closes the third part of section 9, the one that had never been run.
+
+Its premise as written -- "on a split reproducing the design of the test" -- was refuted separately
+(items 123, 129, 206). Plain split conformal does not need it: it needs exchangeability between
+calibration rows and the rows it is applied to, which the Butina folds supply. So the part was run
+as stated minus the impossible clause.
+
+**Item 220 is what made it worth running now.** Until the assay's own noise was measured there was
+no way to say how much of our error is irreducible, because the shipped band is a function of the
+label. With the floor at 0.04 of pIC50 against a model RMSE of 0.735:
+
+    доля дисперсии, объяснимая шумом прибора    0.3 %
+    эпистемическая доля                        99.7 %
+
+**The uncertainty is essentially all "we do not know" and essentially none of it is "the instrument
+is noisy."** That is the same wall item 194 met from the other side in finding the ensemble limited
+by data rather than by model diversity, and it explains why every attempt to model the noise better
+-- the heteroscedastic layer (item 93), the split normal (item 200) -- returned nothing: they were
+modelling 0.3 per cent of the problem.
+
+**Three questions, three different answers.**
+
+*Does the Gaussian process's own predictive variance predict error?* **No.** Correlation of the
+predicted spread with the absolute residual is +0.0245 on average and below 0.1 in magnitude in all
+**sixteen** cells of four enzymes by four seeds, with a sign flip among them. The only member that
+produces uncertainty natively produces one that does not know where it is wrong.
+
+*Does conformal cover marginally?* **Exactly**: 0.8987, 0.8981, 0.9015, 0.8994 against a nominal
+0.90. This should pass by construction and is run because failing would have meant the folds are not
+exchangeable, which would matter far beyond this file. It is the one clean pass here.
+
+*Does coverage hold conditionally?* **No, and the failure is systematic.**
+
+    покрытие по третям активности, сид 0    слабые   средние   сильные
+    CYP1A2                                   0.781     1.000     0.915
+    CYP2C9                                   0.808     0.991     0.895
+    CYP2D6                                   0.815     1.000     0.890
+    CYP3A4                                   0.783     0.983     0.932
+
+The interval is far too narrow where the compounds are weak and far too wide where they are middling
+-- the middle third is covered essentially always, which is not a success but a waste. Section 9
+predicted exactly this shape and gave the reason: a marginal number averages the two failures into
+the right answer.
+
+**Nothing available repairs it.** Normalising residuals by the GP's spread changes the zone spread
+from 0.195 to 0.196, which follows from the first answer -- dividing by noise is not normalising.
+Normalising by a fitted function of the *prediction*, which item 114 licenses since the band is a
+deterministic function of the label and the prediction is the only proxy for the label available at
+test time, does better and not enough: zone spread 0.195 to **0.166**, and intervals about ten per
+cent narrower at the same marginal coverage. Real, and roughly fifteen per cent of the gap.
+
+**So the honest state of the uncertainty line.** We can produce an interval with exact marginal
+coverage and we cannot produce one with honest conditional coverage; we know the reason is not
+instrument noise, because that is 0.3 per cent of it; and we know the two normalisers we have are
+respectively useless and insufficient. Reporting a marginal guarantee without this paragraph would
+be the kind of claim this file exists to prevent.
+
+**And what it would take**, stated so it is not rediscovered by argument: conditional coverage needs
+a per-compound quantity that tracks where the model errs, and item 207 already measured that the
+ensemble's own disagreement locates its error at a lift of 1.56 while containing no better answer.
+That is the natural normaliser to try next and the only one left in the building.
