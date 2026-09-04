@@ -7200,3 +7200,60 @@ would make the correction *increase* the model's aromatic signal, which is the o
 confounder correction, and item 189's rule about physics entering through the measurement model
 rather than the feature matrix applies with full force. The finding is about the benchmark's labels,
 not about our architecture.
+
+**224. The kinetic closure of item 211 was argued on the wrong ground, and the right ground is
+stronger: pinned from literature, the turnover term is rank-preserving and, for this dataset,
+below the floor by three orders.** No new run; arithmetic on published rate constants, prompted by
+an outside objection that item 211 overreached.
+
+**The objection is correct as stated.** Item 211 closed the kinetic line by identifiability: two
+time conditions identify one parameter beyond affinity, and that parameter is spent. But
+identifiability limits what may be **fitted**, not what may be **asserted**. Parameters pinned from
+the literature or from quantum chemistry are not asked of the data at all, so the bound does not
+reach them. That sentence in item 211 was too broad and is corrected here rather than rewritten.
+
+**And the measurement that seemed to settle it was mis-scaled by more than an order of magnitude.**
+Item 209 swept an amplitude over {0, 0.3, 0.6} on the shape
+`log10(1 + 10^{-(E-49.83)/14.3})`, giving deltas with median 0.090 and maximum 0.994 pIC50 at the
+*smallest non-zero* amplitude. Pinned from rate constants, the same quantity is far smaller:
+
+    delta = log10(1 + kcat/koff),   koff = Ki * kon,   kon ~ 1e7 M^-1 s^-1,  kcat ~ 5 min^-1
+
+      pKi 4   delta 0.0000        pKi 7   delta 0.0348
+      pKi 5   delta 0.0004        pKi 8   delta 0.2632
+      pKi 6   delta 0.0036
+
+**The smallest amplitude tested had a median larger than the entire physical range.** So item 209's
+negative result tests an over-large correction, not the physics, and it should not be quoted as
+having tested the latter.
+
+**With the physics in place, two things close the line properly, and neither is identifiability.**
+
+*First, the term is negligible on this population.* Our labels have medians of 4.27 to 5.13 and
+ninety-fifth percentiles of 5.67 to 6.35. Compounds above pIC50 7, where delta first exceeds the
+per-enzyme floors, number **20, 2, 13 and 1** -- between 0.04 and 1.4 per cent. For the typical
+compound here delta is under 0.001, three orders below the floor. The reason is chemical rather than
+statistical: these compounds are weak, so koff is large, so the EI complex is emptied by dissociation
+long before catalysis touches it.
+
+*Second, and this decides it regardless of magnitude:* **delta is a monotone increasing function of
+potency**, since koff = Ki * kon. So `pIC50_набл = pKi - delta(pKi)` is a monotone transformation of
+pKi -- checked numerically, the derivative stays positive at 0.11 across the whole range -- and a
+monotone transformation **preserves rank identically**. Our criterion is rank (items 77, 80). The
+potency-driven part of the turnover correction is therefore invisible to the criterion no matter how
+large it is.
+
+What remains rank-changing is only the variation of delta *at fixed potency*, which comes from kcat,
+that is from the C-H barrier. And that is exactly the quantity item 179 measured at +0.0009 with no
+enzyme clearing its floor, and item 210 measured again as a link at -0.0108 macro.
+
+**So the answer to "pin the parameters from literature or from ORCA" is that pinning them is what
+shows the term cannot pay.** Better barriers would refine kcat, kcat enters only through
+`kcat/koff`, that ratio is 0.0002 to 0.03 across our potency range, and the part of delta that
+depends on potency rather than on the barrier changes no ranks at all. Twenty thousand DFT
+calculations would sharpen a quantity whose rank-relevant component has been measured twice at zero.
+
+**What would make the line live again**, stated so it is not rediscovered: a population of tight
+binders. At pKi 8 the correction is 0.26 pIC50 and matters. This dataset has one such compound on
+CYP3A4 and two on CYP2C9. A benchmark of drug-like inhibitors rather than a diversity screen would
+be a different question, and this closure does not reach it.
