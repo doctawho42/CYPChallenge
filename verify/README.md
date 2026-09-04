@@ -7442,3 +7442,59 @@ Which is a statement about the label rather than the model, and it points where 
 the flag is a deterministic function of two arms we predict at RMSE near 0.7, and the first branch of
 the rule is a difference against a threshold of 0.301, then the ceiling may be arithmetic. That is
 measured next rather than assumed.
+
+**229. The TDI ceiling is the shift, and the shift is unpredictable from structure. MCC near 0.3 is
+close to what the label permits, not a failure of effort.** `verify/k67_tdiceiling.py` plus two
+follow-ups, seed 0. Item 128's oracle procedure carried to the classification track for the first
+time.
+
+Classification is a third of the leaderboard at MCC 0.118 and 0.315, and the question was whether
+that is a bad model or a badly conditioned label. It is the second, and the decomposition says so
+exactly.
+
+    ошибки, ско в pIC50      прям    tdi   Delta напрямую   разность плеч   corr ошибок плеч
+    CYP2D6                  0.846  0.738            0.418           0.461              0.840
+    CYP3A4                  0.698  0.752            0.361           0.411              0.842
+
+    оракулы, MCC     истинные плечи   истин.уровень   истинная Delta   оба предск.   классификатор
+                                      + предск.Delta  + предск.уров.
+    CYP2D6                    1.000           0.078            0.887         0.119           0.129
+    CYP3A4                    1.000           0.439            0.776         0.331           0.353
+
+**The harness passes**: the rule on true arms gives exactly 1.0, as item 197 requires.
+
+**One prior of mine was wrong and the measurement corrected it.** I expected the two arms' errors to
+be independent, which would put the error on their difference near 1.0 against a threshold of 0.301.
+They correlate at **0.84**, so the difference is far better determined than either arm -- 0.36 to
+0.42 against 0.70 to 0.85 -- and differencing costs little over predicting the shift directly, 0.41
+against 0.36. The label is not hopeless for the reason I gave.
+
+**It is hopeless for a different reason, and this is the finding.** Knowing the shift exactly, with
+the level still predicted, gives MCC **0.887 and 0.776**. Knowing the level exactly, with the shift
+predicted, gives **0.078 and 0.439**. The bottleneck is entirely the shift.
+
+And the shift carries no structural signal:
+
+    фермент   sd истинной Delta   sd предсказанной   отношение   ско ошибки      R^2
+    CYP2D6                0.408              0.173        0.42        0.418   -0.050
+    CYP3A4                0.364              0.168        0.46        0.361   +0.016
+
+**R-squared of -0.05 and +0.02: the model of the shift is no better than predicting its mean.** The
+predictor is shrunk to 0.42 of the true spread, and un-shrinking it out of fold moves MCC by +0.004
+and -0.017 while raising the error from 0.418 to 0.534 -- there is no signal to expand, only noise.
+
+**So MCC near 0.3 is close to the ceiling this label permits from structure**, and the classifier's
+0.353 on CYP3A4 is not coming from the difference at all: it is the rule's **second branch**, the one
+that fires on weak compounds and asks only whether the pre-incubation arm exceeds 4.301. That is a
+potency question, which we can answer. The first branch, the difference, we cannot.
+
+**Which also explains item 228's null from the day before.** Handing the classifier our predicted
+arms adds nothing because the quantity that decides the label is the one part of them we cannot
+predict.
+
+**Where the remaining value is, and it is not in the model.** If the ordering is near its ceiling,
+what is left is the threshold. Section 10 measured nested Platt calibration at **+0.028 of MCC on
+CYP3A4** and neutral-to-negative on CYP2D6, and the submission does not use it: it applies a plug-in
+threshold to uncalibrated probabilities whose mean predicted rate is 0.079 against a true 0.217 on
+CYP2D6. On a third of the leaderboard, a measured +0.028 that is not deployed outweighs anything
+still available on the ordering.
