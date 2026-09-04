@@ -327,6 +327,29 @@ def _oof_one(X, y, mask, fold, pool, scr=None):
     return P
 
 
+# Поферментный отбор члена (пункт 218). Ключ --- фермент, значение --- какие члены
+# усредняются на нём; отсутствие ключа означает «все», то есть прежнее поведение.
+#
+# Посылка ансамбля --- что усреднение бьёт свои члены. Прочитанная ПОФЕРМЕНТНО, как велит
+# пункт 165, она есть четыре проверки, и на CYP3A4 проваливается: гауссов процесс в одиночку
+# даёт ранг 0.8153 против 0.8056 у пятичленного, знак 4/4 на четырёх сидах по обоим
+# критериям, втрое выше поля этого фермента (0.0033). Перебор всех 31 подмножества ставит
+# «GP один» первым, а полный ансамбль четырнадцатым.
+#
+# ЧТО ЗДЕСЬ НА ГРАНИ и должно быть видно тому, кто это меняет. «поферментно+GP» даёт ранг
+# 0.8149 --- отличие 0.0004, вчетверо ниже поля, то есть по решающему критерию это НИЧЬЯ, --- и
+# при этом лучше по метрике (0.4101 против 0.4129). Два члена ещё и страхуют от того, что
+# гауссов процесс окажется неудачлив на тесте, чего одиночный член не переживёт. Выбран
+# одиночный GP; альтернатива меняется правкой одной строки ниже.
+SOLO = {"CYP3A4": ("GP",)}
+
+
+def _keep(e, kind):
+    """Входит ли член в ансамбль этого фермента."""
+    sel = SOLO.get(CYPS[e])
+    return sel is None or kind in sel
+
+
 def oof_members(X, y, mask, fold, mode, scr=None, seed=0, dead=False):
     """Предсказания вне фолда КАЖДОГО члена по отдельности, как (вид, по ферментам).
 
@@ -382,7 +405,8 @@ def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None):
         parts = oof_members(X, y, mask, fold, mode, scr, dead=bands is not None)
         if bands is not None:
             parts = dz_pass(parts, X, mask, fold, bands)
-        return [np.mean([P[e] for _, P in parts], axis=0) for e in range(len(CYPS))]
+        return [np.mean([P[e] for k, P in parts if _keep(e, k)], axis=0)
+                for e in range(len(CYPS))]
 
 
 TRUNK_LAM = "3.0"      # значение, на котором пункт 79 мерил канал
@@ -729,6 +753,8 @@ def main():
             # обучающих строках и применяет к тесту. Это же снимает дефект 2 пункта 202:
             # гребневая больше не стандартизуется на объединении обучения с тестом.
             for kind, T in dz_targets:
+                if not _keep(e, kind):
+                    continue
                 Xtr_d, Xte_d = _dz_design(kind, X[m], e, Xte)
                 parts.append(_dz_fit(kind, Xtr_d, T[e], Xte_d))
         elif a.mode in ("раздельно", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
@@ -758,9 +784,12 @@ def main():
             Btr, Bte = _dz_design("гребневая", X[m], e, Xte)
             parts.append(RidgeCV(alphas=np.logspace(-1, 4, 12))
                          .fit(Btr, y[m, e]).predict(Bte))
-        if a.mode == "ансамбль5":
+        if a.mode == "ансамбль5" and _keep(e, "ствол"):
             parts.append(_trunk_clip(trunk_te[:, e], y[m, e]))
         p = np.mean(parts, axis=0)
+        if CYPS[e] in SOLO:
+            print(f"    {c}: поферментный состав {'+'.join(SOLO[CYPS[e]])} "
+                  f"({len(parts)} член(ов) из пяти), пункт 218", flush=True)
         if lams is not None:
             L, mu_tr, sh = lams[e]
             p = L * p + (1.0 - L) * mu_tr + sh

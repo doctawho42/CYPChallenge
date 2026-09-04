@@ -6855,3 +6855,54 @@ pre-register such a decision rather than take it from the table that suggested i
 it: the same comparison on the two seeds not yet used by anything, with the rule written down first
 -- adopt per-enzyme member selection only where the ensemble loses on both criteria with the sign
 holding, which at present is one enzyme of four.
+
+**218. The ensemble is dropped on CYP3A4 in favour of the Gaussian process alone, and the subset
+search says that is the maximum rather than a guess.** Acting on item 217, with the alternative it
+was nearly tied with recorded so that a later reader can weigh it.
+
+All 31 non-empty subsets of the five members, CYP3A4, four seeds:
+
+    ранг     пара   состав
+    0.8153   0.4129   GP                        <- выбрано
+    0.8149   0.4101   поферментно + GP
+    0.8122   0.4149   пул + GP
+    0.8118   0.4194   поферментно + GP + гребневая
+    ...
+    0.8056   0.4298   ВЕСЬ АНСАМБЛЬ             <- место 14 из 31
+
+**The GP alone is first of thirty-one and the full ensemble is fourteenth.** So the choice is the
+maximum of an exhaustive search rather than a cell noticed in a table -- which matters, because item
+217 arrived at it by chasing a contested-pair cell that item 207 had dismissed as exactly that kind
+of cell.
+
+**What is genuinely close, and is recorded rather than smoothed over.** `поферментно + GP` scores
+0.8149 against 0.8153 -- a gap of **0.0004**, four times below CYP3A4's floor of 0.0033, so on the
+deciding criterion the two are **tied**. And the two-member version is better on the metric, 0.4101
+against 0.4129. It also hedges: a single member has no one to average away its bad day, and the test
+is 750 molecules seen once. The single GP was chosen; the constant `SOLO` in `src/submit.py` changes
+it in one line, and this paragraph exists so that the choice is visible as a choice.
+
+Composed over four seeds, the whole submission moves:
+
+    состав                   макро ранг   макро пара      1A2      2C9      2D6      3A4
+    все пять везде               0.6297       0.6483   0.5568   0.6820   0.4744   0.8056
+    GP один на CYP3A4            0.6321       0.6441   0.5568   0.6820   0.4744   0.8153
+
+Macro rank gains +0.0024, **below** the macro floor of 0.0036; macro pair gains 0.0042, above it.
+The per-enzyme gain of +0.0098 is three times CYP3A4's own floor, and item 165 is explicit that a
+per-enzyme claim is judged against the per-enzyme floor. Both figures are reported because the
+honest summary is that this is a large effect on one enzyme and a sub-floor effect on the average of
+four.
+
+**Why this was believable enough to act on.** It is not a new intervention but the removal of one:
+nothing is added to the model, a member is dropped where it was measured to hurt. Three independent
+prior results point the same way -- item 167 (CYP3A4 has never been helped by anything, and pooling
+costs it 0.0057), item 90 (neighbours carry information in descriptor space, which is where the GP's
+kernel lives, and Morgan is the worst of four spaces), and item 92, which measured the GP against
+the boosting on **macro** and never per enzyme.
+
+**What this does not license.** Selecting the best subset per enzyme on all four would be a search
+over 31 cells times 4 enzymes fitted on the same data that scores it. The rule applied here, written
+in item 217 before this table was built, is narrower: drop members only where the full ensemble
+loses on **both** criteria with the sign holding on four seeds. That is one enzyme of four, and the
+other three keep all five members.
