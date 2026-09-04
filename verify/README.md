@@ -6906,3 +6906,48 @@ over 31 cells times 4 enzymes fitted on the same data that scores it. The rule a
 in item 217 before this table was built, is narrower: drop members only where the full ensemble
 loses on **both** criteria with the sign holding on four seeds. That is one enzyme of four, and the
 other three keep all five members.
+
+**219. The Gaussian process's isotropic kernel is not diluted by 247 dimensions, so ARD is closed
+for twenty minutes rather than a week.** `verify/k62_gpdims.py`, four seeds.
+
+Item 218 opened a question that did not exist before it. Items 176 and 182 are two measurements of
+a single member's gain failing to reach the ensemble -- +0.031 arriving as -0.0008, +0.029 as
++0.0014, at error correlations of 0.94 to 0.97. **On CYP3A4 that mechanism is gone**: the member is
+now the model, so an improvement to the GP transfers one for one instead of one in five. It is the
+only place in the submission where that is true.
+
+The obvious target is the kernel. `gp.py` uses an isotropic RBF with **one** lengthscale for all 247
+standardised descriptors, so every dimension enters the distance with equal weight including the
+ones carrying nothing for that enzyme. Automatic relevance determination is the textbook fix and
+costs 247 jointly fitted parameters, which is precisely the flexibility item 178 measured as
+transferring less.
+
+**So the hypothesis was made to predict something instead.** If the kernel is diluted, dropping the
+least informative dimensions must *improve* it. Selection by absolute Spearman correlation on the
+training folds only -- 247 one-dimensional fits rather than one 247-dimensional one, deliberately
+too weak to overfit, so whatever it finds is a lower bound on a real weighting.
+
+    k       макро     1A2     2C9     2D6     3A4     на CYP3A4 против k=247
+    247    0.5533  0.4752  0.5814  0.4018  0.7547                          —
+    128    0.5451  0.4667  0.5711  0.4012  0.7412   -0.0116   знак 0/4
+     64    0.5346  0.4637  0.5532  0.4023  0.7192   -0.0325   знак 0/4
+     32    0.5256  0.4546  0.5555  0.3908  0.7014   -0.0503   знак 0/4
+     16    0.4957  0.4095  0.5460  0.3675  0.6597   -0.0920   знак 0/4
+
+**Every reduction loses, monotonically, on four seeds of four, on every enzyme.** The prediction
+fails in the strongest available way: not "no improvement" but a smooth decline through fifteen
+floors. All 247 dimensions are carrying something, the isotropic kernel is not paying a dilution
+cost, and per-dimension lengthscales have nothing to recover.
+
+**This is what the gate is for.** ARD on 2335 rows is a week of work with a real chance of an
+ambiguous answer at the end. The hypothesis behind it made a cheap falsifiable prediction, the
+prediction was run in twenty minutes, and it failed. The pattern is item 105's and item 114's: count
+something before building.
+
+**With this the named channels are all spent.** Item 166 classified what survives into three kinds
+and every one is now used or closed -- band width by the dead zone (items 164, 204, 213), pair
+distinguishability subsumed by it at sixty per cent overlap with nothing left over (item 181),
+enzyme identity by pooling. The feature channel has six controlled nulls, external data is closed by
+protocol and overlap (items 144, 166, 201), physics by identifiability (item 211), post-hoc
+correction is bounded at 0.0076 (item 128), and the ensemble is limited by data rather than by
+diversity (item 194). **The remaining work is not on the model.**
