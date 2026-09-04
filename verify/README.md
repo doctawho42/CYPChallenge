@@ -7087,3 +7087,48 @@ be the kind of claim this file exists to prevent.
 a per-compound quantity that tracks where the model errs, and item 207 already measured that the
 ensemble's own disagreement locates its error at a lift of 1.56 while containing no better answer.
 That is the natural normaliser to try next and the only one left in the building.
+
+**222. The ensemble's own spread is the best interval normaliser available -- the same quantity item
+93 measured as useless for the other use.** `verify/k64_conformal.py`, four seeds, the normaliser
+item 221 named as the only candidate left.
+
+**The precondition passes, unlike the one before it.** Correlation of the per-compound spread across
+the five members with the absolute residual is **+0.1176 on average and positive in all sixteen
+cells** of four enzymes by four seeds. Weak, but real and consistent -- against the Gaussian
+process's native variance at +0.0245 with a sign flip (item 221).
+
+    нормировщик             разброс зон   закрыто   полуширина   слаб / сред / сильн
+    обычный                       0.195      0.0 %       1.228   0.799 / 0.994 / 0.907
+    дисперсия GP                  0.196     -0.3 %       1.231   0.799 / 0.995 / 0.902
+    предсказание                  0.166     15.0 %       1.163   0.827 / 0.993 / 0.881
+    РАЗБРОС АНСАМБЛЯ              0.144     26.1 %       1.313   0.834 / 0.978 / 0.886
+    предсказание + разброс        0.166     15.1 %       1.155   0.827 / 0.993 / 0.881
+
+**The spread closes about a quarter of the conditional-coverage gap**, against fifteen per cent for
+a fitted function of the prediction and nothing at all for the GP's variance. Marginal coverage
+stays exact throughout, as split conformal guarantees.
+
+**And it is paid for in width.** Median half-interval goes from 1.228 to **1.313**, seven per cent
+wider, while the prediction-based normaliser goes the other way to 1.163. So the two available
+normalisers trade against each other: one buys conditional honesty with width, the other buys width
+with honesty. Reported as a trade rather than as a winner, because which is preferable depends on
+what the interval is for, and nothing in the metric answers that.
+
+**The combination is not a superset and that is informative.** Fitting `E|остаток|` linearly on the
+prediction, its square and the spread gives 0.166 -- exactly the prediction-only figure, no better.
+The spread's information about where the model errs largely overlaps with what the prediction level
+already carries, so the two do not add. What makes the spread better *alone* is its functional form:
+used directly as the scale it follows the error's shape, while a linear fit flattens it.
+
+**The reversal is worth stating plainly.** Item 93 measured model spread as a conditioner for
+adjusting predictions and got +0.0002 against a pre-registered threshold of 0.005 -- a clean failure.
+The same quantity, on the same data, used to *size an interval* rather than to *move a point*, is the
+best normaliser in the building. A quantity that fails one use is not thereby closed for another,
+and this file has now been on both sides of that: item 118 is the case where an idea was
+re-evaluated because its earlier refutation was assumed rather than checked.
+
+**What is still not fixed.** Conditional coverage remains 0.834 against 0.978 across activity zones
+at the nominal 0.90 -- three quarters of the gap survives the best normaliser we have. The honest
+statement for any use of these intervals is that the marginal guarantee holds exactly, the
+conditional one does not, and the residual failure is under-coverage on the weakest compounds, which
+is the direction that matters least for a screening application and most for a ranking one.

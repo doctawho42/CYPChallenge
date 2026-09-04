@@ -101,13 +101,20 @@ def main():
         m = tr[col].notna().to_numpy()
         y = tr.loc[m, col].to_numpy()
         fold = fold_all[m]
-        p = np.mean([P[e] for P in mem.values()], axis=0)
+        M = np.stack([P[e] for P in mem.values()])       # (члены, n)
+        p = M.mean(0)
         res = y - p
+        # Разброс ансамбля по соединению. Пункт 93 пробовал его как ОБУСЛОВЛИВАЮЩУЮ величину
+        # для поправки предсказаний и получил +0.0002; здесь употребление другое --- размер
+        # интервала, а не сдвиг точки, --- поэтому предусловие меряется заново ниже.
+        spr = M.std(0, ddof=1)
         sd = np.sqrt(np.maximum(np.asarray(GV[f"{a.seed}|GPvar|{c}"], float), 1e-12))
 
         r = {"фермент": c, "n": len(y), "RMSE": float(np.sqrt((res ** 2).mean())),
              "sd GP медиана": float(np.median(sd)),
-             "rho(|ошибка|, sd)": float(spearmanr(np.abs(res), sd).statistic)}
+             "rho(|ошибка|, sd)": float(spearmanr(np.abs(res), sd).statistic),
+             "разброс медиана": float(np.median(spr)),
+             "rho(|ошибка|, разброс)": float(spearmanr(np.abs(res), spr).statistic)}
 
         # Нормировка по ПРЕДСКАЗАНИЮ. Пункт 114: ширина полосы есть детерминированная функция
         # МЕТКИ при R^2 0.93--0.98. Метки на тесте нет, но есть предсказание, и оно с меткой
@@ -121,8 +128,21 @@ def main():
             k = np.polyfit(p[trn], np.abs(res[trn]), 2)
             byp[te] = np.maximum(np.polyval(k, p[te]), 0.05)
 
+        # Комбинация: разброс ансамбля, поднятый до масштаба ожидаемой невязки. Обе части
+        # подгоняются только на обучающих фолдах.
+        comb = np.ones(len(y))
+        for f in np.unique(fold):
+            te, trn = fold == f, fold != f
+            if te.sum() == 0 or trn.sum() < 50:
+                continue
+            X2 = np.column_stack([p[trn], p[trn] ** 2, spr[trn], np.ones(trn.sum())])
+            k, *_ = np.linalg.lstsq(X2, np.abs(res[trn]), rcond=None)
+            Z = np.column_stack([p[te], p[te] ** 2, spr[te], np.ones(int(te.sum()))])
+            comb[te] = np.maximum(Z @ k, 0.05)
+
         for nm, sc in (("обычный", np.ones(len(y))), ("нормированный", sd),
-                       ("по предсказанию", byp)):
+                       ("по предсказанию", byp), ("по разбросу", np.maximum(spr, 0.05)),
+                       ("предсказание+разброс", comb)):
             half = conformal(res, sc, fold)
             cov = float((np.abs(res) <= half).mean())
             r[f"{nm}: покрытие"] = cov
@@ -136,19 +156,33 @@ def main():
 
     df = pd.DataFrame(T).set_index("фермент")
     print("1. ПРЕДСКАЗЫВАЕТ ЛИ ДИСПЕРСИЯ GP ОШИБКУ")
-    print(df[["n", "RMSE", "sd GP медиана", "rho(|ошибка|, sd)"]].round(4).to_string())
+    print(df[["n", "RMSE", "sd GP медиана", "rho(|ошибка|, sd)",
+              "разброс медиана", "rho(|ошибка|, разброс)"]].round(4).to_string())
     print("\n2. ПОКРЫТИЕ, маргинальное")
-    print(df[[f"{n}: покрытие" for n in ("обычный", "нормированный", "по предсказанию")]
+    print(df[[f"{n}: покрытие" for n in ("обычный", "нормированный", "по предсказанию", "по разбросу", "предсказание+разброс")]
              + [f"{n}: мед. полуширина" for n in ("обычный", "по предсказанию")]].round(4).to_string())
     print("\n3. ПОКРЫТИЕ ПО ТРЕТЯМ АКТИВНОСТИ (слабые / средние / сильные)")
     print(df[[f"{n}: покр. по зонам" for n in
               ("обычный", "нормированный", "по предсказанию")]].to_string())
-    def spread(col):
-        v = [max(map(float, x.split(" / "))) - min(map(float, x.split(" / "))) for x in df[col]]
-        return float(np.mean(v))
-    print(f"\n   разброс покрытия между зонами (меньше --- лучше):")
-    for n in ("обычный", "нормированный", "по предсказанию"):
-        print(f"     {n:16s} {spread(f'{n}: покр. по зонам'):.3f}")
+    VAR = ("обычный", "нормированный", "по предсказанию", "по разбросу",
+           "предсказание+разброс")
+
+    def zones(col):
+        return np.array([[float(x) for x in v.split(" / ")] for v in df[col]])
+
+    print("\n   СВОДКА: разброс покрытия между зонами (меньше --- лучше)")
+    print(f"   {'нормировщик':22s} {'разброс':>8s} {'закрыто':>8s} {'полуширина':>11s}"
+          f"   слаб / сред / сильн")
+    base = None
+    for n in VAR:
+        Z = zones(f"{n}: покр. по зонам")
+        sp = float(np.mean(Z.max(1) - Z.min(1)))
+        if base is None:
+            base = sp
+        hw = float(df[f"{n}: мед. полуширина"].mean())
+        z = Z.mean(0)
+        print(f"   {n:22s} {sp:8.3f} {100*(base-sp)/base:7.1f}% {hw:11.3f}   "
+              + " / ".join(f"{x:.3f}" for x in z))
 
     rm = float(df.RMSE.mean()); hw = float(df["обычный: мед. полуширина"].mean())
     print(f"""
