@@ -7299,3 +7299,57 @@ form is therefore per-enzyme: multi-task on three, CYP3A4 alone. That per-enzyme
 item 218 acted on from a different direction, dropping the ensemble on CYP3A4 entirely. The two
 arrive at the same shape from opposite ends -- **CYP3A4 does not want to share** -- and that is worth
 more than either arm.
+
+**226. Down-weighting the rows whose curve fit fell apart loses to down-weighting random rows, and
+the reason is that the tail is the weak compounds.** `src/ablweight.py`, seed 0, all arms measured
+**on top of** the dead zone because item 181 is the standing lesson about intervention overlap.
+
+Section 3 of the document observes that the error is unevenly distributed and says outright that
+weighting compounds by their individual error makes more sense than it looks. Checked here, the
+observation is softer than the document's phrasing: the top five per cent by sigma carry **46, 42,
+57 and 22** per cent of the squared error, so "almost sixty" is CYP2D6 and CYP3A4 is a quarter of it.
+
+**The objection that had to be answered first.** Item 114 makes sigma a deterministic function of
+the label, R^2 0.928 to 0.970 reproduced here, so weighting by 1/sigma^2 is weighting by potency and
+the dead zone already gives exactly those rows a wide free zone. What survives the isotonic is 3.0
+to 7.2 per cent of sigma's variance, with correlation to the label of 0.03, -0.04, 0.11 and -0.02 --
+the label dependence is gone, and inside that residual the tail persists, the top five per cent
+carrying 50 to 60 per cent of residual variance. **That residual is the only honest version of the
+proposal.**
+
+    рука                       пара     ранг      1A2     2C9     2D6     3A4
+    контроль                 0.6794   0.6051    0.540   0.644   0.465   0.771
+    1/остаток^2              0.7639   0.5105    0.434   0.547   0.343   0.717
+    1/остаток^2, перемешан   0.7401   0.5456    0.475   0.577   0.415   0.715
+    1/sigma^2                0.8009   0.5174    0.456   0.535   0.418   0.661
+
+**Everything loses by an order of magnitude more than the floor, and the honest arm loses more than
+its own permutation** -- -0.0946 against -0.0595. The addressing of the weights is not merely
+uninformative, it is **anti-informative**.
+
+**Half the magnitude is my construction and I say so.** `1/r^2` with a tenth-percentile floor gives
+an effective sample of 23 to 25 per cent of n on the honest arm and 53 to 56 on the naive one.
+Throwing away three quarters of the effective data must be expensive, and item 194 is why. A gentler
+weighting would lose less. **But the permutation control is unaffected by that**: it has the same
+weight distribution and therefore the same effective sample, and differs only in which row gets
+which weight. So the sign of the real-minus-shuffled gap survives the construction defect even
+though its size does not.
+
+**And the mechanism is measured rather than guessed.**
+
+    фермент   rho(остаток, |ошибка|)   rho(sigma, |ошибка|)   медиана метки в верхних 5 % остатка
+    CYP1A2                     0.089                  0.201        3.36 против 5.17
+    CYP2C9                    -0.009                  0.194        4.14 против 4.63
+    CYP2D6                     0.075                  0.117        3.54 против 4.77
+    CYP3A4                     0.214                  0.301        3.39 против 4.31
+
+The residual **barely predicts model error** at rho 0.09, worse than raw sigma does. But it strongly
+**selects weak compounds**: the isotonic removes the average label dependence and the tail still sits
+1.2 to 1.6 log units below the rest. So down-weighting by it removes the bottom of the potency range
+from the model, and what we are scored on is order. Anchoring the weak end matters, and the arm
+throws it away.
+
+**Which also explains why the naive arm loses**: it does the same thing more directly. And it closes
+the door item 200 left ajar from the other side -- graded weight by band width lost there as the
+split normal, and here the same idea with the label dependence surgically removed loses too.
+Weighting rows by their stated error is closed in both of its forms.
