@@ -7353,3 +7353,53 @@ throws it away.
 the door item 200 left ajar from the other side -- graded weight by band width lost there as the
 split normal, and here the same idea with the label dependence surgically removed loses too.
 Weighting rows by their stated error is closed in both of its forms.
+
+**227. A full unit of noise in the pKa estimate does not hurt the mechanistic block, and on the one
+enzyme where the block lives it helps.** `verify/k66_pkanoise.py`, seed 0. The bound that decides
+whether to replace the rule, computed without replacing it.
+
+The mechanistic block is the best feature block in the project -- +0.0163 of rank, +0.0313 in the
+test regime, three times less sensitive to the split than anything else -- and it rests on a rule
+estimating pKa whose known worst miss is caffeine at 4.5 units. An outside reading proposed replacing
+the rule with a trained predictor, and the proposal has a property the other proposals in that letter
+lacked: **the block sits in the feature matrix, so all five members read it**, and item 213 measured
+that interventions touching every member at once are the only kind that reach the ensemble.
+
+**The exposure is real**, which is why the question was worth asking. pKa enters three features --
+the value, the protonated fraction at pH 7.4, the hard indicator above it -- plus the CYP2D6
+pharmacophore, which asks for a cation at pH 7.4 two to five bonds from an aryl. So an error matters
+where it moves a compound across the threshold, and **13.1 per cent** of the training set sits within
+one pKa unit of it against a typical predictor error of 0.5 to 1.0.
+
+**The measurement is a bound rather than an experiment, and unusually tight.** Injecting error of the
+rule's own magnitude and removing it are the same operation with opposite sign, so the cost of
+injection bounds the gain from a perfect predictor. Item 128's procedure.
+
+    сигма   MACRO пара   MACRO ранг      1A2      2C9      2D6      3A4
+    0.0        0.7150       0.5651   0.4957   0.5972   0.4027   0.7646
+    1.0        0.7138       0.5671   0.4944   0.5914   0.4201   0.7626
+
+**Nothing gets worse.** Macro rank moves +0.0020 and macro pair -0.0012, both *toward better*, and
+this after the perturbation flipped `is_base_74` on **233 molecules, 4.8 per cent** of the set. The
+derived features were recomputed rather than jittered, so the hard threshold really did flip.
+
+**The upper bound on what a trained pKa predictor can buy is therefore zero or less.** The proposal
+closes, and it closes for an hour of compute rather than a week of building.
+
+**And the block's mechanism is now narrower than the document says.** Section 7 explains the block
+through protonation at pH 7.4, and CYP2D6's salt bridge to a protonated nitrogen is item 81's
+finding. But the protonation *call* can be wrong on one molecule in twenty at no cost. So what the
+block delivers is **not the fine boundary of the protonation state** -- it is the geometry around the
+basic centre, the topological distance from that nitrogen to the aromatic system, which a one-unit
+pKa error leaves untouched. The value is in where the nitrogen sits, not in whether the rule got its
+pKa right.
+
+**One number is over the line and is reported as one seed.** CYP2D6 gains **+0.0174** under noise,
+three and a half times its own floor of 0.0049 and just past item 167's threshold of about 0.015 for
+a single-seed per-enzyme claim. Seeds 1 to 3 are queued. The bound does not depend on its sign --
+the macro figure is already non-negative -- but "noise on the pKa improves the enzyme whose
+pharmacophore uses it" is a strong enough sentence to deserve four seeds before it is believed.
+
+**Control reproduces**: the sigma-zero arm gives 0.7150 and 0.5651, the scoreboard's reference row
+for `FP+DESC+MECH, поферментно, HistGB` to the fourth decimal, from a third independently written
+harness today.
