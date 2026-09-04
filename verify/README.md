@@ -7257,3 +7257,45 @@ calculations would sharpen a quantity whose rank-relevant component has been mea
 binders. At pKi 8 the correction is 0.26 pIC50 and matters. This dataset has one such compound on
 CYP3A4 and two on CYP2C9. A benchmark of drug-like inhibitors rather than a diversity screen would
 be a different question, and this closure does not reach it.
+
+**225. Coregionalization closes without being built: its tree analogue is measured, does not reach
+the ensemble, and the mechanism it repairs is absent from the learner we ship.** Composition from
+saved predictions, four seeds, minutes.
+
+The document has carried the intrinsic coregionalization model as an unbuilt design since it was
+written, and an outside reading argued the prior had risen because item 188 measured the tree
+version of the same idea -- one vector of values per leaf, explicit cross-task structure -- at
+**+0.0069 of macro rank** over the per-enzyme reference and +0.0273 over pooling.
+
+**The cheap question first: does the measured version reach the ensemble?**
+
+    состав                                  ранг     пара
+    пять членов (подаётся)                0.6297   0.6483
+    многозадачно ВМЕСТО поферментного     0.6252   0.6556
+    многозадачно ШЕСТЫМ членом            0.6269   0.6545
+
+**-0.0045 as a replacement and -0.0028 as an addition**, worse on both criteria in both forms over
+four seeds. It does not reach the ensemble.
+
+**And the reason was available before the run, from item 188's own argument.** Its gain exists
+because plain depth-5 trees spend depth isolating the enzyme indicator -- item 180 measured the
+share of root-to-leaf paths through it rising from 0.34 to 0.59 -- so a leaf carrying four values
+buys the same conditioning for free. That is a repair of a **specific defect of that learner**. Item
+158 measured the same defect's absence on HistGB: pooling *gains* +0.0141 there against *losing*
+0.027 on plain depth-5 trees. The submission's learner does not pay the cost that multi-task
+refunds, so there is nothing to refund.
+
+**Which also settles the neural version without building it**, by an arithmetic the file already
+has. The ICM would live in the trunk. The trunk is the ensemble's weakest member at rank 0.595
+against the ensemble's 0.634, its entire contribution is **+0.0045** (item 213), and its measured
+transfer ratio is about one in seven -- +0.0320 standalone arriving as +0.0045. So an ICM gain would
+have to exceed **0.025 of standalone rank in the trunk** merely to reach the macro floor of 0.0036
+in the ensemble. That is three and a half times what the tree version achieved standalone against
+its own reference, in the family where the mechanism works less well.
+
+**What item 188 said that does survive, and it is not the coregionalization.** Its closing paragraph
+observed that CYP3A4 loses 0.0171 to multi-task because it has the most labels, and that the honest
+form is therefore per-enzyme: multi-task on three, CYP3A4 alone. That per-enzyme reasoning is what
+item 218 acted on from a different direction, dropping the ensemble on CYP3A4 entirely. The two
+arrive at the same shape from opposite ends -- **CYP3A4 does not want to share** -- and that is worth
+more than either arm.
