@@ -7636,3 +7636,55 @@ exploiting* was not, and the difference matters because it is the part a reader 
 **How it got in.** The oracle decomposition is a statement about *quantities*; I turned it into a
 statement about *branches* by reasoning rather than by counting, in the same paragraph that reported
 the counting. The check that caught it took twenty minutes and could have run that day.
+
+**233. Pre-registration: what would put calibration into the submission.** Written and committed
+with seed 0 in hand and seeds 1 to 3 still running, so the rule cannot be chosen to fit them.
+`verify/k68_tdicalib.py`.
+
+Item 229 ended by proposing that nested Platt calibration go into the submission's TDI path on the
+strength of §10's +0.028 on CYP3A4. Two things then turned up that the proposal did not account for.
+
+**The measurement it rests on calibrated across cluster boundaries.** `verify/f10_calib.py` draws
+its calibration groups with `rng.integers(0, 5, n)` -- random, not Butina -- so close analogues of
+the rows being scored sat in the fitting half. k68 repeats it on the canonical split with full
+nesting: the outer fold's probabilities come from a model that never saw it, and the calibrator is
+fitted on out-of-fold probabilities from an inner split of the remainder.
+
+**Platt is monotone only if its slope is positive.** It fits a logistic on `logit(p)`; on a
+classifier with no ordering the slope can come out negative and the "calibration" reverses the
+ranking. CYP2D6's AUC is 0.588. So the slope is reported per fold rather than assumed, and a smoke
+test on a deliberately signal-free stub reproduced the reversal (3 folds of 5 negative), confirming
+the diagnostic fires.
+
+**Seed 0, both enzymes:**
+
+    плечо              3A4 MCC   против подачи        2D6 MCC   против подачи
+    сырые + plug        0.3277             —           0.0948             —
+    Платт + plug        0.3478      +0.0199            0.1161      +0.0218
+    изотон + plug       0.3496      +0.0217            0.0677      -0.0258
+    сырые + подогнанный 0.3454      +0.0174            0.0727      -0.0210
+    оракул порога       0.3689      +0.0411                 —             —
+
+    E[p] против истинной доли    3A4: 0.266 -> 0.333 (истинная 0.326)   Брайер 0.2021 -> 0.1848
+                                 2D6: 0.099 -> 0.217 (истинная 0.217)   Брайер 0.1914 -> 0.1670
+
+Every interval crosses zero at n = 1495 and 2346, which is why this is decided on seeds and signs
+rather than on one number.
+
+**The rule, fixed now.** Platt plus plug-in goes into `src/submit.py` if and only if all three hold
+over the four seeds:
+
+1. the mean gain in macro MCC over `сырые + plug` is positive;
+2. the sign holds in at least **6 of the 8 cells** (4 seeds x 2 enzymes);
+3. the Platt slope is **positive in all 40 folds** -- one reversal and the map is not a calibration.
+
+**And a rule about which arm.** If Platt fails while isotonic or the fitted threshold passes, nothing
+is adopted. The submission's own comment already settled this principle -- *one rule, applied to both
+endpoints, not a per-endpoint recipe* -- and item 202 is the record of what per-endpoint recipes cost
+here. Picking the winner per enzyme after four seeds is threshold-fitting one level up.
+
+**What seed 0 already suggests, recorded so it cannot be quietly forgotten.** The fitted threshold
+on CYP2D6 came out at 0.40, 0.11, 0.14, 0.50, 0.07 across the five folds. At AUC 0.588 the MCC
+surface is flat and its argmax is noise, which is the mechanism for that arm failing there -- and a
+direct vindication of item 165's sixth finding, that a threshold rule on this endpoint rests on an
+assumption nobody had stated.
