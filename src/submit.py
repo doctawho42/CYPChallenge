@@ -101,7 +101,7 @@ import feats as F
 from cypsplit import butina_folds, fold_digest
 from gp import prepare as gp_prepare, gp_predict
 from sklearn.isotonic import IsotonicRegression
-from sklearn.linear_model import RidgeCV
+from sklearn.linear_model import LogisticRegression, RidgeCV
 from reweight import tilt
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
@@ -138,6 +138,44 @@ def plugin_threshold(pr, grid=None):
         return (tp * tn - fp * fn) / d if d > 0 else 0.0
 
     return float(ts[int(np.argmax([emcc(t) for t in ts]))])
+
+
+# Platt calibration of the classifier's probabilities, fitted OUT OF FOLD on the training rows
+# and applied to the test predictions. Item 233 pre-registered the rule for putting this in and
+# item 235 is the four-seed measurement that passed it: macro MCC +0.0133 against a floor of
+# 0.0076, sign 7 of 8 cells, all 40 Platt slopes positive.
+#
+# Why it is needed at all, and it is a defect rather than an improvement: plugin_threshold above
+# maximises the MCC *expected under the model's own probabilities*, which is only the right
+# threshold if those probabilities are calibrated. They are not - the mean predicted rate was
+# 0.099 against a true 0.217 on CYP2D6. Item 165 raised the unstated assumption; this closes it.
+#
+# The slope must be positive or the map is not a calibration but an order reversal - Platt fits a
+# logistic on logit(p), and on a classifier with no ordering the slope can come out negative.
+# CYP2D6's AUC is 0.588, close enough to make that a live failure, so it is checked rather than
+# assumed. All 40 folds of the four-seed sweep came out positive, minimum +0.084.
+#
+# Costs five extra classifier fits per enzyme, about twenty-five minutes on top of the run.
+def tdi_calibrate(Xtr, ytr, fold, p_test):
+    p_oof = np.zeros(len(ytr))
+    for f in range(5):
+        trn, te = fold != f, fold == f
+        if te.sum() == 0 or ytr[trn].sum() == 0:
+            continue
+        p_oof[te] = gbm_clf().fit(Xtr[trn], ytr[trn]).predict_proba(Xtr[te])[:, 1]
+
+    def _logit(q):
+        q = np.clip(q, 1e-6, 1 - 1e-6)
+        return np.log(q / (1 - q)).reshape(-1, 1)
+
+    lr = LogisticRegression(C=1e6).fit(_logit(p_oof), ytr)
+    slope = float(lr.coef_[0, 0])
+    if slope <= 0:
+        raise SystemExit(
+            f"наклон Платта {slope:+.4f} <= 0: карта переворачивает порядок, а не калибрует. "
+            "Все 40 фолдов четырёхсидового прогона (пункт 235) дали положительный наклон, "
+            "минимум +0.084, так что это не ожидаемый режим -- разбираться, а не обходить.")
+    return lr.predict_proba(_logit(p_test))[:, 1], slope
 
 
 def test_features(desc_names, mech_names):
@@ -818,14 +856,19 @@ def main():
     keep = rows.Molecule_Name.isin(tdi.index).to_numpy()
     T = tdi.loc[rows.Molecule_Name[keep]].reset_index()
     cls = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})
+    tdifold, _ = butina_folds(list(rows.SMILES[keep]))
     for c in TDI_CYPS:
         lab = T[f"{c}_is_TDI"]
         m = lab.notna().to_numpy()
         yb = lab[m].astype(int).to_numpy()
         pr = gbm_clf().fit(X[keep][m], yb).predict_proba(Xte)[:, 1]
+        raw_mean = float(pr.mean())
+        pr, slope = tdi_calibrate(X[keep][m], yb, tdifold[m], pr)
         thr = plugin_threshold(pr)
         cls[f"{c}_is_TDI"] = pr >= thr
-        print(f"    {c}: порог {thr:.3f}, положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
+        print(f"    {c}: Платт наклон {slope:+.3f}, среднее {raw_mean:.3f} -> {pr.mean():.3f} "
+              f"(обучающая доля {yb.mean():.3f}); порог {thr:.3f}, "
+              f"положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
 
     ap_ = a.outdir + "activity_submission.csv"
     tp_ = a.outdir + "tdi_submission.csv"

@@ -61,6 +61,17 @@
 Макро усредняет четыре фермента и потому тише каждого из них. **Поферментное заявление нельзя
 мерить макро-полом.**
 
+**Пол по MCC на классификационном треке (пункт 235), измерен по четырём сидам подаваемой руки:**
+
+    фермент                       пол по MCC
+    CYP3A4                            0.0281
+    CYP2D6                            0.0419
+    МАКРО                             0.0076
+
+Макро-пол MCC совпал с макро-полом ранга (0.0076 против 0.007) на другом треке и другой метрике.
+И здесь **макро-заявление нельзя предъявлять как поферментное**: пункт 235 даёт +0.0133 макро при
+поле 0.0076 и НЕ проходит ни на одном отдельном ферменте.
+
 **Что закрыто за ночь 2 сентября, семь измерений подряд, все с контролями.** Ни одно не «не
 сработало» --- у каждого назван механизм, и два из них сходятся в одном утверждении.
 
@@ -7732,3 +7743,62 @@ of *quantities* the whole time: level known gives 0.078 and 0.439, shift known g
 **Cost of getting this wrong twice: two journal entries and a paragraph of §10.** Cost of the check
 that settles it: one boolean comparison over 3827 rows. The rule was available in closed form in the
 repository the entire time; nobody had folded it.
+
+**235. Calibration passes the pre-registration and goes into the submission; and the four-seed
+sweep hands us the MCC floor the repository never had.** `verify/k68_tdicalib.py`, four seeds, both
+endpoints, `results/preds/tdicalib.json`. Item 233 fixed the rule before these numbers existed.
+
+    MCC                    CYP3A4                          CYP2D6
+    плечо            с0     с1     с2     с3  среднее    с0     с1     с2     с3  среднее
+    сырые+plug   0.3277 0.3182 0.2996 0.3118   0.3143  0.0948 0.1029 0.1367 0.1206   0.1137
+    Платт+plug   0.3478 0.3388 0.3318 0.3331   0.3379  0.1161 0.1102 0.1431 0.0982   0.1169
+    изотон+plug  0.3496 0.3309 0.3326 0.3333   0.3366  0.0677 0.0862 0.1232 0.1121   0.0973
+    сырые+подогн 0.3454 0.3320 0.3286 0.3291   0.3338  0.0727 0.0769 0.1283 0.0923   0.0925
+    оракул       0.3689 0.3733 0.3495 0.3625   0.3635  0.1484 0.1626 0.1708 0.1538   0.1589
+
+**The three pre-registered conditions, checked in the order they were written:**
+
+    1. средний прирост макро-MCC > 0        +0.0133  (+0.0206 +0.0139 +0.0193 -0.0005)   прошло
+    2. знак в >= 6 клетках из 8             7 из 8                                       прошло
+    3. наклон Платта > 0 во всех 40 фолдах  минимум +0.0836, отрицательных 0             прошло
+
+**So it is deployed** -- `tdi_calibrate()` in `src/submit.py`, Platt fitted out of fold on the
+training rows and applied to the test probabilities, with the slope check as a hard failure rather
+than a warning. Cost: ten extra classifier fits, about twenty-five minutes on the run.
+
+**The floor, which is the more durable half of this entry.** This repository had noise floors for
+rank and for ST-RAE and none at all for MCC, so every MCC statement in the file so far was made
+against nothing. The submitted arm re-measured at four split seeds gives it:
+
+    пол по MCC (подаваемая рука, сырые+plug)     sd    2*sd   размах    принят
+    CYP3A4                                   0.0118  0.0236   0.0281    0.0281
+    CYP2D6                                   0.0187  0.0374   0.0419    0.0419
+    МАКРО                                    0.0037  0.0074   0.0076    0.0076
+
+**Macro MCC's floor is 0.0076 -- within a thousandth of the regression track's macro rank floor of
+0.007.** Two different metrics on two different tracks with the same split machinery land in the
+same place, which is a coincidence worth noticing and not worth theorising about.
+
+**And it changes what this result may be claimed as.** The gain is +0.0133 macro against a floor of
+0.0076: **1.75 times the floor, and that is the whole claim.** Per enzyme it does not clear: +0.0235
+on CYP3A4 against a floor of 0.0281, +0.0031 on CYP2D6 against 0.0419. The scoreboard's warning has
+always run the other way -- a per-enzyme claim cannot be measured against the macro floor -- and this
+is the first entry where the converse bites. **There is no CYP3A4 result here. There is a macro
+result.**
+
+**Two things that did not pass, recorded because they were live options.** Isotonic reaches the same
+macro mean but its sign is 4 of 8, and the fitted threshold is 4 of 8 with a mean of -0.0009 -- on
+CYP2D6 its per-fold optimum ranged 0.05 to 0.70 across five folds, because at AUC 0.588 the MCC
+surface is flat and its argmax is noise. Item 233 forbade adopting a per-endpoint winner and nothing
+here tempts one: Platt is the only arm positive in both columns.
+
+**§10's +0.028 does not reproduce and the reason is a defect in `verify/f10_calib.py`.** That script
+draws its calibration groups with `rng.integers(0, 5, n)` -- random, not Butina -- so close analogues
+of the scored rows sat in the fitting half. On the canonical split with full nesting the same
+quantity is **+0.0235 on CYP3A4**, and every per-seed interval crosses zero. The +0.028 was not
+wrong arithmetic; it was measured through a split that does not exist anywhere else in this project.
+
+**The oracle row is the standing reproach.** A threshold chosen with knowledge of the fold's own
+labels reaches 0.3635 and 0.1589 -- **+0.0472 macro, sign 8 of 8**, more than three times what
+calibration recovers. Half the available threshold gap is still on the table and nothing measured
+so far reaches it.
