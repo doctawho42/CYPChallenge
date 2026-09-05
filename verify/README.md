@@ -7538,3 +7538,101 @@ single-seed threshold of about 0.015, and the sentence it licensed was the inter
 reached a commit title. The guard that worked was item 227's own paragraph refusing to believe it.
 The guard that would have worked earlier is not writing the claim into a title until the seeds are
 back; a journal entry can be corrected in place, a commit title cannot.
+
+**231. The 1238 are not free negatives for the classifier either, and here the reason is sharper
+than item 216's: 1048 of them are labelled backwards.** Arithmetic on the organisers' files, no
+model. Item 203's "placeholder, not a measurement" given its proof.
+
+Item 216 closed the 1238 for the **regression** track: the manufactured pIC50 keeps 98.6 per cent of
+the rank and the missing 1.4 is three times CYP3A4's floor. That closure says nothing about the
+**classification** track, where the same rows look like a different and better offer -- they carry a
+`CYP3A4_is_TDI` label already, all of it negative, and adding them would take the classifier from
+2346 rows to 3584 and move the base rate from 0.326 to 0.213, *toward* the calibration §10 says is
+broken. The idea is adjacent to work in flight, which is why it is written down rather than dropped.
+
+It fails on the labels themselves.
+
+    из 1238 строк вне rows.csv, несущих CYP3A4_is_TDI
+    метка True                                              0
+    измеренное плечо с преинкубацией                     1238
+    плечо > 4.301 (вторая ветвь правила сказала бы «да»)  1048   84.6 %
+    плечо <= 4.301 (отрицательные по любой ветви)          190   15.4 %
+    согласие правила с меткой                                    15.3 %
+
+    медиана плеча TDI       у этих 1238   5.403
+                            у 2346 размеченных   4.629
+
+The rule has two branches (§10, item 197). Without a direct arm only the second is evaluable, and it
+asks whether the pre-incubation arm exceeds 4.301. **On 1048 of the 1238 it does** -- these compounds
+are more potent after pre-incubation than the labelled population is, median 5.40 against 4.63 -- and
+every one of them is nevertheless marked `False`.
+
+**The alternative reading does not survive counting.** For the label to be a real derivation, all
+1238 would need a direct arm above 4 with a shift of at most $\log_{10}2$: every one genuinely
+non-TDI. That is a positive rate of 0 out of 1238 against a base rate of 0.326, probability
+$1.4\times10^{-212}$. Zero is a placeholder signature, not a measurement.
+
+**So the two closures are different in kind and both should be quoted.** For the regression track
+the extra rows are *good but not good enough*. For the classification track they are **actively
+poisonous**: training on them injects roughly 1048 mislabelled positives into a classifier whose
+entire measured MCC is 0.353, on the endpoint where two thirds of that MCC comes from the very
+branch these rows would corrupt (item 229 -- CYP3A4's score comes from the second branch, the
+potency question, not from the difference).
+
+**Two counts that look contradictory and are not.** 1249 of the 3584 CYP3A4 labels have no direct
+arm; 1238 of them have no row in `rows.csv` at all. The eleven in between sit in the feature matrix
+with a missing direct arm. The table above is the 1238, because those are the rows the proposal
+would have *added*; the 1249 is the figure §10 quotes for the rule's coverage.
+
+**Cost of this check: twenty minutes, no model, no run** -- the same move as items 105, 109 and 114,
+counting the preconditions before building anything. What is new here is only where it was pointed:
+at a resource already closed for one track, on the assumption that the closure carried to the other.
+It does carry, but not for the recorded reason, and the real reason is stronger.
+
+**232. Item 229 said the shift is unpredictable and that CYP3A4's MCC comes from the second branch.
+The first is too strong and the second is wrong.** A per-branch split of the classifier's own
+out-of-fold probabilities, twenty minutes, no new model. My own correction to my own item, caught
+while writing it into §10.
+
+Item 229 measured a *regression* on the shift and got $R^2$ of $-0.050$ and $+0.016$, then wrote:
+"the shift carries no structural signal", and "the classifier's 0.353 on CYP3A4 is not coming from
+the difference at all: it is the rule's second branch." Splitting the rows by which branch of the
+rule decides them, and scoring the saved OOF probabilities inside each:
+
+    строки, разделённые по ИСТИННОМУ прямому плечу      n   доля полож.    MCC     AUC
+    CYP3A4, ветвь 1 (прямое > 4: разность плеч)      1391        0.489   0.258   0.664
+    CYP3A4, ветвь 2 (прямое <= 4: только плечо TDI)   955        0.088   0.284   0.773
+    CYP2D6, ветвь 1                                  1364        0.200   0.129   0.585
+    CYP2D6, ветвь 2                                   131        0.389   0.102   0.570
+
+**Where 229 was right.** On CYP3A4 the classifier really is better on the second branch, AUC 0.773
+against 0.664. That is the potency question, and it matches the oracle decomposition exactly.
+
+**Where it was wrong.** Branch one is not empty. AUC 0.664 against 0.5 for a coin, on the branch
+that supplies **89 per cent of CYP3A4's positives** -- 680 of 764, against 84 from branch two. So
+0.353 does not come from the second branch; the second branch is where the model is *sharper*, not
+where its score comes from.
+
+**And the two measurements were never in conflict.** $R^2 = 0.016$ is a statement about predicting
+the *value* of the shift under squared error. AUC 0.664 is a statement about ordering compounds by
+whether the shift clears $\log_{10}2$. Different loss, different target, and a predictor can be
+useless at the first while useful at the second. **The shift's position relative to the threshold is
+partly predictable; its magnitude is not.** Item 229's oracle table already contained this and I
+read past it: the arm with $\Delta$ predicted and the level known scores 0.439 on CYP3A4, which is
+not the zero my sentence implied.
+
+**The CYP2D6 story does not survive at all.** I wrote in §10 that the second branch fires less often
+there, hence the AUC of 0.59. It fires on a *larger* share of that enzyme's positives -- 15.7 per
+cent against CYP3A4's 11.0 -- and both branches are equally weak, 0.585 and 0.570. There is no
+branch CYP2D6 is strong on. The enzyme is unordered everywhere, which is a simpler and worse fact
+than the one I invented to explain it.
+
+**What still stands from 229**, and it is the part that matters for the submission: the bottleneck
+is the shift rather than the level (oracle MCC 0.887 and 0.776 with the shift known, against 0.078
+and 0.439 with the level known), the arms' errors correlate at 0.84, and MCC near 0.3 is close to
+what this label permits. The ceiling is real; my account of *which part of the rule the model was
+exploiting* was not, and the difference matters because it is the part a reader would act on.
+
+**How it got in.** The oracle decomposition is a statement about *quantities*; I turned it into a
+statement about *branches* by reasoning rather than by counting, in the same paragraph that reported
+the counting. The check that caught it took twenty minutes and could have run that day.
