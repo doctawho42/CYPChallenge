@@ -7979,3 +7979,76 @@ descriptor and no QM.
 
 **What it does not license.** Nothing on CYP2D6: 1.2 per cent recovery, and the one intervention
 tried there made the composite worse.
+
+**239. The electrostatic channel is below an average block of its own width, and the salt bridge is
+worth more than the whole rest of the matrix on CYP2D6 -- as geometry, not as charge.**
+`verify/k70_chgperm.py`, four seeds, four enzymes, `results/preds/chgperm.json`. Prompted by an
+outside proposal to compute DFT-quality ESP charges as descriptors.
+
+The premise the proposal has to clear is that it is not "add electrostatics" but "refine
+electrostatics", because a coarse version is already in the matrix: **20** charge-derived columns in
+DESC (`MaxPartialCharge`, `MinPartialCharge`, `MaxAbsPartialCharge`, `MinAbsPartialCharge`,
+`BCUT2D_CHGHI/CHGLO`, `PEOE_VSA1..14` -- molecular surface area binned by Gasteiger charge, a coarse
+ESP field folded into a histogram), **21** EState columns, **10** salt-bridge features in MECH, and
+**3** heme counters.
+
+**The control that decides it, and that an outside run of the same idea did not have.** A 20-column
+block cannot be compared against a 216-column block: bigger blocks cost more because they are
+bigger. Every named block is therefore measured against a SIZE-MATCHED random block of the same
+width drawn from the same source, ten draws.
+
+    цена ранга при перестановке        1A2      2C9      2D6      3A4
+    весь DESC (217)                 0.3876   0.4674   0.1156   0.6149
+    весь MECH (30)                  0.0028   0.0643   0.2120   0.0552
+    весь FP (2048)                  0.0888   0.0427   0.0575   0.0698
+    заряд (20)                      0.0122   0.0127   0.0039   0.0228
+      нуль: 20 случайных из DESC    0.0180   0.0203   0.0052   0.0391
+    мостик MECH (10)                0.0014   0.0250   0.2155   0.0079
+      нуль: 10 случайных из MECH    0.0008   0.0192   0.0610   0.0163
+    гем MECH (3)                    0.0007  -0.0001  -0.0006   0.0001
+
+    сверх своего размерного нуля       1A2      2C9      2D6      3A4
+    заряд (20)                     -0.0058  -0.0076  -0.0013  -0.0163
+    EState (21)                    +0.0086  -0.0204  +0.0174  -0.0224
+    мостик MECH (10)               +0.0006  +0.0059  +0.1545  -0.0084
+    гем MECH (3)                   +0.0004  -0.0073  -0.0233  -0.0035
+
+**The charge block is negative above its null on all four enzymes.** The model leans on it *less*
+than on twenty typical DESC columns. Without the size-matched control the raw 0.0228 on CYP3A4 looks
+like a channel; against 0.0391 for any twenty columns it is not one.
+
+**The salt-bridge block is the one large cell in the table: +0.1545 above its null on CYP2D6, and
+0.2155 raw -- larger than all 217 DESC columns there (0.1156).** So the mechanistic block is not
+merely useful on CYP2D6, it is most of what works. But it is not working as *charge*: item 230
+injected a full unit of noise into the pKa estimate, flipping `is_base_74` on 4.2 to 4.9 per cent of
+the set -- moving the charge on exactly that nitrogen by a whole electron -- and macro rank moved
+-0.0020 against a floor of 0.0036. **What the block delivers is the topology of the basic centre,
+not the charge on it**, which is item 227's conclusion arrived at from the opposite direction.
+
+**Heme coordination is zero everywhere**, CYP3A4 included (0.0001 against a null of 0.0036). The
+three nitrogen counters carry nothing. That does not refute the idea that heme ligation matters --
+it says the present surrogate is empty, so the ground is genuinely unoccupied.
+
+**A methodological finding that cost a docstring and is worth more than the result.** This file was
+built on permutation, and its docstring claimed permutation *bounds* what a refinement can deliver.
+It does not. Permutation and retraining answer different questions and here they differ by a factor
+of seventeen:
+
+    CYP3A4, база rho 0.7595     совместная перест.   поколоночная   ПЕРЕОБУЧЕНИЕ без блока
+    заряд (20)                            +0.0237        +0.0207                  +0.0042
+    весь DESC (217)                       +0.6132        +0.6081                  +0.0360
+    CYP2D6, база rho 0.4027
+    заряд (20)                            -0.0107        +0.0021                  -0.0209
+    весь DESC (217)                       +0.1280        +0.0896                  -0.0266
+
+Joint and per-column shuffling agree to within 0.005; **retraining is the whole gap.** The
+difference is redundancy -- FP reconstructs most of DESC when the model is allowed to refit -- and
+for the question actually asked, *would a better version of this column help*, **retraining is the
+right convention**, because adding a column IS a refit. It closes the proposal harder than
+permutation did: dropping all 217 DESC columns costs 0.0360 of rank on CYP3A4 and **improves**
+CYP2D6 by 0.0266; dropping the 20 charge columns costs 0.0042 on CYP3A4 against a floor of 0.0033,
+and -0.0209 on CYP2D6.
+
+**Closed: no QM charge descriptors.** The relative statement -- named block against a random block
+of its own width -- is convention-free by construction, since both arms are measured the same way,
+and it is negative on every enzyme.
