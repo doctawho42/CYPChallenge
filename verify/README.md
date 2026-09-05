@@ -7688,3 +7688,47 @@ on CYP2D6 came out at 0.40, 0.11, 0.14, 0.50, 0.07 across the five folds. At AUC
 surface is flat and its argmax is noise, which is the mechanism for that arm failing there -- and a
 direct vindication of item 165's sixth finding, that a threshold rule on this endpoint rests on an
 assumption nobody had stated.
+
+**234. The rule is a conjunction, the gate can only subtract, and that one fact explains the whole
+gap between the two endpoints. Items 229 and 232 both had the decomposition wrong.** Raised by an
+outside reading, verified here in ten minutes. This supersedes 232, which was itself a correction.
+
+The label is written piecewise in `src/tdi.py` and in §10. It folds:
+
+    is_TDI  <=>  (Delta > log10 2)  AND  (pi_TDI > 4 + log10 2)
+
+Elementwise identical to the piecewise form on every row, and both reproduce the published label
+exactly: **2334/2334 on CYP3A4, 1493/1493 on CYP2D6**. Proof is two lines. If `pi_dir > 4` then
+`Delta > log10 2` already implies `pi_TDI > 4.301`, so the gate is slack and the first conjunct
+decides. If `pi_dir <= 4` then `pi_TDI > 4.301` already implies `Delta > 0.301`, so the shift is
+slack and the gate decides. Neither is a separate case; they are one conjunction seen from two sides.
+
+**What the folded form makes visible and the piecewise form hides: the shift is NECESSARY for every
+positive.** Measured, not argued -- positives with no shift: **0**. Positives with the gate closed:
+**0**. The gate cannot make anything positive. It can only strike rows out.
+
+    фермент   ворота закрыты   среди открытых полож.   MCC одних ворот   MCC одного сдвига
+    CYP3A4             0.398                   0.543           +0.5667             +0.6875
+    CYP2D6             0.058                   0.230           +0.1302             +0.9010
+
+**And that is the entire CYP3A4-versus-CYP2D6 story in one number.** On CYP3A4 the gate strikes out
+**39.8 per cent** of rows, and identifying them is a pure potency question -- which we answer well.
+On CYP2D6 it strikes out **5.8 per cent**, so there is almost no potency sub-problem to win and the
+label is very nearly the shift alone (shift-only MCC 0.9010). AUC 0.745 against 0.588 follows from
+that, and needs no other explanation.
+
+**Both previous readings are now dead, mine included.** Item 229 wrote that CYP3A4's MCC "is the
+rule's second branch, the one that fires on weak compounds". Item 232 corrected the arithmetic but
+kept the frame, reporting per-branch AUC. The frame was the error: **there are no branches.** 232's
+numbers are still correct as computed -- AUC 0.664 on rows with `pi_dir > 4` and 0.773 on the rest --
+but conditioning on `pi_dir` cuts the population in a way that has no counterpart in the rule, and
+reading a mechanism off that cut is what produced two wrong accounts in a row.
+
+**The correct mechanism, stated once.** The classifier's score on CYP3A4 comes substantially from
+recognising rows the gate strikes out -- a potency question. Its remaining work, and all of its work
+on CYP2D6, is the shift. That is consistent with 229's oracle table, which had it right at the level
+of *quantities* the whole time: level known gives 0.078 and 0.439, shift known gives 0.887 and 0.776.
+
+**Cost of getting this wrong twice: two journal entries and a paragraph of §10.** Cost of the check
+that settles it: one boolean comparison over 3827 rows. The rule was available in closed form in the
+repository the entire time; nobody had folded it.
