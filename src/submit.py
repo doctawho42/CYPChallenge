@@ -122,6 +122,24 @@ def gbm_clf():
                                           random_state=0)
 
 
+# The threshold the classification track submits at. It is a PLUG-IN rule: it maximises
+# the MCC *expected* under the model's own probabilities, so it needs no labels - and it is
+# therefore only correct to the extent those probabilities are calibrated. Item 165 raised
+# that as an unstated assumption; verify/k68_tdicalib.py measures what it costs. Kept as
+# one function so the submission and the check cannot drift apart.
+def plugin_threshold(pr, grid=None):
+    ts = np.linspace(0.05, 0.95, 91) if grid is None else np.asarray(grid, float)
+
+    def emcc(t):
+        yh = pr >= t
+        tp = (pr * yh).sum(); fp = ((1 - pr) * yh).sum()
+        fn = (pr * ~yh).sum(); tn = ((1 - pr) * ~yh).sum()
+        d = np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+        return (tp * tn - fp * fn) / d if d > 0 else 0.0
+
+    return float(ts[int(np.argmax([emcc(t) for t in ts]))])
+
+
 def test_features(desc_names, mech_names):
     te = pd.read_csv(D + "cyp-challenge-TEST-BLINDED.csv")
     FP, dsc, M, ok = F.build(list(te.SMILES), desc_names, mech_names)
@@ -805,18 +823,7 @@ def main():
         m = lab.notna().to_numpy()
         yb = lab[m].astype(int).to_numpy()
         pr = gbm_clf().fit(X[keep][m], yb).predict_proba(Xte)[:, 1]
-        # Plug-in threshold by expected MCC. Measured on this data: fitting the threshold
-        # instead is better on 3A4 and worse on 2D6, and calibrating first gains +0.026
-        # on 3A4 and loses on 2D6 - all differences far inside the MCC interval at n=750.
-        # So: one rule, applied to both endpoints, not a per-endpoint recipe.
-        ts = np.linspace(0.05, 0.95, 91)
-        def emcc(t):
-            yh = pr >= t
-            tp = (pr * yh).sum(); fp = ((1 - pr) * yh).sum()
-            fn = (pr * ~yh).sum(); tn = ((1 - pr) * ~yh).sum()
-            d = np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-            return (tp * tn - fp * fn) / d if d > 0 else 0.0
-        thr = ts[int(np.argmax([emcc(t) for t in ts]))]
+        thr = plugin_threshold(pr)
         cls[f"{c}_is_TDI"] = pr >= thr
         print(f"    {c}: порог {thr:.3f}, положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
 

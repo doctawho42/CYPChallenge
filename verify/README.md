@@ -5,7 +5,7 @@
 Этот файл --- журнал дефектов, и читается он соответственно: верная идея получает один пункт,
 неверная получает три (выдвижение, опровержение, поправка к опровержению). Соотношение при
 чтении выходит три к одному в пользу провалов при положительном итоге. Табло существует, чтобы
-состояние проекта не приходилось складывать в голове из ста шестидесяти пунктов.
+состояние проекта не приходилось складывать в голове из двухсот тридцати пунктов.
 
 **Где мы.** Ранг --- Спирмен с истиной, пара --- ST-RAE после аффинной пары. Больше ранг лучше,
 меньше пара лучше.
@@ -38,13 +38,13 @@
 **Что стоит в конвейере и сколько стоит.**
 
     вклад                                  прирост ранга   сидов   пункт   статус
-    мёртвая зона во всех членах                  +0.0167       4     164   в подаче нет
+    мёртвая зона во всех членах                  +0.0197       4 164,213   в подаче есть
     ствол пятым членом                           +0.0054       4     120   в подаче есть
     механистический блок                         +0.0163       4      81   в подаче есть
                         он же в режиме теста     +0.0313       4     119
     пулирование контрастом                       +0.0141       4  84,132   в подаче есть
     GP и гребневая как члены                  своя ошибка      4  92,100   в подаче есть
-    скрининг как мишень, поферментно             +0.0245       1     158   НЕ в подаче
+    скрининг как мишень, поферментно             +0.0290       4 158,177   НЕ в подаче
     панель NCGC, поферментно                  считается        —     157   НЕ в подаче
     пятьдесят битов = 80 % фингерпринта                —       1 150,156   интерпретация
 
@@ -7498,3 +7498,43 @@ CYP3A4** and neutral-to-negative on CYP2D6, and the submission does not use it: 
 threshold to uncalibrated probabilities whose mean predicted rate is 0.079 against a true 0.217 on
 CYP2D6. On a third of the leaderboard, a measured +0.028 that is not deployed outweighs anything
 still available on the ordering.
+
+**230. The pKa bound holds on four seeds, and the sentence item 227 refused to believe on one seed
+was right to be refused.** `verify/k66_pkanoise.py`, seeds 0 to 3. The queued follow-up, closing
+the mechanistic-block proposal for good.
+
+Item 227 measured a full unit of Gaussian noise injected into the pKa estimate and found macro rank
+moving *toward better*, with CYP2D6 gaining +0.0174 -- three and a half times its own floor. It
+declined to believe the second half and queued three more seeds. They are in.
+
+    сигма 1.0 минус сигма 0.0, ранг      сид 0     сид 1     сид 2     сид 3    среднее   знак
+    CYP1A2                             -0.0013   -0.0055   -0.0058   +0.0042   -0.0021    1/4
+    CYP2C9                             -0.0058   -0.0051   +0.0022   -0.0120   -0.0052    1/4
+    CYP2D6                             +0.0174   -0.0035   -0.0035   -0.0080   +0.0006    1/4
+    CYP3A4                             -0.0020   -0.0052   +0.0001   +0.0008   -0.0016    2/4
+    МАКРО                              +0.0020   -0.0048   -0.0017   -0.0037   -0.0020    1/4
+
+**Seed 0 was the outlier and nothing else was.** CYP2D6's +0.0174 is not repeated by any other seed;
+the other three are -0.0035, -0.0035, -0.0080, and the four-seed mean is **+0.0006** against a
+per-enzyme floor of 0.0049. "Noise on the pKa improves the enzyme whose pharmacophore uses it" is
+**false**, and the commit that carried that sentence in its title (`f50f14e`) is wrong in its second
+half. It is left in the history rather than rewritten; this entry is the correction.
+
+**The bound itself is unchanged and is now stronger.** Macro rank moves **-0.0020** on four seeds,
+below the fixed-seed macro floor of 0.0036 and far below the published 0.007, after the perturbation
+flipped `is_base_74` on 4.2 to 4.9 per cent of the set in every seed. Injecting error of the rule's
+own magnitude and removing it are the same operation with opposite sign, so **the upper bound on
+what a trained pKa predictor can buy is a rank movement smaller than the noise floor.** The proposal
+closes on a four-seed measurement rather than on one.
+
+**Item 227's other conclusion survives untouched and is the durable one.** The block delivers the
+geometry around the basic centre -- the topological distance from that nitrogen to the aromatic
+system -- and not the fine boundary of the protonation state, because the protonation *call* can be
+wrong on one molecule in twenty at no cost. That reading did not depend on the sign of the CYP2D6
+cell, which is why it is still here after the cell moved.
+
+**A note on how the error got in, since it is the second time.** One seed cleared item 167's
+single-seed threshold of about 0.015, and the sentence it licensed was the interesting one, so it
+reached a commit title. The guard that worked was item 227's own paragraph refusing to believe it.
+The guard that would have worked earlier is not writing the claim into a title until the seeds are
+back; a journal entry can be corrected in place, a commit title cannot.
