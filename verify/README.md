@@ -7741,8 +7741,24 @@ on CYP2D6, is the shift. That is consistent with 229's oracle table, which had i
 of *quantities* the whole time: level known gives 0.078 and 0.439, shift known gives 0.887 and 0.776.
 
 **Cost of getting this wrong twice: two journal entries and a paragraph of §10.** Cost of the check
-that settles it: one boolean comparison over 3827 rows. The rule was available in closed form in the
-repository the entire time; nobody had folded it.
+that settles it: one boolean comparison over 3827 rows.
+
+**Amendment, added the same day.** The sentence that stood here -- "the rule was available in closed
+form in the repository the entire time; nobody had folded it" -- is wrong, and the correction makes
+the failure worse rather than better. **Item 23 states the conjunction in prose**: *"the label is
+'potent AND shifted', the alerts are about the second half only, and the threshold on the second
+half is a knife edge."* It goes further and gives the knife-edge argument this entry does not --
+the median Delta over CYP3A4 actives is +0.294 against a cutoff of 0.301, so half the actives sit
+within a hundredth of the line, and a predictor of Delta can be good while a predictor of the label
+looks worthless.
+
+So the reading was in the file from item 23 onward. Items 229 and 232 reasoned from the piecewise
+form anyway, and rederived a worse version of something already recorded 211 entries earlier. That
+is the exact failure `CLAUDE.md` puts in bold -- *search `verify/README.md` for the idea before
+evaluating it* -- and it is the fifth instance, after the four in item 202. The four in 202 were
+proposals already refuted; this one is a **framing** already established, which is harder to grep
+for and correspondingly easier to lose. Searching for "TDI" would have found item 23; searching for
+the formula would not.
 
 **235. Calibration passes the pre-registration and goes into the submission; and the four-seed
 sweep hands us the MCC floor the repository never had.** `verify/k68_tdicalib.py`, four seeds, both
@@ -7802,3 +7818,91 @@ wrong arithmetic; it was measured through a split that does not exist anywhere e
 labels reaches 0.3635 and 0.1589 -- **+0.0472 macro, sign 8 of 8**, more than three times what
 calibration recovers. Half the available threshold gap is still on the table and nothing measured
 so far reaches it.
+
+**236. The alert line closes for a reason it has never been closed for, and item 23 has been
+misquoting its own script for the whole project.** Twenty minutes, `verify/h2_tdi_alerts.py` rerun
+plus one out-of-fold reconstruction. Prompted by an outside reading that proposed the alerts be
+reopened.
+
+**First, the misquote, because it is in the scoreboard's oldest entry.** Item 23 says "the largest
+absolute MCC on CYP3A4 is about 0.013, which is noise." Running the script it cites:
+
+    алерт                  встреч.  P(TDI|есть)  P(TDI|нет)   лифт      MCC
+    циклопропиламин             36        0.500       0.210   2.38   +0.071
+    бензил. C-H у гетероцикла  728        0.176       0.223   0.79   -0.046
+    терминальный алкен          26        0.385       0.212   1.81   +0.036
+    ...
+    ЛЮБОЙ из алертов          1285        0.206       0.217   0.95   -0.013
+
+**0.013 is the any-alert row, not the maximum.** The largest is cyclopropylamine at **+0.071** with
+a lift of 2.38 on 36 compounds -- five times what the prose reports, and a specific named motif
+rather than noise. The conclusion of item 23 is not overturned by this (n = 36, and see below), but
+the sentence has been quoted forward for months as though the maximum were 0.013.
+
+**Second, the strongest alert nobody had tried, and why it closes anyway.** A tertiary aliphatic
+amine indicator gives MCC **+0.1146** on CYP3A4's open-gate subset -- larger than any classical
+alert -- and moves Delta by **+0.122 [+0.068, +0.177]**, an interval clear of zero. On CYP2D6 it
+moves Delta the *other* way, **-0.075 [-0.112, -0.035]**, which is item 81's salt bridge showing up
+again: a basic nitrogen makes a compound more potent on CYP2D6 directly, so the shift shrinks.
+
+It closes on the precondition rather than on a run:
+
+    восстановление индикатора из блоков, вне фолда     AUC      MCC      R^2
+    DESC                                            0.9975   0.9359   +0.900
+    DESC+MECH                                       1.0000   0.9991   +0.998
+
+**The feature is already in the matrix, to four nines.** MECH carries the basic-centre description
+item 81 built, and a tertiary-amine indicator is a function of it. Adding one column in 2295 that a
+model can already reconstruct at R^2 0.998 cannot do anything, and item 138 (DESC takes 58-66 per
+cent of splits) says the tree is already using that region. **Cost: five minutes, no fit on the
+target.** Two other SMARTS definitions of "tertiary aliphatic amine" give different carrier counts
+and the same conclusion, because what is reconstructible is the basic-nitrogen count, not the exact
+pattern.
+
+**Third, and this is the methodological finding: the open-gate subset is an ORACLE and must stop
+being quoted as a result.** Every alert number above that improves on the all-rows figure does so
+by conditioning on `pi_TDI > 4.301` -- the gate, computed from the *measured* pre-incubation arm.
+At prediction time that quantity does not exist. `+0.1146` on the open-gate subset against `+0.0458`
+on all rows is not a stronger version of the same measurement; it is a different measurement that
+cannot be deployed. The same applies to the outside reading's `0.11` and `0.078`, which are
+open-gate figures, and to `0.078` specifically for a second reason -- it is the **arithmetic
+maximum** available to a 10-carrier feature at that base rate, so any perfect 10-hit feature prints
+it and the number carries no information about the motif.
+
+**Closed: no alert feature is built.** Item 23's conclusion stands, its arithmetic did not, and the
+reason it stands is not the one it gave.
+
+**237. The precondition for the analogue-Delta feature, run before writing any model code.** Two
+minutes, no fit. Item 105 / 109 / 114's move, applied to the largest live proposal.
+
+The proposal is a similarity-weighted mean of neighbours' Delta as a feature. Before building it,
+the cheapest question: does a single nearest **cross-fold** neighbour's Delta correlate with a
+compound's own? Restricted to rows where Delta is well measured (sigma(Delta) <= 0.316):
+
+    CYP3A4 (2334 строк с Delta, 1637 хорошо измеренных)
+    порог T   срабатывает   доля всех размеченных   Спирмен       Пирсон
+    0.50              474                   0.203    +0.282        +0.339
+    0.55              323                   0.138    +0.364        +0.452
+    0.60              175                   0.075    +0.458        +0.606
+
+    CYP2D6 (1493 / 1332)
+    0.50              137                   0.092    +0.263        +0.378
+    0.55               52                   0.035    +0.365        +0.503
+    0.60               13                   0.009    +0.725        +0.825
+
+**The signal is real** -- p = 4e-10 at T >= 0.50 on CYP3A4 -- and it trades off exactly as a
+neighbour argument predicts: strength rises with the threshold, coverage collapses. Neither cut
+clears the gate that was set before the run (Spearman >= 0.30 AND coverage >= 0.15); 0.50 misses on
+strength, 0.55 on coverage, and they miss in opposite directions.
+
+**This does not kill the proposal and must not be recorded as though it did.** What was measured is
+a *single* neighbour at a *hard* cut, which is strictly weaker than the similarity-weighted average
+over eight neighbours that was proposed: a weighted mean has no coverage cliff and averages down the
+neighbour's own measurement noise. The honest reading is that the precondition **bounds the
+expectation** rather than settling it, and the gate as written was the wrong instrument for this
+particular estimator -- a defect in my precondition, not in the idea.
+
+**What it does settle is CYP2D6.** At 3.5 to 9 per cent coverage there is nothing to build there,
+which agrees with the coverage ratio measured independently (4.0 per cent of training rows have a
+cross-fold neighbour at T >= 0.55, against 34.7 per cent of test rows). Any version of this feature
+is CYP3A4-only in cross-validation, whatever it does on the test set.
