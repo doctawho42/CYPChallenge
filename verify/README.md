@@ -7906,3 +7906,76 @@ particular estimator -- a defect in my precondition, not in the idea.
 which agrees with the coverage ratio measured independently (4.0 per cent of training rows have a
 cross-fold neighbour at T >= 0.55, against 34.7 per cent of test rows). Any version of this feature
 is CYP3A4-only in cross-validation, whatever it does on the test set.
+
+**238. Half the gate is recovered, and on CYP3A4 our classifier turns out to be a potency threshold
+and almost nothing else.** `verify/k69_gate.py`, four seeds, both endpoints, `results/preds/gate.json`.
+The fork item 234 opened and nobody had measured: the gate is a threshold on `pi_TDI`, a quantity we
+predict directly, and its oracle MCC (+0.5667 on CYP3A4) is larger than the whole deployed
+classifier's 0.315.
+
+Item 229 decomposed the label into level and shift because the piecewise form suggested those
+coordinates. In conjunction coordinates the parts are **gate and shift**, and these are the oracles
+that correspond to something the rule does.
+
+    MCC против метки, среднее по 4 сидам        CYP3A4   размах     CYP2D6   размах
+    правило целиком (оракул)                    1.0000   0.0000     1.0000   0.0000
+    ворота ИСТИННЫЕ, одни                       0.5667   0.0000     0.1302   0.0000
+    сдвиг ИСТИННЫЙ, один                        0.6875   0.0000     0.9010   0.0000
+    ворота предск. + сдвиг ИСТИННЫЙ             0.7563   0.0107     0.7722   0.0977
+    ворота ИСТИННЫЕ + сдвиг предск.             0.5285   0.0259     0.1334   0.0275
+    ворота предсказаны, порог 4.301             0.3043   0.0203     0.0015   0.0233
+    ворота предсказаны, порог подогнан          0.3037   0.0222    -0.0330   0.0750
+    сдвиг предсказан, один                      0.2058   0.0272     0.0910   0.0152
+    оба предсказаны                             0.3317   0.0275     0.0928   0.0209
+
+Every range is inside the MCC floors item 235 measured (0.0281 and 0.0419), so nothing here rests
+on one seed. The harness passes: the rule on true arms is exactly 1.0000.
+
+**The fork's answer: the gate is not solved.** We recover **53.7 per cent** of it on CYP3A4 --
+0.3043 against 0.5667 -- and **1.2 per cent** on CYP2D6. So the memo's second branch holds: about
+0.26 of MCC sits in a purely potency-shaped sub-problem on the enzyme with the most labels.
+
+**And the finding nobody was looking for.** On CYP3A4 the predicted gate ALONE scores **0.3043**,
+against the deployed classifier's **0.315** (item 228). Adding the predicted shift moves it to
+0.3317 -- **the shift contributes +0.027 of the total.** To within the floor, **our CYP3A4 TDI
+classifier is a potency threshold.** It is not doing anything about time-dependence; it is finding
+compounds too weak to clear 4.301 and calling them negative, which item 234 showed is 39.8 per cent
+of the set and automatically correct.
+
+CYP2D6 is the exact mirror: gate 0.0015, shift 0.0910, both 0.0928 against the classifier's 0.118.
+There the gate is open on 94.2 per cent, there is no potency sub-problem to win, and the whole score
+is the weak shift model.
+
+**The decomposition, in the coordinates that correspond to the rule:**
+
+    цена ошибки от идеального 1.0000     CYP3A4   CYP2D6
+    только в воротах                      0.244    0.228
+    только в сдвиге                       0.471    0.867
+
+The shift costs twice the gate on CYP3A4 and nearly four times on CYP2D6. Item 229's headline --
+the bottleneck is the shift -- survives in the new coordinates, but it is no longer the whole story
+on CYP3A4, where a quarter of the loss sits in the tractable half.
+
+**A defect found by looking, and it is not the one expected.** Thresholding a SHRUNK prediction at
+the true threshold is the wrong rule -- a regressor pulled toward the mean crosses 4.301 in the
+wrong place. Measured: on CYP2D6 the out-of-fold optimal cut on the predicted arm is **4.69 to
+4.98**, not 4.301, and at 4.301 the predicted gate opens on 95.8 per cent against a true 94.2, which
+discriminates nothing. Fitting the cut recovers the GATE far better -- MCC against the true gate
+rises from 0.078 to 0.182 -- **and makes the LABEL worse, 0.0015 to -0.0330.**
+
+That is worth stating plainly because it is counter-intuitive and it generalises: **in a conjunction
+the gate's only job is to subtract, so a better-centred gate that is still noisy strikes out more
+true positives than true negatives when almost nothing should be struck out.** Improving a component
+degraded the composite. On CYP3A4, where the gate really does need to fire, the fitted cut lands at
+4.21-4.44 and changes nothing (0.3043 against 0.3037).
+
+**What this licenses, and it is one thing.** The gate here was predicted by a **bare HistGB**. The
+regression track that predicts potency for the submission is a five-member ensemble with the dead
+zone, pooling, per-enzyme selection and the affine pair, and **it has never been pointed at the
+pre-incubation arm.** The gate's recovery is bounded by the ordering of the predicted arm, measured
+here at AUC 0.8709 against the true gate on CYP3A4. That is the cheapest named route to the 0.26
+still on the table, it reuses machinery that already exists, and it needs no new chemistry, no new
+descriptor and no QM.
+
+**What it does not license.** Nothing on CYP2D6: 1.2 per cent recovery, and the one intervention
+tried there made the composite worse.
