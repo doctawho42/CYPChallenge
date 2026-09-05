@@ -7808,11 +7808,29 @@ CYP2D6 its per-fold optimum ranged 0.05 to 0.70 across five folds, because at AU
 surface is flat and its argmax is noise. Item 233 forbade adopting a per-endpoint winner and nothing
 here tempts one: Platt is the only arm positive in both columns.
 
-**§10's +0.028 does not reproduce and the reason is a defect in `verify/f10_calib.py`.** That script
-draws its calibration groups with `rng.integers(0, 5, n)` -- random, not Butina -- so close analogues
-of the scored rows sat in the fitting half. On the canonical split with full nesting the same
-quantity is **+0.0235 on CYP3A4**, and every per-seed interval crosses zero. The +0.028 was not
-wrong arithmetic; it was measured through a split that does not exist anywhere else in this project.
+**§10's +0.028 does not reproduce: on the canonical split with full nesting the same quantity is
++0.0235 on CYP3A4, and every per-seed interval crosses zero.**
+
+**Correction, added after fixing the script rather than only diagnosing it.** This entry first
+attributed that gap to a defect in `verify/f10_calib.py` -- it drew its calibration groups with
+`rng.integers(0, 5, n)`, random rather than Butina, so close analogues of the scored rows sat in the
+fitting half. The defect is real and is now fixed. **It is not the cause.** Repaired and rerun:
+
+    CYP3A4, сид 0        plug-in по сырым   plug-in по Платту   выигрыш
+    f10, случайные группы (как было)                     --      +0.0280
+    f10, фолды Бутины (исправлено)   0.3247       0.3519         +0.0272
+    k68, Бутина + полное вложение    0.3277       0.3478         +0.0200
+
+Random groups cost **0.0008**. The nesting costs **0.0072**, nine times more: `f10` fits its
+calibrator on out-of-fold probabilities produced by models that saw the fold being scored, and
+`k68` does not. So the honest attribution is **the nesting plus the seed**, and the sentence that
+stood here named the wrong mechanism while getting the number right -- the same error pattern as
+items 229 and 232, at a tenth the scale. Fixing a defect and measuring what it cost is what
+separates the two, and it is cheap: one script, thirty seconds.
+
+CYP2D6 moves the other way on the repaired script -- raw 0.1151 against Platt 0.0994, **-0.0157** --
+which is why item 233's rule was written on macro and on sign across eight cells rather than on
+either endpoint.
 
 **The oracle row is the standing reproach.** A threshold chosen with knowledge of the fold's own
 labels reaches 0.3635 and 0.1589 -- **+0.0472 macro, sign 8 of 8**, more than three times what
