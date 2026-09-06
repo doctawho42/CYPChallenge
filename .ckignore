@@ -1,0 +1,3 @@
+# results/logs/ holds run logs. This project treats them as results and commits them
+# to git (see .gitignore); the scout-block hook baseline blocks *.log for everyone else.
+!results/logs/*.log
