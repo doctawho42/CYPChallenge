@@ -8544,3 +8544,70 @@ person who caught it.
 **What this licenses as a claim.** On CYP3A4, a calibrated per-compound probability of scoring zero,
 AUC 0.750, better calibrated than the base rate. Not a macro result, not a deployed change, and not
 a prediction of the leaderboard score.
+
+**248. A fourth route to the shift, with no model in it: run the organisers' selection procedure on
+our own labels.** `verify/k78_designsim.py`, 30 draws per setting, `results/preds/designsim.json`.
+Proposed from outside; the control that decides it was added here.
+
+The three existing routes all estimate the test-set label shift through the model or its outputs:
+reweighting the marginal (+0.4 at delta 0, +0.9 at delta 0.5), the anchors' percentiles (+1.05, an
+UPPER bound because the anchors' neighbours were chosen by similarity and regress to the mean), and
+the shift of the predictions themselves (+0.09, a LOWER bound because an interpolating model carries
+only part of an input shift). `src/submit.py` declares +0.1 to +0.6 live and `--shrink` the one
+decision still open.
+
+**This route does not estimate the shift, it reproduces it.** The selection is published -- twenty
+five best by CYP1A2, twenty five by CYP2C9, twenty five by CYP3A4, each with its nearest neighbours
+-- so it can be run on the training set, where the labels are known, and the shift read off
+directly. No fit, no prediction.
+
+**The control is what makes the number readable, and it changed the reading.** Neighbourhood
+expansion moves the marginal by itself: a molecule's neighbours resemble it, and the dense regions
+of the set differ from the sparse ones. So the same procedure runs with anchors chosen AT RANDOM.
+
+    чистый вклад отбора = отбор по потентности минус случайные якоря
+    соседей   уникальных     1A2      2C9      2D6      3A4
+       10            676  +0.189   +0.231   +0.212   +0.341
+       16            971  +0.143   +0.138   +0.150   +0.270
+       24           1317  +0.098   +0.095   +0.121   +0.245
+
+    контроль (случайные якоря) сам по себе: -0.02 .. +0.09, то есть почти ноль
+
+**The shift decays monotonically with neighbourhood size**, and the real test is 750 unique, so the
+operating point sits between the first two rows: interpolating gives roughly **+0.17 / +0.20 /
++0.19 / +0.32** against the deployed defaults of **0 / +0.3 / -0.5 / +0.7**.
+
+**The finding this route was built for: CYP1A2's zero is wrong in sign.** That default was set
+because the statistical route could not determine the sign at all -- P(delta >= 0) = 0.59 -- and a
+coin flip is worse than doing nothing. But CYP1A2 is one of the three enzymes the anchors were
+selected on, so its test half is enriched **by construction**, and the design route puts the net
+contribution at +0.098 to +0.189 with the control at -0.02. This is a determination the statistical
+route could not make by its nature, not a better estimate of the same thing.
+
+**And one thing nobody predicted: most of the base depletion is the neighbourhoods, not the
+selection.**
+
+    доля is_base_74   весь обучающий 0.175 -> случайные якоря 0.132 -> отбор 0.121 -> ТЕСТ 0.104
+
+Neighbourhood expansion oversamples the dense regions of chemical space and those are base-poor;
+potency selection then adds only 0.011 more. The CYP2D6 argument -- that the test carries a third as
+many bases as the CYP2D6 label mask, and CYP2D6 is the one enzyme binding through a salt bridge --
+survives as a fact about the test, but its **mechanism is not the potency selection**, and the
+simulation still lands at 0.121 against the real 0.104.
+
+**So CYP2D6 stays unresolved and this entry does not pretend otherwise.** This route puts its shift
+at +0.121 to +0.212, positive; the chemistry argument puts it at -0.5, negative. The simulation
+under-shoots the depletion that drives the chemistry argument, so it cannot adjudicate. What it does
+establish is that the current -0.5 treats one of two mechanisms as the whole story.
+
+**A second axis nobody is using.** The ratio of pseudo-test to training standard deviation runs
+0.99 to 1.10, and it is consistently highest on **CYP2D6** (1.086, 1.104, 1.101). The test is not
+only shifted, it is slightly wider, and `src/submit.py` grids a single location parameter.
+
+**Bounds on this route, both downward.** The pseudo-test at 10 neighbours holds 676 unique against
+the real 750, so anchors are over-weighted; and the neighbour pool is our 4905 training molecules
+rather than the organisers' full library, so neighbours are closer and enrichment stronger. Both
+push the estimate up, so the true contribution is likely at or below these figures.
+
+**What this does not license.** It is not a decision about `--shrink`. Four routes now disagree by
+more than any of them claims to resolve, and the 25 September reveal happens once.
