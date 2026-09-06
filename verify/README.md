@@ -8468,3 +8468,79 @@ live leaderboard would be unsound if slicing by chemical series cut the effectiv
 gives a correlation of **-0.013 to +0.002** across the four enzymes. Analogues' contributions to
 this metric are uncorrelated, so a series-wise split costs almost nothing in effective n. Without
 that number the whole paragraph above would rest on a guess.
+
+**247. The metric's native uncertainty object: per-compound probability of scoring zero. One enzyme
+of four, and the mechanism says which.** `verify/k77_hitprob.py`. Proposed from outside as the
+project's answer to "novel uncertainty quantification"; built, measured, and reported at the size
+it actually is.
+
+**The framing is the contribution, not the technique.** Conventional uncertainty quantification puts
+an interval around the prediction. Under ST-RAE that is the wrong object: a prediction anywhere
+inside the compound's published band scores **exactly zero**, so distance within the band is not
+paid for. The native quantity is
+
+    P(попадание_i) = P( lo_i <= y-крышка_i <= hi_i )
+
+the per-compound probability of not paying at all. It is observable out of fold, and it is the
+natural partner to the dead zone: one trains predictions **into** the band, the other says whether
+they landed. Two halves of one object, both derived from the definition of the metric.
+
+**The base rate, and why the problem is well posed.** Out of fold on the submitted arm, hits are
+0.247 / 0.439 / 0.198 / 0.369 -- **macro 0.313 of all predictions already score zero.** And the rate
+is strongly structured by a quantity we predict: on CYP3A4, by quintile of *predicted* potency,
+
+    квинтиль   среднее ŷ   средняя ширина   доля попаданий   средняя потеря
+    1               3.08            2.000            0.788            0.101
+    5               5.14            0.209            0.161            0.309
+
+Weak compounds have wide bands (item 114: width is a function of the label to within 3 per cent of
+its variance, correlation -0.885 to -0.928), so they are nearly free to get right.
+
+**The result, and it is one enzyme of four.**
+
+    фермент   базовая доля   AUC(ŷ)   AUC(z)   Брайер(z)   Брайер константы
+    CYP1A2           0.247   0.5560   0.5337      0.1928             0.1861
+    CYP2C9           0.439   0.5893   0.5969      0.2490             0.2463
+    CYP2D6           0.198   0.5401   0.4859      0.1635             0.1585
+    CYP3A4           0.369   0.7459   0.7496      0.1814             0.2328
+
+**On three of four the Brier score is WORSE than a constant at the base rate.** The classifier adds
+noise there. On CYP3A4 it is real: AUC 0.750 and Brier 0.181 against the constant's 0.233.
+
+**The mechanism says exactly why, and it is a property of their assay rather than of our model.**
+
+    фермент   ширина q10   q90   динамический диапазон   sd(ŷ)   размах доли попаданий
+    CYP1A2         0.179  1.441                    8.0   0.410                   0.181
+    CYP2C9         0.227  1.241                    5.5   0.400                   0.311
+    CYP2D6         0.170  0.949                    5.6   0.289                   0.151
+    CYP3A4         0.131  2.523                   19.2   0.733                   0.627
+
+CYP3A4's bands span a **19-fold** range and its predictions span twice the spread of CYP2D6's. Where
+the band barely varies there is nothing for a hit probability to discriminate.
+
+**The better parameterisation, once a bug was out of the way.** Rather than making a classifier
+rediscover the width-potency relation, construct the signal-to-noise ratio directly:
+`z = w-крышка(ŷ) / (2 * масштаб остатка)`, then calibrate `P(попадание)` on z by isotonic
+regression. On CYP3A4 that beats the learned classifier on both metrics with a single interpretable
+number -- correlation of z with hitting **+0.435**.
+
+**The bug is worth more than the improvement.** The first version fitted `IsotonicRegression()` from
+label to width, and that estimator defaults to requiring a NON-DECREASING fit. The relation is
+decreasing, so the fit collapsed to a constant -- range exactly 0.000 -- and z became an inverse
+transform of the residual scale alone, scoring AUC 0.485 on CYP3A4 against the direct classifier's
+0.746. **It was caught by a control, not by reading the code**: the correlation of predicted width
+with hitting came out at +-0.01 on all four enzymes, which is impossible for a monotone function of
+an informative feature. `increasing=False` fixes it.
+
+**And one number of mine was a tautology, said before anyone builds on it.** The file also predicts
+the score itself through a second head, and reports macro ST-RAE 0.6594 predicted against 0.6600
+actual -- agreement to three decimals, which reads as a strong result and is not one. Predicting the
+**mean loss** out of fold does equally well: 0.7657 / 0.5790 / 0.8523 / 0.4426 against true
+0.7656 / 0.5793 / 0.8520 / 0.4430. The aggregate agrees because the folds are exchangeable, not
+because the model knows anything. **The control belonged in the first version and was not there** --
+the same defect this project caught in the threshold oracle two days earlier, committed again by the
+person who caught it.
+
+**What this licenses as a claim.** On CYP3A4, a calibrated per-compound probability of scoring zero,
+AUC 0.750, better calibrated than the base rate. Not a macro result, not a deployed change, and not
+a prediction of the leaderboard score.
