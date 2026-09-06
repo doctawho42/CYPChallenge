@@ -8364,3 +8364,54 @@ than on argument.
 An arm assembled from whatever looked positive afterwards has a larger variance and an estimate
 biased upward by the selection. Item 233 is the precedent, and it is the reason this paragraph
 exists before the numbers rather than after them.
+
+**245. Amendment to item 244, written while `k76_bundle.py` is still running: two of the three arms
+it bundles are selection artefacts, and the sign rule as I wrote it is too broad.** Prompted by an
+outside audit; verified from source and from the saved records. Recorded BEFORE the run reports,
+because a correction published after a failure is not a correction.
+
+**The rule in item 244 says an effect is real-and-small if its sign is consistent even when its
+magnitude is below the floor. That is only true for arms whose NULL EXPECTATION IS ZERO.** An arm
+that is itself a maximum -- over thresholds, over estimators, over enzymes -- has a positive null
+expectation by construction, and its sign count is then a tautology rather than evidence. Item 244
+does not say this and must.
+
+**Two of its three surviving candidates fail on exactly that.** `verify/k74_product.py` scores every
+arm under three threshold rules; item 244 quoted the argmax column and only that column.
+
+    против подаваемого, 8 клеток      plug-in       argmax     центроид   среднее(3)   max(3)
+    ПРОИЗВЕДЕНИЕ                  -0.0031 4/8   +0.0187 6/8  +0.0043 6/8     +0.0066  +0.0187
+    минимум                       -0.0123 3/8   +0.0162 7/8      ---         +0.0010  +0.0152
+
+**Under plug-in -- the rule the submission actually uses -- both are dead by item 244's own
+criterion**, at 4/8 and 3/8 with negative means. Averaged over the three rules both sit under the
+macro floor of 0.0076. The inflation from taking the best of three is +0.0121 and +0.0152, which is
+larger than either candidate's apparent gain.
+
+**What survives.** The k75 arm-ensemble candidate is a comparison of two fixed procedures, its null
+expectation is zero, and its sign is genuine -- but it is **6 of 8, not 7 of 8** as item 244 records
+it. One candidate, not three, and the bundle k76 is measuring therefore contains one live component
+and one artefact.
+
+**The prediction this licenses, entered before the result.** An outside reading predicted condition 3
+would fail or pass only marginally, on the argument that both arms move the same ordering through
+the same probabilities. This finding gives the same prediction by a different route and a sharper
+one: the second component is not weakly overlapping, it is absent under the deployed threshold rule.
+**Condition 3 should fail.** If it passes, something is wrong with the bundle harness and not with
+this paragraph.
+
+**And the same audit found the rule's other victims, one of which is deployed.**
+
+    пункт  рука                             отбор                       статус
+     235   оракул порога                    max по 91 порогу, тот же    не для подачи
+                                            грид, что у plug-in
+     241   колонка "лучший MCC"             max по 3 правилам порога    в записи
+     218   SOLO: один GP на CYP3A4          max по 4 ферментам,         В ПОДАЧЕ
+                                            затем max из 31 подмножества
+
+Item 218's constant is in `src/submit.py:400` and it is the only one of the three that ships. Its
++0.0098 of rank on CYP3A4 was judged against a per-enzyme floor of 0.0033; corrected for the
+winner's curse it is +0.006 to +0.008, and a one-enzyme change enters macro at a quarter weight,
+about +0.002. **The decision stands on cross-validation grounds and is not being reversed here** --
+it costs nothing and the sign is right -- but it must stop being quoted as a leaderboard-relevant
+gain, and the scoreboard will say so.
