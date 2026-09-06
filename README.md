@@ -11,6 +11,11 @@ with a justification for each part, the verification protocol, and a list of wha
 already been tried and does not work. Everything else in this repository is the code
 those numbers came from.
 
+**[`METHOD.md`](METHOD.md)** is the method write-up in English: the loss derived from the
+competition's own metric, the conjunction the classification label folds into, what we made of the
+released data, the apparatus that tells an effect from a noise floor, a catalogue of what we tried
+and closed, and a falsifiable prediction for the interim reveal. Roughly twenty minutes.
+
 ## Getting started
 
 ```bash
