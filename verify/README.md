@@ -8813,3 +8813,55 @@ calling it a shrink.
 predictions actually travel is decided by the fit. CYP1A2 is the clean demonstration -- delta is
 zero and the fitted shift is still +0.07, because the optimal pair is not the identity even when the
 test is assumed to look like the training set.
+
+**253. The falsification band, recomputed on the arm that actually ships — which turned out to be a
+third configuration nobody had scored.** `verify/k79_bandfix.py`, `results/preds/band.json`.
+Replaces the band item 246 withdrew.
+
+**Determining the arm was the whole difficulty.** Three configurations were in play and the first
+two are both wrong:
+
+    0.6599   четырёхчленный ансамбль (пункт 149)     -- на нём стояла отозванная полоса
+    0.6459   пять членов, проход во всех (пункт 213) -- k58_dzsubmit НЕ применяет SOLO
+    0.6416   пять членов + SOLO на CYP3A4            -- ПОДАЁТСЯ
+
+`verify/k58_dzsubmit.py` composes all five members for every enzyme, while `src/submit.py` applies
+item 218's per-enzyme selection and ships **the Gaussian process alone on CYP3A4**. So the submitted
+arm's out-of-fold score existed nowhere -- not in the journal, not in the saved predictions -- and
+the band could not have been computed correctly from anything already on disk.
+
+It is computed here through `src/submit.py:oof_predictions`, which applies `_keep` and therefore
+assembles literally the composition that goes into the file, with the affine pair from
+`src/shrinkchoice.py:fit_apply`.
+
+    фермент   пара подаваемой руки
+    CYP1A2                 0.7555
+    CYP2C9                 0.5612
+    CYP2D6                 0.8403
+    CYP3A4                 0.4092
+    МАКРО                  0.6416
+
+**The check that was missing the first time, and that settles the arm's identity.** CYP3A4 comes out
+at **0.4092**, and item 218's subset search prints **0.4129** for the Gaussian process alone on that
+enzyme. The cell lands where the SOLO decision puts it rather than merely looking plausible. Item 246
+had no such anchor, which is how a four-member arm passed for a five-member one.
+
+**The bands.**
+
+    замер                                среднее      sd            95 %       полуширина
+    промежуточное раскрытие, n = 750      0.6438  0.0202  [0.6044, 0.6851]         0.0404
+    живой лидерборд, n = 375              0.6462  0.0297  [0.5902, 0.7059]         0.0579
+
+The withdrawn centre was 0.6624 against 0.6438, so it was **0.0186 too high** -- item 246 estimated
+"about 0.014" from the difference in arm scores, which was close but not what was published.
+
+**This is a sampling band and not a prediction interval**, and the distinction is the whole caveat:
+it covers the draw, not the distribution shift, which items 123, 129 and 147 established by three
+independent routes cannot be checked from inside. A score outside it falsifies the named assumption
+-- that the test's label spread and band widths resemble the training set's -- and not the model. A
+score inside it confirms nothing.
+
+**Recorded before 24 September and not to be adjusted after.** The only change this entry makes to
+item 246's arithmetic is the arm; the aggregation fix item 246 introduced (bootstrapping the macro
+jointly rather than averaging four per-enzyme percentile bounds) stands, and the half-width remains
+about half of item 147's 0.082 for that reason.

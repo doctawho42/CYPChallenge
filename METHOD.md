@@ -294,27 +294,32 @@ Two families were closed more than once. The quantum block was measured null aga
 
 ## A falsifiable prediction, and what we cannot check
 
-We wrote our score down before it was revealed, and then had to withdraw the first version — which is
-itself the point of writing it down.
+We wrote our score down before it was revealed, and then had to withdraw the first version and
+recompute it — which is itself the point of writing it down.
 
 The organisers publish two external samples: a live leaderboard on half the test set, split so that
 compounds from one parent stay together, and an interim reveal on the full 750 at the halfway mark.
 Resampling the submitted model's out-of-fold predictions 3000 times under a common draw of a
-test-sized molecule sample gives a band for each. **The first version of that band was computed on
-the wrong arm** — a four-member ensemble whose name in the saved predictions matches the submitted
-configuration while its composition does not — and its centre is about 0.014 too high. It is
-withdrawn rather than shifted, because an approximate correction is not something a pre-registration
-may contain, and it is being recomputed on the five-member arm through the submission's own code
-(items 246, and the audit that caught it).
+test-sized molecule sample gives a band for each.
 
-    ОТОЗВАНО, wrong arm            centre     sd      95 per cent band
-    interim reveal, n = 750        0.6624   0.0215    0.6213 – 0.7053
-    live leaderboard, n = 375      0.6648   0.0312    0.6054 – 0.7276
+| Sample | Predicted macro ST-RAE | sd | 95 per cent band |
+|---|---|---|---|
+| interim reveal, full test, n = 750 | 0.6438 | 0.0202 | 0.6044 – 0.6851 |
+| live leaderboard, n = 375 | 0.6462 | 0.0297 | 0.5902 – 0.7059 |
 
-The mechanism is worth more than the number: a saved arm carried the right *name* and the wrong
-*composition*, and the check that catches that — reconciling an arm's own score against the
-scoreboard row for the configuration being claimed, rather than against any row showing the same
-figure — is one this project applies everywhere else and did not apply here.
+The first version of this band was computed on the wrong model. Three configurations were in play:
+a four-member ensemble at macro 0.6599, a five-member one at 0.6459, and the one that actually
+ships — five members with the dead-zone pass, but the Gaussian process alone on CYP3A4, where a
+search over all thirty-one member subsets chose it. That third configuration scored **0.6416**, and
+nobody had ever computed it: not the journal, not the saved predictions. The published band was
+0.0186 too high.
+
+What settles the arm's identity now, and was missing before, is an anchor: CYP3A4 comes out at
+0.4092 against 0.4129 from the independent subset search for the Gaussian process alone on that
+enzyme. The cell lands where the selection decision puts it rather than merely looking plausible.
+The failure mode is worth naming — a saved arm carried the right *name* and the wrong *composition*,
+and the check that catches that is reconciling an arm's own score against the row for the
+configuration being claimed, not against any row showing the same figure.
 
 This is a sampling band and not a prediction interval: it covers the draw, not the distribution shift, because it assumes the test's label spread and confidence-band widths resemble the training set's. A score outside it falsifies that named assumption, not the model; a score inside it confirms nothing.
 
