@@ -15,7 +15,8 @@ a permutation either. feats.build() therefore reindexes by name against the comm
 data/desc_names.csv and data/mech_names.csv.
 
 Shrinkage, and why the default is the open question rather than a settled one.
---shrink is OFF, and the justification it used to carry has since been falsified. That
+--shrink is ON as of 6 September (item 252), with --no-shrink to undo it. It was off for a
+long time, and the justification it used to carry had since been falsified. That
 justification was: on the top quartile by activity, shrinking toward the training mean
 makes every enzyme worse; the test is built around anchors at the 93rd to 98th percentile;
 therefore the test is that kind of subsample and shrinkage would hurt.
@@ -74,7 +75,23 @@ rule picked +0.4 on CYP1A2 and lost to doing nothing in 81 % of draws - exactly 
 that got a single global delta rejected, relocated to another cell. Under the adopted rule
 the fractions are 0.09 / 0.11 / 0.01 on the three enzymes it touches.
 
-None of this fires unless --shrink is passed. That switch is the one decision still open.
+SETTLED, 6 September, item 252. The switch is on and the vector is the DOCUMENTED one --
+0, +0.3, -0.5, +0.7 -- which the code had never actually held (item 251: three statements
+about this default, none agreeing).
+
+The vector was chosen over a narrower alternative for one reason. Items 87 and 88 measure
+delta's spread ACROSS MODELS at nine to eighty-eight times the seed term, growing rather
+than settling when a third model is added, and on CYP2D6 the three estimates are -0.405,
+-0.917 and -1.167. A design-simulation route (item 249) puts CYP2D6 at +0.23 and would
+have moved that cell to -0.1; adopting it would have preferred one model-free estimate
+over three model-based ones agreeing in sign. The documented vector contradicts none of
+them.
+
+The zero on CYP1A2 stays for now, and it is the one cell where the evidence has moved:
+item 88 says "the direction of the shift there is not determined by the data at all",
+while the design route determines it positive BY CONSTRUCTION, CYP1A2 being one of the
+three enzymes the test's anchors were selected on. Changing it is a separate decision and
+is deliberately not bundled with switching the flag.
 
 The size of the shift is bracketed rather than pinned. src/reweight.py tilts the label
 marginal and puts the centre at +0.4 for delta = 0 and +0.9 for delta = 0.5; the anchor
@@ -794,7 +811,14 @@ def fit_shrinkage(P, y, mask, delta=(0.0, 0.0, 0.0, 0.0)):
 def main():
     global LO, HI
     ap = argparse.ArgumentParser()
-    ap.add_argument("--shrink", action="store_true", help="применить усадку (см. docstring)")
+    ap.add_argument("--no-shrink", dest="shrink", action="store_false",
+                    help="не применять усадку (поведение до пункта 252). Флаг ВКЛЮЧЁН по "
+                         "умолчанию: пара (off, lambda) подбирается под предполагаемый сдвиг "
+                         "теста, вектор --delta. Выигрыш по среднему правилу +0.0473 макро пары "
+                         "против подгонки при нуле (src/shrinkchoice.py, блок 6), при парном поле "
+                         "лидерборда 0.017. ВАЖНО: этот выигрыш посчитан по апостериору из одного "
+                         "источника; пункты 87 и 88 меряют разброс delta ПО МОДЕЛЯМ в 9-88 раз "
+                         "больше сидового, и он в оценку не входит.")
     ap.add_argument("--mode", default="ансамбль5",
                     choices=["раздельно", "пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"],
                     help="раздельно воспроизводит поведение до пункта 84; ансамбль включает GP; "
@@ -808,11 +832,11 @@ def main():
     # 0,0.5,-0.5,0.8 до коммита 20be90c и 0,0.5,-0.7,0.8 после. Ни одно из трёх утверждений не
     # согласуется с двумя другими.
     #
-    # Не тронуто потому, что --shrink ВЫКЛЮЧЕН и значение не исполняется; менять его заодно с
-    # включением флага значило бы смешать два решения в одном изменении. Что выбрать, решается
-    # пунктом 88: разброс delta ПО МОДЕЛЯМ в 9-88 раз больше сидового, на CYP2D6 три модели дают
-    # -0.405, -0.917 и -1.167, а на CYP1A2 не выживает даже знак.
-    ap.add_argument("--delta", default="0,0.5,-0.7,0.8",
+    # УСТРАНЕНО 6 сентября (пункт 252): код приведён к документированному вектору, а не наоборот.
+    # Выбор решён пунктом 88: разброс delta ПО МОДЕЛЯМ в 9-88 раз больше сидового, на CYP2D6 три
+    # модели дают -0.405, -0.917 и -1.167, а на CYP1A2 не выживает даже знак. Документированный
+    # вектор не спорит по знаку ни с одной из трёх; узкая альтернатива из пункта 249 спорила бы.
+    ap.add_argument("--delta", default="0,0.3,-0.5,0.7",
                     help="предполагаемый сдвиг средней активности теста относительно нашей "
                          "выборки. Пара (off, lambda) подбирается под ЭТО предположение. "
                          "Ноль означает «тест распределён как обучающая выборка» - это не "
