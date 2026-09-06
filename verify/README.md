@@ -8723,3 +8723,50 @@ arrived at here through a calibrator that knows nothing about the selection proc
 cent of the submitted labels. That is the same shape as item 235's calibration decision and is
 recorded for the same reason: if the classification result on 25 September is worse than expected,
 these two changes are where to look, in this order.
+
+**251. Three statements about the same default, none agreeing, and the reason it never mattered.**
+Found while preparing to switch `--shrink` on. Not a measurement; a reconciliation.
+
+    докстринг src/submit.py    «The default is therefore 0, +0.3, -0.5, +0.7»
+    пункт 59 журнала           «src/submit.py --delta now defaults to it»
+    код, строка 805            default="0,0.5,-0.7,0.8"
+
+Git says the code never held the documented vector: `0,0.5,-0.5,0.8` until commit `20be90c` on
+31 August and `0,0.5,-0.7,0.8` after it. Item 59's sentence was written on 29 August and was
+already false, or became false two days later without anyone noticing. **It never mattered because
+`--shrink` is off and the value is not executed** -- which is exactly the condition under which
+such a divergence survives.
+
+**And the divergence is the smaller half.** Items 87 and 88, both written after item 59 adopted its
+vector, measure the spread of delta **across models** rather than across seeds:
+
+    фермент   поферм. L2      пул   поферм. L1   размах   полуширина бутстрапа
+    CYP1A2        +0.045   +0.344       -0.011    0.354                 0.399
+    CYP2C9        +0.362   +0.801       +0.283    0.518                 0.308
+    CYP2D6        -0.917   -0.405       -1.167    0.762                 0.509
+    CYP3A4        +0.740   +0.847       +0.616    0.230                 0.255
+
+The model term is **nine to eighty-eight times** the seed term, the range grew when a third model
+was added rather than settling, and on CYP1A2 not even the sign survives.
+
+**This voids the recommendation item 249 was building toward, and the fault is mine.** That entry
+compared three posteriors -- the existing draws, a design-route posterior and their mixture -- and
+concluded all three clear the paired leaderboard floor of 0.017. All three are built on ONE source
+of uncertainty, the draws from `verify/k10_strat2d6.py`. The model term item 88 measures is absent
+from every one of them, so the quoted spread of +0.047 to +0.023 understates the uncertainty by
+about an order of magnitude.
+
+**Concretely: the mixture's -0.1 on CYP2D6 stands against three model-based estimates of -0.405,
+-0.917 and -1.167.** All three are negative and none is near zero. Adopting -0.1 would prefer one
+model-free route -- whose own extrapolation multiplier of 1.3 was a judgement -- over three
+model-based ones that agree in sign.
+
+**What survives of item 249.** The design route is the only route with no model in it, so item 88's
+critique does not reach it in the same way, and its determination that CYP1A2's shift is positive
+**by construction** answers exactly the question item 88 says the data cannot: *"the direction of
+the shift there is not determined by the data at all."* That cell, and only that cell, is where the
+fourth route adds something no model-based route can.
+
+**Nothing is changed here.** The code's divergence is annotated rather than corrected, because
+correcting it and switching the flag on are two decisions and merging them into one change is how
+the divergence arose in the first place.
