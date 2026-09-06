@@ -128,8 +128,10 @@
   скрининг ВНУТРИ поферментного члена не измерен --- единственный неизмеренный вариант,
   и механизм пункта 182 предсказывает для него ноль (158, 177, 182);
   три четверти выигрыша на пороге TDI не взяты: оракул +0.0472 против +0.0133 у калибровки (235);
-  ворота 3A4 восстановлены на 53.7 %, и на плечо преинкубации ни разу не направляли
-  пятичленный ансамбль --- самый дешёвый named-маршрут к оставшемуся (238).
+  на классификационном треке ПОЛ, а не моделирование --- связывающее ограничение: дважды
+  найдено настоящее улучшение упорядочения (+0.0196 и +0.0214 AUC, знак 4/4), и оба раза
+  MCC вдвое ниже пола 0.0281; курс обмена AUC в MCC около 0.5, значит доказуемым станет
+  только прирост от +0.05 AUC (241, 243).
 
 **Что закрыто и переоткрывать не надо.** Постобработка сверх аффинной пары (77, 128 --- потолок
 0.0076), предобученные представления (61, 117, 154 --- три чекпойнта), FCFP (101), kNN (107),
@@ -8235,3 +8237,62 @@ at all.
 
 **Closed: the reactivity line needs no psi4, no ALFABET and no cluster, because the cheap version of
 it is already computed and is null against the target it was supposed to explain.**
+
+**243. The submission's own machinery does transfer to the pre-incubation arm -- and the third
+straight result whose ordering gain cannot be shown in the metric that is scored.**
+`verify/k75_armens.py`, four seeds, `results/preds/armens.json`. The one route item 238 left open.
+
+Item 238 measured the CYP3A4 gate at 53.7 per cent recovered and observed that it had been
+predicted by a **bare HistGB**, while the regression track -- four members plus the dead zone,
++0.058 of rank over that same baseline -- had never been pointed at `pi_TDI`. Checked before
+building rather than assumed: the pre-incubation arm **has** confidence bounds
+(`{CYP}_pIC50_TDI_condition_conf_low/_conf_high`), so the dead zone is defined on it. Pooling runs
+over two endpoints instead of four, so its indicator is two-position and these numbers are not
+row-comparable with the regression track's. The trunk does not transfer -- its refit lives under
+torch on four direct targets -- so this is the four-member version, and it is named that way.
+
+**Acceptance was fixed before the numbers: the ensemble had to raise AUC against the true gate**,
+because the gate's recovery is bounded by the arm's ordering and the cut is fitted out of fold
+anyway. It did, decisively.
+
+    CYP3A4, AUC против истинных ворот   среднее   знак      по сидам
+    поферментно (база, = пункт 238)     0.8714      —   (0.8709 в k69, воспроизвелось)
+    АНСАМБЛЬ4 + мёртвая зона            0.8928  +0.0214  4/4  +0.0239 +0.0196 +0.0192 +0.0229
+    АНСАМБЛЬ4                           0.8868  +0.0155  4/4
+    GP один                             0.8854  +0.0141  4/4
+    гребневая                           0.8689  -0.0024  0/4
+    пул                                 0.8658  -0.0056  0/4
+
+Four seeds inside a band 0.005 wide. **The machinery transfers, and the dead zone adds on top of
+the ensemble exactly as item 213 found on the regression track.**
+
+**And the MCC does not clear its floor.**
+
+    CYP3A4 (пол 0.0281)          против поферментного   знак
+    MCC ворот, ансамбль+МЗ                    +0.0161    4/4
+    MCC метки, ансамбль+МЗ                    +0.0110    4/4
+
+Perfect sign, half the floor. And the route as a whole does not beat what is submitted: 0.3431
+against the deployed classifier's 0.3379 (item 235). It beats only the bare-HistGB version of
+itself, 0.3321. **Nothing is deployed.**
+
+**The pattern is now the finding, and it is worth more than any of the three results that produced
+it.** Item 241 gave +0.0196 of AUC on CYP2D6 with MCC below floor; this gives +0.0214 with MCC below
+floor. The exchange rate is measurable from these numbers: **0.021 of AUC buys 0.016 of gate MCC and
+0.011 of label MCC** -- roughly one half -- so clearing a floor of 0.0281 demands about **+0.05 of
+AUC**, more than twice the largest ordering gain anything has produced here. The memo of 5 September
+listed "the R-squared to MCC transfer function" as genuinely open; this is the AUC version of it,
+and it says the classification track's floor, not its modelling, is the binding constraint.
+
+**A side observation on the pooling mystery, and it is the first with a clean sign.** Pooling is the
+largest unexplained effect the submission relies on, +0.0141 of rank, with both candidate mechanisms
+refuted (items 110, 111). Here, across two endpoints instead of four and on a different quantity, it
+**hurts**: -0.0056 at sign 0/4 on CYP3A4 and -0.0481 at 0/4 on CYP2D6. That is not an explanation,
+but it is the first negative pooling observation with a consistent sign, and it narrows the field:
+whatever pooling does, it does not survive being applied to two endpoints of the pre-incubation arm.
+
+**With this the classification track closes.** Over two days: the external rows (240), the threshold
+estimators (k72), the probability product (241), the quantum block against the shift (242), the
+alerts (236) and now the arm ensemble -- every one measured, every one below its floor against what
+is already submitted. The deployed configuration is a structural classifier plus Platt calibration,
+0.3379 and 0.1169, and nothing measured beats it by more than the floor.
