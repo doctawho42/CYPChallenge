@@ -8701,7 +8701,25 @@ where k74's product reached -0.0031 at 4 of 8, with no ensemble in either.
 CYP2D6 +0.0170 against 0.0419. Macro +0.0127 against 0.0076 is the whole claim, which is what item
 244 wrote the rule on.
 
-**By the committed rule this is adopted.** The cost is not small -- the bundle needs the four-member
-ensemble on the pre-incubation arm plus a shift classifier at submission time, roughly one to two
-hours on top of the current run -- and that is an implementation question, not a question about
-whether the rule binds.
+**By the committed rule this is adopted, and it now ships.** `src/submit.py` builds both conjuncts,
+`--no-bundle` restores the previous behaviour in one flag, and the run took about an hour longer.
+Both of the organisers' validators accept.
+
+    подача      было (Платт)   стало (связка)   согласие   только Платт   только связка
+    CYP3A4               284              360      0.832             25             101
+    CYP2D6               258              285      0.799             62              89
+
+**The control that had to pass did**: the regression track is bit-identical between the two runs,
+max absolute difference exactly 0.00e+00 on all four enzymes, so the bundle touched only what it was
+supposed to touch.
+
+**And the deployment corroborated item 249 from a fourth direction nobody planned.** The gate
+calibrator is fitted on training rows and applied to the test; on CYP3A4 it returns a mean gate
+probability of **0.729 against a training rate of 0.602**. The test compounds clear the potency
+threshold more often than ours do -- which is the enrichment the design-simulation route predicts,
+arrived at here through a calibrator that knows nothing about the selection procedure.
+
+**What is being paid for the gain.** Macro +0.0127 of MCC at 1.7 times its floor moves 17 to 20 per
+cent of the submitted labels. That is the same shape as item 235's calibration decision and is
+recorded for the same reason: if the classification result on 25 September is worse than expected,
+these two changes are where to look, in this order.
