@@ -8306,3 +8306,61 @@ estimators (k72), the probability product (241), the quantum block against the s
 alerts (236) and now the arm ensemble -- every one measured, every one below its floor against what
 is already submitted. The deployed configuration is a structural classifier plus Platt calibration,
 0.3379 and 0.1169, and nothing measured beats it by more than the floor.
+
+**244. Pre-registration: bundling two sub-floor gains, and the rule that separates a small effect
+from an absent one.** Written and committed before `verify/k76_bundle.py` runs. The question came
+from outside: if no single intervention clears the floor, can several small ones be introduced
+together and clear it as a bundle?
+
+**The premise is right and the project already depends on it.** A noise floor is a property of a
+MEASUREMENT, not of a component. Nothing obliges each part to be demonstrable on its own: the dead
+zone is exactly this shape -- five per-member applications, each marginal alone, measured as one
+object and worth +0.0197 at sign 4/4 in all sixteen cells.
+
+**But bundling only works for effects that are small and REAL. For absent effects it is worse than
+doing nothing**, because the bundle pays their variance and collects none of their mean. And the
+discriminator is not magnitude, it is **sign consistency** -- the same statistic item 213 leaned on
+for the trunk's +0.0045 against a floor of 0.0036.
+
+Every closed item of the last two days, classified by that rule, against the arm each was measured
+next to:
+
+    что                                   средн.   знак   вердикт
+    k75, ансамбль4+МЗ на плече           +0.0104    7/8   живой, мал
+    k74, произведение как скор           +0.0187    6/8   живой, мал
+    k74, минимум как скор                +0.0162    7/8   живой, мал
+    k75, GP на плече                     +0.0057    5/8   мёртвый
+    k73, квант сырой                     -0.0018    3/8   мёртвый
+    k73, квант остаток                   +0.0035    5/8   мёртвый
+    k73, квант ПЕРЕМЕШАННЫЙ (контроль)   +0.0041    4/8   ---
+    k71, внешние строки                  +0.0051    2/8   мёртвый
+
+**The quantum block is excluded, and the control row is why.** Its shuffled version scores +0.0041
+at 4 of 8 -- higher than either real arm. That is not a small effect; it is zero, and bundling a
+zero costs variance for no mean. Item 242 closed it and this does not reopen it.
+
+**Two candidates survive, and they are different mechanisms** -- one improves the regression of the
+pre-incubation arm, the other changes the shape of the decision function -- so they compose rather
+than compete.
+
+**The bundle, fixed now.** Gate factor from the four-member ensemble with the dead zone on the
+pre-incubation arm, mapped to a probability by a 1-D calibrator fitted out of fold; multiplied by
+the shift factor from a classifier on `Delta > log10 2`; the product calibrated and thresholded by
+the plug-in rule. Measured as **one object** against what is submitted (structural classifier plus
+Platt), four seeds, both endpoints.
+
+**It is adopted if and only if all three hold:**
+
+    1. средний прирост макро-MCC над подаваемым положителен;
+    2. знак держится не менее чем в 6 клетках из 8;
+    3. прирост превышает МАКРО-ПОЛ 0.0076.
+
+The third condition is the whole point of the exercise: the bundle must clear a floor that none of
+its parts cleared. **If it does not, that is the answer** -- the parts overlap more than they looked
+like they would, and the strategy of accumulating sub-floor gains is closed on measurement rather
+than on argument.
+
+**Why it is fixed in advance.** The floor of 0.0281 was measured for a FIXED arm across four seeds.
+An arm assembled from whatever looked positive afterwards has a larger variance and an estimate
+biased upward by the selection. Item 233 is the precedent, and it is the reason this paragraph
+exists before the numbers rather than after them.
