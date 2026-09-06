@@ -8415,3 +8415,56 @@ winner's curse it is +0.006 to +0.008, and a one-enzyme change enters macro at a
 about +0.002. **The decision stands on cross-validation grounds and is not being reversed here** --
 it costs nothing and the sign is right -- but it must stop being quoted as a leaderboard-relevant
 gain, and the scoreboard will say so.
+
+**246. The falsification band was pre-registered for the wrong arm, at the wrong n, with the wrong
+aggregation. Corrected here, and this is the version that stands for 24 September.** Prompted by an
+outside reading of the challenge announcement; the announcement's own wording settles the n.
+
+**What the organisers actually say**, quoted because the project has been working from the
+tutorial's paraphrase: *"Half of the test set will be used for a live leaderboard, split by
+chemisimilar series, such that all compounds from a parent end up in either the live leaderboard or
+the fully blinded set. There will be an interim leaderboard at the halfway mark, at which
+participants' performance on the full test set will be revealed only once."*
+
+So there are **two** external numbers with two different sample sizes, and the project had neither
+right: the live leaderboard runs on **375**, and the interim reveal on 25 September is on the
+**full 750**.
+
+Three defects in item 147's band, in increasing order of size:
+
+    источник ошибки                                        было          стало
+    рука: база FP+DESC+MECH вместо подаваемой         0.639-0.804          ---
+    агрегация: среднее ЧЕТЫРЁХ поферментных границ    полуширина 0.082  ->  0.042
+    n: 750 против 375 для живого лидерборда                   ---      полуширина 0.061
+
+The aggregation defect is the largest and it is arithmetic, not judgement. Item 147 averaged the
+four per-enzyme percentile bounds as though the enzymes' sampling errors moved together. Measured
+cross-enzyme correlation of per-draw ST-RAE under a common draw is **0.02** -- they are very nearly
+independent, and averaging four independent errors halves the spread. **The single-score spread is
+sd 0.022, not 0.08.**
+
+**The corrected bands, on the arm that is actually submitted** (dead zone in all five members, macro
+OOF 0.6600, matching the scoreboard's 0.6599), 3000 draws of a common molecule sample:
+
+    что                       среднее      sd            95 %       полуширина
+    n=750, полный тест         0.6624  0.0215  [0.6213, 0.7053]         0.0420
+    n=375, живой лидерборд     0.6648  0.0312  [0.6054, 0.7276]         0.0611
+
+**This is a SAMPLING band and not a prediction interval, and the difference is the whole caveat.**
+It assumes the test set's label distribution and band widths resemble the training set's. Items
+123, 129 and 130 established by three independent routes that the distribution shift is not
+checkable from inside, and nothing here changes that. What the band covers is the draw; what it
+does not cover is the shift.
+
+**Recorded as a tightening after the fact**, which is the uncomfortable half. The band narrows from
+a half-width of 0.082 to 0.042, making the 25 September test **stricter** than the one item 147
+wrote down. A band that is widened after the fact is worthless; one that is narrowed is defensible
+but only if the narrowing is announced with its reason, before the measurement, and that is what
+this entry is. The reason is an arithmetic error in the aggregation, not a change of mind.
+
+**And a fourth number that now carries weight it did not have.** Planning against the 375-compound
+live leaderboard would be unsound if slicing by chemical series cut the effective sample far below
+375. It does not: yesterday's measurement of per-compound ST-RAE contributions among close analogues
+gives a correlation of **-0.013 to +0.002** across the four enzymes. Analogues' contributions to
+this metric are uncorrelated, so a series-wise split costs almost nothing in effective n. Without
+that number the whole paragraph above would rest on a guess.
