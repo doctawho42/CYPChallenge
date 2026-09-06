@@ -178,6 +178,133 @@ def tdi_calibrate(Xtr, ytr, fold, p_test):
     return lr.predict_proba(_logit(p_test))[:, 1], slope
 
 
+# ---------------------------------------------------------------- связка (пункты 244, 250)
+# Метка TDI --- конъюнкция (пункт 234): is_TDI <=> (Delta > log10 2) И (pi_TDI > 4.301).
+# Прямой классификатор эту структуру выбрасывает. Связка её использует: вероятность ворот
+# берётся из плеча преинкубации, предсказанного четырёхчленным ансамблем с мёртвой зоной, и
+# умножается на вероятность сдвига; произведение калибруется и режется plug-in-порогом.
+#
+# Условия приёмки были зафиксированы в пункте 244 ДО прогона и выполнены в пункте 250: макро
+# +0.0127 при поле 0.0076, знак 6 из 8. Контроли: перемешивание фактора сдвига обрушивает
+# связку до -0.1453 при знаке 0/8, каждый фактор поодиночке хуже подаваемого.
+#
+# Поферментно она не проходит ничего --- +0.0083 на CYP3A4 при поле 0.0281 и +0.0170 на CYP2D6
+# при 0.0419. Заявление здесь МАКРО, и правило пункта 244 писалось на макро сознательно.
+#
+# verify/k76_bundle.py --- измерение, эта функция --- его развёртывание. Логика продублирована,
+# а не импортирована, потому что src/ не должен зависеть от verify/; при расхождении верить
+# k76 и приводить сюда.
+TDI_L = np.log10(2.0)
+TDI_GATE = 4.0 + TDI_L
+BUNDLE_KINDS = ["поферментно", "пул", "GP", "гребневая"]
+
+
+def _pooled2(Z, e):
+    ind = np.zeros((len(Z), 2), np.float32)
+    ind[:, e] = 1.0
+    return np.hstack([Z, ind])
+
+
+def _arm_member(kind, Xs, ys, folds, Xtes, KW, e=None, f=None, full=False):
+    """Один член на плече преинкубации. full=True --- обучение на всех строках для теста."""
+    if kind == "пул":
+        if full:
+            Xtr = np.vstack([_pooled2(Xs[k], k) for k in range(len(Xs))])
+            ytr = np.concatenate(ys)
+            m = HistGradientBoostingRegressor(**KW).fit(Xtr, ytr)
+            return [m.predict(_pooled2(Xtes[k], k)) for k in range(len(Xs))]
+        Xtr = np.vstack([_pooled2(Xs[k][folds[k] != f], k) for k in range(len(Xs))])
+        ytr = np.concatenate([ys[k][folds[k] != f] for k in range(len(Xs))])
+        m = HistGradientBoostingRegressor(**KW).fit(Xtr, ytr)
+        return m.predict(_pooled2(Xs[e][folds[e] == f], e))
+    if full:
+        out = []
+        for k in range(len(Xs)):
+            A, B = _dz_design(kind, Xs[k], k, Xtes[k]) if kind in ("GP", "гребневая") else (Xs[k], Xtes[k])
+            out.append(_dz_fit(kind, A, ys[k], B) if kind in ("GP", "гребневая")
+                       else HistGradientBoostingRegressor(**KW).fit(A, ys[k]).predict(B))
+        return out
+    trn, te = folds[e] != f, folds[e] == f
+    if kind in ("GP", "гребневая"):
+        A, B = _dz_design(kind, Xs[e][trn], e, Xs[e][te])
+        return _dz_fit(kind, A, ys[e][trn], B)
+    return HistGradientBoostingRegressor(**KW).fit(Xs[e][trn], ys[e][trn]).predict(Xs[e][te])
+
+
+def _arm_ensemble(Xs, ys, folds, Xtes, LOs, HIs):
+    """Вне фолда и на тесте: четыре члена, мёртвая зона, невзвешенное среднее.
+
+    Пулированный член обучается ОДИН раз на фолд: его обучающая выборка от эндпоинта не
+    зависит, зависит только предсказание."""
+    PLAIN = dict(max_iter=300, learning_rate=0.06, max_leaf_nodes=31,
+                 l2_regularization=1.0, random_state=0)
+    n = len(Xs)
+    oof = [np.zeros(len(y)) for y in ys]
+    tst = [np.zeros(len(Xt)) for Xt in Xtes]
+
+    def pass_(targets, KW):
+        """Один проход всех членов: вне фолда и на полных данных."""
+        o = [np.zeros(len(t)) for t in targets]
+        t_ = [np.zeros(len(Xt)) for Xt in Xtes]
+        for f in range(5):
+            if "пул" in BUNDLE_KINDS:
+                Xtr = np.vstack([_pooled2(Xs[k][folds[k] != f], k) for k in range(n)])
+                ytr = np.concatenate([targets[k][folds[k] != f] for k in range(n)])
+                mdl = HistGradientBoostingRegressor(**KW).fit(Xtr, ytr)
+                for e in range(n):
+                    te = folds[e] == f
+                    if te.sum():
+                        o[e][te] += mdl.predict(_pooled2(Xs[e][te], e)) / len(BUNDLE_KINDS)
+            for kind in BUNDLE_KINDS:
+                if kind == "пул":
+                    continue
+                for e in range(n):
+                    te = folds[e] == f
+                    if not te.sum():
+                        continue
+                    trn = ~te
+                    if kind in ("GP", "гребневая"):
+                        A, B = _dz_design(kind, Xs[e][trn], e, Xs[e][te])
+                        o[e][te] += _dz_fit(kind, A, targets[e][trn], B) / len(BUNDLE_KINDS)
+                    else:
+                        o[e][te] += (HistGradientBoostingRegressor(**KW)
+                                     .fit(Xs[e][trn], targets[e][trn])
+                                     .predict(Xs[e][te])) / len(BUNDLE_KINDS)
+        Xtr = np.vstack([_pooled2(Xs[k], k) for k in range(n)])
+        mdl = HistGradientBoostingRegressor(**KW).fit(Xtr, np.concatenate(targets))
+        for e in range(n):
+            t_[e] += mdl.predict(_pooled2(Xtes[e], e)) / len(BUNDLE_KINDS)
+        for kind in BUNDLE_KINDS:
+            if kind == "пул":
+                continue
+            for e in range(n):
+                if kind in ("GP", "гребневая"):
+                    A, B = _dz_design(kind, Xs[e], e, Xtes[e])
+                    t_[e] += _dz_fit(kind, A, targets[e], B) / len(BUNDLE_KINDS)
+                else:
+                    t_[e] += (HistGradientBoostingRegressor(**KW).fit(Xs[e], targets[e])
+                              .predict(Xtes[e])) / len(BUNDLE_KINDS)
+        return o, t_
+
+    raw_o, _ = pass_(ys, PLAIN)
+    print("      плечо: обычный проход готов", flush=True)
+    tgt = [np.clip(raw_o[e] * len(BUNDLE_KINDS) / len(BUNDLE_KINDS), LOs[e], HIs[e])
+           for e in range(n)]
+    oof, tst = pass_(tgt, DZ_KW)
+    print("      плечо: мёртвая зона готова", flush=True)
+    return oof, tst
+
+
+def _platt_1d(score_tr, y_tr, score_te, raw=False):
+    def f(q):
+        if raw:
+            return np.asarray(q, float).reshape(-1, 1)
+        q = np.clip(q, 1e-6, 1 - 1e-6)
+        return np.log(q / (1 - q)).reshape(-1, 1)
+    lr = LogisticRegression(C=1e6).fit(f(score_tr), y_tr)
+    return lr.predict_proba(f(score_te))[:, 1], lr.predict_proba(f(score_tr))[:, 1]
+
+
 def test_features(desc_names, mech_names):
     te = pd.read_csv(D + "cyp-challenge-TEST-BLINDED.csv")
     FP, dsc, M, ok = F.build(list(te.SMILES), desc_names, mech_names)
@@ -698,6 +825,14 @@ def main():
                          "воспроизвёл пункт 164 кодом самой подачи --- +0.0136 ранга и "
                          "-0.0158 пары на сиде 0, все четыре фермента вверх.")
     ap.set_defaults(deadzone=True)
+    ap.add_argument("--no-bundle", dest="bundle", action="store_false",
+                    help="классификация прямым классификатором + Платт (поведение до пункта 250). "
+                         "По умолчанию ВКЛЮЧЕНА связка: вероятность ворот из плеча преинкубации, "
+                         "предсказанного четырёхчленным ансамблем с мёртвой зоной, умножается на "
+                         "вероятность сдвига, произведение калибруется и режется plug-in-порогом. "
+                         "Принята по предрегистрации пункта 244: макро MCC +0.0127 при поле 0.0076, "
+                         "знак 6/8. Поферментно не проходит НИЧЕГО (+0.0083 при 0.0281 и +0.0170 "
+                         "при 0.0419) --- заявление макро. Стоит примерно час к прогону.")
     ap.add_argument("--screen", action="store_true",
                     help="добавить строки скрининга в поферментный член. ВЫКЛЮЧЕНО по умолчанию: "
                          "пункт 177 даёт +0.029 ранга ОДИНОЧНОЙ модели, но пункт 182 померил тот "
@@ -857,18 +992,57 @@ def main():
     T = tdi.loc[rows.Molecule_Name[keep]].reset_index()
     cls = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})
     tdifold, _ = butina_folds(list(rows.SMILES[keep]))
-    for c in TDI_CYPS:
-        lab = T[f"{c}_is_TDI"]
-        m = lab.notna().to_numpy()
-        yb = lab[m].astype(int).to_numpy()
-        pr = gbm_clf().fit(X[keep][m], yb).predict_proba(Xte)[:, 1]
-        raw_mean = float(pr.mean())
-        pr, slope = tdi_calibrate(X[keep][m], yb, tdifold[m], pr)
-        thr = plugin_threshold(pr)
-        cls[f"{c}_is_TDI"] = pr >= thr
-        print(f"    {c}: Платт наклон {slope:+.3f}, среднее {raw_mean:.3f} -> {pr.mean():.3f} "
-              f"(обучающая доля {yb.mean():.3f}); порог {thr:.3f}, "
-              f"положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
+    if a.bundle:
+        # Связка (пункты 244, 250). Готовим обе конъюнкты на плече преинкубации.
+        inh_full = (pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
+                      .set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index())
+        Xs, ys, folds, LOs, HIs, labs, shifts, gates = [], [], [], [], [], [], [], []
+        for c in TDI_CYPS:
+            lab = T[f"{c}_is_TDI"]
+            ta = T[f"{c}_pIC50_TDI_condition"].to_numpy(float)
+            dr = inh_full[f"{c}_pIC50_direct_inhibition"].to_numpy(float)
+            lo = T[f"{c}_pIC50_TDI_condition_conf_low"].to_numpy(float)
+            hi = T[f"{c}_pIC50_TDI_condition_conf_high"].to_numpy(float)
+            mm = (lab.notna() & np.isfinite(ta) & np.isfinite(dr)
+                  & np.isfinite(lo) & np.isfinite(hi)).to_numpy()
+            Xs.append(X[keep][mm]); ys.append(ta[mm]); folds.append(tdifold[mm])
+            LOs.append(lo[mm]); HIs.append(hi[mm])
+            labs.append(lab[mm].astype(int).to_numpy())
+            shifts.append((ta - dr)[mm]); gates.append((ta > TDI_GATE)[mm].astype(int))
+            print(f"    {c}: связка, обучающих {int(mm.sum())}", flush=True)
+        arm_oof, arm_tst = _arm_ensemble(Xs, ys, folds, [Xte] * len(TDI_CYPS), LOs, HIs)
+        for e, c in enumerate(TDI_CYPS):
+            gp_te, gp_tr = _platt_1d(arm_oof[e] - TDI_GATE, gates[e],
+                                     arm_tst[e] - TDI_GATE, raw=True)
+            sh = (shifts[e] > TDI_L).astype(int)
+            dp_tr = np.zeros(len(sh))
+            for f in range(5):
+                trn, tef = folds[e] != f, folds[e] == f
+                if tef.sum() and sh[trn].sum():
+                    dp_tr[tef] = gbm_clf().fit(Xs[e][trn], sh[trn]).predict_proba(Xs[e][tef])[:, 1]
+            dp_te = gbm_clf().fit(Xs[e], sh).predict_proba(Xte)[:, 1]
+            prod_tr, prod_te = gp_tr * dp_tr, gp_te * dp_te
+            pr, _ = _platt_1d(prod_tr, labs[e], prod_te)
+            cal_tr, _ = _platt_1d(prod_tr, labs[e], prod_tr)
+            thr = plugin_threshold(cal_tr)
+            cls[f"{c}_is_TDI"] = pr >= thr
+            print(f"    {c}: ворота E[p] {gp_te.mean():.3f} (обуч. доля {gates[e].mean():.3f}), "
+                  f"сдвиг E[p] {dp_te.mean():.3f} ({sh.mean():.3f}); произведение -> "
+                  f"E[p] {pr.mean():.3f} (метка {labs[e].mean():.3f}); порог {thr:.3f}, "
+                  f"положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
+    else:
+        for c in TDI_CYPS:
+            lab = T[f"{c}_is_TDI"]
+            m = lab.notna().to_numpy()
+            yb = lab[m].astype(int).to_numpy()
+            pr = gbm_clf().fit(X[keep][m], yb).predict_proba(Xte)[:, 1]
+            raw_mean = float(pr.mean())
+            pr, slope = tdi_calibrate(X[keep][m], yb, tdifold[m], pr)
+            thr = plugin_threshold(pr)
+            cls[f"{c}_is_TDI"] = pr >= thr
+            print(f"    {c}: Платт наклон {slope:+.3f}, среднее {raw_mean:.3f} -> {pr.mean():.3f} "
+                  f"(обучающая доля {yb.mean():.3f}); порог {thr:.3f}, "
+                  f"положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
 
     ap_ = a.outdir + "activity_submission.csv"
     tp_ = a.outdir + "tdi_submission.csv"
