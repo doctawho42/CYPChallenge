@@ -7850,9 +7850,12 @@ against nothing. The submitted arm re-measured at four split seeds gives it:
     CYP2D6                                   0.0187  0.0374   0.0419    0.0419
     МАКРО                                    0.0037  0.0074   0.0076    0.0076
 
-**Macro MCC's floor is 0.0076 -- within a thousandth of the regression track's macro rank floor of
-0.007.** Two different metrics on two different tracks with the same split machinery land in the
-same place, which is a coincidence worth noticing and not worth theorising about.
+**Macro MCC's floor is 0.0076.** This entry originally compared that to "the regression track's
+macro rank floor of 0.007" and called the agreement a coincidence. **The comparison was to the wrong
+quantity**: item 70's 0.007 is chaotic sensitivity at a FIXED seed measured in ST-RAE, while the
+macro RANK floor over seeds is 0.0036 (item 165). Corrected the same day by a numeric audit. The two
+numbers that do sit close are macro MCC 0.0076 and macro ST-RAE 0.007, which are different metrics on
+different tracks and share only the split machinery.
 
 **And it changes what this result may be claimed as.** The gain is +0.0133 macro against a floor of
 0.0076: **1.75 times the floor, and that is the whole claim.** Per enzyme it does not clear: +0.0235
@@ -8443,12 +8446,28 @@ cross-enzyme correlation of per-draw ST-RAE under a common draw is **0.02** -- t
 independent, and averaging four independent errors halves the spread. **The single-score spread is
 sd 0.022, not 0.08.**
 
-**The corrected bands, on the arm that is actually submitted** (dead zone in all five members, macro
-OOF 0.6600, matching the scoreboard's 0.6599), 3000 draws of a common molecule sample:
+**WITHDRAWN, same day, by a numeric audit of the write-up drafted from this entry.** The bands below
+were computed on the WRONG ARM and must not be used. `results/preds/oof_dzens.json`'s
+`мёртвая зона везде` is item 149's **four-member** ensemble at seed 0, macro 0.6599; the arm that
+ships is item 213's **five-member** configuration at macro **0.6459**, and no per-compound
+out-of-fold predictions for it exist anywhere under `results/preds/`. The sentence "matching the
+scoreboard's 0.6599" matched a number from a different experiment -- 0.6599 appears in the scoreboard
+only at item 149's four-member row, and the submitted configuration's row reads 0.6459.
 
-    что                       среднее      sd            95 %       полуширина
-    n=750, полный тест         0.6624  0.0215  [0.6213, 0.7053]         0.0420
-    n=375, живой лидерборд     0.6648  0.0312  [0.6054, 0.7276]         0.0611
+The centre is therefore about **0.014 too high**. The spread is a property of the loss distribution
+and will move less, but an approximate correction is not what a pre-registration may contain, so the
+band is withdrawn rather than shifted, and `verify/k79_bandfix.py` recomputes it on the five-member
+arm through `src/submit.py`'s own `oof_members` and `dz_pass`.
+
+    ОТОЗВАНО, четырёхчленная рука   среднее      sd            95 %       полуширина
+    n=750, полный тест               0.6624  0.0215  [0.6213, 0.7053]         0.0420
+    n=375, живой лидерборд           0.6648  0.0312  [0.6054, 0.7276]         0.0611
+
+**How it happened, because the mechanism repeats.** `oof_dzens.json` contains an arm whose NAME
+matches what is submitted -- "мёртвая зона везде" -- while its composition does not. The check that
+would have caught it is the one this project applies everywhere else and did not apply here:
+reconcile the arm's own score against the scoreboard row for the configuration being claimed, not
+against any row that carries the same number.
 
 **This is a SAMPLING band and not a prediction interval, and the difference is the whole caveat.**
 It assumes the test set's label distribution and band widths resemble the training set's. Items
