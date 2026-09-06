@@ -8770,3 +8770,46 @@ fourth route adds something no model-based route can.
 **Nothing is changed here.** The code's divergence is annotated rather than corrected, because
 correcting it and switching the flag on are two decisions and merging them into one change is how
 the divergence arose in the first place.
+
+**252. The shrinkage is on, at the documented vector, and the deployment check found the mechanism
+is mostly not shrinkage.** `src/submit.py --no-shrink` undoes it. Chosen by the team from three
+options after item 251 voided the recommendation item 249 was building toward.
+
+**Why the documented vector and not the narrower one.** Items 87 and 88 measure delta's spread
+across MODELS at nine to eighty-eight times the seed term, growing rather than settling when a third
+model is added; on CYP2D6 the three estimates are -0.405, -0.917 and -1.167. Item 249's design route
+puts CYP2D6 at +0.23 and would have moved that cell to -0.1 -- one model-free estimate preferred
+over three model-based ones that agree in sign. **The documented vector 0, +0.3, -0.5, +0.7
+contradicts none of them**, and it is also the vector the docstring and item 59 have claimed all
+along while the code held something else (item 251).
+
+**Both organisers' validators accept, and the control that mattered passed.**
+
+    фермент   дельта   сдвиг средних   отношение sd   спирмен   макс|разн|
+    CYP1A2      +0.0         +0.0700         1.0000    1.0000       0.0700
+    CYP2C9      +0.3         +0.1800         1.0000    1.0000       0.1800
+    CYP2D6      -0.5         -0.1900         1.0000    1.0000       0.1900
+    CYP3A4      +0.7         +0.1719         0.8800    1.0000       0.5626
+
+    классификация: 0 расхождений на обоих эндпоинтах -- побитово прежняя
+
+The classification track is untouched to the bit, which is what it should be: the bundle's inputs do
+not depend on the tilt. Had it moved, something was leaking.
+
+**Three things the deployment revealed that the analysis had not.**
+
+**Spearman is exactly 1.0000 on all four enzymes.** The affine pair is monotone and leaves the
+ordering untouched -- the property the whole "only rank survives" discipline rests on, confirmed on
+the submitted file rather than in the abstract.
+
+**There is almost no shrinkage.** The standard-deviation ratio is 1.0000 on three enzymes of four,
+so lambda = 1 there and the transformation is a pure translation. Real shrinkage happens only on
+CYP3A4, at 0.88. **The name describes the mechanism worse than the mechanism behaves**, and every
+discussion of this switch in the journal, including item 249's, has been arguing about a shift while
+calling it a shrink.
+
+**Predictions move about a quarter of the assumed delta**: +0.18 at delta +0.3, -0.19 at -0.5,
++0.17 at +0.7. Delta is an assumption about the test set, under which a pair is fitted; how far
+predictions actually travel is decided by the fit. CYP1A2 is the clean demonstration -- delta is
+zero and the fitted shift is still +0.07, because the optimal pair is not the identity even when the
+test is assumed to look like the training set.
