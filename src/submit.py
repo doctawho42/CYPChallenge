@@ -101,7 +101,7 @@ import feats as F
 from cypsplit import butina_folds, fold_digest
 from gp import prepare as gp_prepare, gp_predict
 from sklearn.isotonic import IsotonicRegression
-from sklearn.linear_model import RidgeCV
+from sklearn.linear_model import LogisticRegression, RidgeCV
 from reweight import tilt
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
@@ -120,6 +120,62 @@ def gbm_clf():
     return HistGradientBoostingClassifier(max_iter=300, learning_rate=0.06,
                                           max_leaf_nodes=31, l2_regularization=1.0,
                                           random_state=0)
+
+
+# The threshold the classification track submits at. It is a PLUG-IN rule: it maximises
+# the MCC *expected* under the model's own probabilities, so it needs no labels - and it is
+# therefore only correct to the extent those probabilities are calibrated. Item 165 raised
+# that as an unstated assumption; verify/k68_tdicalib.py measures what it costs. Kept as
+# one function so the submission and the check cannot drift apart.
+def plugin_threshold(pr, grid=None):
+    ts = np.linspace(0.05, 0.95, 91) if grid is None else np.asarray(grid, float)
+
+    def emcc(t):
+        yh = pr >= t
+        tp = (pr * yh).sum(); fp = ((1 - pr) * yh).sum()
+        fn = (pr * ~yh).sum(); tn = ((1 - pr) * ~yh).sum()
+        d = np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+        return (tp * tn - fp * fn) / d if d > 0 else 0.0
+
+    return float(ts[int(np.argmax([emcc(t) for t in ts]))])
+
+
+# Platt calibration of the classifier's probabilities, fitted OUT OF FOLD on the training rows
+# and applied to the test predictions. Item 233 pre-registered the rule for putting this in and
+# item 235 is the four-seed measurement that passed it: macro MCC +0.0133 against a floor of
+# 0.0076, sign 7 of 8 cells, all 40 Platt slopes positive.
+#
+# Why it is needed at all, and it is a defect rather than an improvement: plugin_threshold above
+# maximises the MCC *expected under the model's own probabilities*, which is only the right
+# threshold if those probabilities are calibrated. They are not - the mean predicted rate was
+# 0.099 against a true 0.217 on CYP2D6. Item 165 raised the unstated assumption; this closes it.
+#
+# The slope must be positive or the map is not a calibration but an order reversal - Platt fits a
+# logistic on logit(p), and on a classifier with no ordering the slope can come out negative.
+# CYP2D6's AUC is 0.588, close enough to make that a live failure, so it is checked rather than
+# assumed. All 40 folds of the four-seed sweep came out positive, minimum +0.084.
+#
+# Costs five extra classifier fits per enzyme, about twenty-five minutes on top of the run.
+def tdi_calibrate(Xtr, ytr, fold, p_test):
+    p_oof = np.zeros(len(ytr))
+    for f in range(5):
+        trn, te = fold != f, fold == f
+        if te.sum() == 0 or ytr[trn].sum() == 0:
+            continue
+        p_oof[te] = gbm_clf().fit(Xtr[trn], ytr[trn]).predict_proba(Xtr[te])[:, 1]
+
+    def _logit(q):
+        q = np.clip(q, 1e-6, 1 - 1e-6)
+        return np.log(q / (1 - q)).reshape(-1, 1)
+
+    lr = LogisticRegression(C=1e6).fit(_logit(p_oof), ytr)
+    slope = float(lr.coef_[0, 0])
+    if slope <= 0:
+        raise SystemExit(
+            f"наклон Платта {slope:+.4f} <= 0: карта переворачивает порядок, а не калибрует. "
+            "Все 40 фолдов четырёхсидового прогона (пункт 235) дали положительный наклон, "
+            "минимум +0.084, так что это не ожидаемый режим -- разбираться, а не обходить.")
+    return lr.predict_proba(_logit(p_test))[:, 1], slope
 
 
 def test_features(desc_names, mech_names):
@@ -327,6 +383,29 @@ def _oof_one(X, y, mask, fold, pool, scr=None):
     return P
 
 
+# Поферментный отбор члена (пункт 218). Ключ --- фермент, значение --- какие члены
+# усредняются на нём; отсутствие ключа означает «все», то есть прежнее поведение.
+#
+# Посылка ансамбля --- что усреднение бьёт свои члены. Прочитанная ПОФЕРМЕНТНО, как велит
+# пункт 165, она есть четыре проверки, и на CYP3A4 проваливается: гауссов процесс в одиночку
+# даёт ранг 0.8153 против 0.8056 у пятичленного, знак 4/4 на четырёх сидах по обоим
+# критериям, втрое выше поля этого фермента (0.0033). Перебор всех 31 подмножества ставит
+# «GP один» первым, а полный ансамбль четырнадцатым.
+#
+# ЧТО ЗДЕСЬ НА ГРАНИ и должно быть видно тому, кто это меняет. «поферментно+GP» даёт ранг
+# 0.8149 --- отличие 0.0004, вчетверо ниже поля, то есть по решающему критерию это НИЧЬЯ, --- и
+# при этом лучше по метрике (0.4101 против 0.4129). Два члена ещё и страхуют от того, что
+# гауссов процесс окажется неудачлив на тесте, чего одиночный член не переживёт. Выбран
+# одиночный GP; альтернатива меняется правкой одной строки ниже.
+SOLO = {"CYP3A4": ("GP",)}
+
+
+def _keep(e, kind):
+    """Входит ли член в ансамбль этого фермента."""
+    sel = SOLO.get(CYPS[e])
+    return sel is None or kind in sel
+
+
 def oof_members(X, y, mask, fold, mode, scr=None, seed=0, dead=False):
     """Предсказания вне фолда КАЖДОГО члена по отдельности, как (вид, по ферментам).
 
@@ -382,7 +461,8 @@ def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None):
         parts = oof_members(X, y, mask, fold, mode, scr, dead=bands is not None)
         if bands is not None:
             parts = dz_pass(parts, X, mask, fold, bands)
-        return [np.mean([P[e] for _, P in parts], axis=0) for e in range(len(CYPS))]
+        return [np.mean([P[e] for k, P in parts if _keep(e, k)], axis=0)
+                for e in range(len(CYPS))]
 
 
 TRUNK_LAM = "3.0"      # значение, на котором пункт 79 мерил канал
@@ -729,6 +809,8 @@ def main():
             # обучающих строках и применяет к тесту. Это же снимает дефект 2 пункта 202:
             # гребневая больше не стандартизуется на объединении обучения с тестом.
             for kind, T in dz_targets:
+                if not _keep(e, kind):
+                    continue
                 Xtr_d, Xte_d = _dz_design(kind, X[m], e, Xte)
                 parts.append(_dz_fit(kind, Xtr_d, T[e], Xte_d))
         elif a.mode in ("раздельно", "ансамбль", "ансамбль-без-GP", "ансамбль5"):
@@ -747,13 +829,23 @@ def main():
         if dz_targets is None and a.mode in ("ансамбль", "ансамбль5"):
             tf = gp_prepare(X[m])
             parts.append(gp_predict(tf(X[m]), y[m, e], tf(Xte)))
-            B = _desc_scaled(np.vstack([X[m], Xte]))
-            nb = int(m.sum())
+            # Дефект 2 пункта 202: раньше здесь стояло
+            # _desc_scaled(np.vstack([X[m], Xte])) --- стандартизация по объединению
+            # обучения с тестом. Два следствия, и второе хуже первого. Подаваемый член
+            # переставал быть тем, который измерен в _oof_ridge (там масштаб берётся по
+            # X[m]), при поферментных полах 0.003--0.007. И тестовые признаки входили в
+            # обучающее преобразование, то есть это трансдуктивное использование теста.
+            # Путь мёртвой зоны это уже не задевало: _dz_design подгоняет любое
+            # преобразование на обучающих строках. Здесь то же самое.
+            Btr, Bte = _dz_design("гребневая", X[m], e, Xte)
             parts.append(RidgeCV(alphas=np.logspace(-1, 4, 12))
-                         .fit(B[:nb], y[m, e]).predict(B[nb:]))
-        if a.mode == "ансамбль5":
+                         .fit(Btr, y[m, e]).predict(Bte))
+        if a.mode == "ансамбль5" and _keep(e, "ствол"):
             parts.append(_trunk_clip(trunk_te[:, e], y[m, e]))
         p = np.mean(parts, axis=0)
+        if CYPS[e] in SOLO:
+            print(f"    {c}: поферментный состав {'+'.join(SOLO[CYPS[e]])} "
+                  f"({len(parts)} член(ов) из пяти), пункт 218", flush=True)
         if lams is not None:
             L, mu_tr, sh = lams[e]
             p = L * p + (1.0 - L) * mu_tr + sh
@@ -764,25 +856,19 @@ def main():
     keep = rows.Molecule_Name.isin(tdi.index).to_numpy()
     T = tdi.loc[rows.Molecule_Name[keep]].reset_index()
     cls = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})
+    tdifold, _ = butina_folds(list(rows.SMILES[keep]))
     for c in TDI_CYPS:
         lab = T[f"{c}_is_TDI"]
         m = lab.notna().to_numpy()
         yb = lab[m].astype(int).to_numpy()
         pr = gbm_clf().fit(X[keep][m], yb).predict_proba(Xte)[:, 1]
-        # Plug-in threshold by expected MCC. Measured on this data: fitting the threshold
-        # instead is better on 3A4 and worse on 2D6, and calibrating first gains +0.026
-        # on 3A4 and loses on 2D6 - all differences far inside the MCC interval at n=750.
-        # So: one rule, applied to both endpoints, not a per-endpoint recipe.
-        ts = np.linspace(0.05, 0.95, 91)
-        def emcc(t):
-            yh = pr >= t
-            tp = (pr * yh).sum(); fp = ((1 - pr) * yh).sum()
-            fn = (pr * ~yh).sum(); tn = ((1 - pr) * ~yh).sum()
-            d = np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-            return (tp * tn - fp * fn) / d if d > 0 else 0.0
-        thr = ts[int(np.argmax([emcc(t) for t in ts]))]
+        raw_mean = float(pr.mean())
+        pr, slope = tdi_calibrate(X[keep][m], yb, tdifold[m], pr)
+        thr = plugin_threshold(pr)
         cls[f"{c}_is_TDI"] = pr >= thr
-        print(f"    {c}: порог {thr:.3f}, положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
+        print(f"    {c}: Платт наклон {slope:+.3f}, среднее {raw_mean:.3f} -> {pr.mean():.3f} "
+              f"(обучающая доля {yb.mean():.3f}); порог {thr:.3f}, "
+              f"положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
 
     ap_ = a.outdir + "activity_submission.csv"
     tp_ = a.outdir + "tdi_submission.csv"

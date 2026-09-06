@@ -63,6 +63,9 @@ def main():
             .set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index())
     import argparse as _ap
     _p = _ap.ArgumentParser()
+    _p.add_argument("--no-clip", dest="clip", action="store_false",
+                    help="НЕ обрезать ствол диапазоном меток. Воспроизводит поведение до "
+                         "пункта 215, на котором посчитаны пункты 120, 121 и 164.")
     _p.add_argument("--trunk", default=TRUNK_DEFAULT,
                     help="какой файл ствола подставлять пятым членом")
     _p.add_argument("--lam", default=LAM)
@@ -112,7 +115,17 @@ def main():
                         break
                     # Ансамбль --- невзвешенное среднее членов (submit.py:230),
                     # поэтому пятичленный собирается из четырёхчленного точно.
-                    p = (4.0 * a4 + trunk_all[m, e]) / 5.0 if use_trunk else a4
+                    #
+                    # Обрезка ствола диапазоном меток фермента плюс-минус две единицы ---
+                    # ровно то, что делает submit._trunk_clip. Без неё этот файл описывал
+                    # конфигурацию, СОСЕДНЮЮ с подаваемой, а не подаваемую: пункт 205
+                    # намерил, что проход выброс не убирает, а переселяет (на CYP2D6
+                    # минимум -360.26 стал максимумом +76.82), так что в одном члене из
+                    # пяти усреднялось число порядка семидесяти.
+                    tk_e = trunk_all[m, e]
+                    if _a.clip:
+                        tk_e = np.clip(tk_e, np.nanmin(y) - 2.0, np.nanmax(y) + 2.0)
+                    p = (4.0 * a4 + tk_e) / 5.0 if use_trunk else a4
                     q = fit_apply(p, lo, hi, fold[m], np.ones(len(y)) / len(y))
                     r[f"{c} пара"] = float(strae(y, q, y_true_upper=hi, y_true_lower=lo))
                     r[f"{c} rho"] = float(spearmanr(y, p).statistic)

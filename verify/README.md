@@ -5,7 +5,7 @@
 Этот файл --- журнал дефектов, и читается он соответственно: верная идея получает один пункт,
 неверная получает три (выдвижение, опровержение, поправка к опровержению). Соотношение при
 чтении выходит три к одному в пользу провалов при положительном итоге. Табло существует, чтобы
-состояние проекта не приходилось складывать в голове из ста шестидесяти пунктов.
+состояние проекта не приходилось складывать в голове из двухсот сорока пунктов.
 
 **Где мы.** Ранг --- Спирмен с истиной, пара --- ST-RAE после аффинной пары. Больше ранг лучше,
 меньше пара лучше.
@@ -13,8 +13,8 @@
     конфигурация                                 пара      ранг   прирост   сидов   пункт
     база FP+DESC+MECH, поферментно, HistGB     0.7150    0.5651         —       1     эталон
     ансамбль из четырёх членов                 0.6819    0.6009   +0.0358       4       120
-    ансамбль из пяти (ЧТО ПОДАЁТСЯ СЕЙЧАС)     0.6824    0.6063   +0.0412       4   120, 121
-    пять, мёртвая зона в четырёх членах        0.6653    0.6230   +0.0579       4       164
+    ансамбль из пяти                           0.6758    0.6063   +0.0412       4   120, 215
+    пять, мёртвая зона в четырёх членах        0.6567    0.6230   +0.0579       4  164, 215
                                                                                  (нижняя оценка)
 
 **Мёртвая зона внесена в подачу и включена по умолчанию (пункты 204, 205).** Числа ниже сняты
@@ -31,22 +31,65 @@
 одновременно. Вклад перепроецированного ствола +0.0045 при знаке 4/4 и макро-поле 0.0036 ---
 на грани, и цитировать его без пола нельзя.
 
-**Итого траектория: +0.058 ранга и -0.050 пары от базовой модели.** Шум одного счёта лидерборда
-на 750 молекулах --- 0.08 пары (пункт 147), так что по паре проект пока внутри него; по рангу
---- вне, но ранг на лидерборде не показывают.
+**Итого траектория: +0.0579 ранга и -0.0583 пары от базовой модели** (0.5651 -> 0.6230 и
+0.7150 -> 0.6567). Здесь стояло «-0.050 пары» --- ошибка на 0.0083, больше макро-пола по паре;
+исправлено 6 сентября.
+
+**Счёт сходится.** Сумма названных вкладов --- мёртвая зона +0.0197, механистический блок +0.0163,
+пулирование +0.0141, ствол пятым +0.0054 --- даёт +0.0555 против общего +0.0579. Расхождение
+0.0024, глубоко внутри пола, и это единственная проверка, что таблица вкладов описывает ту же
+модель, что и таблица конфигураций.
+
+**И главная оговорка ко всему разделу.** Шум одного счёта лидерборда на 750 молекулах --- 0.08
+пары (пункт 147). Наш прирост по паре --- 0.0583. **То есть на метрике, которую лидерборд
+показывает, весь выигрыш проекта лежит внутри шума одного замера.** По рангу мы вне шума, но ранг
+на лидерборде не показывают.
 
 **Что стоит в конвейере и сколько стоит.**
 
     вклад                                  прирост ранга   сидов   пункт   статус
-    мёртвая зона во всех членах                  +0.0167       4     164   в подаче нет
+    мёртвая зона во всех членах                  +0.0197       4 164,213   в подаче есть
     ствол пятым членом                           +0.0054       4     120   в подаче есть
     механистический блок                         +0.0163       4      81   в подаче есть
                         он же в режиме теста     +0.0313       4     119
     пулирование контрастом                       +0.0141       4  84,132   в подаче есть
     GP и гребневая как члены                  своя ошибка      4  92,100   в подаче есть
-    скрининг как мишень, поферментно             +0.0245       1     158   НЕ в подаче
+    скрининг, ОДИНОЧНАЯ модель                  +0.0290       4 158,177   см. ниже
+                        он же в ансамбле       +0.0014       4     182   ниже пола
     панель NCGC, поферментно                  считается        —     157   НЕ в подаче
     пятьдесят битов = 80 % фингерпринта                —       1 150,156   интерпретация
+
+**Классификационный трек --- треть лидерборда, и до 5 сентября его в табло не было.**
+Метрика MCC, четыре сида, полы из пункта 235 (3A4 0.0281, 2D6 0.0419, макро 0.0076).
+
+    конфигурация                                  3A4      2D6    макро   пункт
+    структурный классификатор + plug-in        0.3143   0.1137   0.2140     228
+    он же + калибровка Платта (подаётся)       0.3379   0.1169   0.2274     235
+    оракул порога (не для подачи)              0.3635   0.1589   0.2612     235
+
+Калибровка забрала +0.0133 макро при поле 0.0076; оракул порога показывает +0.0472 при знаке
+8/8, то есть три четверти доступного на пороге не взяты.
+
+**Метка --- конъюнкция, и это объясняет разрыв между эндпоинтами (пункты 234, 238):**
+
+    is_TDI  <=>  (Delta > log10 2)  И  (pi_TDI > 4.301)
+
+    фермент   ворота закрыты   MCC одних ворот   MCC одного сдвига   ворота восстановлены
+    CYP3A4             0.398           +0.5667             +0.6875                 53.7 %
+    CYP2D6             0.058           +0.1302             +0.9010                  1.2 %
+
+Ворота могут только вычёркивать. На 3A4 они вычёркивают 39.8 % строк, и опознание их ---
+чистый вопрос о потенции; **предсказанные ворота в одиночку дают 0.3043 против 0.315 у всего
+подаваемого классификатора**, то есть на 3A4 наш классификатор TDI есть порог по потенции.
+На 2D6 ворота вычёркивают 5.8 %, выигрывать нечем, и весь счёт --- слабая модель сдвига.
+
+**Про скрининг --- строка, которую легко прочитать неверно, и её один раз уже так прочитали.**
++0.0290 относится к **одиночной** модели (пункт 177). Пункт 182 померил тот же арм ПЯТЫМ ЧЛЕНОМ
+ансамбля и получил +0.0058 на базовом составе и +0.0014 на лучшем --- второе ниже макро-пола
+0.0036. Диагноз там же: корреляция ошибок арма с ансамблем 0.935--0.969, он ошибается на тех же
+соединениях, а среднее платит за несогласие, которого нет. **Так что это не «измеренный выигрыш,
+который забыли завести».** Не измерен ровно один вариант: скрининг ВНУТРИ поферментного члена, а
+не шестым рядом (флаг `--screen` в `src/submit.py`); механизм предсказывает тот же ноль.
 
 **Шумовые полы.** Макро 0.007 при фиксированном сиде (пункт 70); посидовый разброс макро 0.016
 (f3). Поферментные полы **больше макро** и до сих пор нигде не были записаны (пункт 165):
@@ -60,6 +103,17 @@
 
 Макро усредняет четыре фермента и потому тише каждого из них. **Поферментное заявление нельзя
 мерить макро-полом.**
+
+**Пол по MCC на классификационном треке (пункт 235), измерен по четырём сидам подаваемой руки:**
+
+    фермент                       пол по MCC
+    CYP3A4                            0.0281
+    CYP2D6                            0.0419
+    МАКРО                             0.0076
+
+Макро-пол MCC совпал с макро-полом ранга (0.0076 против 0.007) на другом треке и другой метрике.
+И здесь **макро-заявление нельзя предъявлять как поферментное**: пункт 235 даёт +0.0133 макро при
+поле 0.0076 и НЕ проходит ни на одном отдельном ферменте.
 
 **Что закрыто за ночь 2 сентября, семь измерений подряд, все с контролями.** Ни одно не «не
 сработало» --- у каждого назван механизм, и два из них сходятся в одном утверждении.
@@ -77,11 +131,17 @@
 ошибок 0.90--0.97; пункт 194 --- члены можно развести до антикорреляции, и это не помогает. Все
 члены упираются в одни и те же 1285--2335 строк.
 
-**Три главных открытых вопроса.**
+**Главные открытые вопросы.**
 
   почему пулирование выигрывает на HistGB и разворачивается на обычных деревьях (158, 166);
   переносится ли что-либо из этого в тестовый режим --- проверить нечем (123, 129, 147);
-  скрининг поферментно даёт +0.0245 на одном сиде и ждёт остальных.
+  скрининг ВНУТРИ поферментного члена не измерен --- единственный неизмеренный вариант,
+  и механизм пункта 182 предсказывает для него ноль (158, 177, 182);
+  три четверти выигрыша на пороге TDI не взяты: оракул +0.0472 против +0.0133 у калибровки (235);
+  на классификационном треке ПОЛ, а не моделирование --- связывающее ограничение: дважды
+  найдено настоящее улучшение упорядочения (+0.0196 и +0.0214 AUC, знак 4/4), и оба раза
+  MCC вдвое ниже пола 0.0281; курс обмена AUC в MCC около 0.5, значит доказуемым станет
+  только прирост от +0.05 AUC (241, 243).
 
 **Что закрыто и переоткрывать не надо.** Постобработка сверх аффинной пары (77, 128 --- потолок
 0.0076), предобученные представления (61, 117, 154 --- три чекпойнта), FCFP (101), kNN (107),
@@ -89,10 +149,20 @@
 (154), logD и LipE (154), хи-квадрат-DRO (154), ChEMBL как внешний источник (77 --- все три
 способа обращения), CYP2C19 как пятая изоформа (153).
 
-**Не запущено, а не закрыто.** Квантовый блок: признаки ПОСЧИТАНЫ (`data/quantum.npz`, 4905x10,
-homo/lumo/gap/dipole/q_basicN/q_aromN_min/fukui_minus/cone_free/n_arom_N/has_donor, ноль NaN), а
-абляция никогда не запускалась. Отдельно `src/quantum.py` падает на `xtb-python`, которого нет в
-реестре, но файл от более раннего прогона на месте. Это не результат ни в какую сторону.
+**Не запущено, а не закрыто.** Квантовый блок против СДВИГА TDI. Признаки посчитаны и лежат ---
+`data/quantum.npz`, 4905x10 плюс 750 тестовых, homo/lumo/gap/dipole/q_basicN/q_aromN_min/
+fukui_minus/cone_free/n_arom_N/has_donor, ноль NaN.
+
+Против ПОТЕНЦИИ он прогнан и закрыт дважды: пункт 186, четыре сида с перестановочным контролем,
+ни один фермент не проходит свой пол и настоящий блок неотличим от перемешанного. Эта строка
+раньше утверждала, что абляция «никогда не запускалась» --- неверно, и это ровно тот сорт
+рассогласования между табло и журналом, который в пунктах 202 и 234 стоил повторных выводов.
+
+Но целью там была потенция. **Против сдвига Delta = pi_TDI - pi_dir блок не мерили ни разу**, а
+пункт 238 показал, что весь остаток классификационного трека --- это сдвиг, и физика у него не
+электростатика связывания, а реакционная способность: `fukui_minus`, HOMO/LUMO и щель --- ровно
+те величины. Признаки уже на диске, так что это прогон, а не проект. Отдельно `src/quantum.py`
+падает на `xtb-python`, которого нет в реестре, но файл от более раннего прогона на месте.
 
 
 Forty-three scripts in four groups. `f*` was a sweep over everything that had been computed
@@ -6716,3 +6786,1523 @@ CYP2D6.
 -360.26 to +76.82 rather than disappearing. Defect 2 is closed along the dead-zone path only,
 because `_dz_design` fits every transform on the training rows; the non-dead-zone path still
 standardises the ridge on train and test together, and that path is no longer the default.
+
+**215. The scoreboard's headline metric was 0.0066 too high for two years' worth of a citation that
+says otherwise, because `verify/k46_five.py` never clipped the trunk.** Defect 3 of item 202, fixed
+and measured.
+
+`src/submit.py` bounds the trunk's output to the enzyme's label range plus or minus two units
+(`_trunk_clip`), and `verify/k46_five.py` -- which composes the five-member ensemble from saved
+predictions and is where the scoreboard's numbers come from -- did not. Both arms measured:
+
+    состав                        пара без обрезки   пара с обрезкой      ранг
+    пять, обычный                           0.6824            0.6758    0.6063
+    пять, МЗ в четырёх                      0.6653            0.6567    0.6230
+
+**Rank does not move by a single digit and the metric improves by 0.0066 to 0.0086**, twice the
+macro floor. The reason is visible: the trunk puts one CYP2D6 compound at **-360.26** (item 42), and
+ST-RAE sums absolute errors, so one catastrophic row costs the metric a great deal while costing
+Spearman one rank out of 1493.
+
+**The number was wrong on the scoreboard and right in the item it cited.** Item 120 records
+**0.6758** and says in its own text that the trunk is "clipped to the enzyme's label range plus or
+minus two units exactly as `src/trunkdose.py` does". The scoreboard carried 0.6824 attributed to
+"120, 121" -- a value that item does not contain. It entered later from the unclipped composition
+and was never reconciled.
+
+**And `k46_five.py`'s own self-check had been failing the whole time.** Its reading instructions say
+that "пять, обычный" must land near **0.6758 / 0.6063** or the composition is wrong and nothing else
+may be read. It landed on 0.6824 / 0.6063. The check passed inspection because **this file judges by
+rank**, rank was exact, and the pair half of the same sentence went unread. A self-check that is
+only half-read is a self-check that only half-works.
+
+Scoreboard corrected to 0.6758 and 0.6567. Items 120 and 164 are left as written -- the convention
+here is to correct forward rather than to rewrite, as item 198 was handled -- and 164's conclusion
+is untouched, because the +0.0167 it reports is a difference of two rows and rank does not move.
+
+`--no-clip` reproduces the old behaviour for anyone re-reading those items.
+
+**216. The 1238 unread measurements are closed by the test item 203 pre-registered for them: the
+manufactured label keeps 98.6 per cent of the rank and the missing 1.4 is three times the floor.**
+`src/abldry.py`, CYP3A4, four seeds.
+
+    рука                                пара      rho   ранг минус настоящие   знак
+    настоящие                         0.4900   0.7613                 0.0000      —
+    изготовленные, регрессия          0.5096   0.7505                -0.0108    4/4
+    изготовленные, константа          0.5094   0.7505                -0.0108    4/4
+    изготовленные у 35 %              0.4940   0.7582                -0.0030    3/4
+    изготовленные, плечо перемешано   0.9703  -0.0235                -0.7848    4/4
+
+The test was written before the run, in item 203: take the 2334 molecules carrying both arms --
+where the shift is estimated on exactly this population and manufacture is therefore as well
+conditioned as it will ever be -- throw the real labels away, and if the substitution costs more
+than CYP3A4's floor of 0.0033, then 1238 of the same labels on molecules sitting 0.79 log units more
+potent, where the TDI-positive fraction is not computable, will not pay.
+
+**It costs -0.0108, three and a third times the floor, with the sign holding four seeds of four.**
+
+**The interesting half is how good the manufactured label is.** It retains 0.7505 of 0.7613, ninety
+eight and a half per cent of the achievable rank. The pre-incubation arm is an excellent proxy for
+the direct label -- the permutation arm shows how much of that is real, since shuffling it takes
+rank from 0.75 to **-0.02**, so essentially all of the signal is molecule-specific rather than
+distributional. The source fails not because the label is bad but because **good is not good
+enough**: the shortfall is small in absolute terms and large against a floor of 0.0033.
+
+**The constant shift does exactly as well as the regressed one**, -0.0108 both. Item 203 worried
+that the slope of +0.0852 at correlation 0.265 mattered, and that a constant would carry a
+systematic +0.067 on a population 0.79 log units more potent. On this population it does not: the
+slope is noise, and anyone building this later has one fewer quantity to estimate.
+
+**Two honest limits on how far this closes it.**
+
+The dry run **replaces** while the real use would **add**. Replacing degrades a known-good label;
+adding brings new chemistry at the cost of a noisier one, and the two are not the same experiment.
+The 35 per cent arm is the nearest simulation and costs -0.0030, at the floor rather than above it,
+which is the weaker reading. What tips it is that sample size as such has been refuted three times
+in this file already (items 110, 111, 125), and item 125 specifically measured the pre-incubation
+arm added as rows at -0.0027.
+
+And the permutation arm did not do the job it was designed for. It was meant to separate "the
+reading carries nothing molecule-specific" from "the reading is informative and too noisy", but
+replacing **all** labels with noise is catastrophic by construction rather than discriminating -- it
+confirms the harness detects a destroyed signal and no more. The informative version would have
+shuffled inside the 35 per cent arm. Recorded as a design shortcoming rather than quietly dropped.
+
+**Closed: no features are built for the 1238.**
+
+**217. Oracle C on four seeds, and it corrects my own dismissal: on CYP3A4 the ensemble is worse
+than one of its members.** `verify/k60_contested.py` over the four member caches.
+
+    фермент    спорных   ПОДЪЁМ | точн. среднего  большинства  лучшего члена   лучший > среднего
+    CYP1A2      0.3683    1.378 |         0.5809       0.5775         0.5655                 0/4
+    CYP2C9      0.3340    1.601 |         0.5985       0.5881         0.5926                 1/4
+    CYP2D6      0.4064    1.287 |         0.5673       0.5665         0.5613                 0/4
+    CYP3A4      0.2799    1.977 |         0.6177       0.6091         0.6352                 4/4
+
+Item 207's headline holds on four seeds: the lift is **1.561**, contested pairs carry half again
+their share of the discordance, and majority vote beats the mean in **one cell of sixteen**. Routing
+among members is closed as it was.
+
+**But item 207 dismissed CYP3A4 as "one cell of twenty, chosen after seeing the table", and four
+seeds say it is not.** The Gaussian process beats the ensemble mean on contested pairs there on all
+four, by +0.0175 of pairwise accuracy. Chasing it produced a finding that is not about contested
+pairs at all.
+
+    CYP3A4, GP один против пятичленного ансамбля, четыре сида
+    ранг  +0.0098   знак 4/4   (+0.0145 +0.0081 +0.0055 +0.0109)
+    пара  -0.0168   знак 4/4   (-0.0197 -0.0169 -0.0096 -0.0212)
+
+**On CYP3A4 the Gaussian process alone is better than the ensemble containing it**, on both criteria
+with the sign holding four seeds of four, by three times that enzyme's floor of 0.0033. The GP wins
+contested pairs there because it is simply the better model on that enzyme, not because disagreement
+carries routable information -- which also explains why upweighting it improves rank monotonically
+with no interior optimum: the sweep is walking toward the GP alone.
+
+    член            1A2      2C9      2D6      3A4
+    поферментно  0.5435   0.6464   0.4611   0.7717
+    пул          0.5346   0.6250   0.4476   0.7642
+    GP           0.5284   0.6777   0.4660   0.8153
+    гребневая    0.4918   0.6382   0.4262   0.7585
+    ствол        0.4908   0.6245   0.3972   0.7461
+    АНСАМБЛЬ     0.5568   0.6820   0.4744   0.8056
+
+**The ensemble's premise is that averaging beats its members. Read per enzyme -- which item 165
+established is the right granularity -- that is four tests, and it passes three and fails one.** On
+CYP1A2, CYP2C9 and CYP2D6 the ensemble beats every member; on CYP3A4 it loses to the GP. That is not
+a twenty-cell fishing expedition but a check of the submission's own assumption, and it had never
+been run.
+
+**Consistent with what was already known, which is why it is worth believing.** Item 167 found that
+CYP3A4 has never been helped by anything and that pooling actively hurts it (-0.0057); item 90
+measured that neighbours carry information in descriptor space, which is exactly where the GP's
+kernel lives, and that Morgan is the worst of four; item 92 measured the GP as worse than the
+boosting and helpful in the ensemble -- **on macro**, and nobody looked per enzyme.
+
+**Not acted on, deliberately.** Using the GP alone for CYP3A4 is worth +0.0024 of macro, below the
+macro floor of 0.0036 though three times CYP3A4's own. More to the point it is a structural change
+to what gets submitted, resting on a result an hour old, and the file's own standard is to
+pre-register such a decision rather than take it from the table that suggested it. What would settle
+it: the same comparison on the two seeds not yet used by anything, with the rule written down first
+-- adopt per-enzyme member selection only where the ensemble loses on both criteria with the sign
+holding, which at present is one enzyme of four.
+
+**218. The ensemble is dropped on CYP3A4 in favour of the Gaussian process alone, and the subset
+search says that is the maximum rather than a guess.** Acting on item 217, with the alternative it
+was nearly tied with recorded so that a later reader can weigh it.
+
+All 31 non-empty subsets of the five members, CYP3A4, four seeds:
+
+    ранг     пара   состав
+    0.8153   0.4129   GP                        <- выбрано
+    0.8149   0.4101   поферментно + GP
+    0.8122   0.4149   пул + GP
+    0.8118   0.4194   поферментно + GP + гребневая
+    ...
+    0.8056   0.4298   ВЕСЬ АНСАМБЛЬ             <- место 14 из 31
+
+**The GP alone is first of thirty-one and the full ensemble is fourteenth.** So the choice is the
+maximum of an exhaustive search rather than a cell noticed in a table -- which matters, because item
+217 arrived at it by chasing a contested-pair cell that item 207 had dismissed as exactly that kind
+of cell.
+
+**What is genuinely close, and is recorded rather than smoothed over.** `поферментно + GP` scores
+0.8149 against 0.8153 -- a gap of **0.0004**, four times below CYP3A4's floor of 0.0033, so on the
+deciding criterion the two are **tied**. And the two-member version is better on the metric, 0.4101
+against 0.4129. It also hedges: a single member has no one to average away its bad day, and the test
+is 750 molecules seen once. The single GP was chosen; the constant `SOLO` in `src/submit.py` changes
+it in one line, and this paragraph exists so that the choice is visible as a choice.
+
+Composed over four seeds, the whole submission moves:
+
+    состав                   макро ранг   макро пара      1A2      2C9      2D6      3A4
+    все пять везде               0.6297       0.6483   0.5568   0.6820   0.4744   0.8056
+    GP один на CYP3A4            0.6321       0.6441   0.5568   0.6820   0.4744   0.8153
+
+Macro rank gains +0.0024, **below** the macro floor of 0.0036; macro pair gains 0.0042, above it.
+The per-enzyme gain of +0.0098 is three times CYP3A4's own floor, and item 165 is explicit that a
+per-enzyme claim is judged against the per-enzyme floor. Both figures are reported because the
+honest summary is that this is a large effect on one enzyme and a sub-floor effect on the average of
+four.
+
+**Why this was believable enough to act on.** It is not a new intervention but the removal of one:
+nothing is added to the model, a member is dropped where it was measured to hurt. Three independent
+prior results point the same way -- item 167 (CYP3A4 has never been helped by anything, and pooling
+costs it 0.0057), item 90 (neighbours carry information in descriptor space, which is where the GP's
+kernel lives, and Morgan is the worst of four spaces), and item 92, which measured the GP against
+the boosting on **macro** and never per enzyme.
+
+**What this does not license.** Selecting the best subset per enzyme on all four would be a search
+over 31 cells times 4 enzymes fitted on the same data that scores it. The rule applied here, written
+in item 217 before this table was built, is narrower: drop members only where the full ensemble
+loses on **both** criteria with the sign holding on four seeds. That is one enzyme of four, and the
+other three keep all five members.
+
+**219. The Gaussian process's isotropic kernel is not diluted by 247 dimensions, so ARD is closed
+for twenty minutes rather than a week.** `verify/k62_gpdims.py`, four seeds.
+
+Item 218 opened a question that did not exist before it. Items 176 and 182 are two measurements of
+a single member's gain failing to reach the ensemble -- +0.031 arriving as -0.0008, +0.029 as
++0.0014, at error correlations of 0.94 to 0.97. **On CYP3A4 that mechanism is gone**: the member is
+now the model, so an improvement to the GP transfers one for one instead of one in five. It is the
+only place in the submission where that is true.
+
+The obvious target is the kernel. `gp.py` uses an isotropic RBF with **one** lengthscale for all 247
+standardised descriptors, so every dimension enters the distance with equal weight including the
+ones carrying nothing for that enzyme. Automatic relevance determination is the textbook fix and
+costs 247 jointly fitted parameters, which is precisely the flexibility item 178 measured as
+transferring less.
+
+**So the hypothesis was made to predict something instead.** If the kernel is diluted, dropping the
+least informative dimensions must *improve* it. Selection by absolute Spearman correlation on the
+training folds only -- 247 one-dimensional fits rather than one 247-dimensional one, deliberately
+too weak to overfit, so whatever it finds is a lower bound on a real weighting.
+
+    k       макро     1A2     2C9     2D6     3A4     на CYP3A4 против k=247
+    247    0.5533  0.4752  0.5814  0.4018  0.7547                          —
+    128    0.5451  0.4667  0.5711  0.4012  0.7412   -0.0116   знак 0/4
+     64    0.5346  0.4637  0.5532  0.4023  0.7192   -0.0325   знак 0/4
+     32    0.5256  0.4546  0.5555  0.3908  0.7014   -0.0503   знак 0/4
+     16    0.4957  0.4095  0.5460  0.3675  0.6597   -0.0920   знак 0/4
+
+**Every reduction loses, monotonically, on four seeds of four, on every enzyme.** The prediction
+fails in the strongest available way: not "no improvement" but a smooth decline through fifteen
+floors. All 247 dimensions are carrying something, the isotropic kernel is not paying a dilution
+cost, and per-dimension lengthscales have nothing to recover.
+
+**This is what the gate is for.** ARD on 2335 rows is a week of work with a real chance of an
+ambiguous answer at the end. The hypothesis behind it made a cheap falsifiable prediction, the
+prediction was run in twenty minutes, and it failed. The pattern is item 105's and item 114's: count
+something before building.
+
+**With this the named channels are all spent.** Item 166 classified what survives into three kinds
+and every one is now used or closed -- band width by the dead zone (items 164, 204, 213), pair
+distinguishability subsumed by it at sixty per cent overlap with nothing left over (item 181),
+enzyme identity by pooling. The feature channel has six controlled nulls, external data is closed by
+protocol and overlap (items 144, 166, 201), physics by identifiability (item 211), post-hoc
+correction is bounded at 0.0076 (item 128), and the ensemble is limited by data rather than by
+diversity (item 194). **The remaining work is not on the model.**
+
+**220. The band's level is measured at last: it is four times the assay's own curve-fit precision,
+and the chain that establishes it closes on the organisers' side rather than ours.**
+`verify/k63_wellnoise.py`, on the well-level release item 201 found.
+
+Item 114 left the uncertainty line stuck: our confidence band is 3.92 sigma with sigma a
+deterministic function of the label at R^2 0.93 to 0.98, so it is derived from the answer rather
+than measured, and nothing in our own data replaces it. Item 201 found the replacement outside and
+noted the property that makes it usable where the same release's labels were not: **well-level
+variance needs no compound overlap at all**, because how much of the spread is plate, position and
+replicate is a statement about the assay rather than about which molecules went through it.
+
+**Where the replication is.** Library compounds sit at one well per concentration and carry none.
+The controls carry it: 912 negative-control wells over 14 plates -- the assay measuring "no
+inhibition" repeatedly, which is a reproducibility estimate by construction.
+
+    разложение дисперсии отрицательного контроля, log2fc
+    полная             ско 0.1610
+    между планшетами   ско 0.0004   (0.0 %)
+    внутри планшета    ско 0.1627
+
+The between-plate share is zero **by construction** and says so: `fluorescence_norm` is normalised
+within each plate against that plate's own controls, so the plate is already removed. The number
+worth having is the within-plate one, **0.163 in log2fc** -- and our own single-concentration screen
+is in exactly those units.
+
+**The edge effect is real and is a bias rather than a spread.** Edge wells average -0.0787 against
++0.0513 inside, a systematic difference of **0.130** -- the same order as the noise itself.
+Averaging more wells does not remove it.
+
+**The chain, and it closes on their side.**
+
+    шум лунки, измерен здесь                    0.1610 log2fc
+    -> точность кривой, 12 точек, крутизна 1.5  ~0.0310 pIC50
+    их собственная se подгонки, медиана          0.0240 pIC50
+    их ширина CI / se                            3.901   (ожидается 3.92)
+
+Three of the four links are theirs and independent of anything we do, and they agree: the noise we
+measured, propagated through a twelve-point fit, lands on the standard error they publish, and their
+interval is built as 1.96 se exactly as ours is. **The chain is sound and our band is its only free
+end.**
+
+    наша подразумеваемая sigma (медиана по ферментам)   0.090 pIC50
+    их se подгонки                                      0.024 pIC50
+    отношение                                           3.8x
+
+**This does not mean our band is inflated, and the distinction matters.** A reproducibility band is
+legitimately wider than a fit-precision band -- repeating the whole experiment is not refitting the
+same twelve points -- and a factor of about four is plausible for that. What is now measured is the
+**level**: our band lives on the reproducibility scale rather than the precision scale, and the gap
+is a number instead of a guess.
+
+**What remains a defect is not the level but the label-dependence.** A width that is a function of
+the answer at R^2 0.93 to 0.98 is not per-compound measured uncertainty at any scale; it is a
+formula. This item measures that formula's scale, not its origin.
+
+**And one consequence for the metric, worth naming because it is not about our model.** The dead
+zone exploits the band, and the band is calibrated on the reproducibility scale. So the metric
+forgives distinctions the platform can actually resolve, by roughly a factor of four. That is a
+property of the scoring rule; we optimise it rather than choose it, and item 213's +0.0197 is
+earned against the rule as written.
+
+**Caveats stated rather than buried.** Octant's inhibition arm uses a 30-minute active-enzyme
+pre-incubation and covers CYP3A4 only (item 201), so this is the same laboratory and the same
+1536-well fluorescence format but not the same arm. The propagation is a `sqrt(n)/h` argument rather
+than a Fisher information calculation, and is used only to check that the chain closes to within a
+factor, which it does. Their se distribution is skewed -- 0.0156 at the tenth percentile against
+0.1162 at the ninetieth -- so the median understates the tail.
+
+**This is the uncertainty line, not the rank line.** Nothing here changes a prediction. It closes
+the question item 114 opened and item 93 failed to answer from inside: what the band would be if it
+were measured.
+
+**221. Conformal covers exactly on average and fails by activity zone, nothing we hold repairs it,
+and the uncertainty turns out to be 99.7 per cent epistemic.** `verify/k64_conformal.py`, four
+seeds. This closes the third part of section 9, the one that had never been run.
+
+Its premise as written -- "on a split reproducing the design of the test" -- was refuted separately
+(items 123, 129, 206). Plain split conformal does not need it: it needs exchangeability between
+calibration rows and the rows it is applied to, which the Butina folds supply. So the part was run
+as stated minus the impossible clause.
+
+**Item 220 is what made it worth running now.** Until the assay's own noise was measured there was
+no way to say how much of our error is irreducible, because the shipped band is a function of the
+label. With the floor at 0.04 of pIC50 against a model RMSE of 0.735:
+
+    доля дисперсии, объяснимая шумом прибора    0.3 %
+    эпистемическая доля                        99.7 %
+
+**The uncertainty is essentially all "we do not know" and essentially none of it is "the instrument
+is noisy."** That is the same wall item 194 met from the other side in finding the ensemble limited
+by data rather than by model diversity, and it explains why every attempt to model the noise better
+-- the heteroscedastic layer (item 93), the split normal (item 200) -- returned nothing: they were
+modelling 0.3 per cent of the problem.
+
+**Three questions, three different answers.**
+
+*Does the Gaussian process's own predictive variance predict error?* **No.** Correlation of the
+predicted spread with the absolute residual is +0.0245 on average and below 0.1 in magnitude in all
+**sixteen** cells of four enzymes by four seeds, with a sign flip among them. The only member that
+produces uncertainty natively produces one that does not know where it is wrong.
+
+*Does conformal cover marginally?* **Exactly**: 0.8987, 0.8981, 0.9015, 0.8994 against a nominal
+0.90. This should pass by construction and is run because failing would have meant the folds are not
+exchangeable, which would matter far beyond this file. It is the one clean pass here.
+
+*Does coverage hold conditionally?* **No, and the failure is systematic.**
+
+    покрытие по третям активности, сид 0    слабые   средние   сильные
+    CYP1A2                                   0.781     1.000     0.915
+    CYP2C9                                   0.808     0.991     0.895
+    CYP2D6                                   0.815     1.000     0.890
+    CYP3A4                                   0.783     0.983     0.932
+
+The interval is far too narrow where the compounds are weak and far too wide where they are middling
+-- the middle third is covered essentially always, which is not a success but a waste. Section 9
+predicted exactly this shape and gave the reason: a marginal number averages the two failures into
+the right answer.
+
+**Nothing available repairs it.** Normalising residuals by the GP's spread changes the zone spread
+from 0.195 to 0.196, which follows from the first answer -- dividing by noise is not normalising.
+Normalising by a fitted function of the *prediction*, which item 114 licenses since the band is a
+deterministic function of the label and the prediction is the only proxy for the label available at
+test time, does better and not enough: zone spread 0.195 to **0.166**, and intervals about ten per
+cent narrower at the same marginal coverage. Real, and roughly fifteen per cent of the gap.
+
+**So the honest state of the uncertainty line.** We can produce an interval with exact marginal
+coverage and we cannot produce one with honest conditional coverage; we know the reason is not
+instrument noise, because that is 0.3 per cent of it; and we know the two normalisers we have are
+respectively useless and insufficient. Reporting a marginal guarantee without this paragraph would
+be the kind of claim this file exists to prevent.
+
+**And what it would take**, stated so it is not rediscovered by argument: conditional coverage needs
+a per-compound quantity that tracks where the model errs, and item 207 already measured that the
+ensemble's own disagreement locates its error at a lift of 1.56 while containing no better answer.
+That is the natural normaliser to try next and the only one left in the building.
+
+**222. The ensemble's own spread is the best interval normaliser available -- the same quantity item
+93 measured as useless for the other use.** `verify/k64_conformal.py`, four seeds, the normaliser
+item 221 named as the only candidate left.
+
+**The precondition passes, unlike the one before it.** Correlation of the per-compound spread across
+the five members with the absolute residual is **+0.1176 on average and positive in all sixteen
+cells** of four enzymes by four seeds. Weak, but real and consistent -- against the Gaussian
+process's native variance at +0.0245 with a sign flip (item 221).
+
+    нормировщик             разброс зон   закрыто   полуширина   слаб / сред / сильн
+    обычный                       0.195      0.0 %       1.228   0.799 / 0.994 / 0.907
+    дисперсия GP                  0.196     -0.3 %       1.231   0.799 / 0.995 / 0.902
+    предсказание                  0.166     15.0 %       1.163   0.827 / 0.993 / 0.881
+    РАЗБРОС АНСАМБЛЯ              0.144     26.1 %       1.313   0.834 / 0.978 / 0.886
+    предсказание + разброс        0.166     15.1 %       1.155   0.827 / 0.993 / 0.881
+
+**The spread closes about a quarter of the conditional-coverage gap**, against fifteen per cent for
+a fitted function of the prediction and nothing at all for the GP's variance. Marginal coverage
+stays exact throughout, as split conformal guarantees.
+
+**And it is paid for in width.** Median half-interval goes from 1.228 to **1.313**, seven per cent
+wider, while the prediction-based normaliser goes the other way to 1.163. So the two available
+normalisers trade against each other: one buys conditional honesty with width, the other buys width
+with honesty. Reported as a trade rather than as a winner, because which is preferable depends on
+what the interval is for, and nothing in the metric answers that.
+
+**The combination is not a superset and that is informative.** Fitting `E|остаток|` linearly on the
+prediction, its square and the spread gives 0.166 -- exactly the prediction-only figure, no better.
+The spread's information about where the model errs largely overlaps with what the prediction level
+already carries, so the two do not add. What makes the spread better *alone* is its functional form:
+used directly as the scale it follows the error's shape, while a linear fit flattens it.
+
+**The reversal is worth stating plainly.** Item 93 measured model spread as a conditioner for
+adjusting predictions and got +0.0002 against a pre-registered threshold of 0.005 -- a clean failure.
+The same quantity, on the same data, used to *size an interval* rather than to *move a point*, is the
+best normaliser in the building. A quantity that fails one use is not thereby closed for another,
+and this file has now been on both sides of that: item 118 is the case where an idea was
+re-evaluated because its earlier refutation was assumed rather than checked.
+
+**What is still not fixed.** Conditional coverage remains 0.834 against 0.978 across activity zones
+at the nominal 0.90 -- three quarters of the gap survives the best normaliser we have. The honest
+statement for any use of these intervals is that the marginal guarantee holds exactly, the
+conditional one does not, and the residual failure is under-coverage on the weakest compounds, which
+is the direction that matters least for a screening application and most for a ranking one.
+
+**223. The fluorescence artefact is real, measured directly, and points the wrong way to explain
+what people would reach for it to explain.** `verify/k65_fluor.py` plus a direct test on the
+well-level release. The channel section 7 has carried unmeasured since the document was written, and
+the journal had zero mentions of fluorescence, chromophores or quenching before this.
+
+**The design supplies a control no other arm here has.** CYP1A2, CYP2C9 and CYP3A4 are read by
+fluorescence and CYP2D6 by mass spectrometry, so a readout artefact must appear on three endpoints
+and be absent from the fourth by construction.
+
+**Step one, in the labels.** Partial Spearman of the label with aromatic-ring count, after removing
+molecular weight, lipophilicity **and basic-nitrogen count** -- the last because CYP2D6 binds through
+a salt bridge to protonated nitrogen (item 81), so without it the control arm is not a control:
+
+    фермент   считывание   частная rho   перестановка
+    CYP1A2         флуор        +0.139          0.009
+    CYP2C9         флуор        +0.216          0.004
+    CYP3A4         флуор        +0.165         -0.003
+    CYP2D6       МАСС-СП        -0.009          0.006
+
+Exactly the pre-registered pattern. And a shape test designed to discriminate -- binding should be
+monotone in conjugation size while interference should peak where absorption meets the assay
+wavelength -- gives a peak on all three fluorescent enzymes and monotone growth on CYP2D6.
+
+**At which point the obvious conclusion is available and it is wrong.**
+
+**Step two, the direct measurement, and it reverses the reading.** The well-level release lets the
+artefact be measured without any model: take the 80 compounds the organisers themselves mark
+**inactive**, at the two highest concentrations where the compound is present at 50 micromolar and
+no inhibition is possible by their own curve fit.
+
+    средний сигнал                       +0.0641   (ожидается 0)
+    rho с числом ароматических колец       0.411 сырая, 0.163 частная
+    rho с крупнейшей сопряжённой системой  0.322 сырая, 0.224 частная
+
+    колец 1  (n=23)   +0.0052
+    колец 2  (n=26)   +0.0423
+    колец 3  (n=17)   +0.1325
+
+**Compounds that do not inhibit shift the readout, and the shift grows monotonically with aromatic
+content.** The artefact exists and is now a number.
+
+**But `fluorescence_norm` is negative under inhibition** -- in our own data the screening reading
+correlates with pIC50 at -0.83 to -0.94 -- so **+0.13 is an EXCESS of signal**. That is
+autofluorescence adding to the read, not quenching subtracting from it. Such a compound looks
+**less** inhibiting, and its fitted pIC50 is pushed **down**.
+
+The labels show aromatics as **more** potent on the fluorescent enzymes. **The measured artefact
+points the opposite way and therefore cannot explain the association.** What it can do is
+*attenuate* it: the true chemistry effect on those three enzymes is larger than the labels show, not
+smaller.
+
+**So the channel closes, and it closes better than a null would have.** The confounder the document
+has carried for two months is measured rather than assumed, at +0.13 log2fc for three-ring
+compounds; the pattern that would have been read as its fingerprint is not, because the sign is
+wrong; and the remaining explanation for the label pattern is ordinary chemistry, which is what
+CYP1A2's known preference for planar aromatics and CYP2D6's for basic amines would predict anyway.
+
+**Two caveats, and the first is real.** The direct measurement is Octant's assay -- same laboratory,
+same 1536-well fluorescence format, pre-incubation arm, CYP3A4 only (item 201) -- not the challenge's
+own plates, so the transfer is by platform rather than by identity. And 80 inactive compounds is a
+small population; the ring-count trend rests on 23, 26 and 17 molecules.
+
+**What this does not license.** Building the artefact feature into the model. Its measured direction
+would make the correction *increase* the model's aromatic signal, which is the opposite of a
+confounder correction, and item 189's rule about physics entering through the measurement model
+rather than the feature matrix applies with full force. The finding is about the benchmark's labels,
+not about our architecture.
+
+**224. The kinetic closure of item 211 was argued on the wrong ground, and the right ground is
+stronger: pinned from literature, the turnover term is rank-preserving and, for this dataset,
+below the floor by three orders.** No new run; arithmetic on published rate constants, prompted by
+an outside objection that item 211 overreached.
+
+**The objection is correct as stated.** Item 211 closed the kinetic line by identifiability: two
+time conditions identify one parameter beyond affinity, and that parameter is spent. But
+identifiability limits what may be **fitted**, not what may be **asserted**. Parameters pinned from
+the literature or from quantum chemistry are not asked of the data at all, so the bound does not
+reach them. That sentence in item 211 was too broad and is corrected here rather than rewritten.
+
+**And the measurement that seemed to settle it was mis-scaled by more than an order of magnitude.**
+Item 209 swept an amplitude over {0, 0.3, 0.6} on the shape
+`log10(1 + 10^{-(E-49.83)/14.3})`, giving deltas with median 0.090 and maximum 0.994 pIC50 at the
+*smallest non-zero* amplitude. Pinned from rate constants, the same quantity is far smaller:
+
+    delta = log10(1 + kcat/koff),   koff = Ki * kon,   kon ~ 1e7 M^-1 s^-1,  kcat ~ 5 min^-1
+
+      pKi 4   delta 0.0000        pKi 7   delta 0.0348
+      pKi 5   delta 0.0004        pKi 8   delta 0.2632
+      pKi 6   delta 0.0036
+
+**The smallest amplitude tested had a median larger than the entire physical range.** So item 209's
+negative result tests an over-large correction, not the physics, and it should not be quoted as
+having tested the latter.
+
+**With the physics in place, two things close the line properly, and neither is identifiability.**
+
+*First, the term is negligible on this population.* Our labels have medians of 4.27 to 5.13 and
+ninety-fifth percentiles of 5.67 to 6.35. Compounds above pIC50 7, where delta first exceeds the
+per-enzyme floors, number **20, 2, 13 and 1** -- between 0.04 and 1.4 per cent. For the typical
+compound here delta is under 0.001, three orders below the floor. The reason is chemical rather than
+statistical: these compounds are weak, so koff is large, so the EI complex is emptied by dissociation
+long before catalysis touches it.
+
+*Second, and this decides it regardless of magnitude:* **delta is a monotone increasing function of
+potency**, since koff = Ki * kon. So `pIC50_набл = pKi - delta(pKi)` is a monotone transformation of
+pKi -- checked numerically, the derivative stays positive at 0.11 across the whole range -- and a
+monotone transformation **preserves rank identically**. Our criterion is rank (items 77, 80). The
+potency-driven part of the turnover correction is therefore invisible to the criterion no matter how
+large it is.
+
+What remains rank-changing is only the variation of delta *at fixed potency*, which comes from kcat,
+that is from the C-H barrier. And that is exactly the quantity item 179 measured at +0.0009 with no
+enzyme clearing its floor, and item 210 measured again as a link at -0.0108 macro.
+
+**So the answer to "pin the parameters from literature or from ORCA" is that pinning them is what
+shows the term cannot pay.** Better barriers would refine kcat, kcat enters only through
+`kcat/koff`, that ratio is 0.0002 to 0.03 across our potency range, and the part of delta that
+depends on potency rather than on the barrier changes no ranks at all. Twenty thousand DFT
+calculations would sharpen a quantity whose rank-relevant component has been measured twice at zero.
+
+**What would make the line live again**, stated so it is not rediscovered: a population of tight
+binders. At pKi 8 the correction is 0.26 pIC50 and matters. This dataset has one such compound on
+CYP3A4 and two on CYP2C9. A benchmark of drug-like inhibitors rather than a diversity screen would
+be a different question, and this closure does not reach it.
+
+**225. Coregionalization closes without being built: its tree analogue is measured, does not reach
+the ensemble, and the mechanism it repairs is absent from the learner we ship.** Composition from
+saved predictions, four seeds, minutes.
+
+The document has carried the intrinsic coregionalization model as an unbuilt design since it was
+written, and an outside reading argued the prior had risen because item 188 measured the tree
+version of the same idea -- one vector of values per leaf, explicit cross-task structure -- at
+**+0.0069 of macro rank** over the per-enzyme reference and +0.0273 over pooling.
+
+**The cheap question first: does the measured version reach the ensemble?**
+
+    состав                                  ранг     пара
+    пять членов (подаётся)                0.6297   0.6483
+    многозадачно ВМЕСТО поферментного     0.6252   0.6556
+    многозадачно ШЕСТЫМ членом            0.6269   0.6545
+
+**-0.0045 as a replacement and -0.0028 as an addition**, worse on both criteria in both forms over
+four seeds. It does not reach the ensemble.
+
+**And the reason was available before the run, from item 188's own argument.** Its gain exists
+because plain depth-5 trees spend depth isolating the enzyme indicator -- item 180 measured the
+share of root-to-leaf paths through it rising from 0.34 to 0.59 -- so a leaf carrying four values
+buys the same conditioning for free. That is a repair of a **specific defect of that learner**. Item
+158 measured the same defect's absence on HistGB: pooling *gains* +0.0141 there against *losing*
+0.027 on plain depth-5 trees. The submission's learner does not pay the cost that multi-task
+refunds, so there is nothing to refund.
+
+**Which also settles the neural version without building it**, by an arithmetic the file already
+has. The ICM would live in the trunk. The trunk is the ensemble's weakest member at rank 0.595
+against the ensemble's 0.634, its entire contribution is **+0.0045** (item 213), and its measured
+transfer ratio is about one in seven -- +0.0320 standalone arriving as +0.0045. So an ICM gain would
+have to exceed **0.025 of standalone rank in the trunk** merely to reach the macro floor of 0.0036
+in the ensemble. That is three and a half times what the tree version achieved standalone against
+its own reference, in the family where the mechanism works less well.
+
+**What item 188 said that does survive, and it is not the coregionalization.** Its closing paragraph
+observed that CYP3A4 loses 0.0171 to multi-task because it has the most labels, and that the honest
+form is therefore per-enzyme: multi-task on three, CYP3A4 alone. That per-enzyme reasoning is what
+item 218 acted on from a different direction, dropping the ensemble on CYP3A4 entirely. The two
+arrive at the same shape from opposite ends -- **CYP3A4 does not want to share** -- and that is worth
+more than either arm.
+
+**226. Down-weighting the rows whose curve fit fell apart loses to down-weighting random rows, and
+the reason is that the tail is the weak compounds.** `src/ablweight.py`, seed 0, all arms measured
+**on top of** the dead zone because item 181 is the standing lesson about intervention overlap.
+
+Section 3 of the document observes that the error is unevenly distributed and says outright that
+weighting compounds by their individual error makes more sense than it looks. Checked here, the
+observation is softer than the document's phrasing: the top five per cent by sigma carry **46, 42,
+57 and 22** per cent of the squared error, so "almost sixty" is CYP2D6 and CYP3A4 is a quarter of it.
+
+**The objection that had to be answered first.** Item 114 makes sigma a deterministic function of
+the label, R^2 0.928 to 0.970 reproduced here, so weighting by 1/sigma^2 is weighting by potency and
+the dead zone already gives exactly those rows a wide free zone. What survives the isotonic is 3.0
+to 7.2 per cent of sigma's variance, with correlation to the label of 0.03, -0.04, 0.11 and -0.02 --
+the label dependence is gone, and inside that residual the tail persists, the top five per cent
+carrying 50 to 60 per cent of residual variance. **That residual is the only honest version of the
+proposal.**
+
+    рука                       пара     ранг      1A2     2C9     2D6     3A4
+    контроль                 0.6794   0.6051    0.540   0.644   0.465   0.771
+    1/остаток^2              0.7639   0.5105    0.434   0.547   0.343   0.717
+    1/остаток^2, перемешан   0.7401   0.5456    0.475   0.577   0.415   0.715
+    1/sigma^2                0.8009   0.5174    0.456   0.535   0.418   0.661
+
+**Everything loses by an order of magnitude more than the floor, and the honest arm loses more than
+its own permutation** -- -0.0946 against -0.0595. The addressing of the weights is not merely
+uninformative, it is **anti-informative**.
+
+**Half the magnitude is my construction and I say so.** `1/r^2` with a tenth-percentile floor gives
+an effective sample of 23 to 25 per cent of n on the honest arm and 53 to 56 on the naive one.
+Throwing away three quarters of the effective data must be expensive, and item 194 is why. A gentler
+weighting would lose less. **But the permutation control is unaffected by that**: it has the same
+weight distribution and therefore the same effective sample, and differs only in which row gets
+which weight. So the sign of the real-minus-shuffled gap survives the construction defect even
+though its size does not.
+
+**And the mechanism is measured rather than guessed.**
+
+    фермент   rho(остаток, |ошибка|)   rho(sigma, |ошибка|)   медиана метки в верхних 5 % остатка
+    CYP1A2                     0.089                  0.201        3.36 против 5.17
+    CYP2C9                    -0.009                  0.194        4.14 против 4.63
+    CYP2D6                     0.075                  0.117        3.54 против 4.77
+    CYP3A4                     0.214                  0.301        3.39 против 4.31
+
+The residual **barely predicts model error** at rho 0.09, worse than raw sigma does. But it strongly
+**selects weak compounds**: the isotonic removes the average label dependence and the tail still sits
+1.2 to 1.6 log units below the rest. So down-weighting by it removes the bottom of the potency range
+from the model, and what we are scored on is order. Anchoring the weak end matters, and the arm
+throws it away.
+
+**Which also explains why the naive arm loses**: it does the same thing more directly. And it closes
+the door item 200 left ajar from the other side -- graded weight by band width lost there as the
+split normal, and here the same idea with the label dependence surgically removed loses too.
+Weighting rows by their stated error is closed in both of its forms.
+
+**227. A full unit of noise in the pKa estimate does not hurt the mechanistic block, and on the one
+enzyme where the block lives it helps.** `verify/k66_pkanoise.py`, seed 0. The bound that decides
+whether to replace the rule, computed without replacing it.
+
+The mechanistic block is the best feature block in the project -- +0.0163 of rank, +0.0313 in the
+test regime, three times less sensitive to the split than anything else -- and it rests on a rule
+estimating pKa whose known worst miss is caffeine at 4.5 units. An outside reading proposed replacing
+the rule with a trained predictor, and the proposal has a property the other proposals in that letter
+lacked: **the block sits in the feature matrix, so all five members read it**, and item 213 measured
+that interventions touching every member at once are the only kind that reach the ensemble.
+
+**The exposure is real**, which is why the question was worth asking. pKa enters three features --
+the value, the protonated fraction at pH 7.4, the hard indicator above it -- plus the CYP2D6
+pharmacophore, which asks for a cation at pH 7.4 two to five bonds from an aryl. So an error matters
+where it moves a compound across the threshold, and **13.1 per cent** of the training set sits within
+one pKa unit of it against a typical predictor error of 0.5 to 1.0.
+
+**The measurement is a bound rather than an experiment, and unusually tight.** Injecting error of the
+rule's own magnitude and removing it are the same operation with opposite sign, so the cost of
+injection bounds the gain from a perfect predictor. Item 128's procedure.
+
+    сигма   MACRO пара   MACRO ранг      1A2      2C9      2D6      3A4
+    0.0        0.7150       0.5651   0.4957   0.5972   0.4027   0.7646
+    1.0        0.7138       0.5671   0.4944   0.5914   0.4201   0.7626
+
+**Nothing gets worse.** Macro rank moves +0.0020 and macro pair -0.0012, both *toward better*, and
+this after the perturbation flipped `is_base_74` on **233 molecules, 4.8 per cent** of the set. The
+derived features were recomputed rather than jittered, so the hard threshold really did flip.
+
+**The upper bound on what a trained pKa predictor can buy is therefore zero or less.** The proposal
+closes, and it closes for an hour of compute rather than a week of building.
+
+**And the block's mechanism is now narrower than the document says.** Section 7 explains the block
+through protonation at pH 7.4, and CYP2D6's salt bridge to a protonated nitrogen is item 81's
+finding. But the protonation *call* can be wrong on one molecule in twenty at no cost. So what the
+block delivers is **not the fine boundary of the protonation state** -- it is the geometry around the
+basic centre, the topological distance from that nitrogen to the aromatic system, which a one-unit
+pKa error leaves untouched. The value is in where the nitrogen sits, not in whether the rule got its
+pKa right.
+
+**One number is over the line and is reported as one seed.** CYP2D6 gains **+0.0174** under noise,
+three and a half times its own floor of 0.0049 and just past item 167's threshold of about 0.015 for
+a single-seed per-enzyme claim. Seeds 1 to 3 are queued. The bound does not depend on its sign --
+the macro figure is already non-negative -- but "noise on the pKa improves the enzyme whose
+pharmacophore uses it" is a strong enough sentence to deserve four seeds before it is believed.
+
+**Control reproduces**: the sigma-zero arm gives 0.7150 and 0.5651, the scoreboard's reference row
+for `FP+DESC+MECH, поферментно, HistGB` to the fourth decimal, from a third independently written
+harness today.
+
+**228. Handing the classifier the regression track's own predictions gives nothing, and the number
+that matters is not the null.** `src/abltdif.py`, four seeds.
+
+Classification is a third of the leaderboard and the TDI track is one classifier on the feature
+matrix plus a threshold, while the regression track carries five members, the dead zone, pooling,
+per-enzyme selection and the affine pair. The most specific transfer available was to give the
+classifier what the regression track computes, since item 197 established that `is_TDI` is a
+**deterministic function** of the two potency arms -- verified again here at 1.0000 agreement with
+zero errors either way on both enzymes.
+
+    рука            MCC макро   2D6 MCC   2D6 AUC   3A4 MCC   3A4 AUC
+    структура          0.2162    0.1180    0.5922    0.3147    0.7483
+    + пи_прям          0.2132    0.1100    0.5877    0.3168    0.7502
+    + оба плеча        0.2116    0.1130    0.5892    0.3103    0.7455
+    + правило          0.2135    0.1165    0.5875    0.3105    0.7443
+    перемешан          0.2142    0.1137    0.5942    0.3148    0.7477
+
+**Every arm is within 0.005 of the control, the permutation sits among them rather than below, and
+AUC does not move** -- 0.588 to 0.594 on CYP2D6, 0.744 to 0.750 on CYP3A4. A complete null with its
+control passing.
+
+**The number worth taking from this run is CYP2D6's AUC of 0.59.** Against 0.5 for a coin, on 1493
+compounds with 324 positives, the classifier essentially cannot order CYP2D6's TDI label at all. The
+MCC of 0.118 follows from that rather than from a badly chosen threshold: there is little ordering
+for a threshold to exploit.
+
+**Why the transfer fails is not the usual reason and should be said carefully.** Item 166's rule is
+that a new column survives if it is not derivable from the block already present, and a prediction
+made *from* that block looks derivable. But this one is not quite: the regression model is trained on
+a **different label**, so its output carries information from the pIC50 measurements that the
+classifier's own labels do not contain. That is transfer between tasks rather than a re-encoding, and
+it was worth the run. The null therefore says something sharper -- **the pIC50 labels carry no
+information about the TDI flag beyond what structure already carries.**
+
+Which is a statement about the label rather than the model, and it points where item 229 looks: if
+the flag is a deterministic function of two arms we predict at RMSE near 0.7, and the first branch of
+the rule is a difference against a threshold of 0.301, then the ceiling may be arithmetic. That is
+measured next rather than assumed.
+
+**229. The TDI ceiling is the shift, and the shift is unpredictable from structure. MCC near 0.3 is
+close to what the label permits, not a failure of effort.** `verify/k67_tdiceiling.py` plus two
+follow-ups, seed 0. Item 128's oracle procedure carried to the classification track for the first
+time.
+
+Classification is a third of the leaderboard at MCC 0.118 and 0.315, and the question was whether
+that is a bad model or a badly conditioned label. It is the second, and the decomposition says so
+exactly.
+
+    ошибки, ско в pIC50      прям    tdi   Delta напрямую   разность плеч   corr ошибок плеч
+    CYP2D6                  0.846  0.738            0.418           0.461              0.840
+    CYP3A4                  0.698  0.752            0.361           0.411              0.842
+
+    оракулы, MCC     истинные плечи   истин.уровень   истинная Delta   оба предск.   классификатор
+                                      + предск.Delta  + предск.уров.
+    CYP2D6                    1.000           0.078            0.887         0.119           0.129
+    CYP3A4                    1.000           0.439            0.776         0.331           0.353
+
+**The harness passes**: the rule on true arms gives exactly 1.0, as item 197 requires.
+
+**One prior of mine was wrong and the measurement corrected it.** I expected the two arms' errors to
+be independent, which would put the error on their difference near 1.0 against a threshold of 0.301.
+They correlate at **0.84**, so the difference is far better determined than either arm -- 0.36 to
+0.42 against 0.70 to 0.85 -- and differencing costs little over predicting the shift directly, 0.41
+against 0.36. The label is not hopeless for the reason I gave.
+
+**It is hopeless for a different reason, and this is the finding.** Knowing the shift exactly, with
+the level still predicted, gives MCC **0.887 and 0.776**. Knowing the level exactly, with the shift
+predicted, gives **0.078 and 0.439**. The bottleneck is entirely the shift.
+
+And the shift carries no structural signal:
+
+    фермент   sd истинной Delta   sd предсказанной   отношение   ско ошибки      R^2
+    CYP2D6                0.408              0.173        0.42        0.418   -0.050
+    CYP3A4                0.364              0.168        0.46        0.361   +0.016
+
+**R-squared of -0.05 and +0.02: the model of the shift is no better than predicting its mean.** The
+predictor is shrunk to 0.42 of the true spread, and un-shrinking it out of fold moves MCC by +0.004
+and -0.017 while raising the error from 0.418 to 0.534 -- there is no signal to expand, only noise.
+
+**So MCC near 0.3 is close to the ceiling this label permits from structure**, and the classifier's
+0.353 on CYP3A4 is not coming from the difference at all: it is the rule's **second branch**, the one
+that fires on weak compounds and asks only whether the pre-incubation arm exceeds 4.301. That is a
+potency question, which we can answer. The first branch, the difference, we cannot.
+
+**Which also explains item 228's null from the day before.** Handing the classifier our predicted
+arms adds nothing because the quantity that decides the label is the one part of them we cannot
+predict.
+
+**Where the remaining value is, and it is not in the model.** If the ordering is near its ceiling,
+what is left is the threshold. Section 10 measured nested Platt calibration at **+0.028 of MCC on
+CYP3A4** and neutral-to-negative on CYP2D6, and the submission does not use it: it applies a plug-in
+threshold to uncalibrated probabilities whose mean predicted rate is 0.079 against a true 0.217 on
+CYP2D6. On a third of the leaderboard, a measured +0.028 that is not deployed outweighs anything
+still available on the ordering.
+
+**230. The pKa bound holds on four seeds, and the sentence item 227 refused to believe on one seed
+was right to be refused.** `verify/k66_pkanoise.py`, seeds 0 to 3. The queued follow-up, closing
+the mechanistic-block proposal for good.
+
+Item 227 measured a full unit of Gaussian noise injected into the pKa estimate and found macro rank
+moving *toward better*, with CYP2D6 gaining +0.0174 -- three and a half times its own floor. It
+declined to believe the second half and queued three more seeds. They are in.
+
+    сигма 1.0 минус сигма 0.0, ранг      сид 0     сид 1     сид 2     сид 3    среднее   знак
+    CYP1A2                             -0.0013   -0.0055   -0.0058   +0.0042   -0.0021    1/4
+    CYP2C9                             -0.0058   -0.0051   +0.0022   -0.0120   -0.0052    1/4
+    CYP2D6                             +0.0174   -0.0035   -0.0035   -0.0080   +0.0006    1/4
+    CYP3A4                             -0.0020   -0.0052   +0.0001   +0.0008   -0.0016    2/4
+    МАКРО                              +0.0020   -0.0048   -0.0017   -0.0037   -0.0020    1/4
+
+**Seed 0 was the outlier and nothing else was.** CYP2D6's +0.0174 is not repeated by any other seed;
+the other three are -0.0035, -0.0035, -0.0080, and the four-seed mean is **+0.0006** against a
+per-enzyme floor of 0.0049. "Noise on the pKa improves the enzyme whose pharmacophore uses it" is
+**false**, and the commit that carried that sentence in its title (`f50f14e`) is wrong in its second
+half. It is left in the history rather than rewritten; this entry is the correction.
+
+**The bound itself is unchanged and is now stronger.** Macro rank moves **-0.0020** on four seeds,
+below the fixed-seed macro floor of 0.0036 and far below the published 0.007, after the perturbation
+flipped `is_base_74` on 4.2 to 4.9 per cent of the set in every seed. Injecting error of the rule's
+own magnitude and removing it are the same operation with opposite sign, so **the upper bound on
+what a trained pKa predictor can buy is a rank movement smaller than the noise floor.** The proposal
+closes on a four-seed measurement rather than on one.
+
+**Item 227's other conclusion survives untouched and is the durable one.** The block delivers the
+geometry around the basic centre -- the topological distance from that nitrogen to the aromatic
+system -- and not the fine boundary of the protonation state, because the protonation *call* can be
+wrong on one molecule in twenty at no cost. That reading did not depend on the sign of the CYP2D6
+cell, which is why it is still here after the cell moved.
+
+**A note on how the error got in, since it is the second time.** One seed cleared item 167's
+single-seed threshold of about 0.015, and the sentence it licensed was the interesting one, so it
+reached a commit title. The guard that worked was item 227's own paragraph refusing to believe it.
+The guard that would have worked earlier is not writing the claim into a title until the seeds are
+back; a journal entry can be corrected in place, a commit title cannot.
+
+**231. The 1238 are not free negatives for the classifier either, and here the reason is sharper
+than item 216's: 1048 of them are labelled backwards.** Arithmetic on the organisers' files, no
+model. Item 203's "placeholder, not a measurement" given its proof.
+
+Item 216 closed the 1238 for the **regression** track: the manufactured pIC50 keeps 98.6 per cent of
+the rank and the missing 1.4 is three times CYP3A4's floor. That closure says nothing about the
+**classification** track, where the same rows look like a different and better offer -- they carry a
+`CYP3A4_is_TDI` label already, all of it negative, and adding them would take the classifier from
+2346 rows to 3584 and move the base rate from 0.326 to 0.213, *toward* the calibration §10 says is
+broken. The idea is adjacent to work in flight, which is why it is written down rather than dropped.
+
+It fails on the labels themselves.
+
+    из 1238 строк вне rows.csv, несущих CYP3A4_is_TDI
+    метка True                                              0
+    измеренное плечо с преинкубацией                     1238
+    плечо > 4.301 (вторая ветвь правила сказала бы «да»)  1048   84.6 %
+    плечо <= 4.301 (отрицательные по любой ветви)          190   15.4 %
+    согласие правила с меткой                                    15.3 %
+
+    медиана плеча TDI       у этих 1238   5.403
+                            у 2346 размеченных   4.629
+
+The rule has two branches (§10, item 197). Without a direct arm only the second is evaluable, and it
+asks whether the pre-incubation arm exceeds 4.301. **On 1048 of the 1238 it does** -- these compounds
+are more potent after pre-incubation than the labelled population is, median 5.40 against 4.63 -- and
+every one of them is nevertheless marked `False`.
+
+**The alternative reading does not survive counting.** For the label to be a real derivation, all
+1238 would need a direct arm above 4 with a shift of at most $\log_{10}2$: every one genuinely
+non-TDI. That is a positive rate of 0 out of 1238 against a base rate of 0.326, probability
+$1.4\times10^{-212}$. Zero is a placeholder signature, not a measurement.
+
+**So the two closures are different in kind and both should be quoted.** For the regression track
+the extra rows are *good but not good enough*. For the classification track they are **actively
+poisonous**: training on them injects roughly 1048 mislabelled positives into a classifier whose
+entire measured MCC is 0.353, on the endpoint where two thirds of that MCC comes from the very
+branch these rows would corrupt (item 229 -- CYP3A4's score comes from the second branch, the
+potency question, not from the difference).
+
+**Two counts that look contradictory and are not.** 1249 of the 3584 CYP3A4 labels have no direct
+arm; 1238 of them have no row in `rows.csv` at all. The eleven in between sit in the feature matrix
+with a missing direct arm. The table above is the 1238, because those are the rows the proposal
+would have *added*; the 1249 is the figure §10 quotes for the rule's coverage.
+
+**Cost of this check: twenty minutes, no model, no run** -- the same move as items 105, 109 and 114,
+counting the preconditions before building anything. What is new here is only where it was pointed:
+at a resource already closed for one track, on the assumption that the closure carried to the other.
+It does carry, but not for the recorded reason, and the real reason is stronger.
+
+**232. Item 229 said the shift is unpredictable and that CYP3A4's MCC comes from the second branch.
+The first is too strong and the second is wrong.** A per-branch split of the classifier's own
+out-of-fold probabilities, twenty minutes, no new model. My own correction to my own item, caught
+while writing it into §10.
+
+Item 229 measured a *regression* on the shift and got $R^2$ of $-0.050$ and $+0.016$, then wrote:
+"the shift carries no structural signal", and "the classifier's 0.353 on CYP3A4 is not coming from
+the difference at all: it is the rule's second branch." Splitting the rows by which branch of the
+rule decides them, and scoring the saved OOF probabilities inside each:
+
+    строки, разделённые по ИСТИННОМУ прямому плечу      n   доля полож.    MCC     AUC
+    CYP3A4, ветвь 1 (прямое > 4: разность плеч)      1391        0.489   0.258   0.664
+    CYP3A4, ветвь 2 (прямое <= 4: только плечо TDI)   955        0.088   0.284   0.773
+    CYP2D6, ветвь 1                                  1364        0.200   0.129   0.585
+    CYP2D6, ветвь 2                                   131        0.389   0.102   0.570
+
+**Where 229 was right.** On CYP3A4 the classifier really is better on the second branch, AUC 0.773
+against 0.664. That is the potency question, and it matches the oracle decomposition exactly.
+
+**Where it was wrong.** Branch one is not empty. AUC 0.664 against 0.5 for a coin, on the branch
+that supplies **89 per cent of CYP3A4's positives** -- 680 of 764, against 84 from branch two. So
+0.353 does not come from the second branch; the second branch is where the model is *sharper*, not
+where its score comes from.
+
+**And the two measurements were never in conflict.** $R^2 = 0.016$ is a statement about predicting
+the *value* of the shift under squared error. AUC 0.664 is a statement about ordering compounds by
+whether the shift clears $\log_{10}2$. Different loss, different target, and a predictor can be
+useless at the first while useful at the second. **The shift's position relative to the threshold is
+partly predictable; its magnitude is not.** Item 229's oracle table already contained this and I
+read past it: the arm with $\Delta$ predicted and the level known scores 0.439 on CYP3A4, which is
+not the zero my sentence implied.
+
+**The CYP2D6 story does not survive at all.** I wrote in §10 that the second branch fires less often
+there, hence the AUC of 0.59. It fires on a *larger* share of that enzyme's positives -- 15.7 per
+cent against CYP3A4's 11.0 -- and both branches are equally weak, 0.585 and 0.570. There is no
+branch CYP2D6 is strong on. The enzyme is unordered everywhere, which is a simpler and worse fact
+than the one I invented to explain it.
+
+**What still stands from 229**, and it is the part that matters for the submission: the bottleneck
+is the shift rather than the level (oracle MCC 0.887 and 0.776 with the shift known, against 0.078
+and 0.439 with the level known), the arms' errors correlate at 0.84, and MCC near 0.3 is close to
+what this label permits. The ceiling is real; my account of *which part of the rule the model was
+exploiting* was not, and the difference matters because it is the part a reader would act on.
+
+**How it got in.** The oracle decomposition is a statement about *quantities*; I turned it into a
+statement about *branches* by reasoning rather than by counting, in the same paragraph that reported
+the counting. The check that caught it took twenty minutes and could have run that day.
+
+**233. Pre-registration: what would put calibration into the submission.** Written and committed
+with seed 0 in hand and seeds 1 to 3 still running, so the rule cannot be chosen to fit them.
+`verify/k68_tdicalib.py`.
+
+Item 229 ended by proposing that nested Platt calibration go into the submission's TDI path on the
+strength of §10's +0.028 on CYP3A4. Two things then turned up that the proposal did not account for.
+
+**The measurement it rests on calibrated across cluster boundaries.** `verify/f10_calib.py` draws
+its calibration groups with `rng.integers(0, 5, n)` -- random, not Butina -- so close analogues of
+the rows being scored sat in the fitting half. k68 repeats it on the canonical split with full
+nesting: the outer fold's probabilities come from a model that never saw it, and the calibrator is
+fitted on out-of-fold probabilities from an inner split of the remainder.
+
+**Platt is monotone only if its slope is positive.** It fits a logistic on `logit(p)`; on a
+classifier with no ordering the slope can come out negative and the "calibration" reverses the
+ranking. CYP2D6's AUC is 0.588. So the slope is reported per fold rather than assumed, and a smoke
+test on a deliberately signal-free stub reproduced the reversal (3 folds of 5 negative), confirming
+the diagnostic fires.
+
+**Seed 0, both enzymes:**
+
+    плечо              3A4 MCC   против подачи        2D6 MCC   против подачи
+    сырые + plug        0.3277             —           0.0948             —
+    Платт + plug        0.3478      +0.0199            0.1161      +0.0218
+    изотон + plug       0.3496      +0.0217            0.0677      -0.0258
+    сырые + подогнанный 0.3454      +0.0174            0.0727      -0.0210
+    оракул порога       0.3689      +0.0411                 —             —
+
+    E[p] против истинной доли    3A4: 0.266 -> 0.333 (истинная 0.326)   Брайер 0.2021 -> 0.1848
+                                 2D6: 0.099 -> 0.217 (истинная 0.217)   Брайер 0.1914 -> 0.1670
+
+Every interval crosses zero at n = 1495 and 2346, which is why this is decided on seeds and signs
+rather than on one number.
+
+**The rule, fixed now.** Platt plus plug-in goes into `src/submit.py` if and only if all three hold
+over the four seeds:
+
+1. the mean gain in macro MCC over `сырые + plug` is positive;
+2. the sign holds in at least **6 of the 8 cells** (4 seeds x 2 enzymes);
+3. the Platt slope is **positive in all 40 folds** -- one reversal and the map is not a calibration.
+
+**And a rule about which arm.** If Platt fails while isotonic or the fitted threshold passes, nothing
+is adopted. The submission's own comment already settled this principle -- *one rule, applied to both
+endpoints, not a per-endpoint recipe* -- and item 202 is the record of what per-endpoint recipes cost
+here. Picking the winner per enzyme after four seeds is threshold-fitting one level up.
+
+**What seed 0 already suggests, recorded so it cannot be quietly forgotten.** The fitted threshold
+on CYP2D6 came out at 0.40, 0.11, 0.14, 0.50, 0.07 across the five folds. At AUC 0.588 the MCC
+surface is flat and its argmax is noise, which is the mechanism for that arm failing there -- and a
+direct vindication of item 165's sixth finding, that a threshold rule on this endpoint rests on an
+assumption nobody had stated.
+
+**234. The rule is a conjunction, the gate can only subtract, and that one fact explains the whole
+gap between the two endpoints. Items 229 and 232 both had the decomposition wrong.** Raised by an
+outside reading, verified here in ten minutes. This supersedes 232, which was itself a correction.
+
+The label is written piecewise in `src/tdi.py` and in §10. It folds:
+
+    is_TDI  <=>  (Delta > log10 2)  AND  (pi_TDI > 4 + log10 2)
+
+Elementwise identical to the piecewise form on every row, and both reproduce the published label
+exactly: **2334/2334 on CYP3A4, 1493/1493 on CYP2D6**. Proof is two lines. If `pi_dir > 4` then
+`Delta > log10 2` already implies `pi_TDI > 4.301`, so the gate is slack and the first conjunct
+decides. If `pi_dir <= 4` then `pi_TDI > 4.301` already implies `Delta > 0.301`, so the shift is
+slack and the gate decides. Neither is a separate case; they are one conjunction seen from two sides.
+
+**What the folded form makes visible and the piecewise form hides: the shift is NECESSARY for every
+positive.** Measured, not argued -- positives with no shift: **0**. Positives with the gate closed:
+**0**. The gate cannot make anything positive. It can only strike rows out.
+
+    фермент   ворота закрыты   среди открытых полож.   MCC одних ворот   MCC одного сдвига
+    CYP3A4             0.398                   0.543           +0.5667             +0.6875
+    CYP2D6             0.058                   0.230           +0.1302             +0.9010
+
+**And that is the entire CYP3A4-versus-CYP2D6 story in one number.** On CYP3A4 the gate strikes out
+**39.8 per cent** of rows, and identifying them is a pure potency question -- which we answer well.
+On CYP2D6 it strikes out **5.8 per cent**, so there is almost no potency sub-problem to win and the
+label is very nearly the shift alone (shift-only MCC 0.9010). AUC 0.745 against 0.588 follows from
+that, and needs no other explanation.
+
+**Both previous readings are now dead, mine included.** Item 229 wrote that CYP3A4's MCC "is the
+rule's second branch, the one that fires on weak compounds". Item 232 corrected the arithmetic but
+kept the frame, reporting per-branch AUC. The frame was the error: **there are no branches.** 232's
+numbers are still correct as computed -- AUC 0.664 on rows with `pi_dir > 4` and 0.773 on the rest --
+but conditioning on `pi_dir` cuts the population in a way that has no counterpart in the rule, and
+reading a mechanism off that cut is what produced two wrong accounts in a row.
+
+**The correct mechanism, stated once.** The classifier's score on CYP3A4 comes substantially from
+recognising rows the gate strikes out -- a potency question. Its remaining work, and all of its work
+on CYP2D6, is the shift. That is consistent with 229's oracle table, which had it right at the level
+of *quantities* the whole time: level known gives 0.078 and 0.439, shift known gives 0.887 and 0.776.
+
+**Cost of getting this wrong twice: two journal entries and a paragraph of §10.** Cost of the check
+that settles it: one boolean comparison over 3827 rows.
+
+**Amendment, added the same day.** The sentence that stood here -- "the rule was available in closed
+form in the repository the entire time; nobody had folded it" -- is wrong, and the correction makes
+the failure worse rather than better. **Item 23 states the conjunction in prose**: *"the label is
+'potent AND shifted', the alerts are about the second half only, and the threshold on the second
+half is a knife edge."* It goes further and gives the knife-edge argument this entry does not --
+the median Delta over CYP3A4 actives is +0.294 against a cutoff of 0.301, so half the actives sit
+within a hundredth of the line, and a predictor of Delta can be good while a predictor of the label
+looks worthless.
+
+So the reading was in the file from item 23 onward. Items 229 and 232 reasoned from the piecewise
+form anyway, and rederived a worse version of something already recorded 211 entries earlier. That
+is the exact failure `CLAUDE.md` puts in bold -- *search `verify/README.md` for the idea before
+evaluating it* -- and it is the fifth instance, after the four in item 202. The four in 202 were
+proposals already refuted; this one is a **framing** already established, which is harder to grep
+for and correspondingly easier to lose. Searching for "TDI" would have found item 23; searching for
+the formula would not.
+
+**235. Calibration passes the pre-registration and goes into the submission; and the four-seed
+sweep hands us the MCC floor the repository never had.** `verify/k68_tdicalib.py`, four seeds, both
+endpoints, `results/preds/tdicalib.json`. Item 233 fixed the rule before these numbers existed.
+
+    MCC                    CYP3A4                          CYP2D6
+    плечо            с0     с1     с2     с3  среднее    с0     с1     с2     с3  среднее
+    сырые+plug   0.3277 0.3182 0.2996 0.3118   0.3143  0.0948 0.1029 0.1367 0.1206   0.1137
+    Платт+plug   0.3478 0.3388 0.3318 0.3331   0.3379  0.1161 0.1102 0.1431 0.0982   0.1169
+    изотон+plug  0.3496 0.3309 0.3326 0.3333   0.3366  0.0677 0.0862 0.1232 0.1121   0.0973
+    сырые+подогн 0.3454 0.3320 0.3286 0.3291   0.3338  0.0727 0.0769 0.1283 0.0923   0.0925
+    оракул       0.3689 0.3733 0.3495 0.3625   0.3635  0.1484 0.1626 0.1708 0.1538   0.1589
+
+**The three pre-registered conditions, checked in the order they were written:**
+
+    1. средний прирост макро-MCC > 0        +0.0133  (+0.0206 +0.0139 +0.0193 -0.0005)   прошло
+    2. знак в >= 6 клетках из 8             7 из 8                                       прошло
+    3. наклон Платта > 0 во всех 40 фолдах  минимум +0.0836, отрицательных 0             прошло
+
+**So it is deployed** -- `tdi_calibrate()` in `src/submit.py`, Platt fitted out of fold on the
+training rows and applied to the test probabilities, with the slope check as a hard failure rather
+than a warning. Cost: ten extra classifier fits, about twenty-five minutes on the run.
+
+**The floor, which is the more durable half of this entry.** This repository had noise floors for
+rank and for ST-RAE and none at all for MCC, so every MCC statement in the file so far was made
+against nothing. The submitted arm re-measured at four split seeds gives it:
+
+    пол по MCC (подаваемая рука, сырые+plug)     sd    2*sd   размах    принят
+    CYP3A4                                   0.0118  0.0236   0.0281    0.0281
+    CYP2D6                                   0.0187  0.0374   0.0419    0.0419
+    МАКРО                                    0.0037  0.0074   0.0076    0.0076
+
+**Macro MCC's floor is 0.0076 -- within a thousandth of the regression track's macro rank floor of
+0.007.** Two different metrics on two different tracks with the same split machinery land in the
+same place, which is a coincidence worth noticing and not worth theorising about.
+
+**And it changes what this result may be claimed as.** The gain is +0.0133 macro against a floor of
+0.0076: **1.75 times the floor, and that is the whole claim.** Per enzyme it does not clear: +0.0235
+on CYP3A4 against a floor of 0.0281, +0.0031 on CYP2D6 against 0.0419. The scoreboard's warning has
+always run the other way -- a per-enzyme claim cannot be measured against the macro floor -- and this
+is the first entry where the converse bites. **There is no CYP3A4 result here. There is a macro
+result.**
+
+**Two things that did not pass, recorded because they were live options.** Isotonic reaches the same
+macro mean but its sign is 4 of 8, and the fitted threshold is 4 of 8 with a mean of -0.0009 -- on
+CYP2D6 its per-fold optimum ranged 0.05 to 0.70 across five folds, because at AUC 0.588 the MCC
+surface is flat and its argmax is noise. Item 233 forbade adopting a per-endpoint winner and nothing
+here tempts one: Platt is the only arm positive in both columns.
+
+**§10's +0.028 does not reproduce: on the canonical split with full nesting the same quantity is
++0.0235 on CYP3A4, and every per-seed interval crosses zero.**
+
+**Correction, added after fixing the script rather than only diagnosing it.** This entry first
+attributed that gap to a defect in `verify/f10_calib.py` -- it drew its calibration groups with
+`rng.integers(0, 5, n)`, random rather than Butina, so close analogues of the scored rows sat in the
+fitting half. The defect is real and is now fixed. **It is not the cause.** Repaired and rerun:
+
+    CYP3A4, сид 0        plug-in по сырым   plug-in по Платту   выигрыш
+    f10, случайные группы (как было)                     --      +0.0280
+    f10, фолды Бутины (исправлено)   0.3247       0.3519         +0.0272
+    k68, Бутина + полное вложение    0.3277       0.3478         +0.0200
+
+Random groups cost **0.0008**. The nesting costs **0.0072**, nine times more: `f10` fits its
+calibrator on out-of-fold probabilities produced by models that saw the fold being scored, and
+`k68` does not. So the honest attribution is **the nesting plus the seed**, and the sentence that
+stood here named the wrong mechanism while getting the number right -- the same error pattern as
+items 229 and 232, at a tenth the scale. Fixing a defect and measuring what it cost is what
+separates the two, and it is cheap: one script, thirty seconds.
+
+CYP2D6 moves the other way on the repaired script -- raw 0.1151 against Platt 0.0994, **-0.0157** --
+which is why item 233's rule was written on macro and on sign across eight cells rather than on
+either endpoint.
+
+**The oracle row is the standing reproach.** A threshold chosen with knowledge of the fold's own
+labels reaches 0.3635 and 0.1589 -- **+0.0472 macro, sign 8 of 8**, more than three times what
+calibration recovers. Half the available threshold gap is still on the table and nothing measured
+so far reaches it.
+
+**236. The alert line closes for a reason it has never been closed for, and item 23 has been
+misquoting its own script for the whole project.** Twenty minutes, `verify/h2_tdi_alerts.py` rerun
+plus one out-of-fold reconstruction. Prompted by an outside reading that proposed the alerts be
+reopened.
+
+**First, the misquote, because it is in the scoreboard's oldest entry.** Item 23 says "the largest
+absolute MCC on CYP3A4 is about 0.013, which is noise." Running the script it cites:
+
+    алерт                  встреч.  P(TDI|есть)  P(TDI|нет)   лифт      MCC
+    циклопропиламин             36        0.500       0.210   2.38   +0.071
+    бензил. C-H у гетероцикла  728        0.176       0.223   0.79   -0.046
+    терминальный алкен          26        0.385       0.212   1.81   +0.036
+    ...
+    ЛЮБОЙ из алертов          1285        0.206       0.217   0.95   -0.013
+
+**0.013 is the any-alert row, not the maximum.** The largest is cyclopropylamine at **+0.071** with
+a lift of 2.38 on 36 compounds -- five times what the prose reports, and a specific named motif
+rather than noise. The conclusion of item 23 is not overturned by this (n = 36, and see below), but
+the sentence has been quoted forward for months as though the maximum were 0.013.
+
+**Second, the strongest alert nobody had tried, and why it closes anyway.** A tertiary aliphatic
+amine indicator gives MCC **+0.1146** on CYP3A4's open-gate subset -- larger than any classical
+alert -- and moves Delta by **+0.122 [+0.068, +0.177]**, an interval clear of zero. On CYP2D6 it
+moves Delta the *other* way, **-0.075 [-0.112, -0.035]**, which is item 81's salt bridge showing up
+again: a basic nitrogen makes a compound more potent on CYP2D6 directly, so the shift shrinks.
+
+It closes on the precondition rather than on a run:
+
+    восстановление индикатора из блоков, вне фолда     AUC      MCC      R^2
+    DESC                                            0.9975   0.9359   +0.900
+    DESC+MECH                                       1.0000   0.9991   +0.998
+
+**The feature is already in the matrix, to four nines.** MECH carries the basic-centre description
+item 81 built, and a tertiary-amine indicator is a function of it. Adding one column in 2295 that a
+model can already reconstruct at R^2 0.998 cannot do anything, and item 138 (DESC takes 58-66 per
+cent of splits) says the tree is already using that region. **Cost: five minutes, no fit on the
+target.** Two other SMARTS definitions of "tertiary aliphatic amine" give different carrier counts
+and the same conclusion, because what is reconstructible is the basic-nitrogen count, not the exact
+pattern.
+
+**Third, and this is the methodological finding: the open-gate subset is an ORACLE and must stop
+being quoted as a result.** Every alert number above that improves on the all-rows figure does so
+by conditioning on `pi_TDI > 4.301` -- the gate, computed from the *measured* pre-incubation arm.
+At prediction time that quantity does not exist. `+0.1146` on the open-gate subset against `+0.0458`
+on all rows is not a stronger version of the same measurement; it is a different measurement that
+cannot be deployed. The same applies to the outside reading's `0.11` and `0.078`, which are
+open-gate figures, and to `0.078` specifically for a second reason -- it is the **arithmetic
+maximum** available to a 10-carrier feature at that base rate, so any perfect 10-hit feature prints
+it and the number carries no information about the motif.
+
+**Closed: no alert feature is built.** Item 23's conclusion stands, its arithmetic did not, and the
+reason it stands is not the one it gave.
+
+**237. The precondition for the analogue-Delta feature, run before writing any model code.** Two
+minutes, no fit. Item 105 / 109 / 114's move, applied to the largest live proposal.
+
+The proposal is a similarity-weighted mean of neighbours' Delta as a feature. Before building it,
+the cheapest question: does a single nearest **cross-fold** neighbour's Delta correlate with a
+compound's own? Restricted to rows where Delta is well measured (sigma(Delta) <= 0.316):
+
+    CYP3A4 (2334 строк с Delta, 1637 хорошо измеренных)
+    порог T   срабатывает   доля всех размеченных   Спирмен       Пирсон
+    0.50              474                   0.203    +0.282        +0.339
+    0.55              323                   0.138    +0.364        +0.452
+    0.60              175                   0.075    +0.458        +0.606
+
+    CYP2D6 (1493 / 1332)
+    0.50              137                   0.092    +0.263        +0.378
+    0.55               52                   0.035    +0.365        +0.503
+    0.60               13                   0.009    +0.725        +0.825
+
+**The signal is real** -- p = 4e-10 at T >= 0.50 on CYP3A4 -- and it trades off exactly as a
+neighbour argument predicts: strength rises with the threshold, coverage collapses. Neither cut
+clears the gate that was set before the run (Spearman >= 0.30 AND coverage >= 0.15); 0.50 misses on
+strength, 0.55 on coverage, and they miss in opposite directions.
+
+**This does not kill the proposal and must not be recorded as though it did.** What was measured is
+a *single* neighbour at a *hard* cut, which is strictly weaker than the similarity-weighted average
+over eight neighbours that was proposed: a weighted mean has no coverage cliff and averages down the
+neighbour's own measurement noise. The honest reading is that the precondition **bounds the
+expectation** rather than settling it, and the gate as written was the wrong instrument for this
+particular estimator -- a defect in my precondition, not in the idea.
+
+**What it does settle is CYP2D6.** At 3.5 to 9 per cent coverage there is nothing to build there,
+which agrees with the coverage ratio measured independently (4.0 per cent of training rows have a
+cross-fold neighbour at T >= 0.55, against 34.7 per cent of test rows). Any version of this feature
+is CYP3A4-only in cross-validation, whatever it does on the test set.
+
+**238. Half the gate is recovered, and on CYP3A4 our classifier turns out to be a potency threshold
+and almost nothing else.** `verify/k69_gate.py`, four seeds, both endpoints, `results/preds/gate.json`.
+The fork item 234 opened and nobody had measured: the gate is a threshold on `pi_TDI`, a quantity we
+predict directly, and its oracle MCC (+0.5667 on CYP3A4) is larger than the whole deployed
+classifier's 0.315.
+
+Item 229 decomposed the label into level and shift because the piecewise form suggested those
+coordinates. In conjunction coordinates the parts are **gate and shift**, and these are the oracles
+that correspond to something the rule does.
+
+    MCC против метки, среднее по 4 сидам        CYP3A4   размах     CYP2D6   размах
+    правило целиком (оракул)                    1.0000   0.0000     1.0000   0.0000
+    ворота ИСТИННЫЕ, одни                       0.5667   0.0000     0.1302   0.0000
+    сдвиг ИСТИННЫЙ, один                        0.6875   0.0000     0.9010   0.0000
+    ворота предск. + сдвиг ИСТИННЫЙ             0.7563   0.0107     0.7722   0.0977
+    ворота ИСТИННЫЕ + сдвиг предск.             0.5285   0.0259     0.1334   0.0275
+    ворота предсказаны, порог 4.301             0.3043   0.0203     0.0015   0.0233
+    ворота предсказаны, порог подогнан          0.3037   0.0222    -0.0330   0.0750
+    сдвиг предсказан, один                      0.2058   0.0272     0.0910   0.0152
+    оба предсказаны                             0.3317   0.0275     0.0928   0.0209
+
+Every range is inside the MCC floors item 235 measured (0.0281 and 0.0419), so nothing here rests
+on one seed. The harness passes: the rule on true arms is exactly 1.0000.
+
+**The fork's answer: the gate is not solved.** We recover **53.7 per cent** of it on CYP3A4 --
+0.3043 against 0.5667 -- and **1.2 per cent** on CYP2D6. So the memo's second branch holds: about
+0.26 of MCC sits in a purely potency-shaped sub-problem on the enzyme with the most labels.
+
+**And the finding nobody was looking for.** On CYP3A4 the predicted gate ALONE scores **0.3043**,
+against the deployed classifier's **0.315** (item 228). Adding the predicted shift moves it to
+0.3317 -- **the shift contributes +0.027 of the total.** To within the floor, **our CYP3A4 TDI
+classifier is a potency threshold.** It is not doing anything about time-dependence; it is finding
+compounds too weak to clear 4.301 and calling them negative, which item 234 showed is 39.8 per cent
+of the set and automatically correct.
+
+CYP2D6 is the exact mirror: gate 0.0015, shift 0.0910, both 0.0928 against the classifier's 0.118.
+There the gate is open on 94.2 per cent, there is no potency sub-problem to win, and the whole score
+is the weak shift model.
+
+**The decomposition, in the coordinates that correspond to the rule:**
+
+    цена ошибки от идеального 1.0000     CYP3A4   CYP2D6
+    только в воротах                      0.244    0.228
+    только в сдвиге                       0.471    0.867
+
+The shift costs twice the gate on CYP3A4 and nearly four times on CYP2D6. Item 229's headline --
+the bottleneck is the shift -- survives in the new coordinates, but it is no longer the whole story
+on CYP3A4, where a quarter of the loss sits in the tractable half.
+
+**A defect found by looking, and it is not the one expected.** Thresholding a SHRUNK prediction at
+the true threshold is the wrong rule -- a regressor pulled toward the mean crosses 4.301 in the
+wrong place. Measured: on CYP2D6 the out-of-fold optimal cut on the predicted arm is **4.69 to
+4.98**, not 4.301, and at 4.301 the predicted gate opens on 95.8 per cent against a true 94.2, which
+discriminates nothing. Fitting the cut recovers the GATE far better -- MCC against the true gate
+rises from 0.078 to 0.182 -- **and makes the LABEL worse, 0.0015 to -0.0330.**
+
+That is worth stating plainly because it is counter-intuitive and it generalises: **in a conjunction
+the gate's only job is to subtract, so a better-centred gate that is still noisy strikes out more
+true positives than true negatives when almost nothing should be struck out.** Improving a component
+degraded the composite. On CYP3A4, where the gate really does need to fire, the fitted cut lands at
+4.21-4.44 and changes nothing (0.3043 against 0.3037).
+
+**What this licenses, and it is one thing.** The gate here was predicted by a **bare HistGB**. The
+regression track that predicts potency for the submission is a five-member ensemble with the dead
+zone, pooling, per-enzyme selection and the affine pair, and **it has never been pointed at the
+pre-incubation arm.** The gate's recovery is bounded by the ordering of the predicted arm, measured
+here at AUC 0.8709 against the true gate on CYP3A4. That is the cheapest named route to the 0.26
+still on the table, it reuses machinery that already exists, and it needs no new chemistry, no new
+descriptor and no QM.
+
+**What it does not license.** Nothing on CYP2D6: 1.2 per cent recovery, and the one intervention
+tried there made the composite worse.
+
+**239. The electrostatic channel is below an average block of its own width, and the salt bridge is
+worth more than the whole rest of the matrix on CYP2D6 -- as geometry, not as charge.**
+`verify/k70_chgperm.py`, four seeds, four enzymes, `results/preds/chgperm.json`. Prompted by an
+outside proposal to compute DFT-quality ESP charges as descriptors.
+
+The premise the proposal has to clear is that it is not "add electrostatics" but "refine
+electrostatics", because a coarse version is already in the matrix: **20** charge-derived columns in
+DESC (`MaxPartialCharge`, `MinPartialCharge`, `MaxAbsPartialCharge`, `MinAbsPartialCharge`,
+`BCUT2D_CHGHI/CHGLO`, `PEOE_VSA1..14` -- molecular surface area binned by Gasteiger charge, a coarse
+ESP field folded into a histogram), **21** EState columns, **10** salt-bridge features in MECH, and
+**3** heme counters.
+
+**The control that decides it, and that an outside run of the same idea did not have.** A 20-column
+block cannot be compared against a 216-column block: bigger blocks cost more because they are
+bigger. Every named block is therefore measured against a SIZE-MATCHED random block of the same
+width drawn from the same source, ten draws.
+
+    цена ранга при перестановке        1A2      2C9      2D6      3A4
+    весь DESC (217)                 0.3876   0.4674   0.1156   0.6149
+    весь MECH (30)                  0.0028   0.0643   0.2120   0.0552
+    весь FP (2048)                  0.0888   0.0427   0.0575   0.0698
+    заряд (20)                      0.0122   0.0127   0.0039   0.0228
+      нуль: 20 случайных из DESC    0.0180   0.0203   0.0052   0.0391
+    мостик MECH (10)                0.0014   0.0250   0.2155   0.0079
+      нуль: 10 случайных из MECH    0.0008   0.0192   0.0610   0.0163
+    гем MECH (3)                    0.0007  -0.0001  -0.0006   0.0001
+
+    сверх своего размерного нуля       1A2      2C9      2D6      3A4
+    заряд (20)                     -0.0058  -0.0076  -0.0013  -0.0163
+    EState (21)                    +0.0086  -0.0204  +0.0174  -0.0224
+    мостик MECH (10)               +0.0006  +0.0059  +0.1545  -0.0084
+    гем MECH (3)                   +0.0004  -0.0073  -0.0233  -0.0035
+
+**The charge block is negative above its null on all four enzymes.** The model leans on it *less*
+than on twenty typical DESC columns. Without the size-matched control the raw 0.0228 on CYP3A4 looks
+like a channel; against 0.0391 for any twenty columns it is not one.
+
+**The salt-bridge block is the one large cell in the table: +0.1545 above its null on CYP2D6, and
+0.2155 raw -- larger than all 217 DESC columns there (0.1156).** So the mechanistic block is not
+merely useful on CYP2D6, it is most of what works. But it is not working as *charge*: item 230
+injected a full unit of noise into the pKa estimate, flipping `is_base_74` on 4.2 to 4.9 per cent of
+the set -- moving the charge on exactly that nitrogen by a whole electron -- and macro rank moved
+-0.0020 against a floor of 0.0036. **What the block delivers is the topology of the basic centre,
+not the charge on it**, which is item 227's conclusion arrived at from the opposite direction.
+
+**Heme coordination is zero everywhere**, CYP3A4 included (0.0001 against a null of 0.0036). The
+three nitrogen counters carry nothing. That does not refute the idea that heme ligation matters --
+it says the present surrogate is empty, so the ground is genuinely unoccupied.
+
+**A methodological finding that cost a docstring and is worth more than the result.** This file was
+built on permutation, and its docstring claimed permutation *bounds* what a refinement can deliver.
+It does not. Permutation and retraining answer different questions and here they differ by a factor
+of seventeen:
+
+    CYP3A4, база rho 0.7595     совместная перест.   поколоночная   ПЕРЕОБУЧЕНИЕ без блока
+    заряд (20)                            +0.0237        +0.0207                  +0.0042
+    весь DESC (217)                       +0.6132        +0.6081                  +0.0360
+    CYP2D6, база rho 0.4027
+    заряд (20)                            -0.0107        +0.0021                  -0.0209
+    весь DESC (217)                       +0.1280        +0.0896                  -0.0266
+
+Joint and per-column shuffling agree to within 0.005; **retraining is the whole gap.** The
+difference is redundancy -- FP reconstructs most of DESC when the model is allowed to refit -- and
+for the question actually asked, *would a better version of this column help*, **retraining is the
+right convention**, because adding a column IS a refit. It closes the proposal harder than
+permutation did: dropping all 217 DESC columns costs 0.0360 of rank on CYP3A4 and **improves**
+CYP2D6 by 0.0266; dropping the 20 charge columns costs 0.0042 on CYP3A4 against a floor of 0.0033,
+and -0.0209 on CYP2D6.
+
+**Closed: no QM charge descriptors.** The relative statement -- named block against a random block
+of its own width -- is convention-free by construction, since both arms are measured the same way,
+and it is negative on every enzyme.
+
+**240. The 1238 external rows buy nothing, and two of my own readings from partial seeds were
+wrong.** `verify/k71_gatedata.py`, four seeds, `results/preds/gatedata.json`. Item 238 said the
+CYP3A4 gate was recovered at 53.7 per cent and that the cheapest route to the rest was more data
+for the arm regressor. Item 231's discarded rows looked like exactly that.
+
+The premise held: 1238 molecules in the TDI table carry a measured `pi_TDI`, sit outside
+`data/rows.csv`, all parse under RDKit, and none appears in the test set by name or by SMILES --
+a **53 per cent** increase for the one regressor that carries CYP3A4's whole classification score.
+The poison item 231 found is in the label, not the arm.
+
+    CYP3A4, MCC, среднее по 4 сидам (пол 0.0281)      среднее   размах
+    оба, срезы подогнаны СОВМЕСТНО                     0.3458   0.0222
+    произведение вероятностей                          0.3402   0.0663
+    оба: ворота+внешние, совместно                     0.3351   0.0318
+    оба, срезы книжные                                 0.3317   0.0275
+    ворота: регр+внешние, срез 4.301                   0.3094   0.0207
+    ворота: регр, срез 4.301                           0.3043   0.0203
+    ворота: классификатор+внешние                      0.2932   0.0107
+    ворота: классификатор                              0.2987   0.0168
+
+**The external rows are a null in both directions**: $+0.0051$ on the regression route, $-0.0055$
+on the classifier route, both far inside the floor. Not harm, not help -- nothing. Their population
+really is shifted (median `pi_TDI` 5.40 against 4.63, gate open 84.7 per cent against 60.2), which
+is a plausible reason, but the data do not show it. **They show nothing at all, and that is what
+gets recorded.**
+
+**Two corrections to my own reporting, both from reading partial seeds.** On two seeds I told the
+team the external rows "slightly hurt"; on four they are a null. On the same two seeds I reported
+the probability product at 0.3629 and called it the winner; on four it is **0.3402 with a range of
+0.0663** -- the widest of any arm here -- and seed 3 alone gives 0.3011. The two-seed figure was the
+top of a noisy arm. Against the arm actually submitted (Platt plus plug-in, 0.3379 in item 235) that
+is $+0.0023$ at a floor of 0.0281.
+
+**Nothing measured here beats the deployed classifier by more than its floor.** What survives is
+weaker and structural: every arm using BOTH conjuncts (0.3317 to 0.3458) beats every arm using one
+(gate 0.3043, shift 0.2058) -- but the deployed classifier already sits inside that band at 0.3379,
+so the conjunction reproduces what direct training finds and does not exceed it.
+
+**241. On CYP2D6, a classifier trained on the WRONG label orders the right one better -- and the
+gain is real in AUC and invisible in MCC.** `verify/k74_product.py`, four seeds, three threshold
+estimators per score, two permutation controls, `results/preds/product.json`.
+
+Everything done to this track so far has been bounded by one ordering: the one a classifier trained
+on `is_TDI` produces. Calibration is monotone (item 235); every threshold estimator is downstream of
+it (k72); the threshold oracle's $+0.0472$ is the ceiling of that same ordering. Multiplying the two
+conjuncts' probabilities is a *different* ordering, so AUC is the first-class quantity here.
+
+    CYP3A4                        AUC   AUC sd   лучший MCC        CYP2D6      AUC   AUC sd   MCC
+    метка напрямую             0.7503   0.0055       0.3484    ПРОИЗВЕДЕНИЕ 0.6069   0.0077 0.1252
+    метка + Платт              0.7493   0.0054       0.3425    минимум      0.6068   0.0076 0.1282
+    ПРОИЗВЕДЕНИЕ               0.7487   0.0054       0.3418    сдвиг один   0.6067   0.0075 0.1282
+    минимум                    0.7394   0.0047       0.3340    ворота перем.0.6061   0.0079 0.1209
+    ворота одни                0.7014   0.0029       0.2992    метка напрям.0.5873   0.0042 0.1143
+    произв., сдвиг перемешан   0.6524   0.0165       0.2271    метка+Платт  0.5816   0.0023 0.1099
+    сдвиг один                 0.6522   0.0081       0.2083    сдвиг перем. 0.5058   0.0076 -0.007
+    произв., ворота перемешаны 0.5830   0.0080       0.1259    ворота одни  0.4798   0.0075 -0.007
+
+**CYP3A4: a null.** The product neither orders better (0.7487 against 0.7503) nor scores better
+(0.3418 against 0.3484). Both permutation controls bite -- shuffling the gate factor costs 0.166 of
+AUC, shuffling the shift factor 0.096 -- so both conjuncts carry signal there and the direct
+classifier already extracts it.
+
+**CYP2D6: the product orders `is_TDI` better than a classifier trained on `is_TDI`, by 0.0196 of AUC
+against sd of 0.008 and 0.004** -- three to four standard deviations, and the first improvement to
+the ORDERING found anywhere on this track.
+
+**And the controls say the product has nothing to do with it.** Shuffling the gate factor changes
+AUC by 0.0008 (0.6069 to 0.6061); the shift factor alone gives 0.6067. **The whole effect is the
+shift classifier, and the gate contributes literally nothing** -- its own AUC is 0.4798, below
+chance. So the finding is simpler and stranger than the construction that found it: on CYP2D6,
+**train on `Delta > log10 2` and use it to rank `is_TDI`.**
+
+The mechanism is arithmetic. On CYP2D6 the gate is open on 94.2 per cent of rows, so `is_TDI` and
+`Delta > log10 2` disagree on 5.8 per cent -- and on those rows `is_TDI` is negative regardless of
+the shift. From the shift model's point of view that is **label noise**, and training on the clean
+auxiliary target removes it.
+
+**The honest limit, and it is the part that matters for the leaderboard.** Best MCC on CYP2D6 is
+0.1282 for the shift classifier against 0.1099 for the deployed arm: **$+0.0183$ at a floor of
+0.0419.** Real in AUC, not demonstrable in MCC, and MCC is what is scored. Recorded as an ordering
+result awaiting a reason to believe it converts.
+
+**242. The quantum block is null against the shift as well, and the residual arm closes the last
+version of the idea.** `verify/k73_quantshift.py`, four seeds, `results/preds/quantshift.json`.
+
+Item 186 measured this block against POTENCY and found it null. The scoreboard's claim that it had
+never been run was wrong (corrected the same day), but the observation underneath was right: the
+target had always been potency, and item 238 established that the whole remaining classification
+track is the SHIFT, whose physics is reactivity rather than binding electrostatics -- `fukui_minus`,
+HOMO, LUMO and the gap are exactly those quantities, already on disk for all 4905 training and 750
+test molecules.
+
+**The precondition gave a yellow light**, and it took two attempts to measure. The first returned
+$R^2$ from $-100$ to $-2500$, which is a broken fit rather than a result: RDKit's `Ipc` descriptor
+reaches $5.06 \times 10^{14}$ at sd $7.2 \times 10^{12}$, twelve orders above every other column,
+and ridge on a standardised-but-unclipped matrix explodes. Clipping at $\pm 5\sigma$ -- what
+`_dz_design` in the submission already does, which is why the deployed ridge member is unaffected --
+gives the real answer: **9 of 10 columns reconstruct from DESC+MECH out of fold at $R^2 > 0.5$**
+(median 0.68; `n_arom_N` 0.97, `q_basicN` 0.76, `fukui_minus` 0.55), and only `dipole` does not
+(0.14).
+
+Half derivable is not the 0.998 that closed item 236's tertiary amine, so the run went ahead with
+the arm that settles it: the block minus its own out-of-fold reconstruction.
+
+    прирост Спирмена по Delta к базе, 8 клеток      среднее   знак
+    +квант                                          -0.0018    3/8
+    +квант ОСТАТОК                                  +0.0035    5/8
+    +квант перемешан (контроль)                     +0.0041    4/8
+    +10 колонок гауссова шума (контроль ширины)     -0.0033    3/8
+
+**The shuffled block scores higher than either real arm.** A complete null with both controls
+passing, and the residual -- carrying 24 to 88 per cent of each column's variance -- adds nothing
+either. So the gain that is not there is not there because the block is redundant; it is not there
+at all.
+
+**Closed: the reactivity line needs no psi4, no ALFABET and no cluster, because the cheap version of
+it is already computed and is null against the target it was supposed to explain.**
+
+**243. The submission's own machinery does transfer to the pre-incubation arm -- and the third
+straight result whose ordering gain cannot be shown in the metric that is scored.**
+`verify/k75_armens.py`, four seeds, `results/preds/armens.json`. The one route item 238 left open.
+
+Item 238 measured the CYP3A4 gate at 53.7 per cent recovered and observed that it had been
+predicted by a **bare HistGB**, while the regression track -- four members plus the dead zone,
++0.058 of rank over that same baseline -- had never been pointed at `pi_TDI`. Checked before
+building rather than assumed: the pre-incubation arm **has** confidence bounds
+(`{CYP}_pIC50_TDI_condition_conf_low/_conf_high`), so the dead zone is defined on it. Pooling runs
+over two endpoints instead of four, so its indicator is two-position and these numbers are not
+row-comparable with the regression track's. The trunk does not transfer -- its refit lives under
+torch on four direct targets -- so this is the four-member version, and it is named that way.
+
+**Acceptance was fixed before the numbers: the ensemble had to raise AUC against the true gate**,
+because the gate's recovery is bounded by the arm's ordering and the cut is fitted out of fold
+anyway. It did, decisively.
+
+    CYP3A4, AUC против истинных ворот   среднее   знак      по сидам
+    поферментно (база, = пункт 238)     0.8714      —   (0.8709 в k69, воспроизвелось)
+    АНСАМБЛЬ4 + мёртвая зона            0.8928  +0.0214  4/4  +0.0239 +0.0196 +0.0192 +0.0229
+    АНСАМБЛЬ4                           0.8868  +0.0155  4/4
+    GP один                             0.8854  +0.0141  4/4
+    гребневая                           0.8689  -0.0024  0/4
+    пул                                 0.8658  -0.0056  0/4
+
+Four seeds inside a band 0.005 wide. **The machinery transfers, and the dead zone adds on top of
+the ensemble exactly as item 213 found on the regression track.**
+
+**And the MCC does not clear its floor.**
+
+    CYP3A4 (пол 0.0281)          против поферментного   знак
+    MCC ворот, ансамбль+МЗ                    +0.0161    4/4
+    MCC метки, ансамбль+МЗ                    +0.0110    4/4
+
+Perfect sign, half the floor. And the route as a whole does not beat what is submitted: 0.3431
+against the deployed classifier's 0.3379 (item 235). It beats only the bare-HistGB version of
+itself, 0.3321. **Nothing is deployed.**
+
+**The pattern is now the finding, and it is worth more than any of the three results that produced
+it.** Item 241 gave +0.0196 of AUC on CYP2D6 with MCC below floor; this gives +0.0214 with MCC below
+floor. The exchange rate is measurable from these numbers: **0.021 of AUC buys 0.016 of gate MCC and
+0.011 of label MCC** -- roughly one half -- so clearing a floor of 0.0281 demands about **+0.05 of
+AUC**, more than twice the largest ordering gain anything has produced here. The memo of 5 September
+listed "the R-squared to MCC transfer function" as genuinely open; this is the AUC version of it,
+and it says the classification track's floor, not its modelling, is the binding constraint.
+
+**A side observation on the pooling mystery, and it is the first with a clean sign.** Pooling is the
+largest unexplained effect the submission relies on, +0.0141 of rank, with both candidate mechanisms
+refuted (items 110, 111). Here, across two endpoints instead of four and on a different quantity, it
+**hurts**: -0.0056 at sign 0/4 on CYP3A4 and -0.0481 at 0/4 on CYP2D6. That is not an explanation,
+but it is the first negative pooling observation with a consistent sign, and it narrows the field:
+whatever pooling does, it does not survive being applied to two endpoints of the pre-incubation arm.
+
+**With this the classification track closes.** Over two days: the external rows (240), the threshold
+estimators (k72), the probability product (241), the quantum block against the shift (242), the
+alerts (236) and now the arm ensemble -- every one measured, every one below its floor against what
+is already submitted. The deployed configuration is a structural classifier plus Platt calibration,
+0.3379 and 0.1169, and nothing measured beats it by more than the floor.
