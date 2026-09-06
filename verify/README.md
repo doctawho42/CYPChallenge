@@ -8107,3 +8107,121 @@ and -0.0209 on CYP2D6.
 **Closed: no QM charge descriptors.** The relative statement -- named block against a random block
 of its own width -- is convention-free by construction, since both arms are measured the same way,
 and it is negative on every enzyme.
+
+**240. The 1238 external rows buy nothing, and two of my own readings from partial seeds were
+wrong.** `verify/k71_gatedata.py`, four seeds, `results/preds/gatedata.json`. Item 238 said the
+CYP3A4 gate was recovered at 53.7 per cent and that the cheapest route to the rest was more data
+for the arm regressor. Item 231's discarded rows looked like exactly that.
+
+The premise held: 1238 molecules in the TDI table carry a measured `pi_TDI`, sit outside
+`data/rows.csv`, all parse under RDKit, and none appears in the test set by name or by SMILES --
+a **53 per cent** increase for the one regressor that carries CYP3A4's whole classification score.
+The poison item 231 found is in the label, not the arm.
+
+    CYP3A4, MCC, среднее по 4 сидам (пол 0.0281)      среднее   размах
+    оба, срезы подогнаны СОВМЕСТНО                     0.3458   0.0222
+    произведение вероятностей                          0.3402   0.0663
+    оба: ворота+внешние, совместно                     0.3351   0.0318
+    оба, срезы книжные                                 0.3317   0.0275
+    ворота: регр+внешние, срез 4.301                   0.3094   0.0207
+    ворота: регр, срез 4.301                           0.3043   0.0203
+    ворота: классификатор+внешние                      0.2932   0.0107
+    ворота: классификатор                              0.2987   0.0168
+
+**The external rows are a null in both directions**: $+0.0051$ on the regression route, $-0.0055$
+on the classifier route, both far inside the floor. Not harm, not help -- nothing. Their population
+really is shifted (median `pi_TDI` 5.40 against 4.63, gate open 84.7 per cent against 60.2), which
+is a plausible reason, but the data do not show it. **They show nothing at all, and that is what
+gets recorded.**
+
+**Two corrections to my own reporting, both from reading partial seeds.** On two seeds I told the
+team the external rows "slightly hurt"; on four they are a null. On the same two seeds I reported
+the probability product at 0.3629 and called it the winner; on four it is **0.3402 with a range of
+0.0663** -- the widest of any arm here -- and seed 3 alone gives 0.3011. The two-seed figure was the
+top of a noisy arm. Against the arm actually submitted (Platt plus plug-in, 0.3379 in item 235) that
+is $+0.0023$ at a floor of 0.0281.
+
+**Nothing measured here beats the deployed classifier by more than its floor.** What survives is
+weaker and structural: every arm using BOTH conjuncts (0.3317 to 0.3458) beats every arm using one
+(gate 0.3043, shift 0.2058) -- but the deployed classifier already sits inside that band at 0.3379,
+so the conjunction reproduces what direct training finds and does not exceed it.
+
+**241. On CYP2D6, a classifier trained on the WRONG label orders the right one better -- and the
+gain is real in AUC and invisible in MCC.** `verify/k74_product.py`, four seeds, three threshold
+estimators per score, two permutation controls, `results/preds/product.json`.
+
+Everything done to this track so far has been bounded by one ordering: the one a classifier trained
+on `is_TDI` produces. Calibration is monotone (item 235); every threshold estimator is downstream of
+it (k72); the threshold oracle's $+0.0472$ is the ceiling of that same ordering. Multiplying the two
+conjuncts' probabilities is a *different* ordering, so AUC is the first-class quantity here.
+
+    CYP3A4                        AUC   AUC sd   лучший MCC        CYP2D6      AUC   AUC sd   MCC
+    метка напрямую             0.7503   0.0055       0.3484    ПРОИЗВЕДЕНИЕ 0.6069   0.0077 0.1252
+    метка + Платт              0.7493   0.0054       0.3425    минимум      0.6068   0.0076 0.1282
+    ПРОИЗВЕДЕНИЕ               0.7487   0.0054       0.3418    сдвиг один   0.6067   0.0075 0.1282
+    минимум                    0.7394   0.0047       0.3340    ворота перем.0.6061   0.0079 0.1209
+    ворота одни                0.7014   0.0029       0.2992    метка напрям.0.5873   0.0042 0.1143
+    произв., сдвиг перемешан   0.6524   0.0165       0.2271    метка+Платт  0.5816   0.0023 0.1099
+    сдвиг один                 0.6522   0.0081       0.2083    сдвиг перем. 0.5058   0.0076 -0.007
+    произв., ворота перемешаны 0.5830   0.0080       0.1259    ворота одни  0.4798   0.0075 -0.007
+
+**CYP3A4: a null.** The product neither orders better (0.7487 against 0.7503) nor scores better
+(0.3418 against 0.3484). Both permutation controls bite -- shuffling the gate factor costs 0.166 of
+AUC, shuffling the shift factor 0.096 -- so both conjuncts carry signal there and the direct
+classifier already extracts it.
+
+**CYP2D6: the product orders `is_TDI` better than a classifier trained on `is_TDI`, by 0.0196 of AUC
+against sd of 0.008 and 0.004** -- three to four standard deviations, and the first improvement to
+the ORDERING found anywhere on this track.
+
+**And the controls say the product has nothing to do with it.** Shuffling the gate factor changes
+AUC by 0.0008 (0.6069 to 0.6061); the shift factor alone gives 0.6067. **The whole effect is the
+shift classifier, and the gate contributes literally nothing** -- its own AUC is 0.4798, below
+chance. So the finding is simpler and stranger than the construction that found it: on CYP2D6,
+**train on `Delta > log10 2` and use it to rank `is_TDI`.**
+
+The mechanism is arithmetic. On CYP2D6 the gate is open on 94.2 per cent of rows, so `is_TDI` and
+`Delta > log10 2` disagree on 5.8 per cent -- and on those rows `is_TDI` is negative regardless of
+the shift. From the shift model's point of view that is **label noise**, and training on the clean
+auxiliary target removes it.
+
+**The honest limit, and it is the part that matters for the leaderboard.** Best MCC on CYP2D6 is
+0.1282 for the shift classifier against 0.1099 for the deployed arm: **$+0.0183$ at a floor of
+0.0419.** Real in AUC, not demonstrable in MCC, and MCC is what is scored. Recorded as an ordering
+result awaiting a reason to believe it converts.
+
+**242. The quantum block is null against the shift as well, and the residual arm closes the last
+version of the idea.** `verify/k73_quantshift.py`, four seeds, `results/preds/quantshift.json`.
+
+Item 186 measured this block against POTENCY and found it null. The scoreboard's claim that it had
+never been run was wrong (corrected the same day), but the observation underneath was right: the
+target had always been potency, and item 238 established that the whole remaining classification
+track is the SHIFT, whose physics is reactivity rather than binding electrostatics -- `fukui_minus`,
+HOMO, LUMO and the gap are exactly those quantities, already on disk for all 4905 training and 750
+test molecules.
+
+**The precondition gave a yellow light**, and it took two attempts to measure. The first returned
+$R^2$ from $-100$ to $-2500$, which is a broken fit rather than a result: RDKit's `Ipc` descriptor
+reaches $5.06 \times 10^{14}$ at sd $7.2 \times 10^{12}$, twelve orders above every other column,
+and ridge on a standardised-but-unclipped matrix explodes. Clipping at $\pm 5\sigma$ -- what
+`_dz_design` in the submission already does, which is why the deployed ridge member is unaffected --
+gives the real answer: **9 of 10 columns reconstruct from DESC+MECH out of fold at $R^2 > 0.5$**
+(median 0.68; `n_arom_N` 0.97, `q_basicN` 0.76, `fukui_minus` 0.55), and only `dipole` does not
+(0.14).
+
+Half derivable is not the 0.998 that closed item 236's tertiary amine, so the run went ahead with
+the arm that settles it: the block minus its own out-of-fold reconstruction.
+
+    прирост Спирмена по Delta к базе, 8 клеток      среднее   знак
+    +квант                                          -0.0018    3/8
+    +квант ОСТАТОК                                  +0.0035    5/8
+    +квант перемешан (контроль)                     +0.0041    4/8
+    +10 колонок гауссова шума (контроль ширины)     -0.0033    3/8
+
+**The shuffled block scores higher than either real arm.** A complete null with both controls
+passing, and the residual -- carrying 24 to 88 per cent of each column's variance -- adds nothing
+either. So the gain that is not there is not there because the block is redundant; it is not there
+at all.
+
+**Closed: the reactivity line needs no psi4, no ALFABET and no cluster, because the cheap version of
+it is already computed and is null against the target it was supposed to explain.**
