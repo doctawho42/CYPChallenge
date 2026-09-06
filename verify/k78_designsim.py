@@ -43,6 +43,39 @@ CY = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 SEL = ["CYP1A2", "CYP2C9", "CYP3A4"]     # три фермента, по которым отбирали якоря
 
 
+def simulate_exact(Y, S, n_anchor, per_series, rng, jitter, random_anchors=False, pool=None):
+    """Непересекающиеся серии: якорь плюс ближайшие ЕЩЁ НЕ ЗАНЯТЫЕ соседи.
+
+    Организаторы описывают тест как 75 серий по 10, и это ровно 750 при условии, что серии
+    не пересекаются. Перекрывающиеся окрестности давали 676 --- отсюда и весь недобор размера.
+    S --- предвычисленная матрица сходства, pool --- допустимые индексы (для чувствительности
+    к размеру пула)."""
+    ok = np.ones(len(S), bool) if pool is None else np.zeros(len(S), bool)
+    if pool is not None:
+        ok[pool] = True
+    chosen = []
+    for c in SEL:
+        y = Y[c]
+        obs = np.where(np.isfinite(y) & ok)[0]
+        if random_anchors:
+            chosen += list(rng.choice(obs, n_anchor, replace=False))
+        else:
+            top = obs[np.argsort(-y[obs])[:int(n_anchor * jitter)]]
+            chosen += list(rng.choice(top, n_anchor, replace=False))
+    chosen = list(dict.fromkeys(chosen))
+    taken = set(chosen)
+    for a in chosen:
+        order = np.argsort(-S[a])
+        added = 0
+        for j in order:
+            if added >= per_series - 1:
+                break
+            if j == a or j in taken or not ok[j]:
+                continue
+            taken.add(int(j)); added += 1
+    return np.array(sorted(taken)), np.array(chosen)
+
+
 def simulate(Y, fps, sel_idx, n_anchor, n_nb, rng, jitter, random_anchors=False):
     """Один розыгрыш процедуры. Возвращает индексы псевдотеста."""
     chosen = []

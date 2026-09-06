@@ -8611,3 +8611,78 @@ push the estimate up, so the true contribution is likely at or below these figur
 
 **What this does not license.** It is not a decision about `--shrink`. Four routes now disagree by
 more than any of them claims to resolve, and the 25 September reveal happens once.
+
+**249. The design route narrowed to 750, and both of its known biases now point the same way: up.**
+`verify/k78_designsim.py` with non-overlapping series, `results/preds/designsim750.json`.
+
+Item 248's pseudo-test held 676 unique against the real 750 because neighbourhoods overlapped. The
+organisers describe the test as 75 series of ten, which is 750 exactly only if the series are
+**disjoint**, so each anchor now claims its nine nearest **unclaimed** neighbours. That reaches
+726-747 unique and removes the anchor over-weighting item 248 flagged.
+
+    чистый вклад отбора (отбор минус случайные якоря), ровно 750
+    пул          1A2      2C9      2D6      3A4
+    4905       +0.209   +0.217   +0.226   +0.341
+    75 %       +0.199   +0.167   +0.121   +0.329
+    50 %       +0.143   +0.131   +0.045   +0.280
+
+**Shrinking the neighbour pool reduces the contribution monotonically on all four enzymes**, so a
+larger pool gives more enrichment. The organisers' library is larger than our 4905, therefore this
+route **understates**. Both known biases now point upward and the full-pool figures are lower bounds.
+An outside reading had this the other way round; the sensitivity settles it.
+
+**And the base depletion is now almost fully reproduced by the procedure.**
+
+    доля is_base_74   обучающий 0.175 -> случайные якоря 0.129 -> отбор 0.114 -> ТЕСТ 0.104
+
+Against item 248's 0.121 and an outside estimate of 0.148. Neighbourhood expansion accounts for
+0.175 to 0.129 and potency selection for 0.129 to 0.114. **The simulation reproduces the depletion
+the CYP2D6 argument rests on, and still returns a POSITIVE shift of +0.226 for that enzyme.**
+
+**What it does to the `--shrink` decision.** Feeding each posterior through `src/shrinkchoice.py`'s
+assumed-by-true matrices:
+
+    апостериор              макро-выигрыш   2D6 сдвиг   2D6 проигрыш нулю
+    нынешний                     +0.0473        -0.5               0.204
+    дизайн (исправленный)        +0.0243        +0.3               0.000
+    смесь 50/50                  +0.0227        -0.1               0.532
+
+Before the narrowing the spread was +0.047 against +0.010, a factor of five, and no recommendation
+was defensible. **All three now clear the paired leaderboard floor of 0.017**, so whether to turn the
+flag on is no longer the contested question; which per-enzyme shifts to use still is, and the whole
+disagreement sits in CYP2D6.
+
+The design posterior here is uniform on [contribution, contribution x 1.3], where 1.3 extrapolates
+the pool trend. **That multiplier is a judgement, not a measurement**, and the cells move with it.
+
+**250. The pre-registered bundle passes all three conditions, and my own written prediction that it
+would fail was wrong.** `verify/k76_bundle.py`, four seeds, `results/preds/bundle.json`. Item 244
+fixed the conditions before the seeds existed; item 245 amended the inputs mid-run and predicted
+failure. The conditions hold.
+
+    плечо                                    макро    знак   условия 244
+    СВЯЗКА: ворота(ансамбль) * сдвиг       +0.0127     6/8   да + да + да
+    контроль: ПЕРЕМЕШАННЫЙ сдвиг           -0.1453     0/8   ---
+    контроль: ворота одни                  -0.0440     0/8   ---
+    контроль: голое плечо * сдвиг          +0.0071     5/8   ---
+    контроль: сдвиг один                   -0.0658     3/8   ---
+
+**The controls behave**: shuffling the shift factor collapses the bundle to -0.1453 at 0 of 8, and
+each factor alone is worse than what is submitted. It is not repackaged gate.
+
+**Why item 245's prediction failed, stated precisely because the prediction was mine.** That entry
+argued the product component was dead, citing k74's product under the plug-in rule at -0.0031 and
+4 of 8. It treated k74's product and k76's bundle as the same object. They are not: k74's gate
+factor is a classifier's probability, k76's is the pre-incubation arm mapped through a
+one-dimensional calibrator, and k76 calibrates the product before thresholding. The bare-arm control
+proves the difference is the construction rather than the ensemble -- it reaches +0.0071 at 5 of 8
+where k74's product reached -0.0031 at 4 of 8, with no ensemble in either.
+
+**Per enzyme it clears nothing**, as with item 235: CYP3A4 +0.0083 against a floor of 0.0281,
+CYP2D6 +0.0170 against 0.0419. Macro +0.0127 against 0.0076 is the whole claim, which is what item
+244 wrote the rule on.
+
+**By the committed rule this is adopted.** The cost is not small -- the bundle needs the four-member
+ensemble on the pre-incubation arm plus a shift classifier at submission time, roughly one to two
+hours on top of the current run -- and that is an implementation question, not a question about
+whether the rule binds.
