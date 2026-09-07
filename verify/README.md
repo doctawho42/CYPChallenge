@@ -9286,3 +9286,105 @@ conditions stand unchanged and are still the test of item 258's mechanism claim.
 **And the prediction in item 259 is already in trouble.** It said the interaction would land inside
 +/-0.004 and condition 2 would fail. On seed 0 it is +0.0097. One seed of ten decides nothing at
 sd 0.0053, but it is written here before the other nine so that it cannot be quietly dropped.
+
+**261. L1 with the weights fails on every pre-registered condition -- and the run's real finding is
+that the loss switch, null per-enzyme, costs 0.0140 of rank on the POOLED member, almost all of it
+on CYP2D6.** `verify/k81_l1weight.py`, ten seeds, conditions from items 259 and 260.
+Nothing is deployed.
+
+**The anchor first.** k81's `L2 x единицы` cell reproduces k80's equal-weight arm to **0.000000** on
+all four shared seeds (0.579202, 0.576412, 0.571553, 0.579490). Unit `sample_weight` under squared
+error is bit-identical to the unweighted call, so the two scripts measure the same object, and
+item 146's pinned 0.5792 holds.
+
+**Macro over the three enzymes the pooled member actually ships on** (`SOLO` puts CYP3A4 on the
+Gaussian process alone), ten seeds:
+
+    величина                     среднее       sd  нижн.95%   знак       t       p   /пол
+    веса под L1  (L1w - L1)      +0.0003   0.0043   -0.0022   5/10   +0.23   0.826   0.06
+    веса под L2  (L2w - L2)      -0.0008   0.0053   -0.0039   5/10   -0.46   0.659   0.15
+    ВЗАИМОДЕЙСТВИЕ I             +0.0011   0.0070   -0.0030   5/10   +0.49   0.635   0.15
+    L1 против L2 при единицах    -0.0140   0.0058   -0.0173   0/10   -7.64  <0.001   2.69
+
+**All four conditions fail.** The interaction is 0.15 of its floor with sign 5/10 -- as close to
+nothing as this file measures. **The prediction written in item 259 was right**: it said the
+interaction would land inside +/-0.004 and condition 2 would fail. It is +0.0011.
+
+**THE FINDING, which is not what the run was for.** The bottom row is decisive: t = -7.64,
+sign 0/10, 2.7 times the paired floor. And it contradicts the per-enzyme record. Item 80 measured
+"L1 instead of L2" at **+0.0016, t = 0.97, p = 0.405**; items 146 and 148 give -0.0032 and +0.0032
+on different seeds. **Per-enzyme the loss switch is nothing; pooled it costs 0.0140.**
+
+**And it is one enzyme.** Switching the pooled member to absolute error, at equal weights:
+
+    фермент     dранг    знак
+    CYP1A2    +0.0087    9/10
+    CYP2C9    +0.0119   10/10
+    CYP2D6    -0.0625    0/10
+    CYP3A4    -0.0034    0/10
+
+Two enzymes IMPROVE, at sign 9/10 and 10/10. CYP2D6 loses 0.0625 -- seventeen times the one-arm
+floor, and an order of magnitude larger than anything else in this run.
+
+**The mechanism, and it is arithmetic about the gradient.** Under squared error a row's gradient is
+`w*(p-y)`, so an enzyme's pull on the shared trees scales with HOW MUCH ERROR THERE IS TO REMOVE.
+Under absolute error it is `w*sign(p-y)`: every row pulls equally, however badly it is fitted. In a
+per-enzyme fit there is nothing to allocate and the switch is null -- which is exactly what items
+80, 146 and 148 measured. In a POOLED fit the shared trees must divide their splits among four
+enzymes, and absolute error deletes the signal that says where the error is. The enzyme that loses
+is the one item 111 records as gaining most from pooling (+0.0374) while being the LEAST correlated
+with the others (-0.002): a minority signal, orthogonal to the rest, that survives in the pool only
+because its large residuals command splits. Remove magnitude and it is crowded out. The two enzymes
+that gain are the two with the smallest mean absolute residual, which under squared error had the
+least pull.
+
+**A consequence for the submission, and it is not academic.** `dz_pass` refits the pooled member
+PER ENZYME (`_dz_oof(kind, X[m], ...)` on one enzyme's rows, so `pooled_design`'s indicator is a
+constant block) and it refits under `DZ_KW`, which is `absolute_error`. That collapse is
+undocumented and reads as a defect against `_arm_ensemble` in the same file, which pools its
+dead-zone refit and says so in its docstring. **Do not "fix" it.** Pooling that refit would create
+exactly the configuration measured here -- a pooled fit under absolute error -- at -0.0140 of rank
+and -0.0625 on CYP2D6. The collapse is accidentally protecting the submission.
+
+**The weights bite about HALF as hard under L1, which is the opposite of the premise.** The run
+existed because absolute error makes `sample_weight` faithful to a piecewise-linear metric. On the
+two enzymes that move, the weights' effect attenuates:
+
+    фермент      под L2     под L1   отношение
+    CYP2C9      +0.0061    +0.0033        0.54
+    CYP2D6      -0.0084    -0.0036        0.43
+
+**The estimator explains it.** `loss="absolute_error"` is Friedman LAD: each leaf value is replaced
+by the WEIGHTED MEDIAN of its residuals. A median is an order statistic of the weighted
+distribution, so a per-enzyme constant weight moves it only when it changes which observation sits
+at the half-weight point -- where a weighted MEAN moves continuously with every weight. Faithfulness
+is a property of the LOSS; the leaf value under L1 is a quantile, and quantiles are built to ignore
+magnitude and are correspondingly deaf to weights. This predicts the attenuation should shrink for
+fine-grained per-row weights, which is untested.
+
+**And rank and the metric move OPPOSITE ways**, which is the file's own rule in miniature. The loss
+switch costs 0.0113 of macro rank (0/10) and IMPROVES macro ST-RAE after the affine pair by 0.0021
+(better in 8 of 10). A raw metric gain here is worth nothing: only rank survives the pair.
+
+**THREE CORRECTIONS TO ITEM 258, from ten seeds against its four.**
+
+**Its headline number was mostly noise.** The weights under squared error are **-0.0008, t = -0.46,
+p = 0.66, sign 5/10** on ten seeds -- indistinguishable from zero. Item 258 reported -0.0027. On
+the three shipping enzymes and the four shared seeds both scripts agree exactly at -0.0014, so the
+difference is the CYP3A4 column, which does not ship, plus six more seeds. **Item 258's conclusion
+stands -- the weighting does not pay -- but its magnitude did not.**
+
+**Its per-enzyme pattern is weaker than reported.** CYP2C9 was +0.0073 at 4/4 and is +0.0061 at
+8/10; CYP2D6 was -0.0127 at 0/4 and is -0.0084 at 6/10. The direction survives, the sign counts do
+not.
+
+**Its collateral claim SURVIVES the test written to refute it.** Item 259 pre-registered that item
+258's mechanism falls if CYP2D6 recovers past -0.004 under L1 WHILE CYP2C9 keeps a gain above
++0.005. CYP2D6 came in at **-0.0036 (passes)** and CYP2C9 at **+0.0033 (fails)**. Both attenuated
+together, by 0.43 and 0.54 -- proportional damping, not selective recovery, which is precisely what
+the conjunction was built to distinguish. The collateral is not loss-specific.
+
+**The limitation, stated because the headline rests on it.** This script has no per-enzyme L1 arm.
+"Null per-enzyme, -0.0140 pooled" is a comparison ACROSS scripts and seed sets -- items 80, 146 and
+148 against this one. The within-script version costs one more cell per seed and is the obvious
+next measurement if anyone wants to lean on the mechanism rather than the fact.
