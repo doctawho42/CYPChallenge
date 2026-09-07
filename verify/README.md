@@ -9266,3 +9266,23 @@ verdict: CYP2D6's weight is 1.009, unchanged between arms, so its cell is the on
 where the LOSS is the only thing that moved. If CYP2D6 recovers to better than -0.004 under L1
 while CYP2C9 keeps a gain above +0.005, the damage is not the loss-agnostic collateral item 258
 claimed, and that item's mechanism paragraph falls whatever the verdict on the weights.
+
+**260. Amendment to item 259's acceptance rule, made with one seed of ten visible, and it is
+recorded that way.** The three conditions in item 259 are about the MECHANISM -- does the loss
+switch make the weights bite. They do not say the arm must be worth deploying, and on seed 0 the
+gap between the two questions is wide: `L1 x 1/den` scores 0.5072 of three-enzyme macro rank
+against 0.5187 for `L2 x единицы`, the cell that actually ships, because the loss switch alone
+costs -0.0191 and the weights give back +0.0076 of it. **A rule that adopts on the interaction
+alone would license replacing the submitted member with one measurably worse than it.**
+
+    4. среднее (L1,w - L2,1) выше нуля, а для развёртывания --- выше 0.0052.
+
+**What was visible when this was written**, stated because the amendment is post-hoc to it: seed 0
+only, and on seed 0 the interaction is +0.0097, i.e. ABOVE item 259's threshold. The amendment
+therefore makes adoption HARDER after seeing a seed that favoured it, which is the only direction
+in which a post-hoc change to one's own criterion cannot be self-serving. The three original
+conditions stand unchanged and are still the test of item 258's mechanism claim.
+
+**And the prediction in item 259 is already in trouble.** It said the interaction would land inside
++/-0.004 and condition 2 would fail. On seed 0 it is +0.0097. One seed of ten decides nothing at
+sd 0.0053, but it is written here before the other nine so that it cannot be quietly dropped.
