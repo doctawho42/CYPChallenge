@@ -9149,11 +9149,120 @@ its effective training volume. That is a property of the member, not a mechanism
 gain: item 111 shows the between-enzyme pattern of that gain is governed by label correlation and
 is not monotone in n. Pooling's +0.0141 remains unexplained.
 
-**One refinement is real and is deliberately NOT queued.** The metric's row penalty is piecewise
-LINEAR in the error, but `gbm_reg()` trains under squared error, where weight c is equivalent to
-scaling the row's error by sqrt(c). So `1/den` weights a SQUARED error and does not reproduce the
-metric's weighting of absolute errors at all; the faithful pairing is `loss="absolute_error"` plus
-`sample_weight=1/den`, which is unmeasured for the pooled member. The prior is poor: item 155's
-table measures `L1 по метке` per-enzyme at 0.5619 against the reference 0.5651, mildly negative on
-its own, and the weights are mildly negative on their own. The whole case would rest on their
-interaction, and the decomposition above says the collateral term does not care which loss is used.
+**One refinement is real.** The metric's row penalty is piecewise LINEAR in the error, but
+`gbm_reg()` trains under squared error, where weight c is equivalent to scaling the row's error by
+sqrt(c). So `1/den` weights a SQUARED error and does not reproduce the metric's weighting of
+absolute errors at all; the faithful pairing is `loss="absolute_error"` plus `sample_weight=1/den`,
+which is unmeasured for the pooled member. It is queued as item 259.
+
+**TWO CORRECTIONS to the paragraph that stood here, made 7 September before item 259 ran.** It said
+the prior was poor and cited "item 155's table". Both halves were wrong.
+
+**The citation.** The table with `L1 по метке 0.5619` against the reference `0.5651` is **item
+146**'s, not item 155's. It was cited twice, and item 155 has no such table.
+
+**The sign.** That row is seed 0 alone, and reading it as the prior inverts the evidence. Item 148
+measures the same arm on seeds 1-3 and gets **L2 0.5623 against L1 0.5655** -- L1 BETTER by 0.0032,
+the opposite sign. And item 80 already measured this project's own primary statistic for the
+switch: **"L1 instead of L2", +0.0016 macro rank, t = 0.97, p = 0.405, signs -+++.** Per-enzyme L1
+is INDISTINGUISHABLE FROM ZERO, not mildly negative. The sentence that stood here was the one used
+to argue against running item 259, and it was built on a seed-0 row read as if it were the record.
+
+**A THIRD CORRECTION, to the decomposition above.** Its two coefficients are reported with sign
+counts and no fit quality. Refitted over all 64 points the model gives **R^2 = 0.375 with a residual
+standard deviation of 0.0091** -- larger than every effect it is used to explain, which run from
+0.003 to 0.013. And it is additive in (log own weight, pooling gain), hence MACRO-PERMUTATION-
+INVARIANT: it predicts 1/den and its permutations differ by exactly 0.00000 at macro, against the
++0.0025 at sign 3/4 measured six paragraphs above. **The decomposition is a description of where
+the movement sits, not a model that predicts it**, and the sentence "the collateral term does not
+care which loss is used" was an overreach -- the coefficients were fitted on four squared-loss arms,
+so nothing in that fit identifies loss-invariance. A stronger argument for the same conclusion
+exists and is recorded in item 259.
+
+**259. Pre-registration: L1 together with the weights, on ten seeds -- and the floor this project
+has been quoting is the wrong one for every paired comparison it has been applied to.**
+Written and committed before `verify/k81_l1weight.py` runs. The design below is NOT the one first
+drafted; an adversarial pre-flight review of the draft found three defects, and two of them would
+have made the run unreadable. They are recorded here because each is reusable.
+
+**DEFECT 1, which would have made the contrast meaningless.** Under `loss="absolute_error"` in the
+pinned scikit-learn 1.3.2, `AbsoluteError.fit_intercept_only` branches on `sample_weight is None`:
+without weights it calls `np.median`, which INTERPOLATES the two central residuals; with weights it
+calls `_weighted_percentile`, which returns the LOWER one. **A unit `sample_weight` therefore does
+not reproduce the unweighted call under L1** -- the pre-flight measured max |delta| = 1.1174 and
+Spearman 0.9959 between the two fits, which is a rank-scale difference. k80's equal-weight arm
+called the UNWEIGHTED path. Had k81 done the same under L1, the measured effect of the weights
+would have contained a leaf-estimator switch. **Every cell in this run passes an explicit
+`sample_weight`, unit vector included.** Under squared error unit weights are bit-identical to the
+unweighted call, so item 146's pinned 0.5792 still reproduces and the anchor survives.
+
+**DEFECT 2, and it is not local to this run: the noise floor is the wrong one.** Item 165's macro
+rank floor of 0.0036 is the standard deviation of ONE ARM across seeds, and this file has been
+applying it to DIFFERENCES of arms. On k80's own four seeds:
+
+    sd одного плеча (равные веса)             0.00368     <- пункт 165 ровно
+    sd парной разности (1/den минус равные)   0.00533
+    отношение дисперсий                          2.10
+    корреляция плеч по сидам                   -0.031
+
+**The covariance is zero, so pairing buys nothing** and sd(difference) = sqrt(2) x sd(arm) = 0.0052,
+which reproduces the observed 0.0053 exactly. The correct thresholds are therefore
+
+    одно плечо                       0.0036
+    парная разность двух плеч        0.0052
+    ВЗАИМОДЕЙСТВИЕ (разность двух    0.0074
+      парных разностей)
+
+and the 0.0036 quoted against a paired delta understates its own noise by 44 per cent.
+
+**DEFECT 3: four seeds cannot answer the question.** At n = 4 and sd 0.0053 the drafted rule has
+power 0.19 against an effect of 0.0036 and 0.65 against 0.0074; its minimum detectable effect at
+80 per cent power is 0.0088. Ten seeds give 0.62, 0.98 and 0.88 respectively. The three permutation
+arms are dropped from the design -- in item 258 that condition was the ONE that passed a complete
+failure, so it does not discriminate -- and the compute buys seeds instead. Same wall clock.
+
+**The design.** `verify/k81_l1weight.py`, a 2x2 measured inside one script so the comparison is
+internal, seeds 0-9, folds from `butina_folds(smiles, seed=s)`:
+
+    loss in {squared_error (gbm_reg pins), absolute_error (DZ_KW pins)}
+      x  sample_weight in {явные единицы, 1/den_e нормированные на среднее 1}
+
+Denominators are computed per fold on TRAINING rows only. Primary statistic is the per-seed paired
+**interaction** `I_s = (L1,w - L1,1) - (L2,w - L2,1)`, whose standard deviation is computed from the
+n values of `I_s` and NOT propagated from the two deltas.
+
+**Adopted for the pooled member if and only if all three hold**, over ten seeds:
+
+    1. одностороннюю нижнюю 95 %-границу среднего I_s выше нуля;
+    2. среднее I_s выше 0.0074;
+    3. среднее (L1,w - L1,1) выше 0.0052.
+
+**Macro is reported over THREE enzymes, not four.** `SOLO = {"CYP3A4": ("GP",)}` means the pooled
+member does not enter the submitted CYP3A4 arm at all (item 218), so its CYP3A4 column is dead
+weight for a member-level decision. The four-enzyme macro is reported alongside, and item 258's
+numbers are restated on three enzymes so the two runs stay comparable.
+
+**Prior art the pre-flight surfaced, which the drafted item did not know.** The pooled member has
+genuinely never been trained under absolute error -- that cell is new -- but neither half is.
+Item 78 already ran a loss x reweighting square, per-enzyme, on `src/ablsrc.py`: the tilt is worth
+-0.0310 on top of L2 and +0.0007 on top of L1, a large POSITIVE interaction landing on zero, with
+the stated reading that "L1 has already taken everything the tilt was buying". Item 226 /
+`src/ablweight.py` already fits `loss="absolute_error"` TOGETHER WITH `sample_weight` against a
+fixed-marginal permutation null, per-enzyme, and every weighted arm lost. Items 157 and 163 already
+show CYP2D6 as the largest casualty of unequal weights in a pooled fit, monotone in dispersion --
+so k80's CYP2D6 finding was a reproduction, not a discovery, and item 258 should have said so.
+Item 69 is where the permutation null was designed.
+
+**The prediction, written down so it can be wrong.** Item 166's rule for this family -- a new
+objective survives only if it carries PER-COMPOUND structure the affine pair cannot manufacture --
+is failed by `1/den`, which is per-enzyme. Under both losses `sample_weight = c` multiplies the
+row's gradient by exactly c, so the capacity reallocation that produced item 258's collateral is
+the SAME intervention under either loss; only the function of the residual being scaled changes.
+That is the stronger argument item 258 reached for and missed. **I expect the interaction to land
+inside +/-0.004 and condition 2 to fail.** Item 78's zero is the closest measured analogue.
+
+**And the single observation that would refute item 258's collateral claim**, worth more than the
+verdict: CYP2D6's weight is 1.009, unchanged between arms, so its cell is the only one in the run
+where the LOSS is the only thing that moved. If CYP2D6 recovers to better than -0.004 under L1
+while CYP2C9 keeps a gain above +0.005, the damage is not the loss-agnostic collateral item 258
+claimed, and that item's mechanism paragraph falls whatever the verdict on the weights.
