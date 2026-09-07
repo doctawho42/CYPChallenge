@@ -9019,3 +9019,65 @@ the transformation (item 253), now the parameters. `DELTA_DEFAULT` is defined on
 `src/submit.py` and read from there. **All three failures were one duplicated definition apiece**,
 and the fix each time is the same: the band's inputs come from the submission's own code or they are
 guesses.
+
+**257. Pre-registration: the metric weights rows unequally and half the ensemble does not know it.**
+Written and committed before `verify/k80_denweight.py` runs.
+
+**The observation.** ST-RAE divides by the denominator of ITS OWN enzyme and macro averages the four
+fractions, so a row's contribution to the reported score is `1/(4 * den_e)`. Measured on the training
+folds:
+
+    фермент      n   знаменатель   вес строки в макро
+    CYP1A2    1412         694.0                0.909
+    CYP2C9    1285         403.2                1.566
+    CYP2D6    1493         625.4                1.009
+    CYP3A4    2335        1223.3                0.516
+
+**A CYP2C9 row is worth 3.03 times a CYP3A4 row in the number we are scored on.** Per-enzyme members
+are indifferent -- each optimises its own fraction and a monotone rescaling of the loss does not move
+the optimum. But the **pooled member** concatenates all four label sets and fits with no
+`sample_weight` (`src/submit.py:_oof_one`, line 542), and the **trunk** shares a representation
+across enzymes. Two members of five optimise a sum the metric does not pay by.
+
+**Why this is the same move as the dead zone rather than a new trick.** The dead zone derives the
+LOSS from the shape of the metric; this derives the SAMPLE WEIGHTS from its normalisation. One idea
+applied to two different parts of the same definition.
+
+**And it points at the project's largest unexplained effect.** Pooling is worth +0.0141 of rank,
+about a quarter of the regression trajectory, and both candidate mechanisms are refuted (items 110,
+111). If correct weighting moves it, we learn something about pooling; if it does not, that is also
+information about pooling.
+
+**The intervention.** `sample_weight = (1/den_e) / mean(1/den)` for the pooled member, with `den_e`
+computed on the TRAINING folds only. The weight is a per-enzyme constant, because the metric weights
+all rows of one enzyme equally.
+
+**The arms and the control that decides it.**
+
+    пул, равные веса          --- нынешнее поведение
+    пул, веса 1/den           --- вмешательство
+    пул, СЛУЧАЙНЫЕ веса       --- нуль: поферментные константы той же дисперсии
+
+Without the third arm a gain cannot be told from the effect of merely making the weights unequal.
+
+**Adopted for the pooled member if and only if all four hold**, on four seeds:
+
+    1. средний прирост макро-ранга над равными весами положителен;
+    2. знак держится не менее чем в 3 сидах из 4;
+    3. прирост превышает макро-пол ранга 0.0036;
+    4. прирост превышает прирост случайных весов.
+
+**And a second gate before anything is deployed.** Items 176, 182 and 191 measured three consecutive
+standalone gains that did not reach the ensemble, at error correlations of 0.90 to 0.97. A gain in
+the pooled member is a gain in one member of five, and the weighting cannot be applied to the
+per-enzyme members because they are invariant to it. **So even a clean pass here licenses only a
+second measurement, in the ensemble, and not a change to the submission.**
+
+**Stated in advance because it is the likely outcome:** the expected result is that the pooled member
+improves and the ensemble does not.
+
+**A refinement deliberately NOT included in this run.** The denominator belongs to the TEST set, not
+to ours, and the test's enzyme composition differs -- roughly 216/196/229/357 labelled rows against
+our 1412/1285/1493/2335. Weighting by expected test denominators rather than our own would be the
+correct version, and it is the only place in the project where the distribution shift would enter
+TRAINING rather than post-processing. It is left out so that this run measures one thing.
