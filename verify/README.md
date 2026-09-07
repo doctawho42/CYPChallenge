@@ -9081,3 +9081,79 @@ to ours, and the test's enzyme composition differs -- roughly 216/196/229/357 la
 our 1412/1285/1493/2335. Weighting by expected test denominators rather than our own would be the
 correct version, and it is the only place in the project where the distribution shift would enter
 TRAINING rather than post-processing. It is left out so that this run measures one thing.
+
+**258. The metric-derived weights fail, and the decomposition says why: reweighting works on the
+enzyme it aims at and damages every enzyme that depends on the shared fit.** `verify/k80_denweight.py`,
+four seeds, criteria from item 257 and not restated. Nothing is deployed.
+
+    плечо                     макро ранг   знак   макро пара   ЭО
+    равные веса (нынешнее)             —      —            —   6525
+    веса 1/den                   -0.0027    2/4      +0.0019   5587  (-14.4 %)
+    перестановки 1/den (3)       -0.0051    1/4            —   ~5785 (-11.3 %)
+
+**All four acceptance conditions but one fail.** The mean is negative, the sign is 2 of 4, and
+0.0027 is under the 0.0036 floor with a standard error of 0.0027 -- indistinguishable from zero,
+and certainly not a gain. The pair agrees: 0.0019 worse, worse in 3 seeds of 4. The one condition
+that passes is the fourth: 1/den beats the scrambled assignments of the same weights by +0.0025,
+sign 3 of 4. That alone licenses nothing.
+
+**The prediction written in item 257 was wrong.** It said the pooled member would improve and the
+ensemble would not. The pooled member did not improve, the second gate is not licensed, and no
+ensemble measurement was run.
+
+**Two controls that make the number readable.** A unit `sample_weight` reproduces the unweighted
+call BIT FOR BIT, so nothing here is the weighted code path rather than the weights. And the
+equal-weight arm returns macro rank 0.5792 on seed 0 -- the same value item 155's table records
+for `пул`, so this is the published member on the published folds.
+
+**Per enzyme, the intervention does exactly what it was designed to do.**
+
+    фермент     вес   dранг   знак     dпара   лучше
+    CYP1A2     0.91  +0.0012   3/4   +0.0012     1/4
+    CYP2C9     1.57  +0.0073   4/4   -0.0110     4/4
+    CYP2D6     1.01  -0.0127   0/4   +0.0079     0/4
+    CYP3A4     0.52  -0.0066   0/4   +0.0095     0/4
+
+The enzyme it upweights gains on BOTH criteria with sign 4/4, twice the floor. The enzyme it
+deprioritises loses on both with sign 0/4. **The mechanism is not in doubt. What sinks it is
+CYP2D6**, whose weight is 1.009 -- unchanged -- and which loses more than either intended mover.
+
+**Regressing each enzyme's movement on its own weight and on its dependence on pooling**, over
+four arms x four enzymes per seed:
+
+    коэффициент                    среднее   знак
+    log(собственный вес)           +0.0106    4/4
+    выигрыш пула (пункт 111)       -0.3474    0/4
+
+Doubling an enzyme's weight buys +0.0073 of its own rank. And an enzyme that gains X of rank from
+pooling gives back about 0.35X under ANY unequal weighting: item 111 puts CYP2D6's pooling gain at
++0.0374, predicting a collateral loss of 0.0130 against the 0.0127 observed.
+
+**The honest limit on the second coefficient.** `log(own weight)` is identified WITHIN enzyme
+across four weight assignments and the seed-to-seed sign count is real evidence. The pooling term
+is a four-point cross-enzyme association; the same four enzymes recur every seed, so its 0/4 is
+consistency, not four independent confirmations.
+
+**Where the derivation goes wrong, stated so the next person does not redo it.** `1/den_e` is the
+correct derivative of macro ST-RAE with respect to one row's absolute error. That is the cost of an
+error, and training weights are a question about the RETURN on capacity -- a different quantity.
+A shared model has a budget: buying +0.0073 on CYP2C9 costs -0.0066 on CYP3A4 and -0.0127 on a
+bystander, and macro is an unweighted mean of four, so the trade is priced at par while the
+collateral is not. Weight dispersion also costs 11 to 14 per cent of effective sample size, and
+1/den has the LARGEST such loss of the four unequal arms while being the least harmful -- so data
+economy is not the explanation, and the correct assignment does buy something real. It just does
+not buy enough.
+
+**What this does NOT say about pooling.** The pooled member is measurably sensitive to a cut in
+its effective training volume. That is a property of the member, not a mechanism for pooling's
+gain: item 111 shows the between-enzyme pattern of that gain is governed by label correlation and
+is not monotone in n. Pooling's +0.0141 remains unexplained.
+
+**One refinement is real and is deliberately NOT queued.** The metric's row penalty is piecewise
+LINEAR in the error, but `gbm_reg()` trains under squared error, where weight c is equivalent to
+scaling the row's error by sqrt(c). So `1/den` weights a SQUARED error and does not reproduce the
+metric's weighting of absolute errors at all; the faithful pairing is `loss="absolute_error"` plus
+`sample_weight=1/den`, which is unmeasured for the pooled member. The prior is poor: item 155's
+table measures `L1 по метке` per-enzyme at 0.5619 against the reference 0.5651, mildly negative on
+its own, and the weights are mildly negative on their own. The whole case would rest on their
+interaction, and the decomposition above says the collateral term does not care which loss is used.
