@@ -8967,3 +8967,55 @@ the bet paid; if it lands above, the bet is what to look at first.
 of the submitted composition existed nowhere, which is why each recomputation had to guess at an arm
 from names. They are now saved to `results/preds/oof_submitted.json`, so the next recomputation takes
 seconds instead of thirty minutes and an arm cannot be substituted silently.
+
+**256. CYP2D6's shift goes to zero: not a claim about the truth there, a refusal to bet on the one
+cell whose sign is contested.** `src/submit.py --delta`, now `0.1, 0.3, 0, 0.7`. Taken by the team
+after item 255 priced the bet, and it is the first decision this week that makes the submission
+*less* aggressive rather than more.
+
+**What item 255 changed.** Until it ran, the shrinkage switch was discussed only through
+`src/shrinkchoice.py`'s expected gain of +0.0473 over the posterior. The other half -- what the bet
+costs if the test turns out to look like our training set -- had never been measured, and it is
++0.0407 of macro ST-RAE. Close to even money on a quantity nobody can observe before the reveal.
+
+**CYP2D6 carried most of the exposure and is the worst cell to carry it.**
+
+    фермент   подаваемое   обычная пара   цена ставки, было   стало
+    CYP1A2        0.7566         0.7555             +0.0011  +0.0011
+    CYP2C9        0.6006         0.5612             +0.0394  +0.0394
+    CYP2D6        0.8402         0.8403             +0.0735  -0.0002
+    CYP3A4        0.4579         0.4092             +0.0488  +0.0488
+    МАКРО         0.6638         0.6416             +0.0407  +0.0223
+
+Four routes to CYP2D6's shift and they disagree by **sign**: three model-based estimates give
+-0.405, -0.917 and -1.167 (items 87, 88), the design simulation gives +0.23 (item 249). Zero there
+is not an estimate. **It is an abstention**, and the distinction matters -- the cell now contributes
+-0.0002, the fitted shift falls from -0.190 to +0.010, and the three cells where the routes agree in
+sign keep whatever the bet is worth.
+
+**Deployment, controls exact.**
+
+    классификация        3A4 и 2D6: расхождений 0 -- побитово прежняя
+    регрессия           сдвиг средн.   макс|разн|   спирмен   отношение sd
+    CYP1A2                   +0.0000       0.0000    1.0000         1.0000
+    CYP2C9                   +0.0000       0.0000    1.0000         1.0000
+    CYP2D6                   +0.2000       0.2000    1.0000         1.0000
+    CYP3A4                   +0.0000       0.0000    1.0000         1.0000
+
+One enzyme moved, by exactly the difference between the old fitted shift and the new one. Both
+validators accept.
+
+**The band, on the current configuration.**
+
+    замер                                среднее      sd            95 %       полуширина
+    промежуточное раскрытие, n = 750      0.6666  0.0209  [0.6263, 0.7090]         0.0414
+    живой лидерборд, n = 375              0.6691  0.0307  [0.6126, 0.7322]         0.0598
+
+**And the third near-miss of the same kind, caught before it published.** `verify/k79_bandfix.py`
+held its own copy of the delta vector. After the submission moved to `0.1, 0.3, 0, 0.7` it printed
+`[0.1, 0.3, -0.5, 0.7]` and would have produced a band for a configuration no longer submitted --
+the third wrong band in three attempts, by a third mechanism: first the composition (item 246), then
+the transformation (item 253), now the parameters. `DELTA_DEFAULT` is defined once in
+`src/submit.py` and read from there. **All three failures were one duplicated definition apiece**,
+and the fix each time is the same: the band's inputs come from the submission's own code or they are
+guesses.

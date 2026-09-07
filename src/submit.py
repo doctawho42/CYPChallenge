@@ -87,6 +87,16 @@ have moved that cell to -0.1; adopting it would have preferred one model-free es
 over three model-based ones agreeing in sign. The documented vector contradicts none of
 them.
 
+CYP2D6 moved from -0.5 to 0 on 7 September (item 256), after the band recomputation put a
+price on the bet that no earlier discussion had. Fitting under an assumed tilt and scoring
+against our own untilted labels costs 0.0407 of macro ST-RAE if the test turns out to look
+like the training set, against an expected GAIN of 0.0473 over the posterior -- close to an
+even-money bet. CYP2D6 alone carried 0.0735 of that exposure, and it is the cell where the
+four routes disagree by SIGN: three model-based estimates give -0.405, -0.917 and -1.167,
+the design simulation gives +0.23. Setting it to zero drops the price to 0.0223 and leaves
+the three cells where the routes agree in sign untouched. Not a claim about the truth on
+CYP2D6 -- an refusal to bet on a cell whose sign is contested.
+
 CYP1A2 moved from 0 to +0.1 on 6 September as a separate decision (item 254), and the
 argument is minimax regret rather than maximum expectation. Three posteriors put the
 expected ST-RAE at:
@@ -555,6 +565,11 @@ def _oof_one(X, y, mask, fold, pool, scr=None):
 # одиночный GP; альтернатива меняется правкой одной строки ниже.
 SOLO = {"CYP3A4": ("GP",)}
 
+# Предполагаемый сдвиг теста по ферментам. ОДНО определение: verify/k79_bandfix.py читает
+# его отсюда, потому что полоса фальсификации относится к конкретным дельтам, и разошедшиеся
+# копии этой константы уже дважды давали полосу для руки, которая не подаётся.
+DELTA_DEFAULT = "0.1,0.3,0,0.7"
+
 
 def _keep(e, kind):
     """Входит ли член в ансамбль этого фермента."""
@@ -848,7 +863,7 @@ def main():
     # Выбор решён пунктом 88: разброс delta ПО МОДЕЛЯМ в 9-88 раз больше сидового, на CYP2D6 три
     # модели дают -0.405, -0.917 и -1.167, а на CYP1A2 не выживает даже знак. Документированный
     # вектор не спорит по знаку ни с одной из трёх; узкая альтернатива из пункта 249 спорила бы.
-    ap.add_argument("--delta", default="0.1,0.3,-0.5,0.7",
+    ap.add_argument("--delta", default=DELTA_DEFAULT,
                     help="предполагаемый сдвиг средней активности теста относительно нашей "
                          "выборки. Пара (off, lambda) подбирается под ЭТО предположение. "
                          "Ноль означает «тест распределён как обучающая выборка» - это не "
