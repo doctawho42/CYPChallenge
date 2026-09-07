@@ -8865,3 +8865,55 @@ score inside it confirms nothing.
 item 246's arithmetic is the arm; the aggregation fix item 246 introduced (bootstrapping the macro
 jointly rather than averaging four per-enzyme percentile bounds) stands, and the half-width remains
 about half of item 147's 0.082 for that reason.
+
+**254. The zero on CYP1A2 becomes +0.1, by minimax regret rather than by maximum expectation — and
+the band it invalidates is recomputed in the same breath.** `src/submit.py --delta`. The last of
+three deployment decisions taken this week and the only one where the deciding evidence is a route
+with no model in it.
+
+**Why this cell and no other.** Item 88 states that on CYP1A2 "the direction of the shift is not
+determined by the data at all": three model-based estimates give +0.045, +0.344 and -0.011, and the
+sign does not survive. The zero was adopted on that basis and it was the right call for that
+evidence. Item 249's design route determines the sign a different way -- CYP1A2 is one of the three
+enzymes the test's anchors were selected on, so its half is enriched **by construction**, not by
+inference. That is a determination the statistical routes cannot make by their nature, and it is
+the only cell where the fourth route adds something the other three could not.
+
+**The choice, and it is not the maximum of anything.**
+
+    CYP1A2, ожидаемый ST-RAE при подгонке под дельту
+    апостериор                -0.1    +0.0    +0.1    +0.2    +0.3
+    нынешний                 .8368   .8297   .8296   .8363   .8508
+    дизайн (0.209..0.272)    .9106   .8892   .8754   .8694   .8699
+    смесь 50/50              .8756   .8611   .8539   .8539   .8611
+
+**+0.1 is the only value no posterior dislikes.** The current posterior is flat between 0 and +0.1
+(0.8297 against 0.8296); the mixture prefers it to zero by 0.0072; the design route prefers it by
+0.0138 while wanting +0.2. Stepping to +0.2 costs 0.0066 under the current posterior, so the
+maximum-expectation choice under the route that motivated the change is not robust to the routes
+that did not.
+
+**This is a choice of ASSUMPTION, and the noise floor is the wrong instrument for it.** Delta is not
+an effect to be demonstrated; it is a belief about the test set under which a pair is fitted, and
+the criterion is expected loss under the posterior. The gain sits below every floor the project has
+-- 0.0072 against a macro pair floor of 0.007 and a paired leaderboard floor of 0.017 -- and **must
+not be quoted as a measured gain.** It is recorded here as a decision, not as a result.
+
+**Deployment, and the controls are exact.**
+
+    классификация       3A4 и 2D6: расхождений 0 -- побитово прежняя
+    регрессия          сдвиг средн.   макс|разн|   спирмен   отношение sd
+    CYP1A2                  +0.0400       0.0400    1.0000         1.0000
+    CYP2C9                  +0.0000       0.0000    1.0000         1.0000
+    CYP2D6                  +0.0000       0.0000    1.0000         1.0000
+    CYP3A4                  +0.0000       0.0000    1.0000         1.0000
+
+One enzyme moved and the other three did not move by a single bit. On CYP1A2 the maximum absolute
+difference equals the mean shift, so lambda is 1 and the transformation is a pure translation of
++0.04 -- an assumed shift of +0.1 buying a realised shift of +0.04, which is item 252's ratio again.
+Both validators accept.
+
+**And it invalidates item 253's band, which was measured before this change.** The band is a
+property of the submitted arm and the arm has moved; recomputing it is not optional and is the
+immediate next thing, not a later refinement. That is the discipline item 246 failed and item 253
+restored: **a band belongs to a configuration, and changing the configuration retires the band.**

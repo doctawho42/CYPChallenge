@@ -87,11 +87,23 @@ have moved that cell to -0.1; adopting it would have preferred one model-free es
 over three model-based ones agreeing in sign. The documented vector contradicts none of
 them.
 
-The zero on CYP1A2 stays for now, and it is the one cell where the evidence has moved:
-item 88 says "the direction of the shift there is not determined by the data at all",
-while the design route determines it positive BY CONSTRUCTION, CYP1A2 being one of the
-three enzymes the test's anchors were selected on. Changing it is a separate decision and
-is deliberately not bundled with switching the flag.
+CYP1A2 moved from 0 to +0.1 on 6 September as a separate decision (item 254), and the
+argument is minimax regret rather than maximum expectation. Three posteriors put the
+expected ST-RAE at:
+
+                             -0.1    +0.0    +0.1    +0.2
+    current posterior       .8368   .8297   .8296   .8363
+    design route            .9106   .8892   .8754   .8694
+    mixture 50/50           .8756   .8611   .8539   .8539
+
++0.1 is the only value no posterior dislikes: the current one is flat between 0 and +0.1
+(0.8297 against 0.8296), the mixture prefers it to zero by 0.0072, and the design route
+prefers it by 0.0138 while wanting +0.2. Going to +0.2 costs 0.0066 under the current
+posterior, so it is not robust.
+
+This is a choice of ASSUMPTION, not a claim of measured effect, and the noise floor is the
+wrong instrument for it -- the criterion is expected loss under the posterior. The gain is
+below every floor the project has and must not be quoted as one.
 
 The size of the shift is bracketed rather than pinned. src/reweight.py tilts the label
 marginal and puts the centre at +0.4 for delta = 0 and +0.9 for delta = 0.5; the anchor
@@ -836,7 +848,7 @@ def main():
     # Выбор решён пунктом 88: разброс delta ПО МОДЕЛЯМ в 9-88 раз больше сидового, на CYP2D6 три
     # модели дают -0.405, -0.917 и -1.167, а на CYP1A2 не выживает даже знак. Документированный
     # вектор не спорит по знаку ни с одной из трёх; узкая альтернатива из пункта 249 спорила бы.
-    ap.add_argument("--delta", default="0,0.3,-0.5,0.7",
+    ap.add_argument("--delta", default="0.1,0.3,-0.5,0.7",
                     help="предполагаемый сдвиг средней активности теста относительно нашей "
                          "выборки. Пара (off, lambda) подбирается под ЭТО предположение. "
                          "Ноль означает «тест распределён как обучающая выборка» - это не "
