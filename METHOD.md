@@ -304,8 +304,16 @@ test-sized molecule sample gives a band for each.
 
 | Sample | Predicted macro ST-RAE | sd | 95 per cent band |
 |---|---|---|---|
-| interim reveal, full test, n = 750 | 0.6438 | 0.0202 | 0.6044 – 0.6851 |
-| live leaderboard, n = 375 | 0.6462 | 0.0297 | 0.5902 – 0.7059 |
+| interim reveal, full test, n = 750 | 0.6852 | 0.0213 | 0.6447 – 0.7277 |
+| live leaderboard, n = 375 | 0.6874 | 0.0315 | 0.6271 – 0.7521 |
+
+The band carries two named assumptions, not one. The first is that the test's label spread and band
+widths resemble the training set's — that is what makes it a sampling band. The second is newer and
+sharper: the submitted predictions are transformed by an affine pair fitted under an *assumed* shift
+of the test distribution, and measured against our own labels that bet costs **0.0407 of macro
+ST-RAE**, against an expected gain of +0.0473 if the assumed shift is real. It is close to an
+even-money bet on a quantity nobody can observe before the reveal. A score below the band means the
+bet paid; a score above it is where to look first.
 
 The first version of this band was computed on the wrong model. Three configurations were in play:
 a four-member ensemble at macro 0.6599, a five-member one at 0.6459, and the one that actually

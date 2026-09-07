@@ -8917,3 +8917,53 @@ Both validators accept.
 property of the submitted arm and the arm has moved; recomputing it is not optional and is the
 immediate next thing, not a later refinement. That is the discipline item 246 failed and item 253
 restored: **a band belongs to a configuration, and changing the configuration retires the band.**
+
+**255. The band, recomputed on the transformation that actually ships — and it puts a number on the
+shrinkage bet that no previous discussion had.** `verify/k79_bandfix.py`, replaces item 253.
+`results/preds/band.json`.
+
+**Item 253 identified the right arm and the wrong transformation.** It applied the plain per-fold
+affine pair, while the submission applies `fit_shrinkage` — the pair fitted under a TILTED objective
+at the deployed deltas. Same composition, different output. So 253's 0.6416 belonged to something
+that is not submitted either, for the second time in two entries and for a different reason.
+
+**The price of the shrinkage bet, measured under the null that the test looks like our training set:**
+
+    фермент   подаваемое преобразование   обычная пара   цена ставки
+    CYP1A2                       0.7566         0.7555       +0.0011
+    CYP2C9                       0.6006         0.5612       +0.0394
+    CYP2D6                       0.9138         0.8403       +0.0735
+    CYP3A4                       0.4579         0.4092       +0.0488
+    МАКРО                        0.6823         0.6416       +0.0407
+
+**Turning the shrinkage on costs 0.0407 of macro ST-RAE if there is no shift** — 5.8 times the macro
+pair floor and 2.4 times the paired leaderboard floor. `src/shrinkchoice.py` puts the expected GAIN
+at +0.0473 over the posterior. These are the same trade-off seen from two ends: the +0.0473 is the
+posterior average, the +0.0407 is its delta-zero slice. **The switch is close to an even-money bet
+on a shift nobody can observe**, and item 252 recorded the decision without this half of it.
+
+CYP2D6 carries the largest exposure at +0.0735, which is the cell where the four routes disagree by
+sign and where item 249's design simulation says +0.23 against the deployed −0.5.
+
+**A diagnostic that must not be skipped.** On three enzymes of four the fit reports its optimum **at
+the edge of the lambda grid**, lambda = 1.00 with the grid running {0.20 … 1.00}. The tilted
+objective wants to EXPAND the predictions and the grid forbids it, so the fitted pair is pinned
+rather than interior. The offset grid's own comment in `src/shrinkchoice.py` says the edge of a grid
+lies; here it is the lambda edge, and the three shifts (+0.110, +0.180, −0.190) are what a boundary
+solution produced, not an interior optimum.
+
+**The bands, on the submitted transformation.**
+
+    замер                                среднее      sd            95 %       полуширина
+    промежуточное раскрытие, n = 750      0.6852  0.0213  [0.6447, 0.7277]         0.0415
+    живой лидерборд, n = 375              0.6874  0.0315  [0.6271, 0.7521]         0.0625
+
+Still a sampling band and not a prediction interval: it covers the draw, not the shift. And it now
+carries a second named assumption on top of the first — that the deployed deltas are closer to the
+truth than zero is. If the interim score lands **below** this band, that assumption was right and
+the bet paid; if it lands above, the bet is what to look at first.
+
+**The cause of two wrong bands in a row is fixed, not just the bands.** The out-of-fold predictions
+of the submitted composition existed nowhere, which is why each recomputation had to guess at an arm
+from names. They are now saved to `results/preds/oof_submitted.json`, so the next recomputation takes
+seconds instead of thirty minutes and an arm cannot be substituted silently.

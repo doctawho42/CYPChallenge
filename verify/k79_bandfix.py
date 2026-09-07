@@ -62,30 +62,59 @@ def main():
     mask = ~np.isnan(y)
     fold, _ = butina_folds(list(rows.SMILES))
 
-    print("вневыборочный проход подаваемой композиции (пять членов + мёртвая зона, SOLO на 3A4)",
-          flush=True)
-    t0 = time.time()
-    P = SB.oof_predictions(X, y, mask, fold, "ансамбль5", None, (LO, HI))
-    print(f"  готово за {time.time()-t0:.0f} с", flush=True)
+    cache = RES + "preds/oof_submitted.json"
+    if _pl.Path(cache).exists():
+        C = json.load(open(cache))
+        P = [np.asarray(v, float) for v in C["P"]]
+        print(f"вневыборочные предсказания подаваемой руки взяты из {cache}", flush=True)
+    else:
+        print("вневыборочный проход подаваемой композиции (пять членов + мёртвая зона, SOLO на 3A4)",
+              flush=True)
+        t0 = time.time()
+        P = SB.oof_predictions(X, y, mask, fold, "ансамбль5", None, (LO, HI))
+        print(f"  готово за {time.time()-t0:.0f} с", flush=True)
+        # СОХРАНЯЕМ. Отсутствие этих предсказаний --- причина, по которой пункт 246 посчитал
+        # полосу на чужой руке: счёта подаваемой конфигурации не существовало нигде.
+        json.dump({"P": [v.tolist() for v in P],
+                   "что": "oof_predictions, ансамбль5, мёртвая зона, SOLO на CYP3A4, сид 0"},
+                  open(cache, "w"))
+        print(f"  сохранено: {cache}", flush=True)
 
-    per, packs = {}, {}
+    # Подаваемое преобразование --- аффинная пара, подогнанная под НАКЛОНЁННУЮ цель при
+    # разворачиваемых дельтах, а не обычная пара. Полоса должна относиться к нему.
+    SB.LO, SB.HI = LO, HI
+    DELTA = [0.1, 0.3, -0.5, 0.7]
+    lams = SB.fit_shrinkage(P, y, mask, DELTA)
+    print(f"подаваемые дельты {DELTA}; (lambda, mu, sh) по ферментам: "
+          + ", ".join(f"{c[3:]} ({l:.3f}, {m:.2f}, {sh:+.3f})"
+                      for c, (l, m, sh) in zip(CYPS, lams)), flush=True)
+
+    per, packs, per_plain = {}, {}, {}
     for e, c in enumerate(CYPS):
         m = mask[:, e]
         w = np.ones(int(m.sum()))
-        q = fit_apply(P[e], LO[m, e], HI[m, e], fold[m], w)
-        ok = np.isfinite(q)
-        per[c] = float(strae(q[ok], y[m, e][ok], LO[m, e][ok], HI[m, e][ok]))
-        packs[c] = dict(idx=np.where(m)[0][ok], q=q[ok], y=y[m, e][ok],
+        plain = fit_apply(P[e], LO[m, e], HI[m, e], fold[m], w)
+        L_, mu_, sh_ = lams[e]
+        depl = L_ * P[e] + (1.0 - L_) * mu_ + sh_
+        ok = np.isfinite(plain) & np.isfinite(depl)
+        per_plain[c] = float(strae(plain[ok], y[m, e][ok], LO[m, e][ok], HI[m, e][ok]))
+        per[c] = float(strae(depl[ok], y[m, e][ok], LO[m, e][ok], HI[m, e][ok]))
+        packs[c] = dict(idx=np.where(m)[0][ok], q=depl[ok], y=y[m, e][ok],
                         lo=LO[m, e][ok], hi=HI[m, e][ok])
-        print(f"  {c}: пара {per[c]:.4f}  (n {int(ok.sum())})", flush=True)
+        print(f"  {c}: подаваемое преобразование {per[c]:.4f}   обычная пара {per_plain[c]:.4f}"
+              f"   цена ставки на сдвиг {per[c]-per_plain[c]:+.4f}  (n {int(ok.sum())})", flush=True)
     macro = float(np.mean([per[c] for c in CYPS]))
+    macro_plain = float(np.mean([per_plain[c] for c in CYPS]))
+    print(f"\nМАКРО: подаваемое {macro:.4f}, обычная пара {macro_plain:.4f}, "
+          f"цена ставки {macro-macro_plain:+.4f}", flush=True)
     print(f"\nМАКРО ПОДАВАЕМОЙ РУКИ: {macro:.4f}", flush=True)
     print("  для сравнения: 0.6599 --- четырёхчленная (пункт 149), 0.6459 --- пять членов без "
           "SOLO (пункт 213)", flush=True)
 
     pos = {c: {v: k for k, v in enumerate(packs[c]["idx"])} for c in CYPS}
     rng = np.random.default_rng(0)
-    out = {"macro_oof": macro, "per": per, "bands": {}}
+    out = {"macro_oof": macro, "macro_plain": macro_plain, "per": per,
+           "per_plain": per_plain, "delta": DELTA, "bands": {}}
     for n in (750, 375):
         draws = []
         for _ in range(a.draws):
