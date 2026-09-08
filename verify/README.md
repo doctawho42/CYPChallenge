@@ -9649,3 +9649,60 @@ it.** Stereochemistry is dead: only **535 of 4905** training SMILES carry define
 **1958 (40 per cent)** have unspecified stereocentres, and there are exactly **four groups, eight
 rows**, that are true stereo-variants of one another. There is nothing for a stereo-aware
 representation to learn from.
+
+**267. The near-neighbour regime is twenty times rarer in our validation than it will be at test,
+and only one tenth of that is the split's doing.** Prompted by an outside reading of the brief;
+measured here. No model was changed.
+
+**The measurement.** Maximum Morgan/Tanimoto similarity (2048 bits, r=2, the split's own generator)
+from each molecule to the training material available to it:
+
+    ряд                       медиана   среднее   доля >=0.65   сравнивается с
+    ТЕСТ -> трейн              0.5873    0.5979         19.7 %   4905 молекул
+    трейн -> трейн (LOO)       0.4500    0.4638          6.7 %   4904
+    валидация -> свои фолды    0.4348    0.4399          1.0 %   ~3924
+
+The middle row is the control that decides the attribution, and it was not in the proposal that
+prompted this: each training molecule against every OTHER training molecule, so the comparison set
+is the same size as the test's.
+
+**The split is NOT the story.** It costs 0.0152 of median similarity, one tenth of the 0.152 gap.
+The remaining 0.137 is the TEST SET being closer to our training data than our training data is to
+itself. That is a property of the organisers' selection, not of our cross-validation.
+
+**But in the tail both factors multiply, and the tail is where neighbour methods live.** At the
+0.65 threshold -- the similarity at which Butina would have grouped two molecules and the split
+would then have separated them -- the split cuts 6.7 per cent to 1.0 per cent, and the test set is
+three times denser than the training set's own interior. **1.0 per cent under validation against
+19.7 per cent at test.** Item 91 measured the split half of this from the other side and agrees:
+medians identical to three decimals, the split biting only in the extreme tail, Morgan neighbours
+cut 4x in the top 1 per cent.
+
+**Why 93.6 per cent of the split does nothing.** Butina at 0.35 gives 4703 clusters over 4905
+molecules, and the size distribution is 4592 singletons, 67 pairs, 23 triples, and a tail to 9.
+**Only 313 molecules (6.4 per cent) have any cluster-mate at all.** The split cannot separate
+neighbours that do not exist; for the other 93.6 per cent it is a random molecule split. This also
+closes, by arithmetic, any proposal of the form "correct predictions within an analogue series":
+there are no series to correct in.
+
+**What this does and does not mean.** It does NOT mean the reported scores are wrong -- a harsher
+validation gives a conservative estimate, which is the safe direction. It means **SELECTION** ran
+in a regime the test will not be in. Methods whose value is concentrated in the near-neighbour
+regime were measured where that regime occurs 1 per cent of the time and will be graded where it
+occurs 20 per cent of the time.
+
+**The correction to the argument that prompted this.** It ran on the premise that the train-vs-test
+domain classifier "failed", read as the two sets being indistinguishable and therefore drawn from
+one space. That inverts the finding: `verify/k5_shift.py` reports **AUC 0.817** and its own line
+prints "0.5 = наборы неразличимы". What failed was the importance WEIGHTS -- median 0.001,
+effective sample size 116 of 4905 -- not the separation. The sets are distinguishable, and this
+item measures the direction in which: the test is closer in, not further out.
+
+**What cannot be done about it cheaply, said plainly.** Re-scoring the existing out-of-fold
+predictions on a similarity-matched stratum does not work: the >=0.65 stratum holds about 49
+validation molecules, and 49 rows cannot carry a 20 per cent weight. Reaching the test's profile
+needs a different SPLIT, and a split that keeps near neighbours together is the opposite of what
+the cluster split was adopted for. That is a decision for the team, not a fix. **The cheap first
+step is a random-molecule split, which reaches 6.7 per cent by construction** -- three times short
+of the test but nearly seven times closer than the current 1.0 per cent -- and re-measuring the
+neighbour-dependent arms on it.
