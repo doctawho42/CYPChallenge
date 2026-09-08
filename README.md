@@ -128,7 +128,7 @@ the document.
   but they also select for a different skill than the leaderboard pays for — every saved
   ablation has been re-scored under weights matching the test's regime, and six of seven
   keep their ordering.
-- **Check the log before evaluating an idea, not after.** `verify/README.md` is 271
+- **Check the log before evaluating an idea, not after.** `verify/README.md` is 272
   numbered items and several proposals have been re-derived from scratch that were already
   built, run and measured in it.
 - Negative results are recorded and stay in the repository. They are now the majority of

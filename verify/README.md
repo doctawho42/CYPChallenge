@@ -9917,3 +9917,59 @@ model with a labelled near relative -- exactly as a test compound will.
 
 **That is the second split, already built.** It answers only for CYP3A4, because the campaign is
 one enzyme, and it has been pointed at exactly one feature block in its life.
+
+**272. Pre-registration: the contribution ledger re-measured by KNOCKOUT from the shipped
+configuration, instead of by addition to a weak baseline.** Written and committed before
+`verify/k83_loo.py` runs. Not a deployment decision -- a re-audit of the scoreboard.
+
+**Why.** The scoreboard's four contributions were each measured as an ADDITION to whatever baseline
+existed when they were proposed:
+
+    мёртвая зона во всех членах   +0.0197   пункты 164, 213
+    механистический блок          +0.0163   пункт 81
+    пулирование контрастом        +0.0141   пункты 84, 132
+    ствол пятым членом            +0.0054   пункт 120
+                          сумма    0.0555   против общего +0.0579, расхождение 0.0024
+
+**Item 269 is the reason that reconciliation cannot be trusted as it stands.** It measured a gain
+of +0.0108 over one member, +0.0067 over a stronger one, and **-0.0007 over the ensemble** -- not
+by dilution but by redundancy, the other members already carrying the information. By that rule the
+size of every ledger entry depends on the baseline it was measured over and the order it was added
+in, and an agreement to 0.0024 between four such numbers and a total may be luck rather than
+additivity. **Nobody has ever knocked a component OUT of the finished model.**
+
+**A correction to the arithmetic that prompted this, made before the run so it cannot be tuned
+afterwards.** The outside proposal computed the gap as 0.6342 - 0.5651 = 0.0691 against the same
+0.0555, giving 0.0136. That mixes the two tables at the top of this file which it says explicitly
+are not comparable line by line: 0.5651 and 0.6230 come from stacking saved predictions
+(`k46_five`), 0.6342 from recomputing the members with the submission's own code (`k58_dzsubmit`),
+which additionally applies `_trunk_clip` (defect 3 of item 202). Most of the extra 0.0112 is the
+measurement system, not non-additivity. **The proposal is right; its number is not.**
+
+**The design.** Reference is the shipped configuration -- `oof_members(mode="ансамбль5", dead=True)`,
+`dz_pass`, and `_keep`, so `SOLO = {"CYP3A4": ("GP",)}` applies. Four seeds. Knockouts:
+
+    K1  без мёртвой зоны        те же члены, проход не применяется
+    K2  без пулированного члена
+    K3  без ствола
+    K4  без MECH                четыре пересчитываемых члена на FP+DESC
+    K5  без GP                  не в реестре, но SOLO делает его ВСЕМ плечом CYP3A4
+    K6  без гребневой           не в реестре, для полноты
+
+K1, K2, K3, K5 and K6 are recombinations of one member build and cost nothing beyond it. **K4 is a
+PARTIAL knockout and is labelled as such**: the trunk is a torch model trained on DESC+MECH and
+committed as predictions, so it keeps its mechanistic block. K4 therefore under-states MECH's cost.
+
+**Two structural facts to expect, not results.** Removing the pooled member or the trunk changes
+nothing on CYP3A4, because `SOLO` already excludes them there -- so the pooled member's contribution
+to the SUBMISSION lives on three enzymes, not four, exactly as item 268 argued. And K5 is
+degenerate on CYP3A4: dropping the GP leaves the shipped arm empty, so the script falls back to all
+remaining members there and says so.
+
+**The prediction.** I expect the knockouts to be SMALLER than the ledger's additions, because
+components overlap and each was measured over a baseline that lacked the others. Specifically:
+dead zone -0.012 to -0.020 (it is applied inside every member and should hold up best); MECH -0.005
+to -0.012 (understated by the trunk); pooling -0.005 to -0.010 (three enzymes of four, and the
+other members overlap it); trunk -0.002 to -0.005. **And I expect the sum of the knockouts to come
+in BELOW the 0.0579 trajectory**, which would mean the ledger is subadditive and its entries are
+upper bounds on what each component is worth today.
