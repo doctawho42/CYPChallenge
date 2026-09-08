@@ -35,10 +35,14 @@
 0.7150 -> 0.6567). Здесь стояло «-0.050 пары» --- ошибка на 0.0083, больше макро-пола по паре;
 исправлено 6 сентября.
 
-**Счёт сходится.** Сумма названных вкладов --- мёртвая зона +0.0197, механистический блок +0.0163,
-пулирование +0.0141, ствол пятым +0.0054 --- даёт +0.0555 против общего +0.0579. Расхождение
-0.0024, глубоко внутри пола, и это единственная проверка, что таблица вкладов описывает ту же
-модель, что и таблица конфигураций.
+**Счёт сходился, пока его не проверили выбиванием, и ПУНКТ 274 ЕГО ОТМЕНИЛ.** Сумма названных
+вкладов --- мёртвая зона +0.0197, механистический блок +0.0163, пулирование +0.0141, ствол пятым
++0.0054 --- даёт +0.0555 против общего +0.0579, расхождение 0.0024. Но эти четыре числа мерялись
+ДОБАВЛЕНИЕМ к разным базам. Померенные ВЫБИВАНИЕМ из подаваемой конфигурации они дают +0.0315:
+мёртвая зона и ствол воспроизводятся почти точно (-0.0198 и -0.0056), MECH стоит 43 процента
+своей строки, **а пулирование не стоит ничего (+0.0008, знак 0/4)**. Строка «пулирование
+контрастом» ниже описывает настоящий МЕХАНИЗМ (пункты 131, 132), но не предельную ценность ЧЛЕНА
+в готовом ансамбле. Читать таблицу вкладов как аддитивную нельзя.
 
 **И главная оговорка ко всему разделу.** Шум одного счёта лидерборда на 750 молекулах --- 0.08
 пары (пункт 147). Наш прирост по паре --- 0.0583. **То есть на метрике, которую лидерборд
@@ -10020,3 +10024,71 @@ confirmation of `pyproject.toml`'s documented bit-for-bit range since it was wri
 measured a +0.0108 member-level gain arriving at -0.0007 over the ensemble, by redundancy. A
 member-level +0.0084 says nothing about the submission until it is measured there. The dead-zone
 pass's own copy of the estimator is a separate knob and stays unswept until arm 2 reports.
+
+**274. The contribution ledger, re-measured by knockout: the dead zone and the trunk reproduce
+their entries almost exactly, MECH is worth under half of its, and POOLING IS WORTH NOTHING.**
+`verify/k83_loo.py`, four seeds, conditions from item 272. Nothing deployed.
+
+Reference is the shipped configuration (five members, dead zone in all, `SOLO` on CYP3A4), macro
+rank 0.6373 / 0.6339 / 0.6352 / 0.6379 over seeds 0-3.
+
+    выбивание                 Δранг ср.       sd   знак     Δпара   реестр
+    K1 без мёртвой зоны         -0.0198   0.0007    4/4   +0.0225   +0.0197
+    K4 без MECH (частичное)     -0.0070   0.0012    4/4   +0.0073   +0.0163
+    K2 без пула                 +0.0008   0.0005    0/4   -0.0018   +0.0141
+    K3 без ствола               -0.0056   0.0004    4/4   +0.0051   +0.0054
+    K5 без GP                   -0.0126   0.0015    4/4   +0.0172   ---
+    K6 без гребневой            +0.0035   0.0003    0/4   -0.0010   ---
+
+    сумма четырёх строк реестра  +0.0315   против суммы добавлений 0.0555
+
+**The knockout design is roughly ten times more precise than the design it replaces, and that is a
+result in itself.** Standard deviations here are 0.0003 to 0.0015, against the 0.0052 paired floor
+item 259 derived. The floor is right for arms fitted INDEPENDENTLY; a knockout and its reference
+share every fitted member and differ only in which of them are averaged, so almost all the variance
+cancels. **+0.0008 at sd 0.0005 is not "inside the floor", it is significantly positive.** Any
+future comparison of ensemble compositions should be done this way.
+
+**Two entries reproduce almost digit for digit**, by a measurement design with nothing in common
+with the one that produced them. The dead zone: -0.0198 against +0.0197. The trunk: -0.0056 against
++0.0054. **These are the strongest confirmations in the log**, because addition-to-a-weak-baseline
+and knockout-from-the-finished-model are different experiments and they agreed.
+
+**MECH holds at 43 per cent**: -0.0070 against +0.0163. And this is the PARTIAL knockout -- the
+trunk is committed as predictions from a torch model trained on DESC+MECH and keeps its mechanistic
+block -- so the true figure lies between -0.0070 and -0.0163 and the entry is an over-statement of
+unknown size.
+
+**Pooling does not survive at all.** Its knockout costs **+0.0008**, sign 0 of 4 -- removing the
+pooled member makes the shipped ensemble very slightly BETTER, on rank and on the pair
+simultaneously. The ledger's third-largest line, at +0.0141, is worth zero in the finished model.
+
+**This is not a contradiction of items 84, 125, 131 and 132, and the distinction matters.** Pooling
+by contrast is real: item 131 showed that zeroing the enzyme indicator costs 0.076 of rank against
+per-enzyme training, item 132 that handing over the level for free recovers none of it. **What died
+is not the mechanism but the MEMBER'S MARGINAL VALUE**, and it died of the same cause as item 269 --
+redundancy. By the time four other members are averaged, whatever the pooled booster contributes is
+already there. Item 269 measured cross-enzyme stacking at +0.0108 over one member and -0.0007 over
+the ensemble; this is the same shape, applied to a member of the ensemble itself.
+
+**A second member is also net-negative.** Removing the ridge is worth **+0.0035 at sign 0/4 and sd
+0.0003**, improving rank and the pair together. It has never been in the ledger, and item 218's
+subset enumeration -- which found the Gaussian process alone beating the five-member mean on CYP3A4
+-- was run on one enzyme only.
+
+**The obvious follow-up, now cheap.** All six configurations above are recombinations of ONE member
+build per seed; the expensive part is already cached. A full enumeration of all 31 subsets on all
+four enzymes, which item 218 did for CYP3A4 alone, costs one member build per seed and nothing more.
+**That, not this item, is what could change the submission**, and it should be pre-registered
+separately because choosing a subset by its out-of-fold score is exactly the selection that item
+245 warns about.
+
+**The prediction in item 272 was right on three of five and wrong on the one that mattered.** Dead
+zone -0.012 to -0.020 (got -0.0198), MECH -0.005 to -0.012 (got -0.0070), sum below 0.0579 (got
+0.0315). Trunk was predicted -0.002 to -0.005 and came in at -0.0056, just outside. Pooling was
+predicted -0.005 to -0.010 and came in at **+0.0008**.
+
+**And the outside proposal that prompted this is vindicated in substance while its arithmetic
+stays wrong.** It computed the additivity gap as 0.0136 by mixing two tables this file says are not
+comparable. The gap is **0.0240** -- 0.0555 of additions against 0.0315 of knockouts -- and it is
+larger than the number it argued from.
