@@ -9543,7 +9543,7 @@ fifths"; it is nineteen twentieths.
     CYP1A2     +0.0096    3/4       +0.0051    4/4    +0.0045
     CYP2C9     +0.0120    4/4       -0.0007    2/4    +0.0127
     CYP2D6     -0.0656    0/4       +0.0085    4/4    -0.0742
-    CYP3A4     -0.0035    0/4       -0041      0/4    +0.0006
+    CYP3A4     -0.0035    0/4       -0.0041    0/4    +0.0006
 
 CYP2D6 carries the whole interaction. On the other three, J is at or under the floor -- and item
 263 had already predicted CYP1A2's near-zero J from committed artefacts, since its gain under
