@@ -9607,3 +9607,45 @@ session reads before touching anything costs four, and none of the four checked,
 reads as settled context rather than as a claim. **`CLAUDE.md` needs the same discipline as the
 journal: when an item closes a question the file describes as open, the file is part of the
 commit.** This is the second instruction-file defect this week; item 117's correction was the first.
+
+**266. Item 140's `max_features` is reachable after all: "checked" was checked against the
+INSTALLED scikit-learn, not against the pin.** Found while sweeping candidate families; verified
+here, not measured.
+
+Item 140 found column subsampling worth **+0.0123 of macro rank, monotone in the knob** (0.5522,
+0.5615, 0.5644 as `max_features` goes 1.0, 0.3, 0.1), sign the same on all four seeds, nearly twice
+the floor -- and then closed it:
+
+> the pinned scikit-learn's `HistGradientBoostingRegressor` has no `max_features` at all -- checked
+> -- so this is not a setting the journal could have swept
+
+That is **true of 1.3.2, which is installed, and false of the pin**, which is
+`scikit-learn>=1.3,<1.9`. Verified just now in a throwaway environment:
+
+    scikit-learn 1.3.2   max_features   ОТСУТСТВУЕТ
+    scikit-learn 1.8.0   max_features   1.0  (по умолчанию --- без субсэмплинга)
+
+`pyproject.toml` records that every version from 1.3.2 through 1.8.0 regenerates
+`results/preds/oof.json` bit for bit, and the default of 1.0 changes nothing, so moving inside the
+pin is a no-op that unlocks a knob. **In 265 items no HistGB hyperparameter has ever been swept** --
+the log has swept features, learners, losses, weights, splits and post-processing, and never the
+shipped learner's own configuration.
+
+**The counter-argument is in item 140's own table and it is serious.** The HistGB reference scores
+**0.5651 at no subsampling, ABOVE the own booster's best subsampled arm at 0.5644.** The +0.0123
+may be repairing a deficit HistGB does not have -- its binning, `l2_regularization=1.0` and 31-leaf
+cap may already supply that regularisation. And item 158 measured the same knob on the POOLED arm
+of the own booster at **0.5416 against 0.5420** -- identical, nothing.
+
+**So this is a cheap check with a weak prior, not a promising lead**, and it is recorded that way.
+What makes it worth the first hour is that step zero is nearly free and self-verifying: bump to
+1.8.0 inside the existing pin, re-run `src/ablate.py` and `uv run pytest`, and diff `oof.json`
+against the committed bytes. The repository claims max |delta| = 0 over that range; if the diff is
+empty the claim is confirmed and the knob is available, and if it is not, a documented reproduction
+guarantee has just failed, which is worth more than the sweep.
+
+**A side result from the same sweep, which closes a family by arithmetic before anyone proposes
+it.** Stereochemistry is dead: only **535 of 4905** training SMILES carry defined stereochemistry,
+**1958 (40 per cent)** have unspecified stereocentres, and there are exactly **four groups, eight
+rows**, that are true stereo-variants of one another. There is nothing for a stereo-aware
+representation to learn from.
