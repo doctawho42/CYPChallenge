@@ -9816,3 +9816,51 @@ Neither substitution can rescue a result at -0.0007 with sign 1/4.
 -- +0.03 of rank, sign 4/4, on two different single members. The ensemble already reaches it by
 other means, so there is nothing to ship; but it is the sharpest per-enzyme cross-talk this log has
 measured, and it is consistent with CYP2C9-CYP3A4 being the most correlated label pair at 0.705.
+
+**270. Pre-registration: the `max_features` sweep, the first HistGB hyperparameter this log has
+ever touched.** Written and committed before `verify/k82_maxfeat.py` runs. Item 266 established
+that the knob is reachable inside the pin; this measures it.
+
+**Three checks done first, because the knob would be worthless if any failed.**
+
+    oof.json под sklearn 1.8.0 против закоммиченного   тот же SHA-256, пустой diff
+    max_features=1.0 против отсутствия параметра        max |d| = 0.00e+00, бит в бит
+    max_features меняет предсказания вообще             max |d| до 0.72, ро с 1.0 до 0.9635
+
+The second is what makes the sweep safe: **the default is a no-op**, so nothing already published
+moves. The third is what makes it worth running -- and on a single fold of CYP3A4 rank is already
+monotone in the knob, 0.7271 / 0.7295 / 0.7313 / 0.7372 at 1.0 / 0.5 / 0.3 / 0.1, the same
+direction item 140 found on a different learner.
+
+**The design.** Grid `max_features` in {1.0, 0.3, 0.1, 0.03}, matching item 140's spacing with one
+extension below it to find where the trend turns over. Both HistGB members -- the per-enzyme
+booster and the pooled booster -- four seeds, macro rank primary and macro ST-RAE after the affine
+pair secondary. About three hours, one serial process.
+
+**A free anchor.** Because `max_features=1.0` is bit-identical to omitting the parameter, the
+per-enzyme member at 1.0 must reproduce `results/preds/oof.json` exactly: macro-4 **0.565046**. The
+script asserts it.
+
+**Adopted only after two arms, in the order item 269 established the hard way.**
+
+    арм 1  лучшее mf бьёт 1.0 более чем на 0.0052 при знаке не менее 3/4, НА ЧЛЕНЕ
+           -> иначе конец
+    арм 2  тот же выигрыш на АНСАМБЛЕ, тот же порог, и пара не хуже своего пола 0.007
+           -> только это разрешает подачу
+
+Item 269 is the reason arm 2 is not optional: a gain of +0.0108 over a single member came out at
+-0.0007 over the ensemble, and the failure was redundancy rather than dilution. **A member-level
+number here means nothing about the submission.**
+
+**A second knob deliberately NOT swept.** The dead-zone pass refits under `DZ_KW`, its own pinned
+copy of the same estimator. If `max_features` helps the base fit it plausibly helps the refit, but
+that is a separate parameter on a separate stage, and item 77's lesson about stacking measured
+effects applies. It is left for after arm 2, if arm 2 passes.
+
+**The prediction, and it is not optimistic.** Item 140's +0.0123 was measured on a hand-rolled
+booster whose UNsubsampled arm scored 0.5522 against HistGB's 0.5651 -- the knob was repairing a
+deficit HistGB may not have, since its binning, `l2_regularization=1.0` and 31-leaf cap already
+regularise. And item 158 measured the same knob on the pooled arm of that booster at 0.5416 against
+0.5420, which is nothing. **I expect the per-enzyme member to gain +0.003 to +0.008, straddling the
+floor, and the pooled member to gain nothing.** If the per-enzyme member clears, I expect arm 2 to
+fail for the same reason item 269 failed.
