@@ -9566,3 +9566,44 @@ effect of 0.019 with sd 0.0046, four seeds give t = -8.3. **The bias from stoppi
 significance**, so it is named rather than argued away; an effect 2.6 times its threshold survives
 the concern, and a reader who does not accept that should treat J as bounded below by the floor
 rather than estimated at -0.0190.
+
+**265. "Pooling has no surviving mechanism" is four journal items and one instruction file out of
+date, and the instruction file is why.** Found while sweeping candidate families for a new line of
+work; no new computation.
+
+**The mechanism was settled on 31 August.** Item 110 refuted borrowing neighbours. Item 111 refuted
+transferring shared function, and its own inversion (rho = -1.000, pooling helps the LEAST
+correlated enzyme most) is where the trail was left. But it did not stop there:
+
+    пункт 125   пул+TDI: +6538 максимально коррелированных строк, таблица 6525 -> 13063,
+                ранг -0.0027 --- объём выборки не при чём
+    пункт 131   пул слепой: индикатор обнулён, ширина матрицы и 6525 строк сохранены,
+                -0.076 ранга НИЖЕ поферментного обучения
+    пункт 132   пул центрированный: уровень выдан бесплатно, контраст по-прежнему запрещён;
+                0.4647 против 0.4885 у слепого --- уровень не механизм, КОНТРАСТ механизм
+
+Item 132's own title says it: "Pooling works by contrast, not by level. The mechanism of the log's
+largest effect is settled." **And the scoreboard at the top of this file has shipped it under that
+name ever since** -- `пулирование контрастом +0.0141, 4 сида, пункты 84, 132, в подаче есть`.
+
+**Where the stale claim survived.** `CLAUDE.md` -- the file every session reads first -- carried a
+paragraph headed "Two things are known and unexplained" asserting that pooling's gain has no
+surviving mechanism, citing only items 110 and 111. It was written before item 132 and never
+revised. From there it propagated into **item 243** ("the largest unexplained effect the submission
+relies on ... both candidate mechanisms refuted"), and then into **items 257, 261 and 264**, all
+written this week, each repeating it as established. `CLAUDE.md` is corrected.
+
+**What item 264 actually contributes, restated correctly.** It is not "a constraint on any future
+explanation" of an open question -- it is an ELABORATION of a closed one. Item 132 says pooling
+works by contrast: the shared trees learn different dependencies per enzyme through the indicator.
+Item 264 says that contrast is **purchased with residual magnitude**: under squared error a row's
+gradient is `w*(p-y)` and CYP2D6's large residuals command the splits that carry its contrast, while
+under absolute error every row pulls equally and 95 per cent of the gain disappears. Contrast is the
+what; magnitude is the currency. That is a better result than the one item 264 claimed.
+
+**The lesson, and it is about this repository rather than about chemistry.** A stale claim in a
+numbered journal item costs one re-derivation. A stale claim in the instruction file that every
+session reads before touching anything costs four, and none of the four checked, because the file
+reads as settled context rather than as a claim. **`CLAUDE.md` needs the same discipline as the
+journal: when an item closes a question the file describes as open, the file is part of the
+commit.** This is the second instruction-file defect this week; item 117's correction was the first.
