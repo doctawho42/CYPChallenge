@@ -9973,3 +9973,50 @@ to -0.012 (understated by the trunk); pooling -0.005 to -0.010 (three enzymes of
 other members overlap it); trunk -0.002 to -0.005. **And I expect the sum of the knockouts to come
 in BELOW the 0.0579 trajectory**, which would mean the ledger is subadditive and its entries are
 upper bounds on what each component is worth today.
+
+**273. `max_features` passes arm 1 on the per-enzyme member and fails on the pooled one, exactly as
+item 270 predicted -- and the whole thing was behind a version check nobody re-ran.**
+`verify/k82_maxfeat.py`, four seeds, under scikit-learn 1.8.0 inside the existing pin. Nothing
+deployed; arm 2 decides that.
+
+    член          mf     Δранг       sd   знак     Δпара
+    поферментно  0.30   +0.0060   0.0023   4/4    -0.0049
+    поферментно  0.10   +0.0084   0.0016   4/4    -0.0071
+    поферментно  0.03   +0.0037   0.0021   4/4    -0.0026
+    пул          0.30   -0.0005   0.0046   1/4    -0.0001
+    пул          0.10   -0.0031   0.0025   0/4    +0.0011
+    пул          0.03   -0.0079   0.0030   0/4    +0.0061
+
+**Arm 1 passes on the per-enzyme member.** +0.0084 at `max_features=0.1`, sd 0.0016, sign 4/4,
+against a paired floor of 0.0052 -- and **rank and the metric move together**, the pair improving by
+0.0071 against its own floor of 0.007. That simultaneity is rare in this log; most raw-metric gains
+here reverse by rank.
+
+**The curve is unimodal and turns over.** +0.0060, +0.0084, +0.0037 as the knob goes 0.3, 0.1, 0.03.
+An effect that peaks and declines is what a regularisation parameter looks like; a monotone drift
+would have been the shape to distrust.
+
+**The pooled member fails, monotonically.** -0.0005, -0.0031, -0.0079. Indicator dilution is the
+obvious candidate -- the four enzyme columns are in the candidate set at 100, 76, 34 and 11 per cent
+of split searches across the grid, and item 132 says pooling works by contrast through exactly those
+columns -- but that is a hypothesis this run does not test, and items 151 and 158 already raised and
+refuted a version of it on a different learner. **What is measured is the loss, not the reason.**
+
+**Item 270's prediction was accurate.** It said "per-enzyme +0.003 to +0.008, pooled nothing"; the
+per-enzyme member came in at +0.0084, just above the stated range, and the pooled member at -0.0031.
+
+**Two controls held.** `max_features=1.0` is bit-identical to omitting the parameter (max |d| =
+0.00e+00), so nothing already published moves; and the per-enzyme member at 1.0 reproduced
+`results/preds/oof.json` at macro-4 **0.565046**, the value item 270 pre-registered to six digits.
+
+**How this was reachable at all.** Item 140 measured this knob at +0.0123 on a hand-rolled booster
+in August and closed it with "the pinned scikit-learn's `HistGradientBoostingRegressor` has no
+`max_features` at all -- checked". That was checked against the INSTALLED 1.3.2, not against the pin
+`>=1.3,<1.9`; the parameter arrived in 1.4 (item 266). Step zero of this run regenerated
+`oof.json` under 1.8.0 and got the **same SHA-256 and an empty diff**, which is the first
+confirmation of `pyproject.toml`'s documented bit-for-bit range since it was written.
+
+**ARM 2 IS REQUIRED AND IS NOT OPTIONAL.** The per-enzyme member is one of five, and item 269
+measured a +0.0108 member-level gain arriving at -0.0007 over the ensemble, by redundancy. A
+member-level +0.0084 says nothing about the submission until it is measured there. The dead-zone
+pass's own copy of the estimator is a separate knob and stays unswept until arm 2 reports.
