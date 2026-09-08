@@ -9334,9 +9334,24 @@ per-enzyme fit there is nothing to allocate and the switch is null -- which is e
 enzymes, and absolute error deletes the signal that says where the error is. The enzyme that loses
 is the one item 111 records as gaining most from pooling (+0.0374) while being the LEAST correlated
 with the others (-0.002): a minority signal, orthogonal to the rest, that survives in the pool only
-because its large residuals command splits. Remove magnitude and it is crowded out. The two enzymes
-that gain are the two with the smallest mean absolute residual, which under squared error had the
-least pull.
+because its large residuals command splits. Remove magnitude and it is crowded out.
+
+**A SUPPORTING CLAUSE HERE WAS FALSE and is withdrawn 8 September, before item 262 ran.** It said
+"the two enzymes that gain are the two with the smallest mean absolute residual, which under
+squared error had the least pull". On `results/preds/oof.json` the mean absolute residuals are
+CYP1A2 **0.6785**, CYP2C9 0.4752, CYP2D6 0.6188, CYP3A4 0.5348 -- the two smallest are CYP2C9 and
+CYP3A4, while the two that gain are CYP1A2, whose residual is the LARGEST, and CYP2C9.
+
+Worse, the arithmetic the clause was reaching for does not work either. An enzyme's gradient mass
+is `n_e * E|r_e|` under squared error and `n_e` under absolute error, so the switch reweights the
+pool by `1/E|r_e|`, normalised to 0.834, 1.191, 0.915, 1.059. That predicts CYP2C9 and CYP3A4 up,
+CYP1A2 and CYP2D6 down, against the measured +0.0087, +0.0119, -0.0625, -0.0034: **two signs of
+four, a coin flip.** The pull-mass model does NOT predict which enzymes gain.
+
+**What survives, and it is the part that matters.** Absolute error removes magnitude from the
+shared fit's allocation, and the enzyme item 111 records as most dependent on pooling and least
+correlated with the others collapses by 0.0625 at sign 0/10. That is unambiguous. The finer
+per-enzyme prediction is not supported, and item 262 tests the surviving form directly.
 
 **A consequence for the submission, and it is not academic.** `dz_pass` refits the pooled member
 PER ENZYME (`_dz_oof(kind, X[m], ...)` on one enzyme's rows, so `pooled_design`'s indicator is a
@@ -9388,3 +9403,58 @@ the conjunction was built to distinguish. The collateral is not loss-specific.
 "Null per-enzyme, -0.0140 pooled" is a comparison ACROSS scripts and seed sets -- items 80, 146 and
 148 against this one. The within-script version costs one more cell per seed and is the obvious
 next measurement if anyone wants to lean on the mechanism rather than the fact.
+
+
+**262. Pre-registration: the per-enzyme L1 arm, which closes item 261's own stated limitation.**
+Written and committed before the two cells run. Not a deployment decision -- a mechanism test.
+
+**What item 261 left open, in its own words.** It concluded "null per-enzyme, -0.0140 pooled" while
+recording that the comparison was ACROSS scripts and seed sets: items 80, 146 and 148 for the
+per-enzyme half against `verify/k81_l1weight.py` for the pooled half. Two cells at unit weights,
+`L2e` and `L1e`, put both halves in one script, one loader, one set of folds, paired by seed.
+
+**Two cells and not four.** A per-enzyme member is invariant to a per-enzyme CONSTANT weight:
+inside a single-enzyme fit `w/w.mean()` is exactly the unit vector, so "per-enzyme x 1/den" would
+be the identical call. Both new cells still pass EXPLICIT unit weights, because under L1 the
+unweighted path takes a different leaf estimator (item 259, defect 1) and the contrast must differ
+by pooling alone.
+
+**The statistic.** Per-seed, over the three shipping enzymes,
+
+    J = (L1 - L2) - (L1e - L2e),
+
+with its spread computed from the ten values of J. **And J is not really a loss statistic.**
+Rearranged, `J = (L1 - L1e) - (L2 - L2e) = поствыигрыш пула под L1 - выигрыш пула под L2`: the run
+measures HOW MUCH OF POOLING'S GAIN SURVIVES THE LOSS SWITCH. Pooling's gain is the largest effect
+in the submission whose mechanism is unknown (items 110, 111), so this is a measurement about
+pooling that happens to be phrased about a loss.
+
+**The anchor, pre-registered to six digits rather than checked afterwards.** `src/ablate.py` pins
+the same estimator as `gbm_reg()` on the same features, so `L2e` at seed 0 must reproduce the
+per-enzyme numbers already committed in `results/preds/oof.json`:
+
+    макро4  0.565046      (пункт 146 печатает это как эталон 0.5651)
+    макро3  0.498541
+    по ферментам  0.4957  0.5972  0.4027  0.7646
+
+**Conclusions licensed, fixed before the run.**
+
+    механизм ПОДТВЕРЖДЁН, если   среднее J ниже -0.0074 при знаке не менее 8/10
+                                 И CYP2D6 (L1e-L2e) не хуже -0.005
+    механизм ОПРОВЕРГНУТ, если   CYP2D6 (L1e-L2e) ниже -0.020 при знаке не более 2/10
+                                 --- тогда обвал CYP2D6 не про пулирование вовсе
+    иначе                        механизм выживает лишь в ослабленной форме, и предложение
+                                 пункта 261 "поферментно делить нечего и переход нулевой"
+                                 должно быть переписано
+
+**The prediction.** J near -0.016 at sign 0/10, `(L1e - L2e)` inside +/-0.005 and failing its own
+0.0052 floor, and CYP2D6 per-enzyme near zero rather than anywhere near its pooled -0.0625. If that
+holds, pooling's gain on the three shipping enzymes is about +0.020 under squared error and about
++0.004 under absolute error -- **the loss switch would destroy roughly four fifths of it**, which is
+the sharpest statement this run can produce and the reason it is worth an hour.
+
+**One transfer that is NOT exact, recorded so it is not read as a discrepancy later.** `perenz()`
+passes explicit unit weights; `src/abldead.py`, which produced items 146 and 148, passes none. Under
+squared error that is bit-identical, so `L2e` transfers exactly. Under absolute error it is not
+(item 259), so `L1e` is NOT expected to reproduce item 148's L1 row to the last digit. The internal
+contrast J is unaffected -- every cell in it passes explicit weights.
