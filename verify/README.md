@@ -9706,3 +9706,61 @@ the cluster split was adopted for. That is a decision for the team, not a fix. *
 step is a random-molecule split, which reaches 6.7 per cent by construction** -- three times short
 of the test but nearly seven times closer than the current 1.0 per cent -- and re-measuring the
 neighbour-dependent arms on it.
+
+**268. Cross-enzyme stacking above the ensemble: +0.0108 of macro rank on the per-enzyme member,
+sign 4/4 -- and the pre-registration of the two arms that decide whether it means anything.**
+Proposed from outside, measured here. The standalone number is below; the conditions are fixed
+before the deciding arms run.
+
+**The idea.** Every molecule has four predictions, and only `p_e` enters enzyme `e`'s ranking. The
+other three are per-compound information that is currently discarded. A ridge fitted per fold from
+`(p_1..p_4)` to `y_e` is not monotone in `p_e`, so it moves the order -- filter 1 passes -- and it
+carries per-compound structure, so item 166's rule passes.
+
+**Why it is positioned differently from every arm that failed to transfer.** Items 176, 182, 191
+and 213 record standalone gains dying in the ensemble at error correlations of 0.90 to 0.97,
+because each entered as one more correlated member of an unweighted mean. **This operates AFTER the
+mean, on its output. There is nothing left to dilute it.** That argument is structural and it is
+the reason this is worth measuring rather than filing.
+
+**The standalone measurement**, `scratchpad/stack.py`, per-enzyme member, four seeds, ridge on the
+full 4905x4 out-of-fold prediction matrix (`oof.json` stores only labelled cells, so the matrix was
+recomputed with prediction on all rows):
+
+    сид   база    сшивка       Δ
+      0  0.5650   0.5768  +0.0117
+      1  0.5604   0.5718  +0.0113
+      2  0.5630   0.5723  +0.0093
+      3  0.5636   0.5745  +0.0109
+                          +0.0108   sd 0.0011   знак 4/4   (парный пол 0.0052)
+
+**Almost all of it is CYP2C9**: +0.0294 to +0.0328 on every seed, against +0.002 to +0.015 for the
+other three. CYP2C9 is the enzyme with the highest label correlation to another (0.705 with
+CYP3A4), which is the direction the mechanism predicts.
+
+**The sparsity objection does not apply, and this is worth stating because the proposal assumed it
+did.** The stacker for enzyme `e` needs `p_1..p_4` on molecules carrying label `e` -- and
+predictions exist for every molecule regardless of which labels were measured. It trains on all
+1412 to 2335 rows of that enzyme, not on the 1309 multi-label molecules.
+
+**WHY THIS IS NOT YET A RESULT.** The baseline is the per-enzyme member ALONE at 0.5650. The
+submission is a five-member ensemble at 0.6342, and two of those members -- the pooled booster and
+the neural trunk -- already share information across enzymes by construction. **+0.0108 over a
+member that has no cross-enzyme channel is an upper bound on what it can add to an ensemble that
+has two.**
+
+**Pre-registered, arm 1 -- the pooled member.** Same stack, same four seeds, baseline = the pooled
+booster, which learns all four enzymes with an indicator.
+
+    прирост НИЖЕ парного пола 0.0052  ->  межферментную структуру пул уже вычерпал,
+                                          до подачи идея не доходит, второй арм не запускается
+    прирост ВЫШЕ 0.0052               ->  запускается арм 2
+
+**Pre-registered, arm 2 -- the ensemble, and only if arm 1 passes.** Stack on the submitted
+five-member configuration's out-of-fold output, four seeds, scored on macro rank AND on macro
+ST-RAE after the affine pair. **Adopted only if the mean gain exceeds 0.0052 with sign at least
+3 of 4 on rank, and the pair does not worsen by more than the 0.007 ST-RAE floor.**
+
+**Prediction, written down.** Arm 1 loses roughly half: the pooled member's whole mechanism is
+contrast across enzymes (item 132), which is the same information the stack is reading. I expect
++0.004 to +0.007, straddling the floor, and I expect CYP2C9 to keep most of whatever survives.
