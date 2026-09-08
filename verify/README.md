@@ -9458,3 +9458,50 @@ passes explicit unit weights; `src/abldead.py`, which produced items 146 and 148
 squared error that is bit-identical, so `L2e` transfers exactly. Under absolute error it is not
 (item 259), so `L1e` is NOT expected to reproduce item 148's L1 row to the last digit. The internal
 contrast J is unaffected -- every cell in it passes explicit weights.
+
+**263. Items 80, 146 and 148 are ONE measurement sliced three ways, and both item 258 and item 261
+cited them as if they were three.** Found while pre-flighting item 262, recorded before its cells
+finished so that it cannot have been shaped by the result.
+
+The per-seed series of per-enzyme `(L1 - L2)` on macro-4 rank is
+
+    сид 0   -0.0032        <- пункт 146 печатает это как своё число
+    сид 1   +0.0030
+    сид 2   +0.0041
+    сид 3   +0.0023
+    среднее 1-3  +0.0031   <- пункт 148 печатает +0.0032
+    среднее 0-3  +0.0016   <- пункт 80 печатает +0.0016, t = 0.97, p = 0.405
+
+**And the predictions behind them are bit-identical**: `results/preds/oof_l1_4seed.json`,
+`oof_dead.json` and `oof_dead123.json` agree at max |difference| = 0.000e+00 over all sixteen
+seed-by-enzyme keys, because `src/abloss.py` and `src/abldead.py` share pins, folds and features.
+
+**What this breaks.** Item 258's correction said item 148 "measures the same arm on seeds 1-3 and
+gets the opposite sign", and item 261 cited all three as separate corroborations. There is one
+series of four numbers whose seed 0 is negative. The per-enzyme half of item 261's headline --
+"null per-enzyme, -0.0140 pooled" -- therefore rests on **n = 4, not on three independent runs.**
+
+**What survives, and it is stronger than what it replaces.** Read as one series, per-enzyme L1 is
++0.0016 with three of four seeds positive: not "indistinguishable from zero by disagreement" but a
+small positive effect under the floor. Item 258's correction reached the right conclusion by the
+wrong argument, and this is the right one.
+
+**The per-enzyme breakdown, which nobody had printed and which prices item 262 in advance.**
+Averaging the same four seeds:
+
+    фермент   поферментно (L1-L2)   знак   пулированно (пункт 261)   знак
+    CYP1A2              +0.0099      4/4                   +0.0087   9/10
+    CYP2C9              -0.0069      1/4                   +0.0119  10/10
+    CYP2D6              +0.0038      2/4                   -0.0625   0/10
+    CYP3A4              -0.0006      2/4                   -0.0034   0/10
+
+**CYP1A2's gain under absolute error is the SAME pooled and per-enzyme** (+0.0087 against +0.0099),
+so that part of item 261's pooled effect is not a pooling interaction at all -- it is a property of
+the enzyme and the loss. **CYP2C9 flips sign** between the two. **And CYP2D6's collapse is entirely
+pooling**: +0.0038 alone against -0.0625 in the pool. Cross-script, J on the three shipping enzymes
+is -0.0140 - (+0.0023) = **-0.0163**, which is what item 262 predicted from a different route.
+
+**Why this is a defect and not a footnote.** The journal's value is that a number can be cited
+without re-deriving it, and three item numbers reading as three runs is exactly the failure that
+costs days. `src/abloss.py` and `src/abldead.py` should be understood as one measurement with two
+reporting scripts.
