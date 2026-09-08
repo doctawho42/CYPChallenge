@@ -9864,3 +9864,56 @@ regularise. And item 158 measured the same knob on the pooled arm of that booste
 0.5420, which is nothing. **I expect the per-enzyme member to gain +0.003 to +0.008, straddling the
 floor, and the pooled member to gain nothing.** If the per-enzyme member clears, I expect arm 2 to
 fail for the same reason item 269 failed.
+
+**271. Item 267 is a duplicate of item 22, and the way it happened is worth more than the item
+was.** Found while sweeping candidate families; no computation.
+
+**Item 22, written 31 August**, `h1_geometry.py`, reports the same three numbers item 267 spent an
+hour re-measuring on 8 September:
+
+    ряд                        пункт 22   пункт 267
+    leave-one-out                 0.450      0.4500
+    кластерное разбиение          0.435      0.4348
+    ТЕСТ                          0.587      0.5873
+
+and states the conclusion item 267 presented as its finding, in almost the same words: **"The test
+is closer to the training set than the training set is to itself, so no re-slicing reaches it."**
+It also has the tail, on a slightly different threshold and against the random split rather than
+leave-one-out -- share keeping a relative above 0.7 is 0.005 for the cluster split, 0.033 for
+random, 0.101 for the test -- and the same reading, that the split earns its keep in the tail and
+not in the median. Item 91 later extended that to descriptor space, and item 267 cites item 91
+without noticing that its own headline was already in item 22.
+
+**Item 267's attribution decomposition is also already implied.** It made a point of the control
+"train against itself at the same comparison size" and of splitting the 0.152 gap into 0.015 from
+the split and 0.137 from the test set. Both fall straight out of item 22's four-number table:
+0.450 - 0.435 and 0.587 - 0.450. The arithmetic was there; nobody, including me, had subtracted.
+
+**What survives of item 267:** the Butina size distribution printed explicitly (4592 singletons,
+67 pairs, 23 triples, tail to 9), and the >=0.65 threshold chosen because it is the similarity at
+which Butina groups two molecules. Both are decoration on item 22. Even the 93.6 per cent figure
+was already written down -- in `verify/k32_anchor.py`'s own docstring, on 31 August.
+
+**How it happened, which is the part worth keeping.** The rule this repository runs on is SEARCH
+THE JOURNAL BEFORE EVALUATING AN IDEA, and item 118 is its cautionary tale. Over the preceding two
+days that rule was applied five times to PROPOSALS -- a five-agent sweep before the max_features
+work, a three-agent sweep before the per-enzyme L1 arm, a five-agent sweep before the family
+search -- and it worked every time, killing four candidates of five on each pass. It was not
+applied to item 267, because item 267 did not arrive as a proposal to be evaluated. **It arrived as
+a measurement to be run, prompted by an outside reading, and measurements felt exempt.** They are
+not. The rule is about the JOURNAL's contents, not about the shape of the request.
+
+**And the far more useful thing that the same search turned up, which item 267 should have found
+and did not.** `verify/k32_anchor.py` exists, written the same day as item 22, and it is the
+construction item 267 declared impossible. Its docstring is sharper than either item: our
+cross-validation is **"not a weak version of the test's regime, it is the mirror image of it"**,
+because the test is about 132 analogue series built around parents that sit INSIDE the training
+set at median similarity 0.587, while Butina assigns a whole cluster to one fold and so holds a
+compound's analogues out along with it. Item 129 supplies the population that makes the mirror
+constructible: the training set is a diversity screen of 4375 singletons glued to a **CYP3A4-only
+analogue campaign of 530 compounds**, two thirds of which do have a close neighbour. The anchor
+split holds out analogues while keeping one member in training, so a held-out compound faces the
+model with a labelled near relative -- exactly as a test compound will.
+
+**That is the second split, already built.** It answers only for CYP3A4, because the campaign is
+one enzyme, and it has been pointed at exactly one feature block in its life.
