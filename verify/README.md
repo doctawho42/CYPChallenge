@@ -9764,3 +9764,55 @@ ST-RAE after the affine pair. **Adopted only if the mean gain exceeds 0.0052 wit
 **Prediction, written down.** Arm 1 loses roughly half: the pooled member's whole mechanism is
 contrast across enzymes (item 132), which is the same information the stack is reading. I expect
 +0.004 to +0.007, straddling the floor, and I expect CYP2C9 to keep most of whatever survives.
+
+**269. Cross-enzyme stacking dies on the ensemble -- and it dies of REDUNDANCY, not of dilution,
+which is a failure mode this log has not recorded before.** Arms 1 and 2 of item 268. Nothing
+deployed.
+
+**Arm 1 passed**, and the prediction written in item 268 was accurate. On the pooled booster, four
+seeds: **+0.0067, sd 0.0021, sign 4/4**, above the 0.0052 paired floor. Item 268 predicted "+0.004
+to +0.007, straddling the floor, and CYP2C9 keeps most of what survives" -- CYP2C9 came in at
++0.0317, +0.0225, +0.0313, +0.0330.
+
+**Arm 2 fails.** Baseline `мёртвая зона везде` at macro rank 0.6198 over four seeds:
+
+    сид       ранг база -> сшивка        Δ      пара Δ
+      0      0.6203 -> 0.6213     +0.0010     +0.0001
+      1      0.6182 -> 0.6176     -0.0006     -0.0001
+      2      0.6198 -> 0.6169     -0.0029     +0.0028
+      3      0.6208 -> 0.6207     -0.0001     +0.0004
+                                  -0.0007  sd 0.0017  знак 1/4
+
+**The decisive detail is CYP2C9.** It carried essentially the whole effect at both earlier stages
+-- +0.032 over the per-enzyme member, +0.030 over the pooled one -- and on the ensemble it is
+**flat**: -0.0001, -0.0002, -0.0006, -0.0014. Its rank in the ensemble is 0.665 against 0.603 in
+the pooled member. The information the stack was reading is already in there.
+
+**The effect decays monotonically with the strength of what it is stacked on:**
+
+    база                          ранг базы   прирост сшивки
+    поферментный член                0.5650          +0.0108
+    пулированный член                0.5792          +0.0067
+    ансамбль, мёртвая зона везде     0.6198          -0.0007
+
+**Why this is a new entry rather than a repeat of items 176, 182, 191 and 213.** Those four record
+standalone gains dying in the ensemble by DILUTION: each entered as one more correlated member of
+an unweighted mean, at error correlations of 0.90 to 0.97, and the mean paid for its disagreement.
+The proposal that prompted this made a structural argument that it would escape that -- it operates
+AFTER the mean, on its output, so there is nothing left to dilute it -- **and that argument is
+correct.** It died anyway, of a different cause: the ensemble's other members already supply the
+cross-enzyme correction, so there is nothing left to add. **A gain measured over a weak baseline
+can vanish over a strong one with no dilution involved at all**, and "it sits after the averaging"
+is therefore not a defence against the ensemble. That is the reusable part.
+
+**Two substitutions, both conservative, both declared before the run.** The auxiliary predictions
+`p_1..p_4` come from the pooled member rather than from the ensemble, because the ensemble is saved
+only on labelled cells while the stacker needs all four enzymes on each row -- a weaker auxiliary
+signal, so the true version could only be better. And the baseline is `мёртвая зона везде` at
+0.6198 rather than the shipped configuration at 0.6342, so the real headroom is smaller still.
+Neither substitution can rescue a result at -0.0007 with sign 1/4.
+
+**What is left standing.** CYP2C9's ordering is substantially improvable from CYP3A4's prediction
+-- +0.03 of rank, sign 4/4, on two different single members. The ensemble already reaches it by
+other means, so there is nothing to ship; but it is the sharpest per-enzyme cross-talk this log has
+measured, and it is consistent with CYP2C9-CYP3A4 being the most correlated label pair at 0.705.
