@@ -44,10 +44,24 @@
 контрастом» ниже описывает настоящий МЕХАНИЗМ (пункты 131, 132), но не предельную ценность ЧЛЕНА
 в готовом ансамбле. Читать таблицу вкладов как аддитивную нельзя.
 
-**И главная оговорка ко всему разделу.** Шум одного счёта лидерборда на 750 молекулах --- 0.08
-пары (пункт 147). Наш прирост по паре --- 0.0583. **То есть на метрике, которую лидерборд
-показывает, весь выигрыш проекта лежит внутри шума одного замера.** По рангу мы вне шума, но ранг
-на лидерборде не показывают.
+**И главная оговорка ко всему разделу, переписанная 10 сентября (пункт 276): прежняя формулировка
+сравнивала разность с шумом одиночного счёта и вдобавок цитировала вдвое завышенное число.** Полосу
+пункта 147 (полуширина 0.08) исправил пункт 253: она усредняла четыре поферментные перцентильные
+границы так, будто ошибки ферментов ходят вместе, тогда как измеренная кросс-ферментная корреляция
+ошибки одного счёта --- 0.02, и усреднение четырёх почти независимых ошибок сокращает разброс вдвое.
+Корректная полоса на ПОДАВАЕМОЙ конфигурации (пункт 256): раскрытие n=750 --- [0.6263, 0.7090],
+полуширина **0.0414**; живой лидерборд n=375 --- [0.6126, 0.7322], полуширина 0.0598. Это
+sampling-полоса абсолютного счёта, а не то, с чем сравнивается наш прирост.
+
+Наш прирост 0.0583 --- это РАЗНОСТЬ двух конфигураций, и сравнивать её надо с шумом РАЗНОСТИ, а не
+одиночного счёта. Лидерборд считает все подачи на одних и тех же молекулах, поэтому поштучный шум в
+разности сокращается: парный пол --- $\sqrt2\cdot0.0036 = $ **0.0052** (пункт 259, ковариация плеч
+по сидам нулевая), парный бутстрэп по тесту --- sd 0.0074–0.0201. Прирост 0.0583 лежит ВНЕ этого с
+большим запасом, и даже больше исправленной полуширины одиночного счёта 0.0414.
+
+**Итого, честно: абсолютный счёт непредсказуем до $\pm0.04$, положение относительно похожей подачи
+определено до $\pm0.02$, по рангу мы вне шума (а ранг на лидерборде не показывают).** Прежнее «весь
+выигрыш внутри шума одного замера» неверно на обоих счётах.
 
 **Что стоит в конвейере и сколько стоит.**
 
@@ -10141,3 +10155,31 @@ and is worth presenting as such.
 out-of-fold member predictions bounds what any new member could add before it is built. Worth
 computing once as a standing answer to "would a new member survive the ensemble", but it produces a
 ceiling, not a gain.
+
+**276. The masthead caveat cited the noise figure item 253 had already halved, and compared a
+difference against a single-score noise. Rewritten from the journal's own later numbers.** Raised
+by an outside review; no new computation, only a consistency fix flagged before the 24 September
+interim leaderboard.
+
+The masthead still read: "single-score leaderboard noise on 750 molecules is 0.08 (item 147); our
+gain by pair is 0.0583; the whole project gain sits inside one measurement's noise." Two errors.
+
+**The 0.08 was superseded.** Item 253 found item 147 averaged four per-enzyme percentile bounds as
+though the enzymes' sampling errors moved together; the measured cross-enzyme correlation of a
+single score's error is **0.02**, so averaging four near-independent errors halves the spread. The
+corrected sampling half-width on the SHIPPED configuration (item 256) is **0.0414** at n=750 and
+0.0598 at the n=375 live leaderboard -- not 0.08.
+
+**And the comparison was the wrong one.** 0.0583 is a DIFFERENCE between two configurations, and its
+noise is the noise of a difference, not of a single score. The leaderboard scores every entry on the
+same test compounds, so per-compound error cancels in the difference: the paired floor is
+$\sqrt2\cdot0.0036 = 0.0052$ (item 259, seed covariance zero), and the paired test bootstrap gives
+sd 0.0074 to 0.0201. **The gain clears that by a wide margin -- and it even exceeds the corrected
+single-score half-width 0.0414, so the old "inside one measurement's noise" is false on its own
+terms now, not merely pessimistic.**
+
+The honest two-line statement, now in the masthead: the absolute score is unpredictable to about
+$\pm0.04$ (sampling over which 750 are revealed), our position relative to a similar submission is
+pinned to about $\pm0.02$, and by rank we are outside the noise -- which the leaderboard does not
+show. The stale figure had propagated into the write-up drafted from this section; fixing the
+masthead is what keeps that from happening again before the reveal.
