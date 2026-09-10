@@ -10258,3 +10258,54 @@ CYP3A4 to stay GP-alone, and the nested macro-rank gain over the shipped composi
 sum of +0.0315, because selection variance on five folds eats part of it. If the nested gain is
 below the floor while the in-sample ceiling is well above it, that gap IS item 245 in miniature and
 is the more instructive outcome.
+
+**279. Pre-registration: the 3D shape block, arm 2 over the ensemble -- the one feature change with
+both a measurement and an address.** Written and committed before `verify/k85_shape2.py` runs, and
+before k84 (item 278) reports, so it is blind on both. Raised by an outside review that verified
+against the journal; I reproduced every claim it rests on.
+
+**What is already true, checked line by line.** `data/shape3d.npz` exists (train 4905x16, test
+750x16, computed 30 August), sixteen ETKDG-conformer descriptors including `bN_arom_ang_min/mean` --
+the basic nitrogen's angle to the aromatic system, i.e. the Glu216 salt-bridge geometry in three
+dimensions. `src/shape3d.py` and `src/ablshape.py` build and score it; `src/submit.py` references it
+**zero times**, so it is not shipped. Measured four seeds (item 165, line 4753):
+
+    блок формы, Δранг     1A2       2C9       2D6       3A4
+                       +0.0060   -0.0003   +0.0087   -0.0008
+    пол фермента (165)  0.0061    0.0071    0.0049    0.0033
+
+**It helps 2D6 at 1.8x its own floor with sign 4/4, and 1A2 at its floor, and nothing elsewhere.**
+It was closed by item 119 on MACRO (+0.0034, under the 0.0036 macro floor) -- before item 165
+recorded the per-enzyme floors, and item 165 itself says the mechanism "was never used to read it:
+the block was thrown in globally and scored globally." So it was closed by aggregation, not by
+measurement, and the per-enzyme claim on 2D6 has never been refuted.
+
+**Why arm 2 is required and is the whole question.** The +0.0087 is on the BARE per-enzyme member.
+Items 269, 273 and 274 all show member-level gains dying over the ensemble; the shape block must be
+tested where it would ship -- inside the five-member composition, 2D6's rank with a shape-augmented
+per-enzyme member against the same ensemble with the plain one. The claim is **per-enzyme on 2D6
+against floor 0.0049**, not macro: the macro floor 0.0036 will not see it, which is exactly the
+mistake item 119 made.
+
+**The design.** `verify/k85_shape2.py`: rebuild the per-enzyme member on `FP+DESC+MECH+shape3d`
+(2311 columns, the `с формой` arm of `ablshape`), dead-zone-pass it, substitute it for the plain
+per-enzyme member in the shipped composition, four seeds. Report all four enzymes; 3A4 ships GP
+alone (`SOLO`) so shape cannot touch it, and 2C9/3A4 are near-zero at member level, so the live
+cells are 2D6 and 1A2.
+
+**Dependency on k84, stated so it is not a moving target.** The baseline is the SHIPPED composition.
+If item 278's enumeration changes 2D6's composition, arm 2 re-baselines to whatever 2D6 actually
+ships, and the shape-augmented member is substituted into THAT.
+
+**Adopted into the per-enzyme member if and only if, four seeds:** 2D6 ensemble rank gain exceeds
+its floor 0.0049 at sign 3/4 or better, AND no other enzyme falls more than its own floor.
+
+**Prediction, written to be wrong.** Two forces oppose. The salt-bridge geometry is genuinely 3D and
+the other four members carry no 3D channel, so unlike item 269's cross-enzyme stacking it is NOT
+redundant with what the ensemble already knows -- that argues it survives. But it enters one member
+of five in an unweighted mean, and items 176/182/191 show member gains shrinking three- to five-fold
+by that dilution alone. **I expect dilution to win and the 2D6 ensemble gain to land in [0.002,
+0.006], straddling the floor and more likely just under.** If it clears 0.0049 it is the first
+feature block in the project to survive to the ensemble, which is why it is worth the run despite
+the prior. Runs after k84 finishes -- not concurrently, because this machine has been OOM-killed by
+concurrent member builds before.
