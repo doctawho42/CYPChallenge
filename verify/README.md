@@ -10092,3 +10092,52 @@ predicted -0.005 to -0.010 and came in at **+0.0008**.
 stays wrong.** It computed the additivity gap as 0.0136 by mixing two tables this file says are not
 comparable. The gap is **0.0240** -- 0.0555 of additions against 0.0315 of knockouts -- and it is
 larger than the number it argued from.
+
+**275. A five-agent "new information source" sweep returns five kills, and the shape of the five is
+the finding: the unused-signal space is exhausted, not unlucky.** Each candidate was screened
+against the journal, the code and the raw data before any build. No computation beyond distribution
+reads. Two of the sweep's own premises were wrong and are corrected here.
+
+    кандидат                              вердикт        куда упёрлось
+    Emax как вторая ось                   пункты 71, 72  нет динамического диапазона
+    плечо преинкубации как вспом. цель    пункт 196      +0.0008, ниже пола; плечи коллинеарны
+    форензика прямых меток                пункт 105      «нет всплеска цензурирования», ноль заглушек
+    структура партий/планшетов            пункты 160,13  OCNT_Batch --- лот на молекулу, не группа
+    столбцы значимости скрина как вес     пункты 179,226 -0.0099, проигрывает своей перестановке
+
+**The single lesson across all five: every "information the model is not given" turns out to be
+degenerate, collinear, absent, or anti-informative.** Emax is near-constant (median -0.98 to -1.03,
+every compound a near-complete inhibitor, so no partial-inhibitor axis exists). The preincubation
+arm is 0.99/0.97/0.91/0.95 collinear with the direct arm, and where it differs it is Delta, which
+the TDI track already models. The direct labels have no stub or censoring structure (item 105
+reproduced to the digit); the "1238 poisoned" note is the TDI track, which carries zero direct
+labels. The screen's significance columns as a reliability weight lose to their own shuffle, because
+the compounds where two measurements disagree carry signal, not noise (items 179, 226). And batch
+identity does not group anything -- `OCNT_Batch` embeds the molecule name, one lot per compound --
+while `plate_id` lives on the screen, not the labels, and the blinded test carries neither, so any
+batch- or plate-conditioned quantity is blind on the test by construction.
+
+**Two premises the sweep was launched on were false, recorded because a wrong premise that survives
+is worse than a dead idea.** (1) "No script reads the Emax file" -- six do (`k13_channels.py`,
+`f6_data.py`, `k36_ceiling.py`, `k49_hill.py`, `k50_fumic.py`, `docs/tex/figs.py`), and
+`src/trunkdose.py` already encodes `EMAX_SPREAD` from it. (2) `OCNT_Batch` was taken for an assay
+batch id; it is a per-compound lot id with the molecule name inside the string. Both were checkable
+in one grep and were not checked before the sweep -- the same class of error as item 267's duplicate.
+
+**What this says for the innovation angle, stated plainly.** This is the fourth broad idea-sweep in
+three days, and the aggregate is now unambiguous: the search space of new modelling swings and new
+input signals is picked clean, and it is picked clean because the project already visited it. That
+is not a defeat -- it is the result. The distinctive, defensible contributions are the ones already
+in hand: the dead zone as a metric-derived majoriser (item 213, the strongest single effect and the
+only one confirmed by two independent designs), the knockout ledger and its finding that a
+contribution measured by addition is not its value in the finished model (item 274), the test
+geometry -- our cross-validation is the mirror image of the test, not a weak version of it (items
+22, 267) -- and the TDI reframe plus the 1055 stub labels (item 234 neighbourhood, §10). A
+pre-registered, exhaustively negative map of what does NOT work is itself unusual in a competition
+and is worth presenting as such.
+
+**One cheap diagnostic the sweep surfaced, and it is diagnostic, not a swing.** The redundancy trap
+(items 269, 274) can be quantified directly: the pairwise error-correlation matrix of the committed
+out-of-fold member predictions bounds what any new member could add before it is built. Worth
+computing once as a standing answer to "would a new member survive the ensemble", but it produces a
+ceiling, not a gain.
