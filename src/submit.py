@@ -145,7 +145,11 @@ from reweight import tilt
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 TDI_CYPS = ["CYP3A4", "CYP2D6"]          # the only two the organisers score
-GRID = np.linspace(0.2, 1.0, 41)
+# Lambda grid for fit_shrinkage. Extended above 1.0 (item 277): the submitted predictions are
+# 0.32-0.71 as wide as the labels, so the tilted objective wants to EXPAND them, and the optimum
+# sat pinned at the old 1.0 edge on three enzymes of four even at delta=0. It saturates by 1.6;
+# 2.0 gives margin. The map stays strictly increasing (lambda>0), so rank is untouched.
+GRID = np.round(np.arange(0.2, 2.0001, 0.02), 2)
 
 # Same learner and settings as src/ablate.py, so the submitted model is the one the
 # document's numbers describe rather than a cousin of it.
