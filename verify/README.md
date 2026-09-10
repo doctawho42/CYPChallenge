@@ -10183,3 +10183,78 @@ $\pm0.04$ (sampling over which 750 are revealed), our position relative to a sim
 pinned to about $\pm0.02$, and by rank we are outside the noise -- which the leaderboard does not
 show. The stale figure had propagated into the write-up drafted from this section; fixing the
 masthead is what keeps that from happening again before the reveal.
+
+**277. The shrinkage lambda grid is pinned at its upper edge on three enzymes of four; extending it
+above 1.0 is a fix, not a bet, and it is verified before it ships.** Raised by an outside review.
+Honest about provenance: the numbers below were measured while answering that review, so this is a
+decision to ship a checked fix, not a blind pre-registration -- the two acceptance conditions were
+confirmed, not awaited.
+
+`fit_shrinkage`'s lambda grid was `np.linspace(0.2, 1.0, 41)`, capped at 1.0. The submitted
+predictions are 0.32-0.71 as wide as the labels (over-compressed), so the objective wants to EXPAND
+them (lambda > 1), and the reported optimum sat at the 1.0 boundary on CYP1A2/CYP2C9/CYP2D6 with the
+"оптимум на краю сетки" warning firing. `src/shrinkchoice.py:53` already says in a comment that the
+grid edge lies.
+
+**Measured, extending the grid to 2.0 (it saturates by 1.6, and 2.0 is identical):**
+
+    δ                λ до 1.0                λ расширенной        макро ST-RAE       ранг
+    δ = 0        [1.00 1.00 1.00 0.96]   [1.10 1.18 1.10 0.96]   0.6392 -> 0.6357   Спирмен 1.0000
+    δ подаётся   [1.00 1.00 1.00 0.88]   [1.02 1.16 1.10 0.88]   0.6638 -> 0.6571   Спирмен 1.0000
+
+**Condition 1, monotone: met.** lambda stays strictly positive, so the map is strictly increasing
+and every per-enzyme Spearman is 1.0000 before and after -- rank is untouched, which is the point.
+**Condition 2, interior optimum: met.** After extension the optima are 1.02-1.18, well inside 2.0,
+so the boundary warning no longer fires.
+
+**What it is and is not worth.** It improves our own out-of-fold macro ST-RAE by 0.0035 (delta=0) to
+0.0067 (shipped delta), and because it is monotone it changes ONLY the raw score, never rank. The
+raw score is the leaderboard-visible number that item 276 puts at plus or minus 0.04 of sampling
+noise, so this is a correct fix to a boundary artefact worth a within-noise crumb of raw score, not
+a rank lever. It is shipped because a boundary-pinned parameter is a defect regardless of its size.
+The shipped shifts are `+0.11 / +0.18 / +0.01 / +0.24` (an earlier review misquoted CYP2D6 as
+-0.19, which is `k5_shift`'s raw covariate estimate, not the fitted shift). `shrinkchoice.LAMGRID`
+is left capped at 1.0 on purpose: it drives `fit_apply`, which produces the "pair" number across the
+whole journal, and moving it would shift published figures for no gain in rank.
+
+**278. Pre-registration: the 31-subset enumeration, honestly nested, which is the only open move
+that can change the submission.** Written and committed BEFORE `verify/k84_subsets.py` runs -- this
+one is blind, unlike 277. It is the follow-up item 274 named: knockout put the pooled member at
++0.0008 and the ridge at +0.0035 (both net-negative in the finished model, sign 0/4, sd 0.0003-0.0005),
+so at least two of five members may be dead weight on some enzymes, and item 218 already ships the
+Gaussian process ALONE on CYP3A4.
+
+**The arms.** For each enzyme independently, all 31 non-empty subsets of the five dead-zone-passed
+members {поферментно, пул, GP, гребневая, ствол}; a subset's prediction is the unweighted mean of
+its members, matching the ensemble.
+
+**The nested protocol, which is the whole point (item 245).** Member predictions are already
+out-of-fold on all rows (five Butina folds). Outer loop over those five folds: for outer fold k,
+rank every subset per enzyme on the rows NOT in k (their OOF predictions), pick the best subset per
+enzyme, and apply it to fold k. Concatenate across k -> an honest OOF prediction under selection,
+because the subset is chosen on rows disjoint from the fold it is scored on. Choosing the subset on
+the same rows it is scored on -- the naive enumeration -- is exactly item 245's selection
+contamination and is reported ALONGSIDE only as the in-sample ceiling, never as the result.
+
+**The baseline** is the shipped composition scored the same honest way: GP alone on CYP3A4 (`SOLO`),
+the five-member mean on the other three. Reference points reported but not adopted: always-all-five,
+and the fixed item-274 winner.
+
+**Adopted for the submission if and only if, over four seeds:**
+
+    1. средний нест. макро-ранг выше подаваемого более чем на парный пол 0.0052;
+    2. знак держится не менее чем в 3 сидах из 4;
+    3. И выбор устойчив: один и тот же поферментный субсет выбран не менее чем в 3 из 5
+       внешних фолдов И в 3 из 4 сидов --- иначе ячейка объявляется ничьёй и остаётся на
+       подаваемом правиле (страховка по логике пункта 218: два члена держат от невезения GP).
+
+**The correlation matrix item 275 queued falls out for free** from the saved per-compound member
+predictions and is computed in the same run, as the standing ceiling on any future member.
+
+**The prediction, written to be wrong.** Item 274's knockout already says pooled and ridge are net
+negative, so I expect honest per-enzyme selection to drop them on the three non-CYP3A4 enzymes,
+CYP3A4 to stay GP-alone, and the nested macro-rank gain over the shipped composition to land in
+**[0.003, 0.008]** -- positive and clearing the floor, but SMALLER than item 274's in-sample knockout
+sum of +0.0315, because selection variance on five folds eats part of it. If the nested gain is
+below the floor while the in-sample ceiling is well above it, that gap IS item 245 in miniature and
+is the more instructive outcome.
