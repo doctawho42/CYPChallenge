@@ -10309,3 +10309,65 @@ by that dilution alone. **I expect dilution to win and the 2D6 ensemble gain to 
 feature block in the project to survive to the ensemble, which is why it is worth the run despite
 the prior. Runs after k84 finishes -- not concurrently, because this machine has been OOM-killed by
 concurrent member builds before.
+
+**280. The nested subset enumeration: +0.0040 macro, below the pre-registered floor -- but the run
+demonstrates its own floor was the wrong instrument, and it turns up a CYP3A4 lead that contradicts
+item 218.** `verify/k84_subsets.py`, four seeds, conditions from item 278.
+
+    нест. минус подаётся, макро-ранг   +0.0040   sd 0.0012   знак 4/4
+    условие 1 (> 0.0052)               НЕТ
+    условие 2 (знак >= 3/4)            ДА
+
+**By the letter of item 278, not adopted:** +0.0040 < 0.0052. My prediction ([0.003, 0.008],
+clearing the floor) was half right -- positive and sign 4/4, but under the bar.
+
+**The run is the proof that the bar was too coarse, which is the outside review's exact point.** The
+sd is **0.0012**, so +0.0040 is about six sigma. The 0.0052 floor (item 259) is the paired floor for
+INDEPENDENTLY fitted arms; a subset comparison shares every member and fold with its baseline, so
+almost all variance cancels and the honest statement is "significantly positive, below the
+pre-registered effect-size floor". The floor and the effect size are different questions, and the
+pre-registration conflated them. **Future composition comparisons should carry the shared-structure
+sd, not the 0.0052 floor** -- item 274 said this once and this run is the second instance.
+
+**The nested-to-ceiling gap is item 245 made visible, as designed:** nested +0.0040 against the
+in-sample ceiling +0.0078, a gap of 0.0038 that is pure selection contamination.
+
+**Per enzyme, selection helps three and overfits the fourth:**
+
+    фермент   нест-подаётся ранг      sd    знак    пол
+    CYP1A2         +0.0061         0.0032   4/4   0.0061
+    CYP2C9         +0.0091         0.0004   4/4   0.0071
+    CYP2D6         -0.0030         0.0064   2/4   0.0049
+    CYP3A4         +0.0039         0.0017   4/4   0.0033
+
+CYP2D6 is where the five members are most tied, and per-fold selection there costs more variance
+than it buys -- so the macro +0.0040 is the net of three clean gains and one selection loss. The
+subsets consistently drop **пул and гребневая**, matching item 274's knockout from the other
+direction; the error-correlation matrix (item 275, delivered by this run) says why -- поферментно
+and пул are **0.989** correlated, nearly the same estimator, and every member pair sits at 0.91-0.99:
+
+              пофе    пул     GP    греб   ство
+      пофе   1.000  0.989  0.930  0.930  0.929
+       пул   0.989  1.000  0.930  0.930  0.932
+        GP   0.930  0.930  1.000  0.931  0.913
+      греб   0.930  0.930  0.931  1.000  0.924
+      ство   0.929  0.932  0.913  0.924  1.000
+
+The least-correlated pair is GP-ствол at 0.913. **This is the standing ceiling item 275 queued:**
+any new member correlated above ~0.91 with the existing mean is capped low before it is built.
+
+**A CYP3A4 lead that must NOT be acted on yet, because it contradicts item 218.** The nested search
+picks `GP+ствол` on CYP3A4 in **20 of 20** folds-times-seeds, and as a FIXED rule (no selection)
+`GP+ствол` beats the shipped `GP`-alone by **+0.0039** (sd 0.0017, sign 4/4, above CYP3A4's floor
+0.0033). But item 218's own exhaustive 31-subset enumeration on CYP3A4 put `GP`-alone FIRST at rank
+0.8153 with the full ensemble fourteenth, i.e. `GP+ствол` ranked BELOW `GP`-alone. **The GP-alone
+baselines match exactly (0.8153 here and there), so the discrepancy is not the baseline** -- it is
+almost certainly the trunk member, which has been rebuilt since item 218. Until that is reconciled,
+the CYP3A4 change is a contradiction to resolve, not a result to ship: two exhaustive enumerations
+of the same subsets disagree on the same enzyme, and one of them is wrong.
+
+**What ships: nothing, per item 278.** The composition is left as it is. The two things worth a
+separate, blind pre-registration are the CYP2C9 cell (+0.0091 at sd 0.0004 is the largest clean
+composition effect measured, and the shipped all-five is plainly not its optimum) and the CYP3A4
+`GP+ствол`-versus-item-218 contradiction, on fresh seeds so the hypothesis and the test do not share
+data.
