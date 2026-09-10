@@ -10371,3 +10371,41 @@ separate, blind pre-registration are the CYP2C9 cell (+0.0091 at sd 0.0004 is th
 composition effect measured, and the shipped all-five is plainly not its optimum) and the CYP3A4
 `GP+ствол`-versus-item-218 contradiction, on fresh seeds so the hypothesis and the test do not share
 data.
+
+**281. The shape block does not survive to the ensemble: its +0.0087 on CYP2D6 dilutes to +0.0004,
+and CYP2D6 is exactly the enzyme where that had to happen.** `verify/k85_shape2.py`, four seeds,
+conditions from item 279. Nothing adopted.
+
+    фермент   Δранг ансамбля      sd    знак    пол      член (пункт 165)
+    CYP1A2         +0.0014     0.0014   3/4   0.0061         +0.0060
+    CYP2C9         -0.0009     0.0002   0/4   0.0071         -0.0003
+    CYP2D6         +0.0004     0.0011   2/4   0.0049         +0.0087
+    CYP3A4         +0.0000     0.0000   0/4   0.0033         -0.0008
+
+**Condition of item 279 (CYP2D6 gain above 0.0049 at sign 3/4): NO.** The member-level +0.0087 comes
+into the five-member mean as **+0.0004**, a twenty-two-fold shrink -- deeper than the three- to
+five-fold that items 176/182/191 recorded and deeper than item 279's own [0.002, 0.006] guess. The
+prediction was right in direction (dilution wins) and wrong in size, and k84 says why: item 280
+measured CYP2D6 as the enzyme where the five members are most tied, the one where subset selection
+OVERFIT. A signal carried by a single member averages away hardest precisely where the members are
+most interchangeable, so the enzyme the shape block helps most standalone is the enzyme that dilutes
+it most in the ensemble. CYP3A4 is +0.0000 to the digit because it ships the Gaussian process alone,
+so the per-enzyme member -- shape-augmented or not -- never enters it; that zero is the control that
+says the harness is correct.
+
+**This closes the shape block the right way.** Item 119 retired it on a macro average before
+per-enzyme floors existed; item 165 kept its +0.0087 on CYP2D6 alive as a member-level fact and named
+the wrong aggregation. The outside review was right to reopen it and right about the protocol -- arm
+2 over the ensemble, per-enzyme claim -- and the honest arm 2 says the member-level effect is real
+and does not reach the submission. `data/shape3d.npz` stays unshipped, now for a measured reason
+rather than a mis-aggregated one.
+
+**Three feature and composition swings this session, three that do not change the ranking:** the
+nested subset enumeration (+0.0040, under the floor, item 280), the shape block (this item), and
+max_features arm 2 (queued, predicted to fail for the same reason). The only changes that shipped are
+the lambda-grid boundary fix (item 277, raw score only, rank untouched) and the masthead correction
+(item 276, documentation). **The submission's ranking is where it was, and that is the result:** the
+member-level gains are real and the ensemble is redundancy-bound, which items 269, 274, 280 and 281
+now say four times with four different interventions. The defensible claim for the write-up is not a
+new number, it is that boundary -- measured, quantified by the 0.91-0.99 member error-correlation
+matrix, and reproduced on demand.
