@@ -10409,3 +10409,42 @@ member-level gains are real and the ensemble is redundancy-bound, which items 26
 now say four times with four different interventions. The defensible claim for the write-up is not a
 new number, it is that boundary -- measured, quantified by the 0.91-0.99 member error-correlation
 matrix, and reproduced on demand.
+
+**282. Pre-registration: the CYP2C9 composition, fixed subset from seeds 0-3, tested on fresh seeds
+4-7.** Written and committed before `verify/k86_cyp2c9.py` runs. This is the honest follow-up to
+item 280's largest clean per-enzyme effect (CYP2C9 nested +0.0091), done the only way that is not
+item 245: fix the subset the hypothesis-generating seeds chose, and test it as a FIXED rule on seeds
+the choice never saw.
+
+**The hypothesis, from the cached seeds 0-3.** Over all 31 subsets, CYP2C9's best is **`GP+ствол`**
+at mean rank 0.6980, against the shipped all-five at 0.6856 -- **+0.0124 in-sample**, and the shipped
+composition ranks ninth of thirty-one. Second is `поферментно+GP+ствол` at 0.6978, a tie within
+0.0002. The mechanism is coherent and not a coincidence of this enzyme: CYP2C9 has the fewest labels
+(1285), and the two members that survive are exactly the two trained on the 247-column DESC+MECH
+(the Gaussian process and the trunk), while the two dropped are the high-dimensional boosters on 2295
+columns that overfit the smallest training set. Dropping them is dropping the overfitters.
+
+**The test.** `k86_cyp2c9.py` builds the five dead-zone-passed members for FRESH seeds 4, 5, 6, 7
+(seeds 0-3 generated the hypothesis and are not reused), and scores the FIXED rule `GP+ствол` against
+the shipped all-five on CYP2C9. No per-fold selection, so no selection variance -- the only thing
+measured is whether the specific subset transfers. Reported alongside: the full 31-subset enumeration
+on the fresh seeds (does it independently pick `GP+ствол`?), and a check that shipping `GP+ствол` on
+CYP2C9 only leaves the other three enzymes untouched.
+
+**Adopted for the submission (CYP2C9 only) if and only if, over the four fresh seeds:** the fixed
+`GP+ствол` rule beats the shipped all-five on CYP2C9 by more than CYP2C9's own floor **0.0071** at
+sign 3/4 or better. The paired shared-structure sd is reported for significance, but the adoption bar
+is the effect-size floor, not mere significance -- a change smaller than the enzyme's own noise is
+not worth shipping even if it is real.
+
+**Prediction.** The in-sample +0.0124 will shrink -- part of it is seed-0-3 luck -- but `GP+ствол` is
+a fixed rule with no selection variance, and the all-five being ninth of thirty-one is a large
+structural fact rather than a marginal pick. **I expect the fresh-seed fixed gain in [0.006, 0.011],
+clearing the 0.0071 floor.** If it does, it is the first composition change to ship this session, and
+the first thing all week to change the submission's ranking. If it comes in significant but under
+0.0071, it is recorded as real-but-too-small and not adopted.
+
+**And it re-tests item 218's contradiction as a by-product.** The fresh-seed build regenerates the
+trunk-bearing members, so if `GP+ствол` also beats `GP`-alone on CYP3A4 on these seeds, item 280's
+disagreement with item 218 resolves in k84's favour; if not, the trunk member is the culprit. Either
+way the fresh seeds settle which of the two exhaustive enumerations was right.
