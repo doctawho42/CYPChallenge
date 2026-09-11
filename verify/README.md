@@ -10448,3 +10448,45 @@ the first thing all week to change the submission's ranking. If it comes in sign
 trunk-bearing members, so if `GP+ствол` also beats `GP`-alone on CYP3A4 on these seeds, item 280's
 disagreement with item 218 resolves in k84's favour; if not, the trunk member is the culprit. Either
 way the fresh seeds settle which of the two exhaustive enumerations was right.
+
+**283. CYP2C9 adopts GP+ствол, confirmed on fresh seeds with no shrinkage, and the same run
+supersedes item 218 on CYP3A4. The first composition change to ship since the submission was
+frozen.** `verify/k86_cyp2c9.py`, seeds 4-7 (fresh: seeds 0-3 generated the hypothesis in item 280
+and were not reused), conditions from item 282.
+
+    CYP2C9, фикс. GP+ствол минус подаваемый all5
+    сид 4    +0.0155        сид 6    +0.0106
+    сид 5    +0.0121        сид 7    +0.0116
+                      среднее +0.0125   sd 0.0021   знак 4/4   пол 0.0071
+
+**Condition of item 282 (> 0.0071 at sign 3/4): met, and cleanly.** The fresh-seed mean +0.0125 is
+within 0.0001 of the in-sample +0.0124 -- **no shrinkage at all**, which is what a real structural
+effect looks like rather than a fitted one. The fresh 31-subset enumeration independently re-selects
+the GP+ствол core on all four seeds (twice exactly GP+ствол, twice поферментно+GP+ствол, the two
+seeds-0-3 leaders). The mechanism holds: CYP2C9 has the fewest labels (1285), so the two
+low-dimensional members on 247-column DESC+MECH survive and the two high-dimensional boosters that
+overfit are dropped.
+
+**The by-product resolves item 280's contradiction with item 218, in item 280's favour.** On the
+same fresh seeds, CYP3A4 `GP+ствол` beats the shipped `GP`-alone by **+0.0044** (sd 0.0013, sign 4/4,
+above CYP3A4's floor 0.0033). Item 218 enumerated all 31 subsets and put `GP`-alone first -- but that
+was with an EARLIER trunk; the current trunk (committed 3 September, "reproduces bit for bit") makes
+`GP+ствол` the better arm. Item 218 was right for the trunk it had and is superseded by the one that
+ships. The trunk was the culprit, exactly as item 280 guessed.
+
+**Both changes ship.** `SOLO` becomes `{CYP2C9: (GP, ствол), CYP3A4: (GP, ствол)}`. CYP2C9 is the
+formally pre-registered adoption (item 282); CYP3A4 is a by-product confirmed on the same fresh seeds
+against its own floor, with clean train/test separation (hypothesis from seeds 0-3, test on 4-7), and
+it corrects a documented error rather than introducing a guess. Macro rank moves by
+`(0 + 0.0125 + 0 + 0.0044)/4 = +0.0042`, above the 0.0036 macro floor -- **the first shippable macro
+improvement this session, and it is a composition change, not a feature.**
+
+**What it cost and what stayed safe.** The fresh seeds needed the trunk, which existed only for seeds
+0-3; it was trained for 4-7 on MPS (about 25 minutes, two passes), and the predictions were merged
+INTO the committed trunk files additively -- seeds 0-3 verified byte-identical, the golden digest
+`2d93c19815e14261` intact, `tests/test_split.py` green. Nothing that ships on seed 0 moved except the
+`SOLO` rule itself.
+
+**And it does not reopen the closed cells.** CYP1A2 and CYP2D6 were NOT tested on fresh seeds; k84
+found CYP1A2's пофе+GP+ство only borderline stable and CYP2D6's selection net-negative, so neither is
+adopted. Two cells change, two stay.

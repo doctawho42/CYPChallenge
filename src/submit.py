@@ -567,7 +567,16 @@ def _oof_one(X, y, mask, fold, pool, scr=None):
 # при этом лучше по метрике (0.4101 против 0.4129). Два члена ещё и страхуют от того, что
 # гауссов процесс окажется неудачлив на тесте, чего одиночный член не переживёт. Выбран
 # одиночный GP; альтернатива меняется правкой одной строки ниже.
-SOLO = {"CYP3A4": ("GP",)}
+# UPDATED (items 282, 283): CYP2C9 and CYP3A4 both ship GP+ствол, confirmed on FRESH seeds 4-7
+# that did not generate the hypothesis. CYP2C9 GP+ствол beats the five-member mean by +0.0125
+# (sd 0.0021, sign 4/4, floor 0.0071) with no shrinkage from the in-sample +0.0124 -- the fewest
+# labels (1285) mean the two low-dim members on DESC+MECH survive and the high-dim boosters that
+# overfit are dropped. CYP3A4 GP+ствол beats GP-alone by +0.0044 (sd 0.0013, sign 4/4, floor
+# 0.0033): item 218 put GP-alone first, but that was an earlier trunk; the current one makes
+# GP+ствол the better arm, so 218 is superseded, not wrong. Macro rank +0.0042 over the frozen
+# submission. CYP1A2/CYP2D6 were not tested on fresh seeds (k84: 1A2 borderline, 2D6 net-negative)
+# and stay on the full ensemble.
+SOLO = {"CYP2C9": ("GP", "ствол"), "CYP3A4": ("GP", "ствол")}
 
 # Предполагаемый сдвиг теста по ферментам. ОДНО определение: verify/k79_bandfix.py читает
 # его отсюда, потому что полоса фальсификации относится к конкретным дельтам, и разошедшиеся
