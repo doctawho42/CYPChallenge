@@ -10605,3 +10605,54 @@ on both cells**, making max_features the fourth intervention (with cross-enzyme 
 member, and the shape block) that is real at member level and dies over the ensemble. If CYP2D6
 somehow clears its floor, it is the first parameter change to survive, and worth it on the enzyme
 that needs it most.
+
+**287. max_features arm 2 fails, the fourth intervention to die over the ensemble -- and an outside
+reading splits that death into two mechanisms measured separately, one curable and one not.**
+`verify/k87_maxfeat2.py`, fresh seeds 4-7, conditions from item 286. Nothing adopted.
+
+    фермент   Δранг ансамбля      sd    знак    пол      член (k82)
+    CYP1A2         -0.0021     0.0030   1/4   0.0061       +0.0039 (2/4, шум)
+    CYP2D6         +0.0011     0.0012   3/4   0.0049       +0.0149 (4/4)
+
+**The measurement is CYP2D6 alone.** CYP1A2's member-level max_features was +0.0039 at sd 0.0090,
+sign 2/4 -- noise (item 286 said so), and its negative over the ensemble is noise staying noise, not
+dilution. CYP2D6's member-level +0.0149 (three times its floor, sign 4/4) is the real effect, and it
+arrives over the ensemble at **+0.0011** -- a thirteen-fold shrink, below the floor. Predicted
+[0.002, 0.004]; came in lower. **Fourth confirmation of the boundary**, after cross-enzyme stacking
+(269), the pooled member (274) and the shape block (281): real at member level, dead over the
+ensemble.
+
+**But "dead over the ensemble" is two mechanisms, and an outside reading decomposed item 281's own
+table to show it.** Splitting each member-level effect into its 1/N averaging share and the residual:
+
+    фермент   член      1/5 члена   над ансамблем   остаток сверх усреднения
+    CYP1A2   +0.0060     +0.0012        +0.0014      нет --- ровно усреднение
+    CYP2D6   +0.0087     +0.0017        +0.0004      вчетверо ниже 1/N --- избыточность
+    CYP3A4   -0.0008        —           +0.0000      SOLO, контроль (член не входит)
+
+On CYP1A2 the shape block lost exactly its 1/N averaging share and nothing more; on CYP2D6 it lost a
+further four-fold, which is the redundancy k84 measured independently (CYP2D6 is where the five
+members are most tied and where subset selection went net-negative). **The honest caveat, which the
+reading itself states:** over the ensemble both cells are statistically indistinguishable from zero
+(+0.0014 at sd 0.0014, +0.0004 at sd 0.0011), so the averaging-versus-redundancy split is a reading
+of the point estimates consistent with the data, not an established fact.
+
+**Why the distinction matters for the writeup and for the next run.** Averaging is curable and
+redundancy is not. Averaging shrinks with fewer members -- and after items 282-285 the shipped
+compositions are CYP1A2 three members, CYP2C9/CYP3A4 two, only CYP2D6 five -- and with wider
+insertion, since a 3D block can enter both the per-enzyme booster and the Gaussian process, both of
+which read DESC+MECH. **k85 measured its dilution on the five-member compositions that no longer
+exist; any future feature arm 2 must be run against the new SOLO, or it measures a dilution that is
+gone.** It does not reopen the shape block -- three members with the block in two projects to about
++0.0040 against CYP1A2's floor 0.0061, still short -- but the claim for the entry changes from
+"features die of redundancy" to "of averaging on three enzymes of four and of redundancy on CYP2D6,
+measured apart, with CYP3A4's +0.0000 as the SOLO control."
+
+**The falsification band was recomputed on the new composition** (`verify/k79_bandfix.py` over the
+regenerated `oof_submitted.json`): shipped-transform macro pair 0.6506 (plain pair 0.6375 against the
+old 0.6416, so the composition improved the pair too), band n=750 **[0.6114, 0.6997]** half-width
+0.0442, n=375 [0.5945, 0.7265] half-width 0.0660. It shifted down from item 256's [0.6263, 0.7090] by
+the composition gain. One honest edge, from the same outside reading: the band's centre is the seed-0
+realisation, and seed 0 is inside the 0-3 set that generated the composition hypothesis, so the
+effect SIZE (fresh seeds) is clean while this particular REALISATION is partly selected -- the band
+covers the draw over which 750 are revealed, not that selection.
