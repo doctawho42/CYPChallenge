@@ -10494,3 +10494,33 @@ INTO the committed trunk files additively -- seeds 0-3 verified byte-identical, 
 **And it does not reopen the closed cells.** CYP1A2 and CYP2D6 were NOT tested on fresh seeds; k84
 found CYP1A2's пофе+GP+ство only borderline stable and CYP2D6's selection net-negative, so neither is
 adopted. Two cells change, two stay.
+
+**284. Pre-registration: the CYP1A2 composition, fixed subset from seeds 0-3, on fresh seeds 4-7.**
+Written and committed before the fresh-seed result is computed -- and this one is genuinely
+uncertain, unlike CYP2C9. The fresh members are already cached (`members_seed4-7.json` from k86), so
+the test is arithmetic, minutes not hours.
+
+**The hypothesis, from seeds 0-3.** CYP1A2's best of 31 subsets is **`поферментно+GP+ствол`** at mean
+rank 0.5692 against the shipped all-five at 0.5615 -- **+0.0077 in-sample**, all-five sixth of
+thirty-one. It keeps the per-enzyme booster and drops the ridge (and the pooled member); CYP1A2 has
+more labels than CYP2C9 (1412 vs 1285), so its per-enzyme booster overfits less and is worth keeping,
+which is a coherent variant of the same "drop the overfitters" mechanism.
+
+**Why this is weaker than CYP2C9 and may not survive.** The in-sample +0.0077 is only 1.26 times
+CYP1A2's floor 0.0061, against CYP2C9's 1.75 times; item 280 recorded CYP1A2's пофе+GP+ство as only
+13 of 20 folds-times-seeds stable, borderline. A margin that thin over the floor is exactly what
+shrinks below it on fresh seeds.
+
+**The test.** Fixed `поферментно+GP+ствол` vs the shipped all-five on CYP1A2, seeds 4-7 (seeds 0-3
+generated the hypothesis and are not reused), from the cached members. Reported with the fresh
+31-subset enumeration (does it re-select the same subset?).
+
+**Adopted for the submission (CYP1A2 only) if and only if, over the four fresh seeds:** the fixed
+rule beats all-five on CYP1A2 by more than CYP1A2's floor **0.0061** at sign 3/4 or better.
+
+**Prediction.** Shrinkage from +0.0077 lands it near or below the floor -- I put it at a coin flip,
+more likely NOT adopted, at fresh gain in [0.003, 0.007]. If it clears, a third composition cell
+changes and the mechanism ("small-data enzymes drop their high-dimensional members") holds on three
+of four enzymes. If it does not, CYP1A2 stays on the full ensemble and the honest record is that the
+effect was real in-sample but too thin to survive an unbiased test -- which is itself the point of
+running it on fresh seeds.
