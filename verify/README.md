@@ -10777,3 +10777,19 @@ A PASS would have warranted fresh seeds (which would need the external CSVs, no 
 a FAIL closes the external-trunk proposal honestly, and it failed cleanly. The multi-task branch's
 other open-by-rank gap -- multi-task trees (item 188) inserted into the current ensemble -- is
 measured separately in `verify/k90_multitask.py`.
+
+**291. Pre-registration (blind): multi-task trees over the ensemble -- the symmetric gap to 290.**
+`verify/k90_multitask.py`, seeds 0-3, committed predictions `results/preds/oof_multi.json`. Item 188
+measured multi-task trees at +0.0069 macro rank over the per-enzyme reference AT MEMBER LEVEL, but
+never inserted them into the current shipped ensemble and scored by rank over it -- the same
+item-267 shape as 290 for the internal (not external) multi-task route. This inserts the honest-form
+member (multi-task on 1A2/2C9/2D6, independent on 3A4, per item 188's negative-transfer result on the
+data-rich enzyme) as an extra member, with a control (`независимо`, same DecisionTree-boosting
+learner) so the multi-task-specific channel is INSERT(multi) - INSERT(незав), parallel to 290's
+lambda3 - lambda0. Learner and dead-zone caveat: ablmulti's learner is not the shipped HistGB member
+and its predictions carry no dead-zone pass, so this is insertion-with-control, not a clean swap.
+Criterion for adoption: macro ensemble RANK gain > 0.007, sign 4/4. Prediction: INSERT does NOT pass
+-- the member sits in the boosters' niche (rho ~0.95, item 289) beside the per-enzyme booster and the
+pool, so the +0.0069 member-level gain is eaten by redundancy over the ensemble (item 269); the
+control INSERT(незав) <= 0 and the channel small and positive. A FAIL closes "multi-task earns an
+ensemble place" by measurement; a PASS warrants fresh seeds.
