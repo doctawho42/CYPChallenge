@@ -10793,3 +10793,39 @@ Criterion for adoption: macro ensemble RANK gain > 0.007, sign 4/4. Prediction: 
 pool, so the +0.0069 member-level gain is eaten by redundancy over the ensemble (item 269); the
 control INSERT(незав) <= 0 and the channel small and positive. A FAIL closes "multi-task earns an
 ensemble place" by measurement; a PASS warrants fresh seeds.
+
+**292. Multi-task trees are closed by rank over the ensemble -- same anatomy as 290: the channel is
+real, the vehicle is redundant. Multi-task (proposal B) is now measured shut from both ends.**
+`verify/k90_multitask.py`, seeds 0-3, as pre-registered in 291.
+
+    арм (над ансамблем, 4 сида)          Δранг ср.      sd     знак>0   Δпара ср.   вердикт
+    INSERT multi (honest form)            -0.0062     0.0009    0/4      +0.0107    не проходит
+    INSERT multi (pure, все четыре)       -0.0067     0.0007    0/4      +0.0128    не проходит
+    INSERT незав (контроль, тот же учитель) -0.0121   0.0016    0/4      +0.0102    не проходит
+    SWAP поф->multi (honest)              -0.0082     0.0009    0/4      +0.0120    не проходит
+
+    канал многозадачности (INSERT multi - INSERT незав):   +0.0059 ранга, знак 4/4
+    standalone multi(honest) 0.5727  против незав 0.5615:   +0.0112 ранга (item 188 воспроизведён)
+
+**The channel is real, and item 188 reproduces.** Standalone, the multi-task member beats the
+independent per-enzyme member by +0.0112 rank (item 188 measured +0.0069; the honest form here, multi
+on 1A2/2C9/2D6 and independent on 3A4, is stronger than the pure form). Over the ensemble the
+multi-task-specific channel is +0.0059 (INSERT multi - INSERT незав, sign 4/4). Multi-task structure
+genuinely helps relative to a plain second booster -- the mechanism is not a mirage.
+
+**But the vehicle is redundant, so it dies over the ensemble.** Inserting ANY boosting-family member
+costs -0.0121 (the control: a second independent per-enzyme booster), because it lands in the
+boosters' niche (rho ~0.95, item 289) beside поферментно and пул, whose contrast is already vested
+(item 274). The +0.0059 multi-task channel recovers only half of that, so net INSERT multi = -0.0062,
+sign 0/4; SWAP -0.0082; pair-ST-RAE worsens. This is item 269 again, and the exact parallel to 290:
+a real channel (there external labels, here shared-leaf structure) killed by a redundant/weak member.
+
+**Consequence: the transfer/multi-task audit is closed by measurement, not by association.** The
+within-session audit split proposal B into external-auxiliary multi-task (290) and internal
+multi-task (292); both now have their decisive rank-over-ensemble number, and both fail the 0.007
+criterion 0/4 while confirming a real underlying channel. Together with the representation-transfer
+half (encoder embeddings closed by rank, items 61/68/117/154; fine-tuning and CYP-adjacent
+pretraining low-prior per items 166/189/269/289), every branch the audit raised is now measured shut.
+The one lever left with a live claim above the floor is neither proposal -- it is docking (a function
+of the ligand-cavity pair, escaping the saturated ligand-only channel by construction; item 168 and
+memory), whose prior is already lowered after ablsite and which costs ~20000 runs.
