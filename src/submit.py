@@ -576,7 +576,15 @@ def _oof_one(X, y, mask, fold, pool, scr=None):
 # GP+ствол the better arm, so 218 is superseded, not wrong. Macro rank +0.0042 over the frozen
 # submission. CYP1A2/CYP2D6 were not tested on fresh seeds (k84: 1A2 borderline, 2D6 net-negative)
 # and stay on the full ensemble.
-SOLO = {"CYP2C9": ("GP", "ствол"), "CYP3A4": ("GP", "ствол")}
+# CYP1A2 added (items 284, 285): fresh seeds 4-7 give поферментно+GP+ствол over the five-member
+# mean at +0.0068 (sd 0.0017, sign 4/4, floor 0.0061) -- thin (lower 95% bound +0.0047, below the
+# floor) but pre-registered and met. It keeps the per-enzyme booster (1412 labels overfit less than
+# CYP2C9's 1285) and drops the ridge. Three of four enzymes now drop members; only CYP2D6 keeps the
+# full ensemble (k84: its selection is net-negative). Shipped-seed-0 macro +0.0061, fresh-seed
+# estimate +0.0059, both above the 0.0036 floor.
+SOLO = {"CYP1A2": ("поферментно", "GP", "ствол"),
+        "CYP2C9": ("GP", "ствол"),
+        "CYP3A4": ("GP", "ствол")}
 
 # Предполагаемый сдвиг теста по ферментам. ОДНО определение: verify/k79_bandfix.py читает
 # его отсюда, потому что полоса фальсификации относится к конкретным дельтам, и разошедшиеся

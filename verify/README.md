@@ -72,8 +72,8 @@ sampling-полоса абсолютного счёта, а не то, с чем
                         он же в режиме теста     +0.0313       4     119
     пулирование контрастом                       +0.0141       4  84,132   в подаче есть
     GP и гребневая как члены                  своя ошибка      4  92,100   в подаче есть
-    поферментный состав GP+ствол (2C9, 3A4)      +0.0042       4  282,283   в подаче есть
-                        2C9 +0.0125, 3A4 +0.0044 --- на СВЕЖИХ сидах 4-7; заменяет SOLO пункта 218
+    поферментный состав по ферментам             +0.0059       4 282-285   в подаче есть
+                        1A2 пофе+GP+ств, 2C9/3A4 GP+ств --- на СВЕЖИХ сидах 4-7; заменяет SOLO 218
     скрининг, ОДИНОЧНАЯ модель                  +0.0290       4 158,177   см. ниже
                         он же в ансамбле       +0.0014       4     182   ниже пола
     панель NCGC, поферментно                  считается        —     157   НЕ в подаче
@@ -10524,3 +10524,47 @@ changes and the mechanism ("small-data enzymes drop their high-dimensional membe
 of four enzymes. If it does not, CYP1A2 stays on the full ensemble and the honest record is that the
 effect was real in-sample but too thin to survive an unbiased test -- which is itself the point of
 running it on fresh seeds.
+
+**285. CYP1A2 adopts поферментно+GP+ствол -- it passes on fresh seeds, against my prediction, but
+by a thin margin honestly recorded. Three of four cells now change.** Fresh seeds 4-7 from the
+cached members, conditions from item 284.
+
+    CYP1A2, фикс. поферментно+GP+ствол минус all5
+    сид 4    +0.0044        сид 6    +0.0086
+    сид 5    +0.0071        сид 7    +0.0070
+                      среднее +0.0068   sd 0.0017   знак 4/4   пол 0.0061
+
+**Condition of item 284 (> 0.0061 at sign 3/4): met.** But thinly: the mean clears the floor by
+0.0007, and the one-sided 95% lower bound is +0.0047, BELOW the floor. So the effect is
+significantly positive (sign 4/4, t about 8) but marginal in size -- a real cell, not a clean one
+like CYP2C9's +0.0125. **My item-284 prediction ("coin flip, more likely NOT adopted") was too
+pessimistic**; the fresh gain landed in the predicted [0.003, 0.007] band but on the passing side.
+The fresh enumeration re-selects the поферментно+GP+ствол core on all four seeds. Per the
+pre-registered rule it adopts.
+
+**The shipped macro, computed against the RIGHT baselines.** An earlier draft of this arithmetic
+used the five-member mean as CYP3A4's baseline, which is wrong: CYP3A4 already ships GP-alone
+(SOLO), so its change is GP-alone to GP+ствол, +0.0016 on seed 0, not the +0.0129 that all-five to
+GP+ствол would suggest. The correct per-enzyme changes over the SHIPPED composition, seed 0:
+
+    CYP1A2   all5 -> пофе+GP+ство     +0.0103
+    CYP2C9   all5 -> GP+ство          +0.0125
+    CYP2D6   не меняется               0.0000
+    CYP3A4   GP-один -> GP+ство       +0.0016
+    МАКРО                             +0.0061
+
+The fresh-seed unbiased estimate is +0.0059 (1A2 +0.0068, 2C9 +0.0125, 3A4 +0.0044, over four). Both
+sit comfortably above the 0.0036 macro floor -- with all three cells, the composition change is
+worth about +0.006 of macro rank, where two days ago the whole session had shipped nothing.
+
+**`SOLO` becomes `{CYP1A2: (поферментно, GP, ствол), CYP2C9: (GP, ствол), CYP3A4: (GP, ствол)}`.**
+Three of four enzymes now drop members; only CYP2D6 keeps the full ensemble, because k84 measured its
+selection net-negative. The pattern is one mechanism seen three times: the enzyme drops the members
+that overfit its training set, and how many it drops scales with how few labels it has -- CYP2C9
+(1285) drops both boosters, CYP1A2 (1412) keeps the per-enzyme booster and drops the ridge, CYP3A4's
+analog campaign drops everything but GP and the trunk.
+
+**Not selection over cells.** Each cell was pre-registered with its own floor and tested on fresh
+seeds it did not generate; three passed and one (CYP2D6) was measured net-negative and left alone.
+Adopting the three that passed their independent pre-registered tests is not cherry-picking -- the
+one that failed is on the record too.
