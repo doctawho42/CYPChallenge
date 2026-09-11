@@ -10656,3 +10656,36 @@ the composition gain. One honest edge, from the same outside reading: the band's
 realisation, and seed 0 is inside the 0-3 set that generated the composition hypothesis, so the
 effect SIZE (fresh seeds) is clean while this particular REALISATION is partly selected -- the band
 covers the draw over which 750 are revealed, not that selection.
+
+**288. Pre-registration: the estimator-family screen -- the one axis with measured headroom, tested
+by the cheap precomputable gate before any ensemble arm is built.** Written and committed before
+`verify/k88_family.py` runs. This is not an adoption test; it is sieve one of three, and it decides
+only whether a new family EARNS an ensemble arm.
+
+**Why.** Item 280's correlation matrix put every current member pair at 0.91-0.99, and the least
+correlated pair -- GP and the trunk at 0.913 -- share the same 247 DESC+MECH columns, so decorrelation
+in this project comes from the ESTIMATOR FAMILY, not from features. The best-linear-mix ceiling
+(variance x (1+rho)/2, elasticity ~0.012 pair per one per cent of error) gives a new member at
+rho=0.913 up to 0.027 of pair, above the 0.020 paired leaderboard floor -- the only axis with a
+ceiling over that floor. Four families ship (boosting twice, exact GP, ridge, torch MLP); a fifth has
+never been tried, and kNN (items 100, 107) and pretrained embeddings (three times) are closed.
+
+**The screen.** Build out-of-fold predictions on seed 0, per enzyme, for candidate families NOT in
+the ensemble: random forest and extra-trees (bagged trees, a different bias from boosting), SVR with
+an RBF kernel, and kernel ridge with an RBF kernel (kernel methods distinct from the linear ridge).
+For each, measure two numbers per enzyme: its standalone rank, and the correlation of its
+out-of-fold ERROR with the five-member mean's error.
+
+**Passes the gate (earns an ensemble arm) if and only if:** mean error-correlation with the ensemble
+across the four enzymes is **below 0.93**, AND its standalone macro rank is within 0.02 of the
+weakest current member, so it is decorrelated without being so weak it would drag an unweighted mean.
+A family at rho >= 0.93, or far below the accuracy band, is closed here without an ensemble build --
+exactly the precomputable refusal the ceiling licenses.
+
+**Prediction.** The tree families (RF, extra-trees) will correlate high with the boosters (same
+feature matrix, same tree bias family) -- rho ~0.95+, closed. The kernel methods on DESC+MECH will
+correlate high with the GP (same columns, same kernel family) -- rho ~0.93+, closed. **I expect all
+four to fail the gate**, because the reviewer's own diagnosis is that decorrelation needs a genuinely
+different family and these are near-neighbours of families already present. If one surprises, it is
+the first candidate in weeks with a ceiling above the leaderboard floor and gets a pre-registered
+ensemble arm. Either way the screen costs minutes and the refusal is measured, not assumed.
