@@ -72,6 +72,8 @@ sampling-полоса абсолютного счёта, а не то, с чем
                         он же в режиме теста     +0.0313       4     119
     пулирование контрастом                       +0.0141       4  84,132   в подаче есть
     GP и гребневая как члены                  своя ошибка      4  92,100   в подаче есть
+    поферментный состав GP+ствол (2C9, 3A4)      +0.0042       4  282,283   в подаче есть
+                        2C9 +0.0125, 3A4 +0.0044 --- на СВЕЖИХ сидах 4-7; заменяет SOLO пункта 218
     скрининг, ОДИНОЧНАЯ модель                  +0.0290       4 158,177   см. ниже
                         он же в ансамбле       +0.0014       4     182   ниже пола
     панель NCGC, поферментно                  считается        —     157   НЕ в подаче
@@ -8427,7 +8429,7 @@ this paragraph.
      235   оракул порога                    max по 91 порогу, тот же    не для подачи
                                             грид, что у plug-in
      241   колонка "лучший MCC"             max по 3 правилам порога    в записи
-     218   SOLO: один GP на CYP3A4          max по 4 ферментам,         В ПОДАЧЕ
+     218   SOLO: один GP на CYP3A4          max по 4 ферментам,         ЗАМЕНЁН 283
                                             затем max из 31 подмножества
 
 Item 218's constant is in `src/submit.py:400` and it is the only one of the three that ships. Its
@@ -8841,7 +8843,7 @@ two are both wrong:
 
     0.6599   четырёхчленный ансамбль (пункт 149)     -- на нём стояла отозванная полоса
     0.6459   пять членов, проход во всех (пункт 213) -- k58_dzsubmit НЕ применяет SOLO
-    0.6416   пять членов + SOLO на CYP3A4            -- ПОДАЁТСЯ
+    0.6416   пять членов + SOLO GP на CYP3A4         -- было; SOLO обновлён (пункт 283)
 
 `verify/k58_dzsubmit.py` composes all five members for every enzyme, while `src/submit.py` applies
 item 218's per-enzyme selection and ships **the Gaussian process alone on CYP3A4**. So the submitted
@@ -10486,6 +10488,8 @@ improvement this session, and it is a composition change, not a feature.**
 INTO the committed trunk files additively -- seeds 0-3 verified byte-identical, the golden digest
 `2d93c19815e14261` intact, `tests/test_split.py` green. Nothing that ships on seed 0 moved except the
 `SOLO` rule itself.
+
+**One honesty note on the number.** The +0.0042 is the unbiased estimate over the four fresh seeds. The submission ships on seed 0, where it realises as +0.0035 (CYP2C9 +0.0125, CYP3A4 +0.0016) -- CYP3A4's gain is seed-dependent (+0.0016 on seed 0 against +0.0044 averaged), so the shipped realisation sits just under the 0.0036 macro floor while the effect-size estimate sits just over it. Both are positive on every seed; the fresh-seed average is the honest effect size, the seed-0 value is the one draw that ships.
 
 **And it does not reopen the closed cells.** CYP1A2 and CYP2D6 were NOT tested on fresh seeds; k84
 found CYP1A2's пофе+GP+ство only borderline stable and CYP2D6's selection net-negative, so neither is
