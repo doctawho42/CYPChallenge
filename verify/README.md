@@ -10689,3 +10689,44 @@ four to fail the gate**, because the reviewer's own diagnosis is that decorrelat
 different family and these are near-neighbours of families already present. If one surprises, it is
 the first candidate in weeks with a ceiling above the leaderboard floor and gets a pre-registered
 ensemble arm. Either way the screen costs minutes and the refusal is measured, not assumed.
+
+**289. The estimator-family axis is closed by the screen -- decorrelation and accuracy trade off,
+and no family is both. The last axis with a ceiling above the leaderboard floor, measured shut
+without an ensemble build.** `verify/k88_family.py`, seed 0, conditions from item 288.
+
+    семейство         ρ ошибки ср.   ранг макро   слабейший член 0.5776   вердикт
+    случайный лес         0.963         0.5532        -0.0244            закрыт
+    экстра-деревья        0.950         0.5535        -0.0242            закрыт
+    SVR-RBF               0.898         0.5156        -0.0620            закрыт
+    ядровая гребн.-RBF    0.661         0.4402        -0.1374            закрыт
+
+**None passes, and the split says why my prediction was half wrong.** I predicted all four fail
+(right) with the kernels failing on correlation (~0.93+); instead the tree families failed on
+correlation (0.95-0.96, the boosters' tree bias on the same matrix) while the kernel families
+DECORRELATED cleanly -- SVR at 0.898, kernel ridge at 0.661, both below the 0.93 gate -- and failed
+on ACCURACY instead. Decorrelation from the estimator family is real, exactly as the outside reading
+diagnosed; it just does not come free.
+
+**The trade-off is airtight, checked by tuning rather than assumed.** Sweeping kernel ridge's kernel
+width, its accuracy peaks at macro rank 0.5417 (gamma 0.001, error-correlation 0.859) and collapses
+as the kernel narrows; it never reaches the weakest current member (0.5776), let alone the Gaussian
+process (0.627). The weakness is not a hyperparameter artefact: **the accurate RBF-kernel-on-DESC+MECH
+niche is already occupied optimally by the exact GP**, and any cruder kernel method is strictly
+worse. So a kernel method is either tuned toward the GP (accurate and correlated) or away from it
+(decorrelated and weak), with no point that is both -- and the tree families sit in the boosters'
+niche the same way.
+
+**What this does to the best-linear-mix ceiling.** The 0.027-of-pair ceiling at rho=0.913 (item 288)
+assumed a new member at ENSEMBLE accuracy. Empirically no family reaches rho<0.93 at ensemble
+accuracy, because the accurate region of every estimator family present -- trees, RBF kernel, linear,
+MLP -- is already occupied by a member. The ceiling is real and unreachable: decorrelation is
+available (kernel ridge at 0.66) and accuracy is available (the GP at 0.627), never together.
+
+**The consequence, stated plainly for the writeup.** This was the one axis with a measured headroom
+above the 0.020 paired leaderboard floor, and it is now closed by a precomputable screen that cost
+minutes and built no ensemble arm -- the refusal item 288 licensed. With features closed by dilution
+(items 281, 287), compositions paid and shipped (282-285), and estimator families closed by the
+accuracy-decorrelation trade-off here, **every axis the project can reach before 3 November is now
+measured shut, and the submission's +0.006 of macro rank this week is the whole of what was
+available.** That is not fatigue; it is a map with every edge walked to its end and the reason
+written at each one.
