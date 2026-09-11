@@ -10730,3 +10730,50 @@ accuracy-decorrelation trade-off here, **every axis the project can reach before
 measured shut, and the submission's +0.006 of macro rank this week is the whole of what was
 available.** That is not fatigue; it is a map with every edge walked to its end and the reason
 written at each one.
+
+**290. The external-CYP auxiliary-head trunk is closed BY RANK over the ensemble -- the channel is
+real, the vehicle sinks it. The last item-267-pattern gap, measured shut without a build.**
+`verify/k89_exttrunk.py`, seeds 0-3, against the shipped composition (`oof_members` ансамбль5 +
+`dz_pass` + `_keep`/SOLO). Prediction and criterion pre-registered before the run.
+
+This settles a within-session audit finding: `src/trunkext.py` (item 66) -- the shared trunk with
+8004 external ChEMBL CYP pIC50 rows in the auxiliary head instead of the screen -- is the artefact
+that most directly instantiates the "one shared trunk, two tasks, the second external" proposal, and
+it had been scored ONLY in raw ST-RAE (channel -0.0176, 4/4) and never converted to rank after the
+affine pair, nor inserted into the ensemble. Item 66's own last line said "still not settled." Per
+CLAUDE.md / item 77 a raw ST-RAE number is not evidence, so the decisive measurement was never taken
+-- the item-267 shape (shelved by assumption, the deciding number never computed). The committed
+predictions (`results/preds/trunk_ext.json`, seeds 0-3, lambda 0 and 3.0) let it be closed in the
+decisive currency with no training, exactly as item 117 re-read item 68's saved predictions by rank.
+
+    арм (над ансамблем, 4 сида)          Δранг ср.      sd    знак>0    Δпара ср.   вердикт
+    INSERT lam3 (внешний ствол доп.)      -0.0104     0.0007    0/4      +0.0158    не проходит
+    SWAP lam3 (вместо screen-ствола)      -0.0164     0.0013    0/4      +0.0174    не проходит
+    INSERT lam0 (контроль: строки, канал off) -0.0189 0.0008    0/4      +0.0192    не проходит
+
+    канал вспом. головы над ансамблем (INSERT lam3 - lam0):   +0.0085 ранга, знак 4/4
+    канал соло (standalone lam3 - lam0):                      +0.0147 ранга, знак 4/4
+    внешний ствол соло 0.5270  против screen-ствола 0.5966
+
+**The channel is real -- this half vindicates the proposal.** The external-CYP auxiliary head lifts
+the trunk's own rank by +0.0147 standalone (sign 4/4) and contributes +0.0085 of rank over the
+ensemble (INSERT lam3 - INSERT lam0, sign 4/4). So item 66's -0.0176 was NOT an affine-pair artefact;
+the external labels carry genuine, rank-surviving information, and "external data is dead" (the
+row-merge closures, items 60-61, 77, 144, 157) was over-generalised to this route. The user's
+distinction -- transfer a representation vs merge rows -- was correct that far.
+
+**The vehicle sinks it, which is the other half.** The external trunk is a much weaker member than
+the shipped screen trunk (standalone 0.5270 vs 0.5966), so inserting a SECOND neural trunk drags the
+ensemble down -0.0189 (the lam0 control: external rows present, auxiliary term off), and the +0.0085
+channel recovers only part of that. Net INSERT lam3 = -0.0104, sign 0/4; SWAP is worse (-0.0164); the
+pair-ST-RAE also worsens (+0.0158). This is item 269 exactly: a real channel that escapes averaging
+dilution still dies because the member is redundant/weak against the existing five, whose contrast is
+already vested in the pooled member (item 274 knockout +0.0008). Pre-registered prediction ("lands
+like the screen trunk: survives standalone, sub-floor as a member") confirmed on all four seeds.
+
+**Caveat and scope.** Seeds 0-3 are the same seeds item 66 used; this is a re-scoring of committed
+predictions in the decisive currency, legitimate exactly as item 117, not a fresh-seed confirmation.
+A PASS would have warranted fresh seeds (which would need the external CSVs, no longer in the tree);
+a FAIL closes the external-trunk proposal honestly, and it failed cleanly. The multi-task branch's
+other open-by-rank gap -- multi-task trees (item 188) inserted into the current ensemble -- is
+measured separately in `verify/k90_multitask.py`.
