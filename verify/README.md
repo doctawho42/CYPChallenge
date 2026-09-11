@@ -10568,3 +10568,40 @@ analog campaign drops everything but GP and the trunk.
 seeds it did not generate; three passed and one (CYP2D6) was measured net-negative and left alone.
 Adopting the three that passed their independent pre-registered tests is not cherry-picking -- the
 one that failed is on the record too.
+
+**286. Pre-registration: max_features arm 2 over the ensemble, on fresh seeds -- now a CYP2D6
+question, because the SOLO changes removed the per-enzyme member from the other three cells.**
+Written and committed before `verify/k87_maxfeat2.py` runs. This is the arm 2 that item 273 required
+and item 270 pre-registered, updated for the composition that now ships.
+
+**What changed the target.** Items 282-285 dropped the per-enzyme booster from CYP2C9 and CYP3A4
+(both ship GP+ствол) and kept it on CYP1A2 (пофе+GP+ствол) and CYP2D6 (all five). So max_features on
+the per-enzyme member can only reach CYP1A2 and CYP2D6 in the shipped composition. The member-level
+(rank) effect of mf=0.1 on those two, from k82:
+
+    CYP1A2   +0.0039   sd 0.0090   знак 2/4   пол 0.0061   (слабо, шумно)
+    CYP2D6   +0.0149   sd 0.0026   знак 4/4   пол 0.0049   (сильно, 3x пола)
+
+**CYP2D6 is the whole question, and it is the worst possible cell for it.** The +0.0149 is the
+strongest feature/parameter effect measured on CYP2D6, on the enzyme with the largest gap. But CYP2D6
+is also where k84 found the five members most tied, and where item 281's shape block diluted +0.0087
+to +0.0004 over the ensemble -- a twenty-two-fold shrink. Arm 2 pits the strongest member-level
+effect against the worst dilution.
+
+**The test.** `k87_maxfeat2.py` rebuilds the per-enzyme member with `max_features=0.1` and its
+dead-zone pass under scikit-learn 1.8.0, fresh seeds 4-7, substitutes it into the shipped composition
+(CYP1A2 пофе+GP+ствол, CYP2D6 all five), and scores CYP1A2 and CYP2D6 ensemble rank against the
+cached plain per-enzyme member. The baseline is clean: mf=1.0 under 1.8.0 is bit-identical to the
+cached 1.3.2 member (item 273).
+
+**Adopted into the per-enzyme member if and only if, over the four fresh seeds:** CYP2D6 ensemble
+rank gain exceeds its floor 0.0049 at sign 3/4 (primary), or CYP1A2 exceeds 0.0061 at sign 3/4; and
+neither cell falls more than its own floor.
+
+**Prediction.** Dilution wins, as it did for the shape block. CYP2D6's +0.0149 member effect enters
+one member of five in the mean and lands near +0.002-0.004, below its 0.0049 floor; CYP1A2's
+member-level +0.0039 is already sub-floor and noisy (2/4), so it fails too. **I expect arm 2 to fail
+on both cells**, making max_features the fourth intervention (with cross-enzyme stacking, the pooled
+member, and the shape block) that is real at member level and dies over the ensemble. If CYP2D6
+somehow clears its floor, it is the first parameter change to survive, and worth it on the enzyme
+that needs it most.
