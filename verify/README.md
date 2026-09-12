@@ -60,8 +60,15 @@ sampling-полоса абсолютного счёта, а не то, с чем
 большим запасом, и даже больше исправленной полуширины одиночного счёта 0.0414.
 
 **Итого, честно: абсолютный счёт непредсказуем до $\pm0.04$, положение относительно похожей подачи
-определено до $\pm0.02$, по рангу мы вне шума (а ранг на лидерборде не показывают).** Прежнее «весь
+определено до $\pm0.02$, и по рангу мы вне шума --- причём РАНГ ЛИДЕРБОРД ПОКАЗЫВАЕТ.** Прежнее «весь
 выигрыш внутри шума одного замера» неверно на обоих счётах.
+
+Здесь до 12 сентября стояло «а ранг на лидерборде не показывают», и это неверно: pinned README
+организаторов (`CYP-Challenge-Tutorial/README.md`, раздел Challenge Tracks) говорит прямо ---
+«**Secondary metrics** (MAE, R², Spearman ρ, Kendall's τ) are also reported with bootstrap
+confidence intervals». Текст организаторов оперативен, наш --- нет. Следствие не косметическое:
+собственная валюта проекта --- ранг --- становится ВНЕШНЕ проверяемой на раскрытии 25 сентября,
+поэтому предрегистрировать надо не только полосу ST-RAE, но и ранговое предсказание.
 
 **Что стоит в конвейере и сколько стоит.**
 
@@ -84,11 +91,24 @@ sampling-полоса абсолютного счёта, а не то, с чем
 
     конфигурация                                  3A4      2D6    макро   пункт
     структурный классификатор + plug-in        0.3143   0.1137   0.2140     228
-    он же + калибровка Платта (подаётся)       0.3379   0.1169   0.2274     235
+    он же + калибровка Платта                  0.3379   0.1169   0.2274     235
+    СВЯЗКА: ворота(ансамбль) * сдвиг (ПОДАЁТСЯ) 0.3510   0.1235   0.2373     250
     оракул порога (не для подачи)              0.3635   0.1589   0.2612     235
 
-Калибровка забрала +0.0133 макро при поле 0.0076; оракул порога показывает +0.0472 при знаке
-8/8, то есть три четверти доступного на пороге не взяты.
+**Здесь до 12 сентября подаваемой была помечена калибровка Платта. Это устарело с 6 сентября:
+пункт 250 принял связку по предрегистрации пункта 244, и `src/submit.py` строит её по умолчанию
+(`--no-bundle` отключает).** Табло занижало подаваемое плечо на +0.0127 макро.
+
+Калибровка забрала +0.0133 макро при поле 0.0076; связка забрала ещё +0.0127 при знаке 6/8 сверх
+неё; оракул порога показывает +0.0472 при знаке 8/8, то есть три четверти доступного на пороге
+по-прежнему не взяты. Поферментно связка не берёт НИЧЕГО (+0.0083 на 3A4 при поле 0.0281, +0.0170
+на 2D6 при 0.0419) --- заявление строго макро, как и писал пункт 244.
+
+Числа связки --- четырёхсидовые средние из `results/preds/bundle.json`, где её комп��ратор
+«метка+Платт» стоит на 0.3427/0.1065/0.2246. Это ДРУГОЙ прогон того же плеча, чем строка пункта
+235 выше (0.3379/0.1169/0.2274); расхождение --- сидовая и прогонная дисперсия, не дефект, и
+дельты между плечами внутри одного прогона (+0.0083/+0.0170/+0.0127) совпадают с пунктом 250
+точно. Сравнивать плечи можно только внутри одного прогона.
 
 **Метка --- конъюнкция, и это объясняет разрыв между эндпоинтами (пункты 234, 238):**
 
@@ -167,22 +187,34 @@ sampling-полоса абсолютного счёта, а не то, с чем
 0.0076), предобученные представления (61, 117, 154 --- три чекпойнта), FCFP (101), kNN (107),
 краевая регрессия (114), точное байесово действие (126), серийный слой (133), координата фермента
 (154), logD и LipE (154), хи-квадрат-DRO (154), ChEMBL как внешний источник (77 --- все три
-способа обращения), CYP2C19 как пятая изоформа (153).
+способа обращения), CYP2C19 как пятая изоформа (153), квантовый блок --- и против ПОТЕНЦИИ (186),
+и против СДВИГА TDI (242), оба раза с проходящими контролями.
 
-**Не запущено, а не закрыто.** Квантовый блок против СДВИГА TDI. Признаки посчитаны и лежат ---
-`data/quantum.npz`, 4905x10 плюс 750 тестовых, homo/lumo/gap/dipole/q_basicN/q_aromN_min/
-fukui_minus/cone_free/n_arom_N/has_donor, ноль NaN.
+**Этот раздел назывался «Не запущено, а не закрыто» и держал квантовый блок против сдвига как
+последний незапущенный вариант. Исправлено 12 сентября: пункт 242 его закрыл, и табло отстало от
+журнала --- в третий раз тем же способом, что в пунктах 202 и 234.** Признаки лежат и никуда не
+делись (`data/quantum.npz`, 4905x10 плюс 750 тестовых, homo/lumo/gap/dipole/q_basicN/q_aromN_min/
+fukui_minus/cone_free/n_arom_N/has_donor, ноль NaN), но прогон состоялся.
 
-Против ПОТЕНЦИИ он прогнан и закрыт дважды: пункт 186, четыре сида с перестановочным контролем,
-ни один фермент не проходит свой пол и настоящий блок неотличим от перемешанного. Эта строка
-раньше утверждала, что абляция «никогда не запускалась» --- неверно, и это ровно тот сорт
-рассогласования между табло и журналом, который в пунктах 202 и 234 стоил повторных выводов.
+Против ПОТЕНЦИИ блок закрыт дважды (пункт 186, четыре сида с перестановочным контролем: ни один
+фермент не берёт свой пол, настоящий блок неотличим от перемешанного). Против СДВИГА
+Delta = pi_TDI - pi_dir его закрыл пункт 242 (`verify/k73_quantshift.py`, четыре сида, восемь
+клеток), и закрыл с полным набором контролей:
 
-Но целью там была потенция. **Против сдвига Delta = pi_TDI - pi_dir блок не мерили ни разу**, а
-пункт 238 показал, что весь остаток классификационного трека --- это сдвиг, и физика у него не
-электростатика связывания, а реакционная способность: `fukui_minus`, HOMO/LUMO и щель --- ровно
-те величины. Признаки уже на диске, так что это прогон, а не проект. Отдельно `src/quantum.py`
-падает на `xtb-python`, которого нет в реестре, но файл от более раннего прогона на месте.
+    прирост Спирмена по Delta к базе      среднее   знак
+    +квант                                -0.0018    3/8
+    +квант ОСТАТОК                        +0.0035    5/8
+    +квант перемешан (контроль)           +0.0041    4/8
+    +10 колонок гауссова шума (контроль)  -0.0033    3/8
+
+**Перемешанный блок набирает больше любого настоящего плеча** --- полный ноль. Остаточная рука
+(блок минус его собственная вневыборочная реконструкция) существовала потому, что 9 из 10 колонок
+восстанавливаются из DESC+MECH вне фолда при $R^2>0.5$ (медиана 0.68), и она тоже ничего не даёт.
+Так что «физика у сдвига --- реакционная способность, а признаки уже на диске, это прогон, а не
+проект» было верным рассуждением с неверным исходом: прогон сделан, исход отрицательный.
+
+Отдельно `src/quantum.py` падает на `xtb-python`, которого нет в реестре, но файл от более раннего
+прогона на месте --- это к воспроизводимости, а не к открытости вопроса.
 
 
 Forty-three scripts in four groups. `f*` was a sweep over everything that had been computed
@@ -1746,9 +1778,20 @@ the rank the boosting already had, 0.5646 against 0.5630, and no further.
 The practical rule for every future ablation, and it costs nothing: **report the change in rank
 correlation beside the raw score.** The raw column answers "did the intervention move the
 predictions", which is not the question; the rank column answers "did it move them somewhere the
-post-processing cannot reach", which is. A post-isotonic score is the same criterion expressed in
-the metric's own units, and is the conservative bound, since isotonic spans a wider class of
-monotone maps than the affine pair does.
+post-processing cannot reach", which is. A post-isotonic score expresses the same criterion in the
+metric's own units and is useful for comparing two ARMS.
+
+**Corrected 12 September: this paragraph used to call a post-isotonic score "the conservative
+bound, since isotonic spans a wider class of monotone maps than the affine pair does". The licence
+does not hold as written, and item 31 --- written earlier --- already measured why.** Within one
+fold's map isotonic is exactly monotone, but on the glued out-of-fold vector five different maps
+are in play and rank genuinely moves: Kendall tau_b between raw and recalibrated is 0.917 to 0.959,
+1.86 to 3.71 % of all pairs strictly reverse, and Spearman against the LABELS --- the thing the
+instrument is supposed to leave alone --- falls on all four enzymes by 0.007 to 0.015. What item 31
+salvages is narrower than a bound: the distortion is nearly COMMON-MODE, so an arm DIFFERENCE moves
+an order of magnitude less than either arm does. So "compare two arms after out-of-fold isotonic"
+stands; "it preserves rank, therefore it bounds" does not, and a post-isotonic number must not be
+quoted as a conservative bound on a single arm.
 
 **81. The mechanistic block survives post-processing, and the raw measure had been hiding it.**
 The question asked was whether the block does anything on CYP2D6 at all, prompted by item 76:
@@ -10829,3 +10872,135 @@ pretraining low-prior per items 166/189/269/289), every branch the audit raised 
 The one lever left with a live claim above the floor is neither proposal -- it is docking (a function
 of the ligand-cavity pair, escaping the saturated ligand-only channel by construction; item 168 and
 memory), whose prior is already lowered after ablsite and which costs ~20000 runs.
+
+**293. What was on disk was not what we had measured: the submission is rebuilt on the shipped
+composition, the validator gate that guarded it turns out never to have been able to fire, and the
+classification track gets its first falsifiable prediction. Plus five documentation defects, one of
+them mine.** `src/submit.py` (gate fix, commit fde6b22), `verify/k91_mccband.py`, four seeds where
+stated. No modelling axis is involved: every number below is delivery of gains already measured.
+
+**The gate could not fire, and this is the worst defect of the four.** `src/submit.py`'s own
+docstring promises to "refuse to write anything the validator rejects". Both organisers' validators
+are typed `-> tuple[bool, list[str]]` and return `(ok, errors)`; the gate tested `isinstance(res,
+list)` and then `getattr(res, "errors", [])`, so a TUPLE fell through both, `bad` was always empty
+and the `SystemExit` was unreachable. A second arm, `except TypeError`, printed "принято" without
+looking at the result at all. Proven rather than argued, before and after, by direct call on a copy
+of the file with one molecule deleted:
+
+    validator returns            (False, ["Missing 1 expected molecule(s): ['OCNT-2535825']"])
+    old logic -> bad = []        -> printed "принято", would have shipped it
+    new logic -> passed = False  -> refuses
+
+So the headline guarantee was inoperative on the only expensive artefact in the repository, for as
+long as the gate has existed. The rebuild below is the first build in the project's history written
+through a gate that can actually refuse.
+
+**The files on disk were two composition commits and one grid commit stale.** They were dated
+7 September and built when `SOLO` was `{"CYP3A4": ("GP",)}` -- i.e. before items 282-285 (+0.0059
+macro rank on fresh seeds 4-7, floor 0.0036) and before item 277. Rebuilt with defaults, which is
+the shipped arm; the 7 September build is archived at
+`results/submission/prev_2026-09-12-pre282/`. Fitted transform, all four optima INTERIOR so item
+277's grid is live in a submission for the first time:
+
+    фермент   lambda   сдвиг предсказаний   состав
+    CYP1A2     1.08          +0.130         поферментно+GP+ствол (3 из 5)
+    CYP2C9     1.22          +0.170         GP+ствол (2 из 5)
+    CYP2D6     1.10          +0.010         все пять
+    CYP3A4     1.04          +0.240         GP+ствол (2 из 5)
+
+**The rebuild verifies itself, and the check is sharper than "it ran".** Rank must move on exactly
+the three enzymes whose COMPOSITION changed and must not move on CYP2D6, whose composition did not
+-- because there the only change is a strictly increasing map, which preserves Spearman exactly.
+Fitting new = lambda*old + c against the archived build:
+
+    фермент   подогнанная lambda   max|остаток|   Spearman    строгих инверсий пар
+    CYP2D6           1.1000          1.78e-15    1.0000000000          0
+    CYP1A2           1.0868          3.14e-01    0.9928212350     10 392
+    CYP2C9           1.2506          4.98e-01    0.9772806701     17 828
+    CYP3A4           0.9784          6.31e-01    0.9788141982     17 321
+
+CYP2D6 is an EXACT affine image of the old build -- the fitted lambda reproduces the logged 1.10 and
+the residual is at machine epsilon -- while the other three carry real residuals and tens of
+thousands of strict pair inversions. CYP3A4's fitted lambda is BELOW one, which rules out "it is
+merely rescaled" there on its own. The TDI files are bit-identical (360 and 285 positives, 0 of 750
+disagreements), as they must be: the direct-inhibition composition does not enter the bundle's gate.
+
+**Provenance, which this artefact had none of.** `results/submission/submission.meta.json` is now
+written PROGRAMMATICALLY (not transcribed): commit, branch, the dirty-tree listing with the note
+that none of the dirty files enter `submit.py` or its imports, sha256 of both CSVs, the SOLO and
+delta actually used, the fold digest checked against the golden `2d93c19815e14261` (4703 clusters,
+matched), and library versions inside the reproducing window (sklearn 1.3.2, numpy 1.26.4, torch
+2.13.0).
+
+**A planned step was removed by checking instead of running.** The band was to be recomputed, on the
+suspicion that `oof_submitted.json` would silently re-describe a cached arm -- the failure of items
+246/253/255. It does not: the cache carries its own provenance string naming the shipped three-cell
+SOLO, `band.json` (11 September 12:40) POSTDATES item 277's commit (10 September 20:33), and the
+rebuild changed only test predictions, not the out-of-fold arm. So `k79_bandfix` did not need
+re-running and was not re-run. The cache's stamp is nevertheless now derived from `SB.SOLO` rather
+than hard-coded, because the `else` branch would have re-created it saying "SOLO на CYP3A4".
+
+**The classification track gets a falsifiable prediction for the first time, and it is wide.**
+`verify/k91_mccband.py`, seed 0, 1000 resamples, organisers' protocol (`BOOTSTRAP_SAMPLES = 1000`,
+`BOOTSTRAP_SEED = 0`). The shipped bundle's per-compound out-of-fold probabilities existed NOWHERE --
+`bundle.json`/`tdicalib.json` hold only summary records, `oof_tdif.json` holds other arms, and
+`tdi_probs.json` is the direct classifier retired on 6 September -- so the arm is recomputed with
+k76's own functions and the missing artefact is now saved as `results/preds/bundle_oof.json`.
+
+    плечо (сид 0)   MCC     CI организаторов      полоса раскрытия n=750
+    CYP3A4        +0.3578   [+0.3200, +0.3961]    [+0.3074, +0.4129]
+    CYP2D6        +0.1282   [+0.0768, +0.1777]    [+0.0724, +0.1764]
+    макро         +0.2425   [+0.2121, +0.2717]    [+0.2048, +0.2803]
+
+Point estimates sit within seed spread of item 250's four-seed means (0.3510 / 0.1235 / 0.2373), as
+recorded before the run. **Two quantities, deliberately kept apart, because conflating them is
+exactly what cost the masthead item 276**: the organisers' CI (with replacement, at the set's own n,
+half-width 0.0298 macro) answers "how uncertain is our MCC on THIS set"; the reveal band (without
+replacement, to test size, half-width 0.0377 at n=750 and 0.0593 at n=375) answers "how much does it
+move with WHICH set we get". They may not be added.
+
+**And the reveal band is wider than the track's entire measured history**, which was the
+pre-registered reading and is the result rather than a disappointment:
+
+    эталон                        величина   полоса n=750 шире в   n=375
+    калибровка Платта (235)        +0.0133          2.8x            4.5x
+    связка (250)                   +0.0127          3.0x            4.7x
+    макро-пол трека                +0.0076          5.0x            7.8x
+
+So 25 September will tell us our LEVEL on the classification track and cannot tell us which of our
+arms is better: no single reveal distinguishes the bundle from Platt from the bare classifier by
+MCC. Zero degenerate resamples anywhere, at label rates 0.327 and 0.217, so the band is not an
+artefact of degeneracy. One caveat to carry: n=750 assumes 750 LABELLED compounds per enzyme, while
+the blind test is 750 compounds in TOTAL and the per-enzyme labelled counts are unknown to us -- so
+reality is likely closer to n=375, and the band is wider than the headline row, not narrower.
+
+**Five documentation defects, corrected in the same commit because this file is part of the claim.**
+
+  (1) The masthead said "а ранг на лидерборде не показывают". FALSE, and it changes strategy: the
+      organisers' pinned README states secondary metrics MAE, R^2, Spearman rho and Kendall's tau
+      ARE reported with bootstrap confidence intervals. The project's own currency is externally
+      checkable on 25 September, so a RANK prediction must be pre-registered, not only an ST-RAE band.
+  (2) The scoreboard named Platt calibration as the shipped TDI arm. Superseded on 6 September by
+      the bundle (item 250); the table understated what ships by +0.0127 macro MCC. Row added with
+      the four-seed absolutes from `bundle.json` (0.3510 / 0.1235 / 0.2373) and a note that its own
+      comparator stands at 0.3427 / 0.1065 / 0.2246 -- a DIFFERENT run of the same arm than item
+      235's row, so arms may be compared only within one run.
+  (3) The scoreboard still advertised the quantum block against the TDI SHIFT as "не запущено, а не
+      закрыто". Item 242 closed it, with the shuffled control scoring higher than either real arm.
+      That is the THIRD instance of the scoreboard lagging the journal in the way items 202 and 234
+      already charged for; quantum is now in the closed list for both potency (186) and shift (242).
+  (4) Item 80's licence, "a post-isotonic score ... is the conservative bound, since isotonic spans a
+      wider class of monotone maps", does not hold as written, and item 31 -- written EARLIER --
+      already measured why: on the glued out-of-fold vector five maps are in play, Kendall tau_b
+      falls to 0.917-0.959, 1.86-3.71 % of pairs strictly reverse and Spearman against the labels
+      drops 0.007-0.015 on all four enzymes. What survives is narrower: the distortion is nearly
+      common-mode, so an arm DIFFERENCE is safe; a single arm's post-isotonic number is not a bound.
+  (5) `submit.py` printed "пункт 218" beside the per-enzyme composition it actually takes from items
+      282-285 (print string only, no numerical effect).
+
+**The fifth defect is mine and belongs in the record.** Asked what was left to try, I proposed
+re-measuring post-processing richer than the affine pair -- an axis standing in plain text in this
+file's own "что закрыто и переоткрывать не надо" list, with its ceiling (0.0076, items 77/128)
+printed beside it. The project's first rule is to search this file before evaluating an idea, and
+the list that exists precisely to make that cheap is the thing I did not read. It cost nothing only
+because the probe read it; the same class of error produced item 267 eleven items ago.

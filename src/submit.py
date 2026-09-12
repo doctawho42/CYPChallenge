@@ -1062,7 +1062,7 @@ def main():
         p = np.mean(parts, axis=0)
         if CYPS[e] in SOLO:
             print(f"    {c}: поферментный состав {'+'.join(SOLO[CYPS[e]])} "
-                  f"({len(parts)} член(ов) из пяти), пункт 218", flush=True)
+                  f"({len(parts)} член(ов) из пяти), пункты 282-285", flush=True)
         if lams is not None:
             L, mu_tr, sh = lams[e]
             p = L * p + (1.0 - L) * mu_tr + sh
