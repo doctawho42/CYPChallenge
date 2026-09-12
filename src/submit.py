@@ -1136,21 +1136,43 @@ def main():
     from validation.tdi_validation import validate_tdi_submission
     ids = set(te.Molecule_Name)
     ok = True
+
+    def _verdict(res):
+        """Normalise a validator's return into (passed, errors).
+
+        Both organisers' validators are typed `-> tuple[bool, list[str]]` and return
+        (ok, errors). The previous form tested only for a list or an `.errors` attribute, so a
+        TUPLE fell through both branches, `bad` was always empty, and the SystemExit below was
+        unreachable -- the gate printed "принято" for every possible input, including a file the
+        validator had just rejected. Confirmed by direct call before this fix: the return is
+        `(True, [])`, `isinstance(res, list)` is False and `getattr(res, "errors", [])` misses.
+
+        The second defect was the `except TypeError` arm, which printed "принято" without
+        looking at the result at all. It now goes through the same verdict.
+        """
+        if isinstance(res, tuple):
+            errs = list(res[1]) if len(res) > 1 and res[1] else []
+            return bool(res[0]) and not errs, errs
+        if isinstance(res, list):
+            return not res, list(res)
+        errs = list(getattr(res, "errors", []) or [])
+        return bool(getattr(res, "ok", not errs)) and not errs, errs
+
     for name, fn, path in [("регрессия", validate_activity_submission, ap_),
                            ("классификация", validate_tdi_submission, tp_)]:
         try:
             res = fn(path, expected_ids=ids)
-            bad = res if isinstance(res, list) else getattr(res, "errors", [])
-            if bad:
-                ok = False
-                print(f"  {name}: ОТКЛОНЕНО")
-                for e_ in bad:
-                    print("     ", e_)
-            else:
-                print(f"  {name}: принято")
         except TypeError:
             res = fn(path)
-            print(f"  {name}: принято (валидатор без expected_ids)")
+            print(f"  {name}: валидатор без expected_ids, проверка только по файлу", flush=True)
+        passed, bad = _verdict(res)
+        if not passed:
+            ok = False
+            print(f"  {name}: ОТКЛОНЕНО")
+            for e_ in (bad or ["валидатор вернул отказ без списка ошибок"]):
+                print("     ", e_)
+        else:
+            print(f"  {name}: принято")
     if not ok:
         raise SystemExit("валидатор отверг файл; ничего не отправлять")
     print(f"\nготово:\n  {ap_}\n  {tp_}")
