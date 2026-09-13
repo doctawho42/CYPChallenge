@@ -11705,3 +11705,72 @@ sds support and our own estimate does NOT (our sds are 1.01 to 1.20 against trai
 -- wider, but far less so). If the reveal lands below 0.6114 the wide-denominator reading wins; if it
 lands inside the band with CYP2D6 the worst cell, our estimate does; and if CYP2D6 comes back far
 better than out-of-fold, the probed 3.107 does.
+
+**302. The docking campaign's inputs could not be rebuilt by anybody, and closing that hole cost me
+a false alarm and four overwritten files. The heme was never missing; my diagnostic could not see
+it.** `src/prep_receptors.py` and `src/prep_lig3d.py`, both default-safe with `--dry-run`.
+
+**The real hole, which is why these two files exist.** `src/dock.py` reads
+`data/receptors/*_rec.pdb` and `data/lig3d_{train,test}.sdf`; `src/shape3d.py`, `src/overlay.py`
+and `src/quantum.py` read the ligand SDFs too. All of it is gitignored, and no committed script
+wrote any of it -- `git grep lig3d -- '*.py'` returns exactly one hit and it is a read. So the
+inputs four scripts depend on existed on one machine with no recipe. That became blocking the
+moment a second person offered to run docking: he cannot obtain the files and could not regenerate
+them, and item 298's prose ("chain A plus its own heme, waters, glycerol, DMSO and ions stripped")
+is a description, not a procedure.
+
+**THE FALSE ALARM, recorded first because it is the more useful half.** Counting heme atoms across
+the four prepared receptors with `awk '$1=="HETATM"'` returned 129 -- which is 43 x 3, not 43 x 4 --
+and I read that as 4WNV carrying no heme. That would have been serious: 4WNV is CYP2D6, the one
+enzyme with a mechanistic address, and a cavity missing its iron is a void that ligands dock into.
+It was wrong. PDB is fixed-column -- columns 1-6 the record name, 7-11 the right-justified serial
+-- so a five-digit serial gives `HETATM14450` with no space and `split()[0]` is no longer
+"HETATM". 4WNV has 14449 ATOM records across chains A-D, so all 615 of its HETATM lines are
+invisible to a whitespace split; 2HI4 (3845), 1R9O (3650) and 3NXU (7356) stay under 10000 and
+parse fine. Chain A's protein comes first with four-digit serials, which is why the protein looked
+complete. The heme was in all four the whole time: each old file's length equals its coordinate
+count plus one terminator (3889, 3694, 3722, 3709), an identity that only holds with 43 heme atoms
+present.
+
+    файл     ATOM   HEM   coord+1   прежних строк   совпало
+    2HI4     3845    43      3889            3889        да
+    1R9O     3650    43      3694            3694        да
+    3NXU     3678    43      3722            3722        да
+    4WNV     3665    43      3709            3709        да
+
+**Sixth instance of one error class in a single session, and the first to cause damage.** The
+others were harmless: `pgrep -fc 'smina -r'` reading zero because `-r` was eaten as a pgrep flag;
+a `_conf_low` grep hitting the wrong CSV; `ps -o comm` never matching `dock.py` because `comm`
+carries the command name and not argv; twice more besides. Every one is the same shape -- a command
+that cannot return a positive answer, read as a negative answer about the world. The cheap guard is
+a positive control: before believing a zero, check the instrument reports non-zero where the answer
+is known to exist.
+
+**And the damage was not the parse bug but the order of operations.** In the same message that
+announced the defect I wrote that the three intact files coming out atom-identical was the strongest
+check available -- and then wrote the files before running it, in a gitignored directory with no
+backup and no git history. The originals are unrecoverable, so the retraction above had to be argued
+from line-count arithmetic instead of a byte comparison. Both scripts therefore ship with
+`--dry-run`, and `prep_lig3d.py` also takes `--limit N` so the comparison costs seconds; verified
+before writing, 40 of 40 names and atom counts reproduced in both halves, file digests unchanged.
+
+**What the receptor rewrite actually changed: one `TER` line per file, and nothing else.** The
+campaign was mid-run and was checked rather than assumed -- receptors replaced at 15:13:12, chunks
+started afterwards (`tr_0028`-`tr_0034`, 15:13:46-15:14:41) producing poses normally, seven smina
+alive, `rc: 0` on the following entries. `os.replace` is atomic, so a chunk holding the old file
+open kept its inode.
+
+**The ligand half, with the trap named.** `_Name` is the POSITIONAL ROW INDEX, not a counter:
+`tr_<i>` into `data/rows.csv`, `te_<i>` into the blinded CSV. Three training molecules fail to
+embed, so the train file holds 4902 records whose names run to `tr_4904` with three gaps.
+Renumbering would silently desynchronise every map from a pose back to a label -- the failure
+`rows.csv` exists to prevent. The parameters are not invented here: ETKDGv3 with
+`randomSeed = 0xC0FFEE` and `MMFFOptimizeMolecule(maxIters=400)` on a hydrogen-added molecule are
+already pinned in `shape3d.py` and `quantum.py`, and the files on disk match (tr_0: 21 atoms, 9 of
+them hydrogens, one conformer). A full rebuild is deferred until the campaign frees the cores.
+
+**Cost I imposed, stated because it is mine.** Chunk times rose from a 1933 s mean over the first
+seven to 2316, 2509 and 2701 s for the last three, monotonically, alongside my own runs competing
+for the machine -- Tanimoto matrices in item 301, four PDB downloads, repeated `uv run` starts. The
+campaign ETA has been revised upward five times today (21, 24.7, 27.5, 28, 31.6 h) and every
+revision was my estimate being optimistic, not the run degrading on its own.
