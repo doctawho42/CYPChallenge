@@ -15,6 +15,24 @@ results/nn_seed*.npy
 # Run logs ARE results here and stay in git (commit 8481c22).
 !results/logs/
 
+# Docking campaign (пункт 298): сгенерированные входы и позы, не результаты.
+#
+# Ни одно правило их не закрывало, а объём растёт на живом прогоне: 22 МБ поз на
+# 8 чанках из 380, то есть порядка гигабайта к финишу, плюс 18 МБ трёхмерных
+# лигандов и 5.7 МБ рецепторов. Один `git add -A` на любой из четырёх машин ---
+# и гигабайт необратимо в истории.
+#
+# Всё это пересобирается: рецепторы --- из PDB, `lig3d_*.sdf` --- RDKit-ом,
+# позы --- `src/dock.py` (он чанкованный и возобновляемый). В пайплайн идёт
+# только `data/dock.npz`, а его уже закрывает `*.npz` строкой 5 --- по тому же
+# принципу, по которому не коммитится `feats.npz`.
+#
+# `results/logs/dock_progress.jsonl` СЮДА НЕ ВХОДИТ и остаётся в git: это лог
+# прогона, то есть результат по правилу выше.
+data/lig3d_*.sdf
+data/receptors/
+results/dock/
+
 # LaTeX build products. The finished PDF in docs/ is committed; main.pdf is not.
 docs/tex/*.aux
 docs/tex/*.log
