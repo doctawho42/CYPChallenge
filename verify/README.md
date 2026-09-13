@@ -11275,3 +11275,82 @@ unpublished. The rule was on the announcement page the whole time. `openadmet.or
 returns 403 to an unauthenticated fetch, which is the only part of that search genuinely blocked.
 Absence of a statement in the code repository is not absence of the statement; this file has charged
 that error against others (items 202, 234, 293) and it is the same one.
+
+**298. Pre-registration (blind): docking into the four cavities -- the last open structural lever,
+at a prior lowered twice, with the cost measured rather than asserted.** `src/dock.py` writes the
+block, the ablation mirrors `verify/k93_overlay.py` exactly. Written and committed before the run
+starts. The team chose the full variant knowing the cost.
+
+**Why it is not the class that keeps returning zero.** Item 168: descriptors OF THE ENZYME are
+closed by arithmetic, while a quantity of the (ligand, cavity) PAIR is not a re-encoding of the
+SMILES. Item 189 collected six ligand-only blocks that all returned zero. A docked pose depends on
+the cavity, so it sits outside that class by construction -- and item 296 showed the class is not
+empty: the cheap overlay proxy's own-cavity column beat its wrong-isoform control on CYP1A2 at
+sign 4/4. What item 296 also showed is that the magnitude was a quarter of the floor.
+
+**The prior, stated before the run rather than after.** Lowered twice: item 179 (hand-built
+active-site blocks bought nothing; CYP2D6's own salt-bridge angles made it WORSE at -0.0094) and
+item 296 (+0.0017 against a floor of 0.0061 on 1A2; on 2D6 the targeted arm did not beat its own
+control). A pose must supply what neither a guessed cavity nor an overlay onto one reference ligand
+could.
+
+**Method, fixed here so it cannot drift.** smina master:dc3dfab (AutoDock Vina 1.1.2), `--scoring
+vina`, `--exhaustiveness 8`, `--num_modes 1`, `--seed 42`, one CPU per process, box from
+`--autobox_ligand` on the co-crystal ligand plus `--autobox_add 4`. Receptors are **chain A plus its
+own heme**, with waters, glycerol, DMSO and ions stripped; the heme stays because it is part of the
+site and without it there is a hole where the iron should be. `vinardo` is available and may be
+faster, and is deliberately NOT used: a different scoring function is different physics, i.e. a
+methodological change, not a speed knob, and switching it to save hours would be choosing the arm
+by its cost.
+
+**The silent catastrophe that was avoided by counting.** 4WNV carries four protein copies and 3NXU
+two. Our co-crystal SDFs had to be matched to the right one or the box would have landed in empty
+space and the run would have completed cleanly with meaningless numbers. Measured: all four SDFs
+coincide with **chain A at 0.00 A**, the other copies sitting 50-89 A away.
+
+**Cost, measured on six molecules spanning our size distribution (21-34 heavy atoms; p25=23,
+p50=24, p95=30):** 38.9 s/molecule on 2HI4 and 26.2 s/molecule on 3NXU at exhaustiveness 8, one
+CPU. Over 5652 ligands x 4 cavities = 22608 runs that is ~204 CPU-hours, about a day of wall clock
+at six concurrent processes. An earlier probe on a 12-heavy-atom molecule gave 5.5 s and was
+unrepresentative by a factor of six -- recorded because it was my estimate and it was wrong.
+The run is chunked and resumable: a crash at hour twenty costs one chunk.
+
+**The feature is the CONTRAST, not the four affinities.** Row-centring across the four cavities
+cancels size and lipophilicity, which the ligand block already carries in 2295 columns, and leaves
+complementarity to a particular pocket. The contrast is therefore also the wrong-isoform control
+built into the feature itself -- which is why item 296's 2C9 and 3A4 columns collapsed from +0.077
+and +0.082 to +0.002 under centring: there the raw score was mostly bulk.
+
+**Live cells are exactly two, for the same structural reason as item 295.** The arm rebuilds the
+per-enzyme member, and after items 282-285 that member is kept only on CYP1A2 and CYP2D6. CYP2C9 and
+CYP3A4 must read **0.000000**; they are a harness control, not candidate cells.
+
+**Arms, mirroring k93 so the comparison with the overlay proxy is paired.** A targeted (own-cavity
+contrast column), B wrong isoform (the next cavity's column), C undirected (all four columns).
+
+**Seeds.** 4-7, whose member caches exist. Fresh for THIS hypothesis -- no docking arm has ever been
+run on any seed -- though spent on the composition and on the overlay proxy. A pass must be
+re-confirmed on genuinely new seeds 8-11, which costs four to six hours because both the trunk and
+the whole member cache would have to be built there.
+
+**ACCEPTANCE, fixed before the run.** Adopted only if, on CYP1A2 or CYP2D6:
+
+  1. Δ rank over the shipped composition exceeds that enzyme's floor (1A2 0.0061, 2D6 0.0049);
+  2. sign holds on at least 3 of the 4 seeds;
+  3. arm A beats arm B -- without this the gain is a volume descriptor and is refused whatever its
+     size;
+  4. CYP2C9 and CYP3A4 read 0.0000 exactly.
+
+**PREDICTION, written before any number exists.** Nothing passes. CYP1A2 is again the only cell with
+any signal, and I expect docking to BEAT the overlay proxy there -- more than +0.0017 -- while still
+falling short of 0.0061, because the collapse from a univariate correlation to a rank gain over a
+three-member mean was about a hundred-fold for the proxy and nothing in a better pose changes the
+dilution arithmetic. Two further falsifiable statements: CYP2D6's targeted arm again fails to beat
+its control, and CYP3A4's RAW affinities correlate with heavy-atom count more strongly than the other
+three cavities' do, reproducing item 199's +0.283 volume confound from the docking side.
+
+**What a failure would mean, so it is not read as nothing.** Docking is the sixth structural null and
+the last member of the one class that was still open. That closes the (ligand, cavity) pair-function
+lever empirically rather than by argument -- a boundary the write-up can cite, and the strongest
+remaining statement of the form "we looked where the theory said to look, with the control that
+distinguishes signal from bulk, and the magnitude was not there."
