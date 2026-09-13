@@ -15,7 +15,8 @@ a permutation either. feats.build() therefore reindexes by name against the comm
 data/desc_names.csv and data/mech_names.csv.
 
 Shrinkage, and why the default is the open question rather than a settled one.
---shrink is OFF, and the justification it used to carry has since been falsified. That
+--shrink is ON as of 6 September (item 252), with --no-shrink to undo it. It was off for a
+long time, and the justification it used to carry had since been falsified. That
 justification was: on the top quartile by activity, shrinking toward the training mean
 makes every enzyme worse; the test is built around anchors at the 93rd to 98th percentile;
 therefore the test is that kind of subsample and shrinkage would hurt.
@@ -74,7 +75,45 @@ rule picked +0.4 on CYP1A2 and lost to doing nothing in 81 % of draws - exactly 
 that got a single global delta rejected, relocated to another cell. Under the adopted rule
 the fractions are 0.09 / 0.11 / 0.01 on the three enzymes it touches.
 
-None of this fires unless --shrink is passed. That switch is the one decision still open.
+SETTLED, 6 September, item 252. The switch is on and the vector is the DOCUMENTED one --
+0, +0.3, -0.5, +0.7 -- which the code had never actually held (item 251: three statements
+about this default, none agreeing).
+
+The vector was chosen over a narrower alternative for one reason. Items 87 and 88 measure
+delta's spread ACROSS MODELS at nine to eighty-eight times the seed term, growing rather
+than settling when a third model is added, and on CYP2D6 the three estimates are -0.405,
+-0.917 and -1.167. A design-simulation route (item 249) puts CYP2D6 at +0.23 and would
+have moved that cell to -0.1; adopting it would have preferred one model-free estimate
+over three model-based ones agreeing in sign. The documented vector contradicts none of
+them.
+
+CYP2D6 moved from -0.5 to 0 on 7 September (item 256), after the band recomputation put a
+price on the bet that no earlier discussion had. Fitting under an assumed tilt and scoring
+against our own untilted labels costs 0.0407 of macro ST-RAE if the test turns out to look
+like the training set, against an expected GAIN of 0.0473 over the posterior -- close to an
+even-money bet. CYP2D6 alone carried 0.0735 of that exposure, and it is the cell where the
+four routes disagree by SIGN: three model-based estimates give -0.405, -0.917 and -1.167,
+the design simulation gives +0.23. Setting it to zero drops the price to 0.0223 and leaves
+the three cells where the routes agree in sign untouched. Not a claim about the truth on
+CYP2D6 -- an refusal to bet on a cell whose sign is contested.
+
+CYP1A2 moved from 0 to +0.1 on 6 September as a separate decision (item 254), and the
+argument is minimax regret rather than maximum expectation. Three posteriors put the
+expected ST-RAE at:
+
+                             -0.1    +0.0    +0.1    +0.2
+    current posterior       .8368   .8297   .8296   .8363
+    design route            .9106   .8892   .8754   .8694
+    mixture 50/50           .8756   .8611   .8539   .8539
+
++0.1 is the only value no posterior dislikes: the current one is flat between 0 and +0.1
+(0.8297 against 0.8296), the mixture prefers it to zero by 0.0072, and the design route
+prefers it by 0.0138 while wanting +0.2. Going to +0.2 costs 0.0066 under the current
+posterior, so it is not robust.
+
+This is a choice of ASSUMPTION, not a claim of measured effect, and the noise floor is the
+wrong instrument for it -- the criterion is expected loss under the posterior. The gain is
+below every floor the project has and must not be quoted as one.
 
 The size of the shift is bracketed rather than pinned. src/reweight.py tilts the label
 marginal and puts the centre at +0.4 for delta = 0 and +0.9 for delta = 0.5; the anchor
@@ -106,7 +145,11 @@ from reweight import tilt
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 TDI_CYPS = ["CYP3A4", "CYP2D6"]          # the only two the organisers score
-GRID = np.linspace(0.2, 1.0, 41)
+# Lambda grid for fit_shrinkage. Extended above 1.0 (item 277): the submitted predictions are
+# 0.32-0.71 as wide as the labels, so the tilted objective wants to EXPAND them, and the optimum
+# sat pinned at the old 1.0 edge on three enzymes of four even at delta=0. It saturates by 1.6;
+# 2.0 gives margin. The map stays strictly increasing (lambda>0), so rank is untouched.
+GRID = np.round(np.arange(0.2, 2.0001, 0.02), 2)
 
 # Same learner and settings as src/ablate.py, so the submitted model is the one the
 # document's numbers describe rather than a cousin of it.
@@ -176,6 +219,133 @@ def tdi_calibrate(Xtr, ytr, fold, p_test):
             "Все 40 фолдов четырёхсидового прогона (пункт 235) дали положительный наклон, "
             "минимум +0.084, так что это не ожидаемый режим -- разбираться, а не обходить.")
     return lr.predict_proba(_logit(p_test))[:, 1], slope
+
+
+# ---------------------------------------------------------------- связка (пункты 244, 250)
+# Метка TDI --- конъюнкция (пункт 234): is_TDI <=> (Delta > log10 2) И (pi_TDI > 4.301).
+# Прямой классификатор эту структуру выбрасывает. Связка её использует: вероятность ворот
+# берётся из плеча преинкубации, предсказанного четырёхчленным ансамблем с мёртвой зоной, и
+# умножается на вероятность сдвига; произведение калибруется и режется plug-in-порогом.
+#
+# Условия приёмки были зафиксированы в пункте 244 ДО прогона и выполнены в пункте 250: макро
+# +0.0127 при поле 0.0076, знак 6 из 8. Контроли: перемешивание фактора сдвига обрушивает
+# связку до -0.1453 при знаке 0/8, каждый фактор поодиночке хуже подаваемого.
+#
+# Поферментно она не проходит ничего --- +0.0083 на CYP3A4 при поле 0.0281 и +0.0170 на CYP2D6
+# при 0.0419. Заявление здесь МАКРО, и правило пункта 244 писалось на макро сознательно.
+#
+# verify/k76_bundle.py --- измерение, эта функция --- его развёртывание. Логика продублирована,
+# а не импортирована, потому что src/ не должен зависеть от verify/; при расхождении верить
+# k76 и приводить сюда.
+TDI_L = np.log10(2.0)
+TDI_GATE = 4.0 + TDI_L
+BUNDLE_KINDS = ["поферментно", "пул", "GP", "гребневая"]
+
+
+def _pooled2(Z, e):
+    ind = np.zeros((len(Z), 2), np.float32)
+    ind[:, e] = 1.0
+    return np.hstack([Z, ind])
+
+
+def _arm_member(kind, Xs, ys, folds, Xtes, KW, e=None, f=None, full=False):
+    """Один член на плече преинкубации. full=True --- обучение на всех строках для теста."""
+    if kind == "пул":
+        if full:
+            Xtr = np.vstack([_pooled2(Xs[k], k) for k in range(len(Xs))])
+            ytr = np.concatenate(ys)
+            m = HistGradientBoostingRegressor(**KW).fit(Xtr, ytr)
+            return [m.predict(_pooled2(Xtes[k], k)) for k in range(len(Xs))]
+        Xtr = np.vstack([_pooled2(Xs[k][folds[k] != f], k) for k in range(len(Xs))])
+        ytr = np.concatenate([ys[k][folds[k] != f] for k in range(len(Xs))])
+        m = HistGradientBoostingRegressor(**KW).fit(Xtr, ytr)
+        return m.predict(_pooled2(Xs[e][folds[e] == f], e))
+    if full:
+        out = []
+        for k in range(len(Xs)):
+            A, B = _dz_design(kind, Xs[k], k, Xtes[k]) if kind in ("GP", "гребневая") else (Xs[k], Xtes[k])
+            out.append(_dz_fit(kind, A, ys[k], B) if kind in ("GP", "гребневая")
+                       else HistGradientBoostingRegressor(**KW).fit(A, ys[k]).predict(B))
+        return out
+    trn, te = folds[e] != f, folds[e] == f
+    if kind in ("GP", "гребневая"):
+        A, B = _dz_design(kind, Xs[e][trn], e, Xs[e][te])
+        return _dz_fit(kind, A, ys[e][trn], B)
+    return HistGradientBoostingRegressor(**KW).fit(Xs[e][trn], ys[e][trn]).predict(Xs[e][te])
+
+
+def _arm_ensemble(Xs, ys, folds, Xtes, LOs, HIs):
+    """Вне фолда и на тесте: четыре члена, мёртвая зона, невзвешенное среднее.
+
+    Пулированный член обучается ОДИН раз на фолд: его обучающая выборка от эндпоинта не
+    зависит, зависит только предсказание."""
+    PLAIN = dict(max_iter=300, learning_rate=0.06, max_leaf_nodes=31,
+                 l2_regularization=1.0, random_state=0)
+    n = len(Xs)
+    oof = [np.zeros(len(y)) for y in ys]
+    tst = [np.zeros(len(Xt)) for Xt in Xtes]
+
+    def pass_(targets, KW):
+        """Один проход всех членов: вне фолда и на полных данных."""
+        o = [np.zeros(len(t)) for t in targets]
+        t_ = [np.zeros(len(Xt)) for Xt in Xtes]
+        for f in range(5):
+            if "пул" in BUNDLE_KINDS:
+                Xtr = np.vstack([_pooled2(Xs[k][folds[k] != f], k) for k in range(n)])
+                ytr = np.concatenate([targets[k][folds[k] != f] for k in range(n)])
+                mdl = HistGradientBoostingRegressor(**KW).fit(Xtr, ytr)
+                for e in range(n):
+                    te = folds[e] == f
+                    if te.sum():
+                        o[e][te] += mdl.predict(_pooled2(Xs[e][te], e)) / len(BUNDLE_KINDS)
+            for kind in BUNDLE_KINDS:
+                if kind == "пул":
+                    continue
+                for e in range(n):
+                    te = folds[e] == f
+                    if not te.sum():
+                        continue
+                    trn = ~te
+                    if kind in ("GP", "гребневая"):
+                        A, B = _dz_design(kind, Xs[e][trn], e, Xs[e][te])
+                        o[e][te] += _dz_fit(kind, A, targets[e][trn], B) / len(BUNDLE_KINDS)
+                    else:
+                        o[e][te] += (HistGradientBoostingRegressor(**KW)
+                                     .fit(Xs[e][trn], targets[e][trn])
+                                     .predict(Xs[e][te])) / len(BUNDLE_KINDS)
+        Xtr = np.vstack([_pooled2(Xs[k], k) for k in range(n)])
+        mdl = HistGradientBoostingRegressor(**KW).fit(Xtr, np.concatenate(targets))
+        for e in range(n):
+            t_[e] += mdl.predict(_pooled2(Xtes[e], e)) / len(BUNDLE_KINDS)
+        for kind in BUNDLE_KINDS:
+            if kind == "пул":
+                continue
+            for e in range(n):
+                if kind in ("GP", "гребневая"):
+                    A, B = _dz_design(kind, Xs[e], e, Xtes[e])
+                    t_[e] += _dz_fit(kind, A, targets[e], B) / len(BUNDLE_KINDS)
+                else:
+                    t_[e] += (HistGradientBoostingRegressor(**KW).fit(Xs[e], targets[e])
+                              .predict(Xtes[e])) / len(BUNDLE_KINDS)
+        return o, t_
+
+    raw_o, _ = pass_(ys, PLAIN)
+    print("      плечо: обычный проход готов", flush=True)
+    tgt = [np.clip(raw_o[e] * len(BUNDLE_KINDS) / len(BUNDLE_KINDS), LOs[e], HIs[e])
+           for e in range(n)]
+    oof, tst = pass_(tgt, DZ_KW)
+    print("      плечо: мёртвая зона готова", flush=True)
+    return oof, tst
+
+
+def _platt_1d(score_tr, y_tr, score_te, raw=False):
+    def f(q):
+        if raw:
+            return np.asarray(q, float).reshape(-1, 1)
+        q = np.clip(q, 1e-6, 1 - 1e-6)
+        return np.log(q / (1 - q)).reshape(-1, 1)
+    lr = LogisticRegression(C=1e6).fit(f(score_tr), y_tr)
+    return lr.predict_proba(f(score_te))[:, 1], lr.predict_proba(f(score_tr))[:, 1]
 
 
 def test_features(desc_names, mech_names):
@@ -397,7 +567,29 @@ def _oof_one(X, y, mask, fold, pool, scr=None):
 # при этом лучше по метрике (0.4101 против 0.4129). Два члена ещё и страхуют от того, что
 # гауссов процесс окажется неудачлив на тесте, чего одиночный член не переживёт. Выбран
 # одиночный GP; альтернатива меняется правкой одной строки ниже.
-SOLO = {"CYP3A4": ("GP",)}
+# UPDATED (items 282, 283): CYP2C9 and CYP3A4 both ship GP+ствол, confirmed on FRESH seeds 4-7
+# that did not generate the hypothesis. CYP2C9 GP+ствол beats the five-member mean by +0.0125
+# (sd 0.0021, sign 4/4, floor 0.0071) with no shrinkage from the in-sample +0.0124 -- the fewest
+# labels (1285) mean the two low-dim members on DESC+MECH survive and the high-dim boosters that
+# overfit are dropped. CYP3A4 GP+ствол beats GP-alone by +0.0044 (sd 0.0013, sign 4/4, floor
+# 0.0033): item 218 put GP-alone first, but that was an earlier trunk; the current one makes
+# GP+ствол the better arm, so 218 is superseded, not wrong. Macro rank +0.0042 over the frozen
+# submission. CYP1A2/CYP2D6 were not tested on fresh seeds (k84: 1A2 borderline, 2D6 net-negative)
+# and stay on the full ensemble.
+# CYP1A2 added (items 284, 285): fresh seeds 4-7 give поферментно+GP+ствол over the five-member
+# mean at +0.0068 (sd 0.0017, sign 4/4, floor 0.0061) -- thin (lower 95% bound +0.0047, below the
+# floor) but pre-registered and met. It keeps the per-enzyme booster (1412 labels overfit less than
+# CYP2C9's 1285) and drops the ridge. Three of four enzymes now drop members; only CYP2D6 keeps the
+# full ensemble (k84: its selection is net-negative). Shipped-seed-0 macro +0.0061, fresh-seed
+# estimate +0.0059, both above the 0.0036 floor.
+SOLO = {"CYP1A2": ("поферментно", "GP", "ствол"),
+        "CYP2C9": ("GP", "ствол"),
+        "CYP3A4": ("GP", "ствол")}
+
+# Предполагаемый сдвиг теста по ферментам. ОДНО определение: verify/k79_bandfix.py читает
+# его отсюда, потому что полоса фальсификации относится к конкретным дельтам, и разошедшиеся
+# копии этой константы уже дважды давали полосу для руки, которая не подаётся.
+DELTA_DEFAULT = "0.1,0.3,0,0.7"
 
 
 def _keep(e, kind):
@@ -667,7 +859,14 @@ def fit_shrinkage(P, y, mask, delta=(0.0, 0.0, 0.0, 0.0)):
 def main():
     global LO, HI
     ap = argparse.ArgumentParser()
-    ap.add_argument("--shrink", action="store_true", help="применить усадку (см. docstring)")
+    ap.add_argument("--no-shrink", dest="shrink", action="store_false",
+                    help="не применять усадку (поведение до пункта 252). Флаг ВКЛЮЧЁН по "
+                         "умолчанию: пара (off, lambda) подбирается под предполагаемый сдвиг "
+                         "теста, вектор --delta. Выигрыш по среднему правилу +0.0473 макро пары "
+                         "против подгонки при нуле (src/shrinkchoice.py, блок 6), при парном поле "
+                         "лидерборда 0.017. ВАЖНО: этот выигрыш посчитан по апостериору из одного "
+                         "источника; пункты 87 и 88 меряют разброс delta ПО МОДЕЛЯМ в 9-88 раз "
+                         "больше сидового, и он в оценку не входит.")
     ap.add_argument("--mode", default="ансамбль5",
                     choices=["раздельно", "пул", "ансамбль", "ансамбль-без-GP", "ансамбль5"],
                     help="раздельно воспроизводит поведение до пункта 84; ансамбль включает GP; "
@@ -675,7 +874,17 @@ def main():
                          "(пункт 120: -0.0061 пары, +0.0054 ранга, знак 4/4 на каждом "
                          "ферменте). Умолчание не переключено: пятый член требует torch на "
                          "машине, где собирается сабмит, и решение о составе принимает команда")
-    ap.add_argument("--delta", default="0,0.5,-0.7,0.8",
+    # РАСХОЖДЕНИЕ, найденное 6 сентября и здесь только ЗАФИКСИРОВАННОЕ, а не исправленное.
+    # Докстринг выше говорит «The default is therefore 0, +0.3, -0.5, +0.7», пункт 59 журнала
+    # говорит «src/submit.py --delta now defaults to it», а код стоял на другом векторе всегда:
+    # 0,0.5,-0.5,0.8 до коммита 20be90c и 0,0.5,-0.7,0.8 после. Ни одно из трёх утверждений не
+    # согласуется с двумя другими.
+    #
+    # УСТРАНЕНО 6 сентября (пункт 252): код приведён к документированному вектору, а не наоборот.
+    # Выбор решён пунктом 88: разброс delta ПО МОДЕЛЯМ в 9-88 раз больше сидового, на CYP2D6 три
+    # модели дают -0.405, -0.917 и -1.167, а на CYP1A2 не выживает даже знак. Документированный
+    # вектор не спорит по знаку ни с одной из трёх; узкая альтернатива из пункта 249 спорила бы.
+    ap.add_argument("--delta", default=DELTA_DEFAULT,
                     help="предполагаемый сдвиг средней активности теста относительно нашей "
                          "выборки. Пара (off, lambda) подбирается под ЭТО предположение. "
                          "Ноль означает «тест распределён как обучающая выборка» - это не "
@@ -698,6 +907,14 @@ def main():
                          "воспроизвёл пункт 164 кодом самой подачи --- +0.0136 ранга и "
                          "-0.0158 пары на сиде 0, все четыре фермента вверх.")
     ap.set_defaults(deadzone=True)
+    ap.add_argument("--no-bundle", dest="bundle", action="store_false",
+                    help="классификация прямым классификатором + Платт (поведение до пункта 250). "
+                         "По умолчанию ВКЛЮЧЕНА связка: вероятность ворот из плеча преинкубации, "
+                         "предсказанного четырёхчленным ансамблем с мёртвой зоной, умножается на "
+                         "вероятность сдвига, произведение калибруется и режется plug-in-порогом. "
+                         "Принята по предрегистрации пункта 244: макро MCC +0.0127 при поле 0.0076, "
+                         "знак 6/8. Поферментно не проходит НИЧЕГО (+0.0083 при 0.0281 и +0.0170 "
+                         "при 0.0419) --- заявление макро. Стоит примерно час к прогону.")
     ap.add_argument("--screen", action="store_true",
                     help="добавить строки скрининга в поферментный член. ВЫКЛЮЧЕНО по умолчанию: "
                          "пункт 177 даёт +0.029 ранга ОДИНОЧНОЙ модели, но пункт 182 померил тот "
@@ -845,7 +1062,7 @@ def main():
         p = np.mean(parts, axis=0)
         if CYPS[e] in SOLO:
             print(f"    {c}: поферментный состав {'+'.join(SOLO[CYPS[e]])} "
-                  f"({len(parts)} член(ов) из пяти), пункт 218", flush=True)
+                  f"({len(parts)} член(ов) из пяти), пункты 282-285", flush=True)
         if lams is not None:
             L, mu_tr, sh = lams[e]
             p = L * p + (1.0 - L) * mu_tr + sh
@@ -857,18 +1074,57 @@ def main():
     T = tdi.loc[rows.Molecule_Name[keep]].reset_index()
     cls = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})
     tdifold, _ = butina_folds(list(rows.SMILES[keep]))
-    for c in TDI_CYPS:
-        lab = T[f"{c}_is_TDI"]
-        m = lab.notna().to_numpy()
-        yb = lab[m].astype(int).to_numpy()
-        pr = gbm_clf().fit(X[keep][m], yb).predict_proba(Xte)[:, 1]
-        raw_mean = float(pr.mean())
-        pr, slope = tdi_calibrate(X[keep][m], yb, tdifold[m], pr)
-        thr = plugin_threshold(pr)
-        cls[f"{c}_is_TDI"] = pr >= thr
-        print(f"    {c}: Платт наклон {slope:+.3f}, среднее {raw_mean:.3f} -> {pr.mean():.3f} "
-              f"(обучающая доля {yb.mean():.3f}); порог {thr:.3f}, "
-              f"положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
+    if a.bundle:
+        # Связка (пункты 244, 250). Готовим обе конъюнкты на плече преинкубации.
+        inh_full = (pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
+                      .set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index())
+        Xs, ys, folds, LOs, HIs, labs, shifts, gates = [], [], [], [], [], [], [], []
+        for c in TDI_CYPS:
+            lab = T[f"{c}_is_TDI"]
+            ta = T[f"{c}_pIC50_TDI_condition"].to_numpy(float)
+            dr = inh_full[f"{c}_pIC50_direct_inhibition"].to_numpy(float)
+            lo = T[f"{c}_pIC50_TDI_condition_conf_low"].to_numpy(float)
+            hi = T[f"{c}_pIC50_TDI_condition_conf_high"].to_numpy(float)
+            mm = (lab.notna() & np.isfinite(ta) & np.isfinite(dr)
+                  & np.isfinite(lo) & np.isfinite(hi)).to_numpy()
+            Xs.append(X[keep][mm]); ys.append(ta[mm]); folds.append(tdifold[mm])
+            LOs.append(lo[mm]); HIs.append(hi[mm])
+            labs.append(lab[mm].astype(int).to_numpy())
+            shifts.append((ta - dr)[mm]); gates.append((ta > TDI_GATE)[mm].astype(int))
+            print(f"    {c}: связка, обучающих {int(mm.sum())}", flush=True)
+        arm_oof, arm_tst = _arm_ensemble(Xs, ys, folds, [Xte] * len(TDI_CYPS), LOs, HIs)
+        for e, c in enumerate(TDI_CYPS):
+            gp_te, gp_tr = _platt_1d(arm_oof[e] - TDI_GATE, gates[e],
+                                     arm_tst[e] - TDI_GATE, raw=True)
+            sh = (shifts[e] > TDI_L).astype(int)
+            dp_tr = np.zeros(len(sh))
+            for f in range(5):
+                trn, tef = folds[e] != f, folds[e] == f
+                if tef.sum() and sh[trn].sum():
+                    dp_tr[tef] = gbm_clf().fit(Xs[e][trn], sh[trn]).predict_proba(Xs[e][tef])[:, 1]
+            dp_te = gbm_clf().fit(Xs[e], sh).predict_proba(Xte)[:, 1]
+            prod_tr, prod_te = gp_tr * dp_tr, gp_te * dp_te
+            pr, _ = _platt_1d(prod_tr, labs[e], prod_te)
+            cal_tr, _ = _platt_1d(prod_tr, labs[e], prod_tr)
+            thr = plugin_threshold(cal_tr)
+            cls[f"{c}_is_TDI"] = pr >= thr
+            print(f"    {c}: ворота E[p] {gp_te.mean():.3f} (обуч. доля {gates[e].mean():.3f}), "
+                  f"сдвиг E[p] {dp_te.mean():.3f} ({sh.mean():.3f}); произведение -> "
+                  f"E[p] {pr.mean():.3f} (метка {labs[e].mean():.3f}); порог {thr:.3f}, "
+                  f"положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
+    else:
+        for c in TDI_CYPS:
+            lab = T[f"{c}_is_TDI"]
+            m = lab.notna().to_numpy()
+            yb = lab[m].astype(int).to_numpy()
+            pr = gbm_clf().fit(X[keep][m], yb).predict_proba(Xte)[:, 1]
+            raw_mean = float(pr.mean())
+            pr, slope = tdi_calibrate(X[keep][m], yb, tdifold[m], pr)
+            thr = plugin_threshold(pr)
+            cls[f"{c}_is_TDI"] = pr >= thr
+            print(f"    {c}: Платт наклон {slope:+.3f}, среднее {raw_mean:.3f} -> {pr.mean():.3f} "
+                  f"(обучающая доля {yb.mean():.3f}); порог {thr:.3f}, "
+                  f"положительных {int((pr>=thr).sum())} из {len(pr)}", flush=True)
 
     ap_ = a.outdir + "activity_submission.csv"
     tp_ = a.outdir + "tdi_submission.csv"
@@ -880,21 +1136,43 @@ def main():
     from validation.tdi_validation import validate_tdi_submission
     ids = set(te.Molecule_Name)
     ok = True
+
+    def _verdict(res):
+        """Normalise a validator's return into (passed, errors).
+
+        Both organisers' validators are typed `-> tuple[bool, list[str]]` and return
+        (ok, errors). The previous form tested only for a list or an `.errors` attribute, so a
+        TUPLE fell through both branches, `bad` was always empty, and the SystemExit below was
+        unreachable -- the gate printed "принято" for every possible input, including a file the
+        validator had just rejected. Confirmed by direct call before this fix: the return is
+        `(True, [])`, `isinstance(res, list)` is False and `getattr(res, "errors", [])` misses.
+
+        The second defect was the `except TypeError` arm, which printed "принято" without
+        looking at the result at all. It now goes through the same verdict.
+        """
+        if isinstance(res, tuple):
+            errs = list(res[1]) if len(res) > 1 and res[1] else []
+            return bool(res[0]) and not errs, errs
+        if isinstance(res, list):
+            return not res, list(res)
+        errs = list(getattr(res, "errors", []) or [])
+        return bool(getattr(res, "ok", not errs)) and not errs, errs
+
     for name, fn, path in [("регрессия", validate_activity_submission, ap_),
                            ("классификация", validate_tdi_submission, tp_)]:
         try:
             res = fn(path, expected_ids=ids)
-            bad = res if isinstance(res, list) else getattr(res, "errors", [])
-            if bad:
-                ok = False
-                print(f"  {name}: ОТКЛОНЕНО")
-                for e_ in bad:
-                    print("     ", e_)
-            else:
-                print(f"  {name}: принято")
         except TypeError:
             res = fn(path)
-            print(f"  {name}: принято (валидатор без expected_ids)")
+            print(f"  {name}: валидатор без expected_ids, проверка только по файлу", flush=True)
+        passed, bad = _verdict(res)
+        if not passed:
+            ok = False
+            print(f"  {name}: ОТКЛОНЕНО")
+            for e_ in (bad or ["валидатор вернул отказ без списка ошибок"]):
+                print("     ", e_)
+        else:
+            print(f"  {name}: принято")
     if not ok:
         raise SystemExit("валидатор отверг файл; ничего не отправлять")
     print(f"\nготово:\n  {ap_}\n  {tp_}")

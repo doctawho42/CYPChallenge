@@ -1,0 +1,8 @@
+clusters: 4703 | fold sizes: [1016  938  992  933 1026]
+FP               done in 370s
+FP+DESC          done in 376s
+FP+DESC+MECH     done in 405s
+DESC+MECH        done in 90s
+MECH             done in 60s
+DESC             done in 94s
+saved

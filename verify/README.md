@@ -35,15 +35,46 @@
 0.7150 -> 0.6567). Здесь стояло «-0.050 пары» --- ошибка на 0.0083, больше макро-пола по паре;
 исправлено 6 сентября.
 
-**Счёт сходится.** Сумма названных вкладов --- мёртвая зона +0.0197, механистический блок +0.0163,
-пулирование +0.0141, ствол пятым +0.0054 --- даёт +0.0555 против общего +0.0579. Расхождение
-0.0024, глубоко внутри пола, и это единственная проверка, что таблица вкладов описывает ту же
-модель, что и таблица конфигураций.
+**Счёт сходился, пока его не проверили выбиванием, и ПУНКТ 274 ЕГО ОТМЕНИЛ.** Сумма названных
+вкладов --- мёртвая зона +0.0197, механистический блок +0.0163, пулирование +0.0141, ствол пятым
++0.0054 --- даёт +0.0555 против общего +0.0579, расхождение 0.0024. Но эти четыре числа мерялись
+ДОБАВЛЕНИЕМ к разным базам. Померенные ВЫБИВАНИЕМ из подаваемой конфигурации они дают +0.0315:
+мёртвая зона и ствол воспроизводятся почти точно (-0.0198 и -0.0056), MECH стоит 43 процента
+своей строки, **а пулирование не стоит ничего (+0.0008, знак 0/4)**. Строка «пулирование
+контрастом» ниже описывает настоящий МЕХАНИЗМ (пункты 131, 132), но не предельную ценность ЧЛЕНА
+в готовом ансамбле. Читать таблицу вкладов как аддитивную нельзя.
 
-**И главная оговорка ко всему разделу.** Шум одного счёта лидерборда на 750 молекулах --- 0.08
-пары (пункт 147). Наш прирост по паре --- 0.0583. **То есть на метрике, которую лидерборд
-показывает, весь выигрыш проекта лежит внутри шума одного замера.** По рангу мы вне шума, но ранг
-на лидерборде не показывают.
+**И главная оговорка ко всему разделу, переписанная 10 сентября (пункт 276): прежняя формулировка
+сравнивала разность с шумом одиночного счёта и вдобавок цитировала вдвое завышенное число.** Полосу
+пункта 147 (полуширина 0.08) исправил пункт 253: она усредняла четыре поферментные перцентильные
+границы так, будто ошибки ферментов ходят вместе, тогда как измеренная кросс-ферментная корреляция
+ошибки одного счёта --- 0.02, и усреднение четырёх почти независимых ошибок сокращает разброс вдвое.
+Корректная полоса на ПОДАВАЕМОЙ конфигурации, пересчитанная 11 сентября на составе, который
+подаётся СЕЙЧАС (`results/preds/band.json`, пункты 282--285 и 277): раскрытие n=750 ---
+[0.6114, 0.6997], полуширина **0.0442**; живой лидерборд n=375 --- [0.5945, 0.7265], полуширина
+0.0660. Это sampling-полоса абсолютного счёта, а не то, с чем сравнивается наш прирост.
+
+Здесь до 13 сентября стояли числа пункта 256 --- [0.6263, 0.7090] и [0.6126, 0.7322], --- верные
+для состава, который подавался ТОГДА. Сдвиг 0.013 макро, то есть размером с саму смену состава: это
+была полоса другого плеча, а не округление. Таблица внутри пункта 256 оставлена как запись о том,
+что было верно тогда; убрано только ЖИВОЕ утверждение, цитировавшее её (пункт 294).
+
+Наш прирост 0.0583 --- это РАЗНОСТЬ двух конфигураций, и сравнивать её надо с шумом РАЗНОСТИ, а не
+одиночного счёта. Лидерборд считает все подачи на одних и тех же молекулах, поэтому поштучный шум в
+разности сокращается: парный пол --- $\sqrt2\cdot0.0036 = $ **0.0052** (пункт 259, ковариация плеч
+по сидам нулевая), парный бутстрэп по тесту --- sd 0.0074–0.0201. Прирост 0.0583 лежит ВНЕ этого с
+большим запасом, и даже больше исправленной полуширины одиночного счёта 0.0442.
+
+**Итого, честно: абсолютный счёт непредсказуем до $\pm0.04$, положение относительно похожей подачи
+определено до $\pm0.02$, и по рангу мы вне шума --- причём РАНГ ЛИДЕРБОРД ПОКАЗЫВАЕТ.** Прежнее «весь
+выигрыш внутри шума одного замера» неверно на обоих счётах.
+
+Здесь до 12 сентября стояло «а ранг на лидерборде не показывают», и это неверно: pinned README
+организаторов (`CYP-Challenge-Tutorial/README.md`, раздел Challenge Tracks) говорит прямо ---
+«**Secondary metrics** (MAE, R², Spearman ρ, Kendall's τ) are also reported with bootstrap
+confidence intervals». Текст организаторов оперативен, наш --- нет. Следствие не косметическое:
+собственная валюта проекта --- ранг --- становится ВНЕШНЕ проверяемой на раскрытии 25 сентября,
+поэтому предрегистрировать надо не только полосу ST-RAE, но и ранговое предсказание.
 
 **Что стоит в конвейере и сколько стоит.**
 
@@ -54,6 +85,8 @@
                         он же в режиме теста     +0.0313       4     119
     пулирование контрастом                       +0.0141       4  84,132   в подаче есть
     GP и гребневая как члены                  своя ошибка      4  92,100   в подаче есть
+    поферментный состав по ферментам             +0.0059       4 282-285   в подаче есть
+                        1A2 пофе+GP+ств, 2C9/3A4 GP+ств --- на СВЕЖИХ сидах 4-7; заменяет SOLO 218
     скрининг, ОДИНОЧНАЯ модель                  +0.0290       4 158,177   см. ниже
                         он же в ансамбле       +0.0014       4     182   ниже пола
     панель NCGC, поферментно                  считается        —     157   НЕ в подаче
@@ -64,11 +97,24 @@
 
     конфигурация                                  3A4      2D6    макро   пункт
     структурный классификатор + plug-in        0.3143   0.1137   0.2140     228
-    он же + калибровка Платта (подаётся)       0.3379   0.1169   0.2274     235
+    он же + калибровка Платта                  0.3379   0.1169   0.2274     235
+    СВЯЗКА: ворота(ансамбль) * сдвиг (ПОДАЁТСЯ) 0.3510   0.1235   0.2373     250
     оракул порога (не для подачи)              0.3635   0.1589   0.2612     235
 
-Калибровка забрала +0.0133 макро при поле 0.0076; оракул порога показывает +0.0472 при знаке
-8/8, то есть три четверти доступного на пороге не взяты.
+**Здесь до 12 сентября подаваемой была помечена калибровка Платта. Это устарело с 6 сентября:
+пункт 250 принял связку по предрегистрации пункта 244, и `src/submit.py` строит её по умолчанию
+(`--no-bundle` отключает).** Табло занижало подаваемое плечо на +0.0127 макро.
+
+Калибровка забрала +0.0133 макро при поле 0.0076; связка забрала ещё +0.0127 при знаке 6/8 сверх
+неё; оракул порога показывает +0.0472 при знаке 8/8, то есть три четверти доступного на пороге
+по-прежнему не взяты. Поферментно связка не берёт НИЧЕГО (+0.0083 на 3A4 при поле 0.0281, +0.0170
+на 2D6 при 0.0419) --- заявление строго макро, как и писал пункт 244.
+
+Числа связки --- четырёхсидовые средние из `results/preds/bundle.json`, где её комп��ратор
+«метка+Платт» стоит на 0.3427/0.1065/0.2246. Это ДРУГОЙ прогон того же плеча, чем строка пункта
+235 выше (0.3379/0.1169/0.2274); расхождение --- сидовая и прогонная дисперсия, не дефект, и
+дельты между плечами внутри одного прогона (+0.0083/+0.0170/+0.0127) совпадают с пунктом 250
+точно. Сравнивать плечи можно только внутри одного прогона.
 
 **Метка --- конъюнкция, и это объясняет разрыв между эндпоинтами (пункты 234, 238):**
 
@@ -147,22 +193,34 @@
 0.0076), предобученные представления (61, 117, 154 --- три чекпойнта), FCFP (101), kNN (107),
 краевая регрессия (114), точное байесово действие (126), серийный слой (133), координата фермента
 (154), logD и LipE (154), хи-квадрат-DRO (154), ChEMBL как внешний источник (77 --- все три
-способа обращения), CYP2C19 как пятая изоформа (153).
+способа обращения), CYP2C19 как пятая изоформа (153), квантовый блок --- и против ПОТЕНЦИИ (186),
+и против СДВИГА TDI (242), оба раза с проходящими контролями.
 
-**Не запущено, а не закрыто.** Квантовый блок против СДВИГА TDI. Признаки посчитаны и лежат ---
-`data/quantum.npz`, 4905x10 плюс 750 тестовых, homo/lumo/gap/dipole/q_basicN/q_aromN_min/
-fukui_minus/cone_free/n_arom_N/has_donor, ноль NaN.
+**Этот раздел назывался «Не запущено, а не закрыто» и держал квантовый блок против сдвига как
+последний незапущенный вариант. Исправлено 12 сентября: пункт 242 его закрыл, и табло отстало от
+журнала --- в третий раз тем же способом, что в пунктах 202 и 234.** Признаки лежат и никуда не
+делись (`data/quantum.npz`, 4905x10 плюс 750 тестовых, homo/lumo/gap/dipole/q_basicN/q_aromN_min/
+fukui_minus/cone_free/n_arom_N/has_donor, ноль NaN), но прогон состоялся.
 
-Против ПОТЕНЦИИ он прогнан и закрыт дважды: пункт 186, четыре сида с перестановочным контролем,
-ни один фермент не проходит свой пол и настоящий блок неотличим от перемешанного. Эта строка
-раньше утверждала, что абляция «никогда не запускалась» --- неверно, и это ровно тот сорт
-рассогласования между табло и журналом, который в пунктах 202 и 234 стоил повторных выводов.
+Против ПОТЕНЦИИ блок закрыт дважды (пункт 186, четыре сида с перестановочным контролем: ни один
+фермент не берёт свой пол, настоящий блок неотличим от перемешанного). Против СДВИГА
+Delta = pi_TDI - pi_dir его закрыл пункт 242 (`verify/k73_quantshift.py`, четыре сида, восемь
+клеток), и закрыл с полным набором контролей:
 
-Но целью там была потенция. **Против сдвига Delta = pi_TDI - pi_dir блок не мерили ни разу**, а
-пункт 238 показал, что весь остаток классификационного трека --- это сдвиг, и физика у него не
-электростатика связывания, а реакционная способность: `fukui_minus`, HOMO/LUMO и щель --- ровно
-те величины. Признаки уже на диске, так что это прогон, а не проект. Отдельно `src/quantum.py`
-падает на `xtb-python`, которого нет в реестре, но файл от более раннего прогона на месте.
+    прирост Спирмена по Delta к базе      среднее   знак
+    +квант                                -0.0018    3/8
+    +квант ОСТАТОК                        +0.0035    5/8
+    +квант перемешан (контроль)           +0.0041    4/8
+    +10 колонок гауссова шума (контроль)  -0.0033    3/8
+
+**Перемешанный блок набирает больше любого настоящего плеча** --- полный ноль. Остаточная рука
+(блок минус его собственная вневыборочная реконструкция) существовала потому, что 9 из 10 колонок
+восстанавливаются из DESC+MECH вне фолда при $R^2>0.5$ (медиана 0.68), и она тоже ничего не даёт.
+Так что «физика у сдвига --- реакционная способность, а признаки уже на диске, это прогон, а не
+проект» было верным рассуждением с неверным исходом: прогон сделан, исход отрицательный.
+
+Отдельно `src/quantum.py` падает на `xtb-python`, которого нет в реестре, но файл от более раннего
+прогона на месте --- это к воспроизводимости, а не к открытости вопроса.
 
 
 Forty-three scripts in four groups. `f*` was a sweep over everything that had been computed
@@ -1726,9 +1784,20 @@ the rank the boosting already had, 0.5646 against 0.5630, and no further.
 The practical rule for every future ablation, and it costs nothing: **report the change in rank
 correlation beside the raw score.** The raw column answers "did the intervention move the
 predictions", which is not the question; the rank column answers "did it move them somewhere the
-post-processing cannot reach", which is. A post-isotonic score is the same criterion expressed in
-the metric's own units, and is the conservative bound, since isotonic spans a wider class of
-monotone maps than the affine pair does.
+post-processing cannot reach", which is. A post-isotonic score expresses the same criterion in the
+metric's own units and is useful for comparing two ARMS.
+
+**Corrected 12 September: this paragraph used to call a post-isotonic score "the conservative
+bound, since isotonic spans a wider class of monotone maps than the affine pair does". The licence
+does not hold as written, and item 31 --- written earlier --- already measured why.** Within one
+fold's map isotonic is exactly monotone, but on the glued out-of-fold vector five different maps
+are in play and rank genuinely moves: Kendall tau_b between raw and recalibrated is 0.917 to 0.959,
+1.86 to 3.71 % of all pairs strictly reverse, and Spearman against the LABELS --- the thing the
+instrument is supposed to leave alone --- falls on all four enzymes by 0.007 to 0.015. What item 31
+salvages is narrower than a bound: the distortion is nearly COMMON-MODE, so an arm DIFFERENCE moves
+an order of magnitude less than either arm does. So "compare two arms after out-of-fold isotonic"
+stands; "it preserves rank, therefore it bounds" does not, and a post-isotonic number must not be
+quoted as a conservative bound on a single arm.
 
 **81. The mechanistic block survives post-processing, and the raw measure had been hiding it.**
 The question asked was whether the block does anything on CYP2D6 at all, prompted by item 76:
@@ -7850,9 +7919,12 @@ against nothing. The submitted arm re-measured at four split seeds gives it:
     CYP2D6                                   0.0187  0.0374   0.0419    0.0419
     МАКРО                                    0.0037  0.0074   0.0076    0.0076
 
-**Macro MCC's floor is 0.0076 -- within a thousandth of the regression track's macro rank floor of
-0.007.** Two different metrics on two different tracks with the same split machinery land in the
-same place, which is a coincidence worth noticing and not worth theorising about.
+**Macro MCC's floor is 0.0076.** This entry originally compared that to "the regression track's
+macro rank floor of 0.007" and called the agreement a coincidence. **The comparison was to the wrong
+quantity**: item 70's 0.007 is chaotic sensitivity at a FIXED seed measured in ST-RAE, while the
+macro RANK floor over seeds is 0.0036 (item 165). Corrected the same day by a numeric audit. The two
+numbers that do sit close are macro MCC 0.0076 and macro ST-RAE 0.007, which are different metrics on
+different tracks and share only the split machinery.
 
 **And it changes what this result may be claimed as.** The gain is +0.0133 macro against a floor of
 0.0076: **1.75 times the floor, and that is the whole claim.** Per enzyme it does not clear: +0.0235
@@ -8306,3 +8378,2818 @@ estimators (k72), the probability product (241), the quantum block against the s
 alerts (236) and now the arm ensemble -- every one measured, every one below its floor against what
 is already submitted. The deployed configuration is a structural classifier plus Platt calibration,
 0.3379 and 0.1169, and nothing measured beats it by more than the floor.
+
+**244. Pre-registration: bundling two sub-floor gains, and the rule that separates a small effect
+from an absent one.** Written and committed before `verify/k76_bundle.py` runs. The question came
+from outside: if no single intervention clears the floor, can several small ones be introduced
+together and clear it as a bundle?
+
+**The premise is right and the project already depends on it.** A noise floor is a property of a
+MEASUREMENT, not of a component. Nothing obliges each part to be demonstrable on its own: the dead
+zone is exactly this shape -- five per-member applications, each marginal alone, measured as one
+object and worth +0.0197 at sign 4/4 in all sixteen cells.
+
+**But bundling only works for effects that are small and REAL. For absent effects it is worse than
+doing nothing**, because the bundle pays their variance and collects none of their mean. And the
+discriminator is not magnitude, it is **sign consistency** -- the same statistic item 213 leaned on
+for the trunk's +0.0045 against a floor of 0.0036.
+
+Every closed item of the last two days, classified by that rule, against the arm each was measured
+next to:
+
+    что                                   средн.   знак   вердикт
+    k75, ансамбль4+МЗ на плече           +0.0104    7/8   живой, мал
+    k74, произведение как скор           +0.0187    6/8   живой, мал
+    k74, минимум как скор                +0.0162    7/8   живой, мал
+    k75, GP на плече                     +0.0057    5/8   мёртвый
+    k73, квант сырой                     -0.0018    3/8   мёртвый
+    k73, квант остаток                   +0.0035    5/8   мёртвый
+    k73, квант ПЕРЕМЕШАННЫЙ (контроль)   +0.0041    4/8   ---
+    k71, внешние строки                  +0.0051    2/8   мёртвый
+
+**The quantum block is excluded, and the control row is why.** Its shuffled version scores +0.0041
+at 4 of 8 -- higher than either real arm. That is not a small effect; it is zero, and bundling a
+zero costs variance for no mean. Item 242 closed it and this does not reopen it.
+
+**Two candidates survive, and they are different mechanisms** -- one improves the regression of the
+pre-incubation arm, the other changes the shape of the decision function -- so they compose rather
+than compete.
+
+**The bundle, fixed now.** Gate factor from the four-member ensemble with the dead zone on the
+pre-incubation arm, mapped to a probability by a 1-D calibrator fitted out of fold; multiplied by
+the shift factor from a classifier on `Delta > log10 2`; the product calibrated and thresholded by
+the plug-in rule. Measured as **one object** against what is submitted (structural classifier plus
+Platt), four seeds, both endpoints.
+
+**It is adopted if and only if all three hold:**
+
+    1. средний прирост макро-MCC над подаваемым положителен;
+    2. знак держится не менее чем в 6 клетках из 8;
+    3. прирост превышает МАКРО-ПОЛ 0.0076.
+
+The third condition is the whole point of the exercise: the bundle must clear a floor that none of
+its parts cleared. **If it does not, that is the answer** -- the parts overlap more than they looked
+like they would, and the strategy of accumulating sub-floor gains is closed on measurement rather
+than on argument.
+
+**Why it is fixed in advance.** The floor of 0.0281 was measured for a FIXED arm across four seeds.
+An arm assembled from whatever looked positive afterwards has a larger variance and an estimate
+biased upward by the selection. Item 233 is the precedent, and it is the reason this paragraph
+exists before the numbers rather than after them.
+
+**245. Amendment to item 244, written while `k76_bundle.py` is still running: two of the three arms
+it bundles are selection artefacts, and the sign rule as I wrote it is too broad.** Prompted by an
+outside audit; verified from source and from the saved records. Recorded BEFORE the run reports,
+because a correction published after a failure is not a correction.
+
+**The rule in item 244 says an effect is real-and-small if its sign is consistent even when its
+magnitude is below the floor. That is only true for arms whose NULL EXPECTATION IS ZERO.** An arm
+that is itself a maximum -- over thresholds, over estimators, over enzymes -- has a positive null
+expectation by construction, and its sign count is then a tautology rather than evidence. Item 244
+does not say this and must.
+
+**Two of its three surviving candidates fail on exactly that.** `verify/k74_product.py` scores every
+arm under three threshold rules; item 244 quoted the argmax column and only that column.
+
+    против подаваемого, 8 клеток      plug-in       argmax     центроид   среднее(3)   max(3)
+    ПРОИЗВЕДЕНИЕ                  -0.0031 4/8   +0.0187 6/8  +0.0043 6/8     +0.0066  +0.0187
+    минимум                       -0.0123 3/8   +0.0162 7/8      ---         +0.0010  +0.0152
+
+**Under plug-in -- the rule the submission actually uses -- both are dead by item 244's own
+criterion**, at 4/8 and 3/8 with negative means. Averaged over the three rules both sit under the
+macro floor of 0.0076. The inflation from taking the best of three is +0.0121 and +0.0152, which is
+larger than either candidate's apparent gain.
+
+**What survives.** The k75 arm-ensemble candidate is a comparison of two fixed procedures, its null
+expectation is zero, and its sign is genuine -- but it is **6 of 8, not 7 of 8** as item 244 records
+it. One candidate, not three, and the bundle k76 is measuring therefore contains one live component
+and one artefact.
+
+**The prediction this licenses, entered before the result.** An outside reading predicted condition 3
+would fail or pass only marginally, on the argument that both arms move the same ordering through
+the same probabilities. This finding gives the same prediction by a different route and a sharper
+one: the second component is not weakly overlapping, it is absent under the deployed threshold rule.
+**Condition 3 should fail.** If it passes, something is wrong with the bundle harness and not with
+this paragraph.
+
+**And the same audit found the rule's other victims, one of which is deployed.**
+
+    пункт  рука                             отбор                       статус
+     235   оракул порога                    max по 91 порогу, тот же    не для подачи
+                                            грид, что у plug-in
+     241   колонка "лучший MCC"             max по 3 правилам порога    в записи
+     218   SOLO: один GP на CYP3A4          max по 4 ферментам,         ЗАМЕНЁН 283
+                                            затем max из 31 подмножества
+
+Item 218's constant is in `src/submit.py:400` and it is the only one of the three that ships. Its
++0.0098 of rank on CYP3A4 was judged against a per-enzyme floor of 0.0033; corrected for the
+winner's curse it is +0.006 to +0.008, and a one-enzyme change enters macro at a quarter weight,
+about +0.002. **The decision stands on cross-validation grounds and is not being reversed here** --
+it costs nothing and the sign is right -- but it must stop being quoted as a leaderboard-relevant
+gain, and the scoreboard will say so.
+
+**246. The falsification band was pre-registered for the wrong arm, at the wrong n, with the wrong
+aggregation. Corrected here, and this is the version that stands for 24 September.** Prompted by an
+outside reading of the challenge announcement; the announcement's own wording settles the n.
+
+**What the organisers actually say**, quoted because the project has been working from the
+tutorial's paraphrase: *"Half of the test set will be used for a live leaderboard, split by
+chemisimilar series, such that all compounds from a parent end up in either the live leaderboard or
+the fully blinded set. There will be an interim leaderboard at the halfway mark, at which
+participants' performance on the full test set will be revealed only once."*
+
+So there are **two** external numbers with two different sample sizes, and the project had neither
+right: the live leaderboard runs on **375**, and the interim reveal on 25 September is on the
+**full 750**.
+
+Three defects in item 147's band, in increasing order of size:
+
+    источник ошибки                                        было          стало
+    рука: база FP+DESC+MECH вместо подаваемой         0.639-0.804          ---
+    агрегация: среднее ЧЕТЫРЁХ поферментных границ    полуширина 0.082  ->  0.042
+    n: 750 против 375 для живого лидерборда                   ---      полуширина 0.061
+
+The aggregation defect is the largest and it is arithmetic, not judgement. Item 147 averaged the
+four per-enzyme percentile bounds as though the enzymes' sampling errors moved together. Measured
+cross-enzyme correlation of per-draw ST-RAE under a common draw is **0.02** -- they are very nearly
+independent, and averaging four independent errors halves the spread. **The single-score spread is
+sd 0.022, not 0.08.**
+
+**WITHDRAWN, same day, by a numeric audit of the write-up drafted from this entry.** The bands below
+were computed on the WRONG ARM and must not be used. `results/preds/oof_dzens.json`'s
+`мёртвая зона везде` is item 149's **four-member** ensemble at seed 0, macro 0.6599; the arm that
+ships is item 213's **five-member** configuration at macro **0.6459**, and no per-compound
+out-of-fold predictions for it exist anywhere under `results/preds/`. The sentence "matching the
+scoreboard's 0.6599" matched a number from a different experiment -- 0.6599 appears in the scoreboard
+only at item 149's four-member row, and the submitted configuration's row reads 0.6459.
+
+The centre is therefore about **0.014 too high**. The spread is a property of the loss distribution
+and will move less, but an approximate correction is not what a pre-registration may contain, so the
+band is withdrawn rather than shifted, and `verify/k79_bandfix.py` recomputes it on the five-member
+arm through `src/submit.py`'s own `oof_members` and `dz_pass`.
+
+    ОТОЗВАНО, четырёхчленная рука   среднее      sd            95 %       полуширина
+    n=750, полный тест               0.6624  0.0215  [0.6213, 0.7053]         0.0420
+    n=375, живой лидерборд           0.6648  0.0312  [0.6054, 0.7276]         0.0611
+
+**How it happened, because the mechanism repeats.** `oof_dzens.json` contains an arm whose NAME
+matches what is submitted -- "мёртвая зона везде" -- while its composition does not. The check that
+would have caught it is the one this project applies everywhere else and did not apply here:
+reconcile the arm's own score against the scoreboard row for the configuration being claimed, not
+against any row that carries the same number.
+
+**This is a SAMPLING band and not a prediction interval, and the difference is the whole caveat.**
+It assumes the test set's label distribution and band widths resemble the training set's. Items
+123, 129 and 130 established by three independent routes that the distribution shift is not
+checkable from inside, and nothing here changes that. What the band covers is the draw; what it
+does not cover is the shift.
+
+**Recorded as a tightening after the fact**, which is the uncomfortable half. The band narrows from
+a half-width of 0.082 to 0.042, making the 25 September test **stricter** than the one item 147
+wrote down. A band that is widened after the fact is worthless; one that is narrowed is defensible
+but only if the narrowing is announced with its reason, before the measurement, and that is what
+this entry is. The reason is an arithmetic error in the aggregation, not a change of mind.
+
+**And a fourth number that now carries weight it did not have.** Planning against the 375-compound
+live leaderboard would be unsound if slicing by chemical series cut the effective sample far below
+375. It does not: yesterday's measurement of per-compound ST-RAE contributions among close analogues
+gives a correlation of **-0.013 to +0.002** across the four enzymes. Analogues' contributions to
+this metric are uncorrelated, so a series-wise split costs almost nothing in effective n. Without
+that number the whole paragraph above would rest on a guess.
+
+**247. The metric's native uncertainty object: per-compound probability of scoring zero. One enzyme
+of four, and the mechanism says which.** `verify/k77_hitprob.py`. Proposed from outside as the
+project's answer to "novel uncertainty quantification"; built, measured, and reported at the size
+it actually is.
+
+**The framing is the contribution, not the technique.** Conventional uncertainty quantification puts
+an interval around the prediction. Under ST-RAE that is the wrong object: a prediction anywhere
+inside the compound's published band scores **exactly zero**, so distance within the band is not
+paid for. The native quantity is
+
+    P(попадание_i) = P( lo_i <= y-крышка_i <= hi_i )
+
+the per-compound probability of not paying at all. It is observable out of fold, and it is the
+natural partner to the dead zone: one trains predictions **into** the band, the other says whether
+they landed. Two halves of one object, both derived from the definition of the metric.
+
+**The base rate, and why the problem is well posed.** Out of fold on the submitted arm, hits are
+0.247 / 0.439 / 0.198 / 0.369 -- **macro 0.313 of all predictions already score zero.** And the rate
+is strongly structured by a quantity we predict: on CYP3A4, by quintile of *predicted* potency,
+
+    квинтиль   среднее ŷ   средняя ширина   доля попаданий   средняя потеря
+    1               3.08            2.000            0.788            0.101
+    5               5.14            0.209            0.161            0.309
+
+Weak compounds have wide bands (item 114: width is a function of the label to within 3 per cent of
+its variance, correlation -0.885 to -0.928), so they are nearly free to get right.
+
+**The result, and it is one enzyme of four.**
+
+    фермент   базовая доля   AUC(ŷ)   AUC(z)   Брайер(z)   Брайер константы
+    CYP1A2           0.247   0.5560   0.5337      0.1928             0.1861
+    CYP2C9           0.439   0.5893   0.5969      0.2490             0.2463
+    CYP2D6           0.198   0.5401   0.4859      0.1635             0.1585
+    CYP3A4           0.369   0.7459   0.7496      0.1814             0.2328
+
+**On three of four the Brier score is WORSE than a constant at the base rate.** The classifier adds
+noise there. On CYP3A4 it is real: AUC 0.750 and Brier 0.181 against the constant's 0.233.
+
+**The mechanism says exactly why, and it is a property of their assay rather than of our model.**
+
+    фермент   ширина q10   q90   динамический диапазон   sd(ŷ)   размах доли попаданий
+    CYP1A2         0.179  1.441                    8.0   0.410                   0.181
+    CYP2C9         0.227  1.241                    5.5   0.400                   0.311
+    CYP2D6         0.170  0.949                    5.6   0.289                   0.151
+    CYP3A4         0.131  2.523                   19.2   0.733                   0.627
+
+CYP3A4's bands span a **19-fold** range and its predictions span twice the spread of CYP2D6's. Where
+the band barely varies there is nothing for a hit probability to discriminate.
+
+**The better parameterisation, once a bug was out of the way.** Rather than making a classifier
+rediscover the width-potency relation, construct the signal-to-noise ratio directly:
+`z = w-крышка(ŷ) / (2 * масштаб остатка)`, then calibrate `P(попадание)` on z by isotonic
+regression. On CYP3A4 that beats the learned classifier on both metrics with a single interpretable
+number -- correlation of z with hitting **+0.435**.
+
+**The bug is worth more than the improvement.** The first version fitted `IsotonicRegression()` from
+label to width, and that estimator defaults to requiring a NON-DECREASING fit. The relation is
+decreasing, so the fit collapsed to a constant -- range exactly 0.000 -- and z became an inverse
+transform of the residual scale alone, scoring AUC 0.485 on CYP3A4 against the direct classifier's
+0.746. **It was caught by a control, not by reading the code**: the correlation of predicted width
+with hitting came out at +-0.01 on all four enzymes, which is impossible for a monotone function of
+an informative feature. `increasing=False` fixes it.
+
+**And one number of mine was a tautology, said before anyone builds on it.** The file also predicts
+the score itself through a second head, and reports macro ST-RAE 0.6594 predicted against 0.6600
+actual -- agreement to three decimals, which reads as a strong result and is not one. Predicting the
+**mean loss** out of fold does equally well: 0.7657 / 0.5790 / 0.8523 / 0.4426 against true
+0.7656 / 0.5793 / 0.8520 / 0.4430. The aggregate agrees because the folds are exchangeable, not
+because the model knows anything. **The control belonged in the first version and was not there** --
+the same defect this project caught in the threshold oracle two days earlier, committed again by the
+person who caught it.
+
+**What this licenses as a claim.** On CYP3A4, a calibrated per-compound probability of scoring zero,
+AUC 0.750, better calibrated than the base rate. Not a macro result, not a deployed change, and not
+a prediction of the leaderboard score.
+
+**248. A fourth route to the shift, with no model in it: run the organisers' selection procedure on
+our own labels.** `verify/k78_designsim.py`, 30 draws per setting, `results/preds/designsim.json`.
+Proposed from outside; the control that decides it was added here.
+
+The three existing routes all estimate the test-set label shift through the model or its outputs:
+reweighting the marginal (+0.4 at delta 0, +0.9 at delta 0.5), the anchors' percentiles (+1.05, an
+UPPER bound because the anchors' neighbours were chosen by similarity and regress to the mean), and
+the shift of the predictions themselves (+0.09, a LOWER bound because an interpolating model carries
+only part of an input shift). `src/submit.py` declares +0.1 to +0.6 live and `--shrink` the one
+decision still open.
+
+**This route does not estimate the shift, it reproduces it.** The selection is published -- twenty
+five best by CYP1A2, twenty five by CYP2C9, twenty five by CYP3A4, each with its nearest neighbours
+-- so it can be run on the training set, where the labels are known, and the shift read off
+directly. No fit, no prediction.
+
+**The control is what makes the number readable, and it changed the reading.** Neighbourhood
+expansion moves the marginal by itself: a molecule's neighbours resemble it, and the dense regions
+of the set differ from the sparse ones. So the same procedure runs with anchors chosen AT RANDOM.
+
+    чистый вклад отбора = отбор по потентности минус случайные якоря
+    соседей   уникальных     1A2      2C9      2D6      3A4
+       10            676  +0.189   +0.231   +0.212   +0.341
+       16            971  +0.143   +0.138   +0.150   +0.270
+       24           1317  +0.098   +0.095   +0.121   +0.245
+
+    контроль (случайные якоря) сам по себе: -0.02 .. +0.09, то есть почти ноль
+
+**The shift decays monotonically with neighbourhood size**, and the real test is 750 unique, so the
+operating point sits between the first two rows: interpolating gives roughly **+0.17 / +0.20 /
++0.19 / +0.32** against the deployed defaults of **0 / +0.3 / -0.5 / +0.7**.
+
+**The finding this route was built for: CYP1A2's zero is wrong in sign.** That default was set
+because the statistical route could not determine the sign at all -- P(delta >= 0) = 0.59 -- and a
+coin flip is worse than doing nothing. But CYP1A2 is one of the three enzymes the anchors were
+selected on, so its test half is enriched **by construction**, and the design route puts the net
+contribution at +0.098 to +0.189 with the control at -0.02. This is a determination the statistical
+route could not make by its nature, not a better estimate of the same thing.
+
+**And one thing nobody predicted: most of the base depletion is the neighbourhoods, not the
+selection.**
+
+    доля is_base_74   весь обучающий 0.175 -> случайные якоря 0.132 -> отбор 0.121 -> ТЕСТ 0.104
+
+Neighbourhood expansion oversamples the dense regions of chemical space and those are base-poor;
+potency selection then adds only 0.011 more. The CYP2D6 argument -- that the test carries a third as
+many bases as the CYP2D6 label mask, and CYP2D6 is the one enzyme binding through a salt bridge --
+survives as a fact about the test, but its **mechanism is not the potency selection**, and the
+simulation still lands at 0.121 against the real 0.104.
+
+**So CYP2D6 stays unresolved and this entry does not pretend otherwise.** This route puts its shift
+at +0.121 to +0.212, positive; the chemistry argument puts it at -0.5, negative. The simulation
+under-shoots the depletion that drives the chemistry argument, so it cannot adjudicate. What it does
+establish is that the current -0.5 treats one of two mechanisms as the whole story.
+
+**A second axis nobody is using.** The ratio of pseudo-test to training standard deviation runs
+0.99 to 1.10, and it is consistently highest on **CYP2D6** (1.086, 1.104, 1.101). The test is not
+only shifted, it is slightly wider, and `src/submit.py` grids a single location parameter.
+
+**Bounds on this route, both downward.** The pseudo-test at 10 neighbours holds 676 unique against
+the real 750, so anchors are over-weighted; and the neighbour pool is our 4905 training molecules
+rather than the organisers' full library, so neighbours are closer and enrichment stronger. Both
+push the estimate up, so the true contribution is likely at or below these figures.
+
+**What this does not license.** It is not a decision about `--shrink`. Four routes now disagree by
+more than any of them claims to resolve, and the 25 September reveal happens once.
+
+**249. The design route narrowed to 750, and both of its known biases now point the same way: up.**
+`verify/k78_designsim.py` with non-overlapping series, `results/preds/designsim750.json`.
+
+Item 248's pseudo-test held 676 unique against the real 750 because neighbourhoods overlapped. The
+organisers describe the test as 75 series of ten, which is 750 exactly only if the series are
+**disjoint**, so each anchor now claims its nine nearest **unclaimed** neighbours. That reaches
+726-747 unique and removes the anchor over-weighting item 248 flagged.
+
+    чистый вклад отбора (отбор минус случайные якоря), ровно 750
+    пул          1A2      2C9      2D6      3A4
+    4905       +0.209   +0.217   +0.226   +0.341
+    75 %       +0.199   +0.167   +0.121   +0.329
+    50 %       +0.143   +0.131   +0.045   +0.280
+
+**Shrinking the neighbour pool reduces the contribution monotonically on all four enzymes**, so a
+larger pool gives more enrichment. The organisers' library is larger than our 4905, therefore this
+route **understates**. Both known biases now point upward and the full-pool figures are lower bounds.
+An outside reading had this the other way round; the sensitivity settles it.
+
+**And the base depletion is now almost fully reproduced by the procedure.**
+
+    доля is_base_74   обучающий 0.175 -> случайные якоря 0.129 -> отбор 0.114 -> ТЕСТ 0.104
+
+Against item 248's 0.121 and an outside estimate of 0.148. Neighbourhood expansion accounts for
+0.175 to 0.129 and potency selection for 0.129 to 0.114. **The simulation reproduces the depletion
+the CYP2D6 argument rests on, and still returns a POSITIVE shift of +0.226 for that enzyme.**
+
+**What it does to the `--shrink` decision.** Feeding each posterior through `src/shrinkchoice.py`'s
+assumed-by-true matrices:
+
+    апостериор              макро-выигрыш   2D6 сдвиг   2D6 проигрыш нулю
+    нынешний                     +0.0473        -0.5               0.204
+    дизайн (исправленный)        +0.0243        +0.3               0.000
+    смесь 50/50                  +0.0227        -0.1               0.532
+
+Before the narrowing the spread was +0.047 against +0.010, a factor of five, and no recommendation
+was defensible. **All three now clear the paired leaderboard floor of 0.017**, so whether to turn the
+flag on is no longer the contested question; which per-enzyme shifts to use still is, and the whole
+disagreement sits in CYP2D6.
+
+The design posterior here is uniform on [contribution, contribution x 1.3], where 1.3 extrapolates
+the pool trend. **That multiplier is a judgement, not a measurement**, and the cells move with it.
+
+**250. The pre-registered bundle passes all three conditions, and my own written prediction that it
+would fail was wrong.** `verify/k76_bundle.py`, four seeds, `results/preds/bundle.json`. Item 244
+fixed the conditions before the seeds existed; item 245 amended the inputs mid-run and predicted
+failure. The conditions hold.
+
+    плечо                                    макро    знак   условия 244
+    СВЯЗКА: ворота(ансамбль) * сдвиг       +0.0127     6/8   да + да + да
+    контроль: ПЕРЕМЕШАННЫЙ сдвиг           -0.1453     0/8   ---
+    контроль: ворота одни                  -0.0440     0/8   ---
+    контроль: голое плечо * сдвиг          +0.0071     5/8   ---
+    контроль: сдвиг один                   -0.0658     3/8   ---
+
+**The controls behave**: shuffling the shift factor collapses the bundle to -0.1453 at 0 of 8, and
+each factor alone is worse than what is submitted. It is not repackaged gate.
+
+**Why item 245's prediction failed, stated precisely because the prediction was mine.** That entry
+argued the product component was dead, citing k74's product under the plug-in rule at -0.0031 and
+4 of 8. It treated k74's product and k76's bundle as the same object. They are not: k74's gate
+factor is a classifier's probability, k76's is the pre-incubation arm mapped through a
+one-dimensional calibrator, and k76 calibrates the product before thresholding. The bare-arm control
+proves the difference is the construction rather than the ensemble -- it reaches +0.0071 at 5 of 8
+where k74's product reached -0.0031 at 4 of 8, with no ensemble in either.
+
+**Per enzyme it clears nothing**, as with item 235: CYP3A4 +0.0083 against a floor of 0.0281,
+CYP2D6 +0.0170 against 0.0419. Macro +0.0127 against 0.0076 is the whole claim, which is what item
+244 wrote the rule on.
+
+**By the committed rule this is adopted, and it now ships.** `src/submit.py` builds both conjuncts,
+`--no-bundle` restores the previous behaviour in one flag, and the run took about an hour longer.
+Both of the organisers' validators accept.
+
+    подача      было (Платт)   стало (связка)   согласие   только Платт   только связка
+    CYP3A4               284              360      0.832             25             101
+    CYP2D6               258              285      0.799             62              89
+
+**The control that had to pass did**: the regression track is bit-identical between the two runs,
+max absolute difference exactly 0.00e+00 on all four enzymes, so the bundle touched only what it was
+supposed to touch.
+
+**And the deployment corroborated item 249 from a fourth direction nobody planned.** The gate
+calibrator is fitted on training rows and applied to the test; on CYP3A4 it returns a mean gate
+probability of **0.729 against a training rate of 0.602**. The test compounds clear the potency
+threshold more often than ours do -- which is the enrichment the design-simulation route predicts,
+arrived at here through a calibrator that knows nothing about the selection procedure.
+
+**What is being paid for the gain.** Macro +0.0127 of MCC at 1.7 times its floor moves 17 to 20 per
+cent of the submitted labels. That is the same shape as item 235's calibration decision and is
+recorded for the same reason: if the classification result on 25 September is worse than expected,
+these two changes are where to look, in this order.
+
+**251. Three statements about the same default, none agreeing, and the reason it never mattered.**
+Found while preparing to switch `--shrink` on. Not a measurement; a reconciliation.
+
+    докстринг src/submit.py    «The default is therefore 0, +0.3, -0.5, +0.7»
+    пункт 59 журнала           «src/submit.py --delta now defaults to it»
+    код, строка 805            default="0,0.5,-0.7,0.8"
+
+Git says the code never held the documented vector: `0,0.5,-0.5,0.8` until commit `20be90c` on
+31 August and `0,0.5,-0.7,0.8` after it. Item 59's sentence was written on 29 August and was
+already false, or became false two days later without anyone noticing. **It never mattered because
+`--shrink` is off and the value is not executed** -- which is exactly the condition under which
+such a divergence survives.
+
+**And the divergence is the smaller half.** Items 87 and 88, both written after item 59 adopted its
+vector, measure the spread of delta **across models** rather than across seeds:
+
+    фермент   поферм. L2      пул   поферм. L1   размах   полуширина бутстрапа
+    CYP1A2        +0.045   +0.344       -0.011    0.354                 0.399
+    CYP2C9        +0.362   +0.801       +0.283    0.518                 0.308
+    CYP2D6        -0.917   -0.405       -1.167    0.762                 0.509
+    CYP3A4        +0.740   +0.847       +0.616    0.230                 0.255
+
+The model term is **nine to eighty-eight times** the seed term, the range grew when a third model
+was added rather than settling, and on CYP1A2 not even the sign survives.
+
+**This voids the recommendation item 249 was building toward, and the fault is mine.** That entry
+compared three posteriors -- the existing draws, a design-route posterior and their mixture -- and
+concluded all three clear the paired leaderboard floor of 0.017. All three are built on ONE source
+of uncertainty, the draws from `verify/k10_strat2d6.py`. The model term item 88 measures is absent
+from every one of them, so the quoted spread of +0.047 to +0.023 understates the uncertainty by
+about an order of magnitude.
+
+**Concretely: the mixture's -0.1 on CYP2D6 stands against three model-based estimates of -0.405,
+-0.917 and -1.167.** All three are negative and none is near zero. Adopting -0.1 would prefer one
+model-free route -- whose own extrapolation multiplier of 1.3 was a judgement -- over three
+model-based ones that agree in sign.
+
+**What survives of item 249.** The design route is the only route with no model in it, so item 88's
+critique does not reach it in the same way, and its determination that CYP1A2's shift is positive
+**by construction** answers exactly the question item 88 says the data cannot: *"the direction of
+the shift there is not determined by the data at all."* That cell, and only that cell, is where the
+fourth route adds something no model-based route can.
+
+**Nothing is changed here.** The code's divergence is annotated rather than corrected, because
+correcting it and switching the flag on are two decisions and merging them into one change is how
+the divergence arose in the first place.
+
+**252. The shrinkage is on, at the documented vector, and the deployment check found the mechanism
+is mostly not shrinkage.** `src/submit.py --no-shrink` undoes it. Chosen by the team from three
+options after item 251 voided the recommendation item 249 was building toward.
+
+**Why the documented vector and not the narrower one.** Items 87 and 88 measure delta's spread
+across MODELS at nine to eighty-eight times the seed term, growing rather than settling when a third
+model is added; on CYP2D6 the three estimates are -0.405, -0.917 and -1.167. Item 249's design route
+puts CYP2D6 at +0.23 and would have moved that cell to -0.1 -- one model-free estimate preferred
+over three model-based ones that agree in sign. **The documented vector 0, +0.3, -0.5, +0.7
+contradicts none of them**, and it is also the vector the docstring and item 59 have claimed all
+along while the code held something else (item 251).
+
+**Both organisers' validators accept, and the control that mattered passed.**
+
+    фермент   дельта   сдвиг средних   отношение sd   спирмен   макс|разн|
+    CYP1A2      +0.0         +0.0700         1.0000    1.0000       0.0700
+    CYP2C9      +0.3         +0.1800         1.0000    1.0000       0.1800
+    CYP2D6      -0.5         -0.1900         1.0000    1.0000       0.1900
+    CYP3A4      +0.7         +0.1719         0.8800    1.0000       0.5626
+
+    классификация: 0 расхождений на обоих эндпоинтах -- побитово прежняя
+
+The classification track is untouched to the bit, which is what it should be: the bundle's inputs do
+not depend on the tilt. Had it moved, something was leaking.
+
+**Three things the deployment revealed that the analysis had not.**
+
+**Spearman is exactly 1.0000 on all four enzymes.** The affine pair is monotone and leaves the
+ordering untouched -- the property the whole "only rank survives" discipline rests on, confirmed on
+the submitted file rather than in the abstract.
+
+**There is almost no shrinkage.** The standard-deviation ratio is 1.0000 on three enzymes of four,
+so lambda = 1 there and the transformation is a pure translation. Real shrinkage happens only on
+CYP3A4, at 0.88. **The name describes the mechanism worse than the mechanism behaves**, and every
+discussion of this switch in the journal, including item 249's, has been arguing about a shift while
+calling it a shrink.
+
+**Predictions move about a quarter of the assumed delta**: +0.18 at delta +0.3, -0.19 at -0.5,
++0.17 at +0.7. Delta is an assumption about the test set, under which a pair is fitted; how far
+predictions actually travel is decided by the fit. CYP1A2 is the clean demonstration -- delta is
+zero and the fitted shift is still +0.07, because the optimal pair is not the identity even when the
+test is assumed to look like the training set.
+
+**253. The falsification band, recomputed on the arm that actually ships — which turned out to be a
+third configuration nobody had scored.** `verify/k79_bandfix.py`, `results/preds/band.json`.
+Replaces the band item 246 withdrew.
+
+**Determining the arm was the whole difficulty.** Three configurations were in play and the first
+two are both wrong:
+
+    0.6599   четырёхчленный ансамбль (пункт 149)     -- на нём стояла отозванная полоса
+    0.6459   пять членов, проход во всех (пункт 213) -- k58_dzsubmit НЕ применяет SOLO
+    0.6416   пять членов + SOLO GP на CYP3A4         -- было; SOLO обновлён (пункт 283)
+
+`verify/k58_dzsubmit.py` composes all five members for every enzyme, while `src/submit.py` applies
+item 218's per-enzyme selection and ships **the Gaussian process alone on CYP3A4**. So the submitted
+arm's out-of-fold score existed nowhere -- not in the journal, not in the saved predictions -- and
+the band could not have been computed correctly from anything already on disk.
+
+It is computed here through `src/submit.py:oof_predictions`, which applies `_keep` and therefore
+assembles literally the composition that goes into the file, with the affine pair from
+`src/shrinkchoice.py:fit_apply`.
+
+    фермент   пара подаваемой руки
+    CYP1A2                 0.7555
+    CYP2C9                 0.5612
+    CYP2D6                 0.8403
+    CYP3A4                 0.4092
+    МАКРО                  0.6416
+
+**The check that was missing the first time, and that settles the arm's identity.** CYP3A4 comes out
+at **0.4092**, and item 218's subset search prints **0.4129** for the Gaussian process alone on that
+enzyme. The cell lands where the SOLO decision puts it rather than merely looking plausible. Item 246
+had no such anchor, which is how a four-member arm passed for a five-member one.
+
+**The bands.**
+
+    замер                                среднее      sd            95 %       полуширина
+    промежуточное раскрытие, n = 750      0.6438  0.0202  [0.6044, 0.6851]         0.0404
+    живой лидерборд, n = 375              0.6462  0.0297  [0.5902, 0.7059]         0.0579
+
+The withdrawn centre was 0.6624 against 0.6438, so it was **0.0186 too high** -- item 246 estimated
+"about 0.014" from the difference in arm scores, which was close but not what was published.
+
+**This is a sampling band and not a prediction interval**, and the distinction is the whole caveat:
+it covers the draw, not the distribution shift, which items 123, 129 and 147 established by three
+independent routes cannot be checked from inside. A score outside it falsifies the named assumption
+-- that the test's label spread and band widths resemble the training set's -- and not the model. A
+score inside it confirms nothing.
+
+**Recorded before 24 September and not to be adjusted after.** The only change this entry makes to
+item 246's arithmetic is the arm; the aggregation fix item 246 introduced (bootstrapping the macro
+jointly rather than averaging four per-enzyme percentile bounds) stands, and the half-width remains
+about half of item 147's 0.082 for that reason.
+
+**254. The zero on CYP1A2 becomes +0.1, by minimax regret rather than by maximum expectation — and
+the band it invalidates is recomputed in the same breath.** `src/submit.py --delta`. The last of
+three deployment decisions taken this week and the only one where the deciding evidence is a route
+with no model in it.
+
+**Why this cell and no other.** Item 88 states that on CYP1A2 "the direction of the shift is not
+determined by the data at all": three model-based estimates give +0.045, +0.344 and -0.011, and the
+sign does not survive. The zero was adopted on that basis and it was the right call for that
+evidence. Item 249's design route determines the sign a different way -- CYP1A2 is one of the three
+enzymes the test's anchors were selected on, so its half is enriched **by construction**, not by
+inference. That is a determination the statistical routes cannot make by their nature, and it is
+the only cell where the fourth route adds something the other three could not.
+
+**The choice, and it is not the maximum of anything.**
+
+    CYP1A2, ожидаемый ST-RAE при подгонке под дельту
+    апостериор                -0.1    +0.0    +0.1    +0.2    +0.3
+    нынешний                 .8368   .8297   .8296   .8363   .8508
+    дизайн (0.209..0.272)    .9106   .8892   .8754   .8694   .8699
+    смесь 50/50              .8756   .8611   .8539   .8539   .8611
+
+**+0.1 is the only value no posterior dislikes.** The current posterior is flat between 0 and +0.1
+(0.8297 against 0.8296); the mixture prefers it to zero by 0.0072; the design route prefers it by
+0.0138 while wanting +0.2. Stepping to +0.2 costs 0.0066 under the current posterior, so the
+maximum-expectation choice under the route that motivated the change is not robust to the routes
+that did not.
+
+**This is a choice of ASSUMPTION, and the noise floor is the wrong instrument for it.** Delta is not
+an effect to be demonstrated; it is a belief about the test set under which a pair is fitted, and
+the criterion is expected loss under the posterior. The gain sits below every floor the project has
+-- 0.0072 against a macro pair floor of 0.007 and a paired leaderboard floor of 0.017 -- and **must
+not be quoted as a measured gain.** It is recorded here as a decision, not as a result.
+
+**Deployment, and the controls are exact.**
+
+    классификация       3A4 и 2D6: расхождений 0 -- побитово прежняя
+    регрессия          сдвиг средн.   макс|разн|   спирмен   отношение sd
+    CYP1A2                  +0.0400       0.0400    1.0000         1.0000
+    CYP2C9                  +0.0000       0.0000    1.0000         1.0000
+    CYP2D6                  +0.0000       0.0000    1.0000         1.0000
+    CYP3A4                  +0.0000       0.0000    1.0000         1.0000
+
+One enzyme moved and the other three did not move by a single bit. On CYP1A2 the maximum absolute
+difference equals the mean shift, so lambda is 1 and the transformation is a pure translation of
++0.04 -- an assumed shift of +0.1 buying a realised shift of +0.04, which is item 252's ratio again.
+Both validators accept.
+
+**And it invalidates item 253's band, which was measured before this change.** The band is a
+property of the submitted arm and the arm has moved; recomputing it is not optional and is the
+immediate next thing, not a later refinement. That is the discipline item 246 failed and item 253
+restored: **a band belongs to a configuration, and changing the configuration retires the band.**
+
+**255. The band, recomputed on the transformation that actually ships — and it puts a number on the
+shrinkage bet that no previous discussion had.** `verify/k79_bandfix.py`, replaces item 253.
+`results/preds/band.json`.
+
+**Item 253 identified the right arm and the wrong transformation.** It applied the plain per-fold
+affine pair, while the submission applies `fit_shrinkage` — the pair fitted under a TILTED objective
+at the deployed deltas. Same composition, different output. So 253's 0.6416 belonged to something
+that is not submitted either, for the second time in two entries and for a different reason.
+
+**The price of the shrinkage bet, measured under the null that the test looks like our training set:**
+
+    фермент   подаваемое преобразование   обычная пара   цена ставки
+    CYP1A2                       0.7566         0.7555       +0.0011
+    CYP2C9                       0.6006         0.5612       +0.0394
+    CYP2D6                       0.9138         0.8403       +0.0735
+    CYP3A4                       0.4579         0.4092       +0.0488
+    МАКРО                        0.6823         0.6416       +0.0407
+
+**Turning the shrinkage on costs 0.0407 of macro ST-RAE if there is no shift** — 5.8 times the macro
+pair floor and 2.4 times the paired leaderboard floor. `src/shrinkchoice.py` puts the expected GAIN
+at +0.0473 over the posterior. These are the same trade-off seen from two ends: the +0.0473 is the
+posterior average, the +0.0407 is its delta-zero slice. **The switch is close to an even-money bet
+on a shift nobody can observe**, and item 252 recorded the decision without this half of it.
+
+CYP2D6 carries the largest exposure at +0.0735, which is the cell where the four routes disagree by
+sign and where item 249's design simulation says +0.23 against the deployed −0.5.
+
+**A diagnostic that must not be skipped.** On three enzymes of four the fit reports its optimum **at
+the edge of the lambda grid**, lambda = 1.00 with the grid running {0.20 … 1.00}. The tilted
+objective wants to EXPAND the predictions and the grid forbids it, so the fitted pair is pinned
+rather than interior. The offset grid's own comment in `src/shrinkchoice.py` says the edge of a grid
+lies; here it is the lambda edge, and the three shifts (+0.110, +0.180, −0.190) are what a boundary
+solution produced, not an interior optimum.
+
+**The bands, on the submitted transformation.**
+
+    замер                                среднее      sd            95 %       полуширина
+    промежуточное раскрытие, n = 750      0.6852  0.0213  [0.6447, 0.7277]         0.0415
+    живой лидерборд, n = 375              0.6874  0.0315  [0.6271, 0.7521]         0.0625
+
+Still a sampling band and not a prediction interval: it covers the draw, not the shift. And it now
+carries a second named assumption on top of the first — that the deployed deltas are closer to the
+truth than zero is. If the interim score lands **below** this band, that assumption was right and
+the bet paid; if it lands above, the bet is what to look at first.
+
+**The cause of two wrong bands in a row is fixed, not just the bands.** The out-of-fold predictions
+of the submitted composition existed nowhere, which is why each recomputation had to guess at an arm
+from names. They are now saved to `results/preds/oof_submitted.json`, so the next recomputation takes
+seconds instead of thirty minutes and an arm cannot be substituted silently.
+
+**256. CYP2D6's shift goes to zero: not a claim about the truth there, a refusal to bet on the one
+cell whose sign is contested.** `src/submit.py --delta`, now `0.1, 0.3, 0, 0.7`. Taken by the team
+after item 255 priced the bet, and it is the first decision this week that makes the submission
+*less* aggressive rather than more.
+
+**What item 255 changed.** Until it ran, the shrinkage switch was discussed only through
+`src/shrinkchoice.py`'s expected gain of +0.0473 over the posterior. The other half -- what the bet
+costs if the test turns out to look like our training set -- had never been measured, and it is
++0.0407 of macro ST-RAE. Close to even money on a quantity nobody can observe before the reveal.
+
+**CYP2D6 carried most of the exposure and is the worst cell to carry it.**
+
+    фермент   подаваемое   обычная пара   цена ставки, было   стало
+    CYP1A2        0.7566         0.7555             +0.0011  +0.0011
+    CYP2C9        0.6006         0.5612             +0.0394  +0.0394
+    CYP2D6        0.8402         0.8403             +0.0735  -0.0002
+    CYP3A4        0.4579         0.4092             +0.0488  +0.0488
+    МАКРО         0.6638         0.6416             +0.0407  +0.0223
+
+Four routes to CYP2D6's shift and they disagree by **sign**: three model-based estimates give
+-0.405, -0.917 and -1.167 (items 87, 88), the design simulation gives +0.23 (item 249). Zero there
+is not an estimate. **It is an abstention**, and the distinction matters -- the cell now contributes
+-0.0002, the fitted shift falls from -0.190 to +0.010, and the three cells where the routes agree in
+sign keep whatever the bet is worth.
+
+**Deployment, controls exact.**
+
+    классификация        3A4 и 2D6: расхождений 0 -- побитово прежняя
+    регрессия           сдвиг средн.   макс|разн|   спирмен   отношение sd
+    CYP1A2                   +0.0000       0.0000    1.0000         1.0000
+    CYP2C9                   +0.0000       0.0000    1.0000         1.0000
+    CYP2D6                   +0.2000       0.2000    1.0000         1.0000
+    CYP3A4                   +0.0000       0.0000    1.0000         1.0000
+
+One enzyme moved, by exactly the difference between the old fitted shift and the new one. Both
+validators accept.
+
+**The band, on the current configuration.**
+
+    замер                                среднее      sd            95 %       полуширина
+    промежуточное раскрытие, n = 750      0.6666  0.0209  [0.6263, 0.7090]         0.0414
+    живой лидерборд, n = 375              0.6691  0.0307  [0.6126, 0.7322]         0.0598
+
+**And the third near-miss of the same kind, caught before it published.** `verify/k79_bandfix.py`
+held its own copy of the delta vector. After the submission moved to `0.1, 0.3, 0, 0.7` it printed
+`[0.1, 0.3, -0.5, 0.7]` and would have produced a band for a configuration no longer submitted --
+the third wrong band in three attempts, by a third mechanism: first the composition (item 246), then
+the transformation (item 253), now the parameters. `DELTA_DEFAULT` is defined once in
+`src/submit.py` and read from there. **All three failures were one duplicated definition apiece**,
+and the fix each time is the same: the band's inputs come from the submission's own code or they are
+guesses.
+
+**257. Pre-registration: the metric weights rows unequally and half the ensemble does not know it.**
+Written and committed before `verify/k80_denweight.py` runs.
+
+**The observation.** ST-RAE divides by the denominator of ITS OWN enzyme and macro averages the four
+fractions, so a row's contribution to the reported score is `1/(4 * den_e)`. Measured on the training
+folds:
+
+    фермент      n   знаменатель   вес строки в макро
+    CYP1A2    1412         694.0                0.909
+    CYP2C9    1285         403.2                1.566
+    CYP2D6    1493         625.4                1.009
+    CYP3A4    2335        1223.3                0.516
+
+**A CYP2C9 row is worth 3.03 times a CYP3A4 row in the number we are scored on.** Per-enzyme members
+are indifferent -- each optimises its own fraction and a monotone rescaling of the loss does not move
+the optimum. But the **pooled member** concatenates all four label sets and fits with no
+`sample_weight` (`src/submit.py:_oof_one`, line 542), and the **trunk** shares a representation
+across enzymes. Two members of five optimise a sum the metric does not pay by.
+
+**Why this is the same move as the dead zone rather than a new trick.** The dead zone derives the
+LOSS from the shape of the metric; this derives the SAMPLE WEIGHTS from its normalisation. One idea
+applied to two different parts of the same definition.
+
+**And it points at the project's largest unexplained effect.** Pooling is worth +0.0141 of rank,
+about a quarter of the regression trajectory, and both candidate mechanisms are refuted (items 110,
+111). If correct weighting moves it, we learn something about pooling; if it does not, that is also
+information about pooling.
+
+**The intervention.** `sample_weight = (1/den_e) / mean(1/den)` for the pooled member, with `den_e`
+computed on the TRAINING folds only. The weight is a per-enzyme constant, because the metric weights
+all rows of one enzyme equally.
+
+**The arms and the control that decides it.**
+
+    пул, равные веса          --- нынешнее поведение
+    пул, веса 1/den           --- вмешательство
+    пул, СЛУЧАЙНЫЕ веса       --- нуль: поферментные константы той же дисперсии
+
+Without the third arm a gain cannot be told from the effect of merely making the weights unequal.
+
+**Adopted for the pooled member if and only if all four hold**, on four seeds:
+
+    1. средний прирост макро-ранга над равными весами положителен;
+    2. знак держится не менее чем в 3 сидах из 4;
+    3. прирост превышает макро-пол ранга 0.0036;
+    4. прирост превышает прирост случайных весов.
+
+**And a second gate before anything is deployed.** Items 176, 182 and 191 measured three consecutive
+standalone gains that did not reach the ensemble, at error correlations of 0.90 to 0.97. A gain in
+the pooled member is a gain in one member of five, and the weighting cannot be applied to the
+per-enzyme members because they are invariant to it. **So even a clean pass here licenses only a
+second measurement, in the ensemble, and not a change to the submission.**
+
+**Stated in advance because it is the likely outcome:** the expected result is that the pooled member
+improves and the ensemble does not.
+
+**A refinement deliberately NOT included in this run.** The denominator belongs to the TEST set, not
+to ours, and the test's enzyme composition differs -- roughly 216/196/229/357 labelled rows against
+our 1412/1285/1493/2335. Weighting by expected test denominators rather than our own would be the
+correct version, and it is the only place in the project where the distribution shift would enter
+TRAINING rather than post-processing. It is left out so that this run measures one thing.
+
+**258. The metric-derived weights fail, and the decomposition says why: reweighting works on the
+enzyme it aims at and damages every enzyme that depends on the shared fit.** `verify/k80_denweight.py`,
+four seeds, criteria from item 257 and not restated. Nothing is deployed.
+
+    плечо                     макро ранг   знак   макро пара   ЭО
+    равные веса (нынешнее)             —      —            —   6525
+    веса 1/den                   -0.0027    2/4      +0.0019   5587  (-14.4 %)
+    перестановки 1/den (3)       -0.0051    1/4            —   ~5785 (-11.3 %)
+
+**All four acceptance conditions but one fail.** The mean is negative, the sign is 2 of 4, and
+0.0027 is under the 0.0036 floor with a standard error of 0.0027 -- indistinguishable from zero,
+and certainly not a gain. The pair agrees: 0.0019 worse, worse in 3 seeds of 4. The one condition
+that passes is the fourth: 1/den beats the scrambled assignments of the same weights by +0.0025,
+sign 3 of 4. That alone licenses nothing.
+
+**The prediction written in item 257 was wrong.** It said the pooled member would improve and the
+ensemble would not. The pooled member did not improve, the second gate is not licensed, and no
+ensemble measurement was run.
+
+**Two controls that make the number readable.** A unit `sample_weight` reproduces the unweighted
+call BIT FOR BIT, so nothing here is the weighted code path rather than the weights. And the
+equal-weight arm returns macro rank 0.5792 on seed 0 -- the same value item 155's table records
+for `пул`, so this is the published member on the published folds.
+
+**Per enzyme, the intervention does exactly what it was designed to do.**
+
+    фермент     вес   dранг   знак     dпара   лучше
+    CYP1A2     0.91  +0.0012   3/4   +0.0012     1/4
+    CYP2C9     1.57  +0.0073   4/4   -0.0110     4/4
+    CYP2D6     1.01  -0.0127   0/4   +0.0079     0/4
+    CYP3A4     0.52  -0.0066   0/4   +0.0095     0/4
+
+The enzyme it upweights gains on BOTH criteria with sign 4/4, twice the floor. The enzyme it
+deprioritises loses on both with sign 0/4. **The mechanism is not in doubt. What sinks it is
+CYP2D6**, whose weight is 1.009 -- unchanged -- and which loses more than either intended mover.
+
+**Regressing each enzyme's movement on its own weight and on its dependence on pooling**, over
+four arms x four enzymes per seed:
+
+    коэффициент                    среднее   знак
+    log(собственный вес)           +0.0106    4/4
+    выигрыш пула (пункт 111)       -0.3474    0/4
+
+Doubling an enzyme's weight buys +0.0073 of its own rank. And an enzyme that gains X of rank from
+pooling gives back about 0.35X under ANY unequal weighting: item 111 puts CYP2D6's pooling gain at
++0.0374, predicting a collateral loss of 0.0130 against the 0.0127 observed.
+
+**The honest limit on the second coefficient.** `log(own weight)` is identified WITHIN enzyme
+across four weight assignments and the seed-to-seed sign count is real evidence. The pooling term
+is a four-point cross-enzyme association; the same four enzymes recur every seed, so its 0/4 is
+consistency, not four independent confirmations.
+
+**Where the derivation goes wrong, stated so the next person does not redo it.** `1/den_e` is the
+correct derivative of macro ST-RAE with respect to one row's absolute error. That is the cost of an
+error, and training weights are a question about the RETURN on capacity -- a different quantity.
+A shared model has a budget: buying +0.0073 on CYP2C9 costs -0.0066 on CYP3A4 and -0.0127 on a
+bystander, and macro is an unweighted mean of four, so the trade is priced at par while the
+collateral is not. Weight dispersion also costs 11 to 14 per cent of effective sample size, and
+1/den has the LARGEST such loss of the four unequal arms while being the least harmful -- so data
+economy is not the explanation, and the correct assignment does buy something real. It just does
+not buy enough.
+
+**What this does NOT say about pooling.** The pooled member is measurably sensitive to a cut in
+its effective training volume. That is a property of the member, not a mechanism for pooling's
+gain: item 111 shows the between-enzyme pattern of that gain is governed by label correlation and
+is not monotone in n. Pooling's +0.0141 remains unexplained.
+
+**One refinement is real.** The metric's row penalty is piecewise LINEAR in the error, but
+`gbm_reg()` trains under squared error, where weight c is equivalent to scaling the row's error by
+sqrt(c). So `1/den` weights a SQUARED error and does not reproduce the metric's weighting of
+absolute errors at all; the faithful pairing is `loss="absolute_error"` plus `sample_weight=1/den`,
+which is unmeasured for the pooled member. It is queued as item 259.
+
+**TWO CORRECTIONS to the paragraph that stood here, made 7 September before item 259 ran.** It said
+the prior was poor and cited "item 155's table". Both halves were wrong.
+
+**The citation.** The table with `L1 по метке 0.5619` against the reference `0.5651` is **item
+146**'s, not item 155's. It was cited twice, and item 155 has no such table.
+
+**The sign.** That row is seed 0 alone, and reading it as the prior inverts the evidence. Item 148
+measures the same arm on seeds 1-3 and gets **L2 0.5623 against L1 0.5655** -- L1 BETTER by 0.0032,
+the opposite sign. And item 80 already measured this project's own primary statistic for the
+switch: **"L1 instead of L2", +0.0016 macro rank, t = 0.97, p = 0.405, signs -+++.** Per-enzyme L1
+is INDISTINGUISHABLE FROM ZERO, not mildly negative. The sentence that stood here was the one used
+to argue against running item 259, and it was built on a seed-0 row read as if it were the record.
+
+**A THIRD CORRECTION, to the decomposition above.** Its two coefficients are reported with sign
+counts and no fit quality. Refitted over all 64 points the model gives **R^2 = 0.375 with a residual
+standard deviation of 0.0091** -- larger than every effect it is used to explain, which run from
+0.003 to 0.013. And it is additive in (log own weight, pooling gain), hence MACRO-PERMUTATION-
+INVARIANT: it predicts 1/den and its permutations differ by exactly 0.00000 at macro, against the
++0.0025 at sign 3/4 measured six paragraphs above. **The decomposition is a description of where
+the movement sits, not a model that predicts it**, and the sentence "the collateral term does not
+care which loss is used" was an overreach -- the coefficients were fitted on four squared-loss arms,
+so nothing in that fit identifies loss-invariance. A stronger argument for the same conclusion
+exists and is recorded in item 259.
+
+**259. Pre-registration: L1 together with the weights, on ten seeds -- and the floor this project
+has been quoting is the wrong one for every paired comparison it has been applied to.**
+Written and committed before `verify/k81_l1weight.py` runs. The design below is NOT the one first
+drafted; an adversarial pre-flight review of the draft found three defects, and two of them would
+have made the run unreadable. They are recorded here because each is reusable.
+
+**DEFECT 1, which would have made the contrast meaningless.** Under `loss="absolute_error"` in the
+pinned scikit-learn 1.3.2, `AbsoluteError.fit_intercept_only` branches on `sample_weight is None`:
+without weights it calls `np.median`, which INTERPOLATES the two central residuals; with weights it
+calls `_weighted_percentile`, which returns the LOWER one. **A unit `sample_weight` therefore does
+not reproduce the unweighted call under L1** -- the pre-flight measured max |delta| = 1.1174 and
+Spearman 0.9959 between the two fits, which is a rank-scale difference. k80's equal-weight arm
+called the UNWEIGHTED path. Had k81 done the same under L1, the measured effect of the weights
+would have contained a leaf-estimator switch. **Every cell in this run passes an explicit
+`sample_weight`, unit vector included.** Under squared error unit weights are bit-identical to the
+unweighted call, so item 146's pinned 0.5792 still reproduces and the anchor survives.
+
+**DEFECT 2, and it is not local to this run: the noise floor is the wrong one.** Item 165's macro
+rank floor of 0.0036 is the standard deviation of ONE ARM across seeds, and this file has been
+applying it to DIFFERENCES of arms. On k80's own four seeds:
+
+    sd одного плеча (равные веса)             0.00368     <- пункт 165 ровно
+    sd парной разности (1/den минус равные)   0.00533
+    отношение дисперсий                          2.10
+    корреляция плеч по сидам                   -0.031
+
+**The covariance is zero, so pairing buys nothing** and sd(difference) = sqrt(2) x sd(arm) = 0.0052,
+which reproduces the observed 0.0053 exactly. The correct thresholds are therefore
+
+    одно плечо                       0.0036
+    парная разность двух плеч        0.0052
+    ВЗАИМОДЕЙСТВИЕ (разность двух    0.0074
+      парных разностей)
+
+and the 0.0036 quoted against a paired delta understates its own noise by 44 per cent.
+
+**DEFECT 3: four seeds cannot answer the question.** At n = 4 and sd 0.0053 the drafted rule has
+power 0.19 against an effect of 0.0036 and 0.65 against 0.0074; its minimum detectable effect at
+80 per cent power is 0.0088. Ten seeds give 0.62, 0.98 and 0.88 respectively. The three permutation
+arms are dropped from the design -- in item 258 that condition was the ONE that passed a complete
+failure, so it does not discriminate -- and the compute buys seeds instead. Same wall clock.
+
+**The design.** `verify/k81_l1weight.py`, a 2x2 measured inside one script so the comparison is
+internal, seeds 0-9, folds from `butina_folds(smiles, seed=s)`:
+
+    loss in {squared_error (gbm_reg pins), absolute_error (DZ_KW pins)}
+      x  sample_weight in {явные единицы, 1/den_e нормированные на среднее 1}
+
+Denominators are computed per fold on TRAINING rows only. Primary statistic is the per-seed paired
+**interaction** `I_s = (L1,w - L1,1) - (L2,w - L2,1)`, whose standard deviation is computed from the
+n values of `I_s` and NOT propagated from the two deltas.
+
+**Adopted for the pooled member if and only if all three hold**, over ten seeds:
+
+    1. одностороннюю нижнюю 95 %-границу среднего I_s выше нуля;
+    2. среднее I_s выше 0.0074;
+    3. среднее (L1,w - L1,1) выше 0.0052.
+
+**Macro is reported over THREE enzymes, not four.** `SOLO = {"CYP3A4": ("GP",)}` means the pooled
+member does not enter the submitted CYP3A4 arm at all (item 218), so its CYP3A4 column is dead
+weight for a member-level decision. The four-enzyme macro is reported alongside, and item 258's
+numbers are restated on three enzymes so the two runs stay comparable.
+
+**Prior art the pre-flight surfaced, which the drafted item did not know.** The pooled member has
+genuinely never been trained under absolute error -- that cell is new -- but neither half is.
+Item 78 already ran a loss x reweighting square, per-enzyme, on `src/ablsrc.py`: the tilt is worth
+-0.0310 on top of L2 and +0.0007 on top of L1, a large POSITIVE interaction landing on zero, with
+the stated reading that "L1 has already taken everything the tilt was buying". Item 226 /
+`src/ablweight.py` already fits `loss="absolute_error"` TOGETHER WITH `sample_weight` against a
+fixed-marginal permutation null, per-enzyme, and every weighted arm lost. Items 157 and 163 already
+show CYP2D6 as the largest casualty of unequal weights in a pooled fit, monotone in dispersion --
+so k80's CYP2D6 finding was a reproduction, not a discovery, and item 258 should have said so.
+Item 69 is where the permutation null was designed.
+
+**The prediction, written down so it can be wrong.** Item 166's rule for this family -- a new
+objective survives only if it carries PER-COMPOUND structure the affine pair cannot manufacture --
+is failed by `1/den`, which is per-enzyme. Under both losses `sample_weight = c` multiplies the
+row's gradient by exactly c, so the capacity reallocation that produced item 258's collateral is
+the SAME intervention under either loss; only the function of the residual being scaled changes.
+That is the stronger argument item 258 reached for and missed. **I expect the interaction to land
+inside +/-0.004 and condition 2 to fail.** Item 78's zero is the closest measured analogue.
+
+**And the single observation that would refute item 258's collateral claim**, worth more than the
+verdict: CYP2D6's weight is 1.009, unchanged between arms, so its cell is the only one in the run
+where the LOSS is the only thing that moved. If CYP2D6 recovers to better than -0.004 under L1
+while CYP2C9 keeps a gain above +0.005, the damage is not the loss-agnostic collateral item 258
+claimed, and that item's mechanism paragraph falls whatever the verdict on the weights.
+
+**260. Amendment to item 259's acceptance rule, made with one seed of ten visible, and it is
+recorded that way.** The three conditions in item 259 are about the MECHANISM -- does the loss
+switch make the weights bite. They do not say the arm must be worth deploying, and on seed 0 the
+gap between the two questions is wide: `L1 x 1/den` scores 0.5072 of three-enzyme macro rank
+against 0.5187 for `L2 x единицы`, the cell that actually ships, because the loss switch alone
+costs -0.0191 and the weights give back +0.0076 of it. **A rule that adopts on the interaction
+alone would license replacing the submitted member with one measurably worse than it.**
+
+    4. среднее (L1,w - L2,1) выше нуля, а для развёртывания --- выше 0.0052.
+
+**What was visible when this was written**, stated because the amendment is post-hoc to it: seed 0
+only, and on seed 0 the interaction is +0.0097, i.e. ABOVE item 259's threshold. The amendment
+therefore makes adoption HARDER after seeing a seed that favoured it, which is the only direction
+in which a post-hoc change to one's own criterion cannot be self-serving. The three original
+conditions stand unchanged and are still the test of item 258's mechanism claim.
+
+**And the prediction in item 259 is already in trouble.** It said the interaction would land inside
++/-0.004 and condition 2 would fail. On seed 0 it is +0.0097. One seed of ten decides nothing at
+sd 0.0053, but it is written here before the other nine so that it cannot be quietly dropped.
+
+**261. L1 with the weights fails on every pre-registered condition -- and the run's real finding is
+that the loss switch, null per-enzyme, costs 0.0140 of rank on the POOLED member, almost all of it
+on CYP2D6.** `verify/k81_l1weight.py`, ten seeds, conditions from items 259 and 260.
+Nothing is deployed.
+
+**The anchor first.** k81's `L2 x единицы` cell reproduces k80's equal-weight arm to **0.000000** on
+all four shared seeds (0.579202, 0.576412, 0.571553, 0.579490). Unit `sample_weight` under squared
+error is bit-identical to the unweighted call, so the two scripts measure the same object, and
+item 146's pinned 0.5792 holds.
+
+**Macro over the three enzymes the pooled member actually ships on** (`SOLO` puts CYP3A4 on the
+Gaussian process alone), ten seeds:
+
+    величина                     среднее       sd  нижн.95%   знак       t       p   /пол
+    веса под L1  (L1w - L1)      +0.0003   0.0043   -0.0022   5/10   +0.23   0.826   0.06
+    веса под L2  (L2w - L2)      -0.0008   0.0053   -0.0039   5/10   -0.46   0.659   0.15
+    ВЗАИМОДЕЙСТВИЕ I             +0.0011   0.0070   -0.0030   5/10   +0.49   0.635   0.15
+    L1 против L2 при единицах    -0.0140   0.0058   -0.0173   0/10   -7.64  <0.001   2.69
+
+**All four conditions fail.** The interaction is 0.15 of its floor with sign 5/10 -- as close to
+nothing as this file measures. **The prediction written in item 259 was right**: it said the
+interaction would land inside +/-0.004 and condition 2 would fail. It is +0.0011.
+
+**THE FINDING, which is not what the run was for.** The bottom row is decisive: t = -7.64,
+sign 0/10, 2.7 times the paired floor. And it contradicts the per-enzyme record. Item 80 measured
+"L1 instead of L2" at **+0.0016, t = 0.97, p = 0.405**; items 146 and 148 give -0.0032 and +0.0032
+on different seeds. **Per-enzyme the loss switch is nothing; pooled it costs 0.0140.**
+
+**And it is one enzyme.** Switching the pooled member to absolute error, at equal weights:
+
+    фермент     dранг    знак
+    CYP1A2    +0.0087    9/10
+    CYP2C9    +0.0119   10/10
+    CYP2D6    -0.0625    0/10
+    CYP3A4    -0.0034    0/10
+
+Two enzymes IMPROVE, at sign 9/10 and 10/10. CYP2D6 loses 0.0625 -- seventeen times the one-arm
+floor, and an order of magnitude larger than anything else in this run.
+
+**The mechanism, and it is arithmetic about the gradient.** Under squared error a row's gradient is
+`w*(p-y)`, so an enzyme's pull on the shared trees scales with HOW MUCH ERROR THERE IS TO REMOVE.
+Under absolute error it is `w*sign(p-y)`: every row pulls equally, however badly it is fitted. In a
+per-enzyme fit there is nothing to allocate and the switch is null -- which is exactly what items
+80, 146 and 148 measured. In a POOLED fit the shared trees must divide their splits among four
+enzymes, and absolute error deletes the signal that says where the error is. The enzyme that loses
+is the one item 111 records as gaining most from pooling (+0.0374) while being the LEAST correlated
+with the others (-0.002): a minority signal, orthogonal to the rest, that survives in the pool only
+because its large residuals command splits. Remove magnitude and it is crowded out.
+
+**A SUPPORTING CLAUSE HERE WAS FALSE and is withdrawn 8 September, before item 262 ran.** It said
+"the two enzymes that gain are the two with the smallest mean absolute residual, which under
+squared error had the least pull". On `results/preds/oof.json` the mean absolute residuals are
+CYP1A2 **0.6785**, CYP2C9 0.4752, CYP2D6 0.6188, CYP3A4 0.5348 -- the two smallest are CYP2C9 and
+CYP3A4, while the two that gain are CYP1A2, whose residual is the LARGEST, and CYP2C9.
+
+Worse, the arithmetic the clause was reaching for does not work either. An enzyme's gradient mass
+is `n_e * E|r_e|` under squared error and `n_e` under absolute error, so the switch reweights the
+pool by `1/E|r_e|`, normalised to 0.834, 1.191, 0.915, 1.059. That predicts CYP2C9 and CYP3A4 up,
+CYP1A2 and CYP2D6 down, against the measured +0.0087, +0.0119, -0.0625, -0.0034: **two signs of
+four, a coin flip.** The pull-mass model does NOT predict which enzymes gain.
+
+**What survives, and it is the part that matters.** Absolute error removes magnitude from the
+shared fit's allocation, and the enzyme item 111 records as most dependent on pooling and least
+correlated with the others collapses by 0.0625 at sign 0/10. That is unambiguous. The finer
+per-enzyme prediction is not supported, and item 262 tests the surviving form directly.
+
+**A consequence for the submission, and it is not academic.** `dz_pass` refits the pooled member
+PER ENZYME (`_dz_oof(kind, X[m], ...)` on one enzyme's rows, so `pooled_design`'s indicator is a
+constant block) and it refits under `DZ_KW`, which is `absolute_error`. That collapse is
+undocumented and reads as a defect against `_arm_ensemble` in the same file, which pools its
+dead-zone refit and says so in its docstring. **Do not "fix" it.** Pooling that refit would create
+exactly the configuration measured here -- a pooled fit under absolute error -- at -0.0140 of rank
+and -0.0625 on CYP2D6. The collapse is accidentally protecting the submission.
+
+**The weights bite about HALF as hard under L1, which is the opposite of the premise.** The run
+existed because absolute error makes `sample_weight` faithful to a piecewise-linear metric. On the
+two enzymes that move, the weights' effect attenuates:
+
+    фермент      под L2     под L1   отношение
+    CYP2C9      +0.0061    +0.0033        0.54
+    CYP2D6      -0.0084    -0.0036        0.43
+
+**The estimator explains it.** `loss="absolute_error"` is Friedman LAD: each leaf value is replaced
+by the WEIGHTED MEDIAN of its residuals. A median is an order statistic of the weighted
+distribution, so a per-enzyme constant weight moves it only when it changes which observation sits
+at the half-weight point -- where a weighted MEAN moves continuously with every weight. Faithfulness
+is a property of the LOSS; the leaf value under L1 is a quantile, and quantiles are built to ignore
+magnitude and are correspondingly deaf to weights. This predicts the attenuation should shrink for
+fine-grained per-row weights, which is untested.
+
+**And rank and the metric move OPPOSITE ways**, which is the file's own rule in miniature. The loss
+switch costs 0.0113 of macro rank (0/10) and IMPROVES macro ST-RAE after the affine pair by 0.0021
+(better in 8 of 10). A raw metric gain here is worth nothing: only rank survives the pair.
+
+**THREE CORRECTIONS TO ITEM 258, from ten seeds against its four.**
+
+**Its headline number was mostly noise.** The weights under squared error are **-0.0008, t = -0.46,
+p = 0.66, sign 5/10** on ten seeds -- indistinguishable from zero. Item 258 reported -0.0027. On
+the three shipping enzymes and the four shared seeds both scripts agree exactly at -0.0014, so the
+difference is the CYP3A4 column, which does not ship, plus six more seeds. **Item 258's conclusion
+stands -- the weighting does not pay -- but its magnitude did not.**
+
+**Its per-enzyme pattern is weaker than reported.** CYP2C9 was +0.0073 at 4/4 and is +0.0061 at
+8/10; CYP2D6 was -0.0127 at 0/4 and is -0.0084 at 6/10. The direction survives, the sign counts do
+not.
+
+**Its collateral claim SURVIVES the test written to refute it.** Item 259 pre-registered that item
+258's mechanism falls if CYP2D6 recovers past -0.004 under L1 WHILE CYP2C9 keeps a gain above
++0.005. CYP2D6 came in at **-0.0036 (passes)** and CYP2C9 at **+0.0033 (fails)**. Both attenuated
+together, by 0.43 and 0.54 -- proportional damping, not selective recovery, which is precisely what
+the conjunction was built to distinguish. The collateral is not loss-specific.
+
+**The limitation, stated because the headline rests on it.** This script has no per-enzyme L1 arm.
+"Null per-enzyme, -0.0140 pooled" is a comparison ACROSS scripts and seed sets -- items 80, 146 and
+148 against this one. The within-script version costs one more cell per seed and is the obvious
+next measurement if anyone wants to lean on the mechanism rather than the fact.
+
+
+**262. Pre-registration: the per-enzyme L1 arm, which closes item 261's own stated limitation.**
+Written and committed before the two cells run. Not a deployment decision -- a mechanism test.
+
+**What item 261 left open, in its own words.** It concluded "null per-enzyme, -0.0140 pooled" while
+recording that the comparison was ACROSS scripts and seed sets: items 80, 146 and 148 for the
+per-enzyme half against `verify/k81_l1weight.py` for the pooled half. Two cells at unit weights,
+`L2e` and `L1e`, put both halves in one script, one loader, one set of folds, paired by seed.
+
+**Two cells and not four.** A per-enzyme member is invariant to a per-enzyme CONSTANT weight:
+inside a single-enzyme fit `w/w.mean()` is exactly the unit vector, so "per-enzyme x 1/den" would
+be the identical call. Both new cells still pass EXPLICIT unit weights, because under L1 the
+unweighted path takes a different leaf estimator (item 259, defect 1) and the contrast must differ
+by pooling alone.
+
+**The statistic.** Per-seed, over the three shipping enzymes,
+
+    J = (L1 - L2) - (L1e - L2e),
+
+with its spread computed from the ten values of J. **And J is not really a loss statistic.**
+Rearranged, `J = (L1 - L1e) - (L2 - L2e) = поствыигрыш пула под L1 - выигрыш пула под L2`: the run
+measures HOW MUCH OF POOLING'S GAIN SURVIVES THE LOSS SWITCH. Pooling's gain is the largest effect
+in the submission whose mechanism is unknown (items 110, 111), so this is a measurement about
+pooling that happens to be phrased about a loss.
+
+**The anchor, pre-registered to six digits rather than checked afterwards.** `src/ablate.py` pins
+the same estimator as `gbm_reg()` on the same features, so `L2e` at seed 0 must reproduce the
+per-enzyme numbers already committed in `results/preds/oof.json`:
+
+    макро4  0.565046      (пункт 146 печатает это как эталон 0.5651)
+    макро3  0.498541
+    по ферментам  0.4957  0.5972  0.4027  0.7646
+
+**Conclusions licensed, fixed before the run.**
+
+    механизм ПОДТВЕРЖДЁН, если   среднее J ниже -0.0074 при знаке не менее 8/10
+                                 И CYP2D6 (L1e-L2e) не хуже -0.005
+    механизм ОПРОВЕРГНУТ, если   CYP2D6 (L1e-L2e) ниже -0.020 при знаке не более 2/10
+                                 --- тогда обвал CYP2D6 не про пулирование вовсе
+    иначе                        механизм выживает лишь в ослабленной форме, и предложение
+                                 пункта 261 "поферментно делить нечего и переход нулевой"
+                                 должно быть переписано
+
+**The prediction.** J near -0.016 at sign 0/10, `(L1e - L2e)` inside +/-0.005 and failing its own
+0.0052 floor, and CYP2D6 per-enzyme near zero rather than anywhere near its pooled -0.0625. If that
+holds, pooling's gain on the three shipping enzymes is about +0.020 under squared error and about
++0.004 under absolute error -- **the loss switch would destroy roughly four fifths of it**, which is
+the sharpest statement this run can produce and the reason it is worth an hour.
+
+**One transfer that is NOT exact, recorded so it is not read as a discrepancy later.** `perenz()`
+passes explicit unit weights; `src/abldead.py`, which produced items 146 and 148, passes none. Under
+squared error that is bit-identical, so `L2e` transfers exactly. Under absolute error it is not
+(item 259), so `L1e` is NOT expected to reproduce item 148's L1 row to the last digit. The internal
+contrast J is unaffected -- every cell in it passes explicit weights.
+
+**263. Items 80, 146 and 148 are ONE measurement sliced three ways, and both item 258 and item 261
+cited them as if they were three.** Found while pre-flighting item 262, recorded before its cells
+finished so that it cannot have been shaped by the result.
+
+The per-seed series of per-enzyme `(L1 - L2)` on macro-4 rank is
+
+    сид 0   -0.0032        <- пункт 146 печатает это как своё число
+    сид 1   +0.0030
+    сид 2   +0.0041
+    сид 3   +0.0023
+    среднее 1-3  +0.0031   <- пункт 148 печатает +0.0032
+    среднее 0-3  +0.0016   <- пункт 80 печатает +0.0016, t = 0.97, p = 0.405
+
+**And the predictions behind them are bit-identical**: `results/preds/oof_l1_4seed.json`,
+`oof_dead.json` and `oof_dead123.json` agree at max |difference| = 0.000e+00 over all sixteen
+seed-by-enzyme keys, because `src/abloss.py` and `src/abldead.py` share pins, folds and features.
+
+**What this breaks.** Item 258's correction said item 148 "measures the same arm on seeds 1-3 and
+gets the opposite sign", and item 261 cited all three as separate corroborations. There is one
+series of four numbers whose seed 0 is negative. The per-enzyme half of item 261's headline --
+"null per-enzyme, -0.0140 pooled" -- therefore rests on **n = 4, not on three independent runs.**
+
+**What survives, and it is stronger than what it replaces.** Read as one series, per-enzyme L1 is
++0.0016 with three of four seeds positive: not "indistinguishable from zero by disagreement" but a
+small positive effect under the floor. Item 258's correction reached the right conclusion by the
+wrong argument, and this is the right one.
+
+**The per-enzyme breakdown, which nobody had printed and which prices item 262 in advance.**
+Averaging the same four seeds:
+
+    фермент   поферментно (L1-L2)   знак   пулированно (пункт 261)   знак
+    CYP1A2              +0.0099      4/4                   +0.0087   9/10
+    CYP2C9              -0.0069      1/4                   +0.0119  10/10
+    CYP2D6              +0.0038      2/4                   -0.0625   0/10
+    CYP3A4              -0.0006      2/4                   -0.0034   0/10
+
+**CYP1A2's gain under absolute error is the SAME pooled and per-enzyme** (+0.0087 against +0.0099),
+so that part of item 261's pooled effect is not a pooling interaction at all -- it is a property of
+the enzyme and the loss. **CYP2C9 flips sign** between the two. **And CYP2D6's collapse is entirely
+pooling**: +0.0038 alone against -0.0625 in the pool. Cross-script, J on the three shipping enzymes
+is -0.0140 - (+0.0023) = **-0.0163**, which is what item 262 predicted from a different route.
+
+**Why this is a defect and not a footnote.** The journal's value is that a number can be cited
+without re-deriving it, and three item numbers reading as three runs is exactly the failure that
+costs days. `src/abloss.py` and `src/abldead.py` should be understood as one measurement with two
+reporting scripts.
+
+**264. The mechanism is confirmed: switching the pooled member to absolute error destroys 95 per
+cent of pooling's gain, and it is entirely CYP2D6.** `verify/k81_l1weight.py --cells L2e,L1e`,
+conditions from item 262. Nothing is deployed.
+
+**The anchor is exact.** `L2e` reproduces `submit._oof_one(pool=False)` at **0.565046 against
+0.565046, difference 0.00e+00**, which is also the value item 262 pre-registered to six digits from
+`results/preds/oof.json`. And `L1e` returns macro-4 0.5619 on seed 0 -- item 146's printed number,
+reached through a different leaf estimator.
+
+Macro over the three shipping enzymes:
+
+    величина                  среднее       sd       t        p   знак   /пол
+    L1-L2 ПУЛИРОВАННО         -0.0147   0.0074   -3.97   0.0285    0/4   2.82
+    L1-L2 ПОФЕРМЕНТНО         +0.0043   0.0049   +1.75   0.1788    3/4   0.83
+    J = потеря x пулирование  -0.0190   0.0046   -8.31   0.0036    0/4   2.57
+
+**Item 262's confirmation conditions are met and its refutation condition is nowhere near.** Mean J
+is -0.0190 against a threshold of -0.0074, sign 4/4. CYP2D6's per-enzyme `(L1e - L2e)` is **+0.0085
+at sign 4/4** -- the refutation line was -0.020, and the confirmation line -0.005, so CYP2D6 does
+not merely fail to collapse per-enzyme, it IMPROVES. The per-enzyme half also reproduces items
+80/146/148 inside one script: +0.0043 at sign 3/4, below its own 0.0052 floor.
+
+**Stated as the quantity it actually is.** `J` rearranges to pooling's gain under one loss minus its
+gain under the other:
+
+    выигрыш пулирования, макро3    под L2   +0.0201
+                                   под L1   +0.0011
+
+**The loss switch destroys 95 per cent of pooling's gain.** Item 262 predicted "roughly four
+fifths"; it is nineteen twentieths.
+
+**And it is one enzyme.**
+
+    фермент        пул   знак   поферментно   знак         J
+    CYP1A2     +0.0096    3/4       +0.0051    4/4    +0.0045
+    CYP2C9     +0.0120    4/4       -0.0007    2/4    +0.0127
+    CYP2D6     -0.0656    0/4       +0.0085    4/4    -0.0742
+    CYP3A4     -0.0035    0/4       -0.0041    0/4    +0.0006
+
+CYP2D6 carries the whole interaction. On the other three, J is at or under the floor -- and item
+263 had already predicted CYP1A2's near-zero J from committed artefacts, since its gain under
+absolute error is the same pooled and alone.
+
+**What this says about pooling, which is the point.** Pooling is worth +0.0141 of rank in the
+submission and both candidate mechanisms are refuted (items 110, 111). This does not supply a
+mechanism, but it removes a large class of them: **whatever pooling does for CYP2D6, it is carried
+by the MAGNITUDE of the residuals, not by their sign.** Under squared error a row's gradient is
+`w*(p-y)` and CYP2D6's large residuals command splits in the shared trees; under absolute error it
+is `w*sign(p-y)`, every row pulls equally, and the gain vanishes. That is consistent with item 111's
+inversion -- the least correlated enzyme gains most -- and it is a constraint any future explanation
+has to satisfy.
+
+**n was cut from ten to four, after two seeds were visible, and that is optional stopping.** Item
+262 pre-registered ten. The effect came in at 2.57 times its threshold with sign 4/4 on the first
+four, the remaining six seeds were about 2.3 hours of wall clock, and they were budgeted for a
+FLOOR-SIZED effect -- item 259 chose n = 10 for the weights, where power at n = 4 was 0.19. At an
+effect of 0.019 with sd 0.0046, four seeds give t = -8.3. **The bias from stopping early runs toward
+significance**, so it is named rather than argued away; an effect 2.6 times its threshold survives
+the concern, and a reader who does not accept that should treat J as bounded below by the floor
+rather than estimated at -0.0190.
+
+**265. "Pooling has no surviving mechanism" is four journal items and one instruction file out of
+date, and the instruction file is why.** Found while sweeping candidate families for a new line of
+work; no new computation.
+
+**The mechanism was settled on 31 August.** Item 110 refuted borrowing neighbours. Item 111 refuted
+transferring shared function, and its own inversion (rho = -1.000, pooling helps the LEAST
+correlated enzyme most) is where the trail was left. But it did not stop there:
+
+    пункт 125   пул+TDI: +6538 максимально коррелированных строк, таблица 6525 -> 13063,
+                ранг -0.0027 --- объём выборки не при чём
+    пункт 131   пул слепой: индикатор обнулён, ширина матрицы и 6525 строк сохранены,
+                -0.076 ранга НИЖЕ поферментного обучения
+    пункт 132   пул центрированный: уровень выдан бесплатно, контраст по-прежнему запрещён;
+                0.4647 против 0.4885 у слепого --- уровень не механизм, КОНТРАСТ механизм
+
+Item 132's own title says it: "Pooling works by contrast, not by level. The mechanism of the log's
+largest effect is settled." **And the scoreboard at the top of this file has shipped it under that
+name ever since** -- `пулирование контрастом +0.0141, 4 сида, пункты 84, 132, в подаче есть`.
+
+**Where the stale claim survived.** `CLAUDE.md` -- the file every session reads first -- carried a
+paragraph headed "Two things are known and unexplained" asserting that pooling's gain has no
+surviving mechanism, citing only items 110 and 111. It was written before item 132 and never
+revised. From there it propagated into **item 243** ("the largest unexplained effect the submission
+relies on ... both candidate mechanisms refuted"), and then into **items 257, 261 and 264**, all
+written this week, each repeating it as established. `CLAUDE.md` is corrected.
+
+**What item 264 actually contributes, restated correctly.** It is not "a constraint on any future
+explanation" of an open question -- it is an ELABORATION of a closed one. Item 132 says pooling
+works by contrast: the shared trees learn different dependencies per enzyme through the indicator.
+Item 264 says that contrast is **purchased with residual magnitude**: under squared error a row's
+gradient is `w*(p-y)` and CYP2D6's large residuals command the splits that carry its contrast, while
+under absolute error every row pulls equally and 95 per cent of the gain disappears. Contrast is the
+what; magnitude is the currency. That is a better result than the one item 264 claimed.
+
+**The lesson, and it is about this repository rather than about chemistry.** A stale claim in a
+numbered journal item costs one re-derivation. A stale claim in the instruction file that every
+session reads before touching anything costs four, and none of the four checked, because the file
+reads as settled context rather than as a claim. **`CLAUDE.md` needs the same discipline as the
+journal: when an item closes a question the file describes as open, the file is part of the
+commit.** This is the second instruction-file defect this week; item 117's correction was the first.
+
+**266. Item 140's `max_features` is reachable after all: "checked" was checked against the
+INSTALLED scikit-learn, not against the pin.** Found while sweeping candidate families; verified
+here, not measured.
+
+Item 140 found column subsampling worth **+0.0123 of macro rank, monotone in the knob** (0.5522,
+0.5615, 0.5644 as `max_features` goes 1.0, 0.3, 0.1), sign the same on all four seeds, nearly twice
+the floor -- and then closed it:
+
+> the pinned scikit-learn's `HistGradientBoostingRegressor` has no `max_features` at all -- checked
+> -- so this is not a setting the journal could have swept
+
+That is **true of 1.3.2, which is installed, and false of the pin**, which is
+`scikit-learn>=1.3,<1.9`. Verified just now in a throwaway environment:
+
+    scikit-learn 1.3.2   max_features   ОТСУТСТВУЕТ
+    scikit-learn 1.8.0   max_features   1.0  (по умолчанию --- без субсэмплинга)
+
+`pyproject.toml` records that every version from 1.3.2 through 1.8.0 regenerates
+`results/preds/oof.json` bit for bit, and the default of 1.0 changes nothing, so moving inside the
+pin is a no-op that unlocks a knob. **In 265 items no HistGB hyperparameter has ever been swept** --
+the log has swept features, learners, losses, weights, splits and post-processing, and never the
+shipped learner's own configuration.
+
+**The counter-argument is in item 140's own table and it is serious.** The HistGB reference scores
+**0.5651 at no subsampling, ABOVE the own booster's best subsampled arm at 0.5644.** The +0.0123
+may be repairing a deficit HistGB does not have -- its binning, `l2_regularization=1.0` and 31-leaf
+cap may already supply that regularisation. And item 158 measured the same knob on the POOLED arm
+of the own booster at **0.5416 against 0.5420** -- identical, nothing.
+
+**So this is a cheap check with a weak prior, not a promising lead**, and it is recorded that way.
+What makes it worth the first hour is that step zero is nearly free and self-verifying: bump to
+1.8.0 inside the existing pin, re-run `src/ablate.py` and `uv run pytest`, and diff `oof.json`
+against the committed bytes. The repository claims max |delta| = 0 over that range; if the diff is
+empty the claim is confirmed and the knob is available, and if it is not, a documented reproduction
+guarantee has just failed, which is worth more than the sweep.
+
+**A side result from the same sweep, which closes a family by arithmetic before anyone proposes
+it.** Stereochemistry is dead: only **535 of 4905** training SMILES carry defined stereochemistry,
+**1958 (40 per cent)** have unspecified stereocentres, and there are exactly **four groups, eight
+rows**, that are true stereo-variants of one another. There is nothing for a stereo-aware
+representation to learn from.
+
+**267. The near-neighbour regime is twenty times rarer in our validation than it will be at test,
+and only one tenth of that is the split's doing.** Prompted by an outside reading of the brief;
+measured here. No model was changed.
+
+**The measurement.** Maximum Morgan/Tanimoto similarity (2048 bits, r=2, the split's own generator)
+from each molecule to the training material available to it:
+
+    ряд                       медиана   среднее   доля >=0.65   сравнивается с
+    ТЕСТ -> трейн              0.5873    0.5979         19.7 %   4905 молекул
+    трейн -> трейн (LOO)       0.4500    0.4638          6.7 %   4904
+    валидация -> свои фолды    0.4348    0.4399          1.0 %   ~3924
+
+The middle row is the control that decides the attribution, and it was not in the proposal that
+prompted this: each training molecule against every OTHER training molecule, so the comparison set
+is the same size as the test's.
+
+**The split is NOT the story.** It costs 0.0152 of median similarity, one tenth of the 0.152 gap.
+The remaining 0.137 is the TEST SET being closer to our training data than our training data is to
+itself. That is a property of the organisers' selection, not of our cross-validation.
+
+**But in the tail both factors multiply, and the tail is where neighbour methods live.** At the
+0.65 threshold -- the similarity at which Butina would have grouped two molecules and the split
+would then have separated them -- the split cuts 6.7 per cent to 1.0 per cent, and the test set is
+three times denser than the training set's own interior. **1.0 per cent under validation against
+19.7 per cent at test.** Item 91 measured the split half of this from the other side and agrees:
+medians identical to three decimals, the split biting only in the extreme tail, Morgan neighbours
+cut 4x in the top 1 per cent.
+
+**Why 93.6 per cent of the split does nothing.** Butina at 0.35 gives 4703 clusters over 4905
+molecules, and the size distribution is 4592 singletons, 67 pairs, 23 triples, and a tail to 9.
+**Only 313 molecules (6.4 per cent) have any cluster-mate at all.** The split cannot separate
+neighbours that do not exist; for the other 93.6 per cent it is a random molecule split. This also
+closes, by arithmetic, any proposal of the form "correct predictions within an analogue series":
+there are no series to correct in.
+
+**What this does and does not mean.** It does NOT mean the reported scores are wrong -- a harsher
+validation gives a conservative estimate, which is the safe direction. It means **SELECTION** ran
+in a regime the test will not be in. Methods whose value is concentrated in the near-neighbour
+regime were measured where that regime occurs 1 per cent of the time and will be graded where it
+occurs 20 per cent of the time.
+
+**The correction to the argument that prompted this.** It ran on the premise that the train-vs-test
+domain classifier "failed", read as the two sets being indistinguishable and therefore drawn from
+one space. That inverts the finding: `verify/k5_shift.py` reports **AUC 0.817** and its own line
+prints "0.5 = наборы неразличимы". What failed was the importance WEIGHTS -- median 0.001,
+effective sample size 116 of 4905 -- not the separation. The sets are distinguishable, and this
+item measures the direction in which: the test is closer in, not further out.
+
+**What cannot be done about it cheaply, said plainly.** Re-scoring the existing out-of-fold
+predictions on a similarity-matched stratum does not work: the >=0.65 stratum holds about 49
+validation molecules, and 49 rows cannot carry a 20 per cent weight. Reaching the test's profile
+needs a different SPLIT, and a split that keeps near neighbours together is the opposite of what
+the cluster split was adopted for. That is a decision for the team, not a fix. **The cheap first
+step is a random-molecule split, which reaches 6.7 per cent by construction** -- three times short
+of the test but nearly seven times closer than the current 1.0 per cent -- and re-measuring the
+neighbour-dependent arms on it.
+
+**268. Cross-enzyme stacking above the ensemble: +0.0108 of macro rank on the per-enzyme member,
+sign 4/4 -- and the pre-registration of the two arms that decide whether it means anything.**
+Proposed from outside, measured here. The standalone number is below; the conditions are fixed
+before the deciding arms run.
+
+**The idea.** Every molecule has four predictions, and only `p_e` enters enzyme `e`'s ranking. The
+other three are per-compound information that is currently discarded. A ridge fitted per fold from
+`(p_1..p_4)` to `y_e` is not monotone in `p_e`, so it moves the order -- filter 1 passes -- and it
+carries per-compound structure, so item 166's rule passes.
+
+**Why it is positioned differently from every arm that failed to transfer.** Items 176, 182, 191
+and 213 record standalone gains dying in the ensemble at error correlations of 0.90 to 0.97,
+because each entered as one more correlated member of an unweighted mean. **This operates AFTER the
+mean, on its output. There is nothing left to dilute it.** That argument is structural and it is
+the reason this is worth measuring rather than filing.
+
+**The standalone measurement**, `scratchpad/stack.py`, per-enzyme member, four seeds, ridge on the
+full 4905x4 out-of-fold prediction matrix (`oof.json` stores only labelled cells, so the matrix was
+recomputed with prediction on all rows):
+
+    сид   база    сшивка       Δ
+      0  0.5650   0.5768  +0.0117
+      1  0.5604   0.5718  +0.0113
+      2  0.5630   0.5723  +0.0093
+      3  0.5636   0.5745  +0.0109
+                          +0.0108   sd 0.0011   знак 4/4   (парный пол 0.0052)
+
+**Almost all of it is CYP2C9**: +0.0294 to +0.0328 on every seed, against +0.002 to +0.015 for the
+other three. CYP2C9 is the enzyme with the highest label correlation to another (0.705 with
+CYP3A4), which is the direction the mechanism predicts.
+
+**The sparsity objection does not apply, and this is worth stating because the proposal assumed it
+did.** The stacker for enzyme `e` needs `p_1..p_4` on molecules carrying label `e` -- and
+predictions exist for every molecule regardless of which labels were measured. It trains on all
+1412 to 2335 rows of that enzyme, not on the 1309 multi-label molecules.
+
+**WHY THIS IS NOT YET A RESULT.** The baseline is the per-enzyme member ALONE at 0.5650. The
+submission is a five-member ensemble at 0.6342, and two of those members -- the pooled booster and
+the neural trunk -- already share information across enzymes by construction. **+0.0108 over a
+member that has no cross-enzyme channel is an upper bound on what it can add to an ensemble that
+has two.**
+
+**Pre-registered, arm 1 -- the pooled member.** Same stack, same four seeds, baseline = the pooled
+booster, which learns all four enzymes with an indicator.
+
+    прирост НИЖЕ парного пола 0.0052  ->  межферментную структуру пул уже вычерпал,
+                                          до подачи идея не доходит, второй арм не запускается
+    прирост ВЫШЕ 0.0052               ->  запускается арм 2
+
+**Pre-registered, arm 2 -- the ensemble, and only if arm 1 passes.** Stack on the submitted
+five-member configuration's out-of-fold output, four seeds, scored on macro rank AND on macro
+ST-RAE after the affine pair. **Adopted only if the mean gain exceeds 0.0052 with sign at least
+3 of 4 on rank, and the pair does not worsen by more than the 0.007 ST-RAE floor.**
+
+**Prediction, written down.** Arm 1 loses roughly half: the pooled member's whole mechanism is
+contrast across enzymes (item 132), which is the same information the stack is reading. I expect
++0.004 to +0.007, straddling the floor, and I expect CYP2C9 to keep most of whatever survives.
+
+**269. Cross-enzyme stacking dies on the ensemble -- and it dies of REDUNDANCY, not of dilution,
+which is a failure mode this log has not recorded before.** Arms 1 and 2 of item 268. Nothing
+deployed.
+
+**Arm 1 passed**, and the prediction written in item 268 was accurate. On the pooled booster, four
+seeds: **+0.0067, sd 0.0021, sign 4/4**, above the 0.0052 paired floor. Item 268 predicted "+0.004
+to +0.007, straddling the floor, and CYP2C9 keeps most of what survives" -- CYP2C9 came in at
++0.0317, +0.0225, +0.0313, +0.0330.
+
+**Arm 2 fails.** Baseline `мёртвая зона везде` at macro rank 0.6198 over four seeds:
+
+    сид       ранг база -> сшивка        Δ      пара Δ
+      0      0.6203 -> 0.6213     +0.0010     +0.0001
+      1      0.6182 -> 0.6176     -0.0006     -0.0001
+      2      0.6198 -> 0.6169     -0.0029     +0.0028
+      3      0.6208 -> 0.6207     -0.0001     +0.0004
+                                  -0.0007  sd 0.0017  знак 1/4
+
+**The decisive detail is CYP2C9.** It carried essentially the whole effect at both earlier stages
+-- +0.032 over the per-enzyme member, +0.030 over the pooled one -- and on the ensemble it is
+**flat**: -0.0001, -0.0002, -0.0006, -0.0014. Its rank in the ensemble is 0.665 against 0.603 in
+the pooled member. The information the stack was reading is already in there.
+
+**The effect decays monotonically with the strength of what it is stacked on:**
+
+    база                          ранг базы   прирост сшивки
+    поферментный член                0.5650          +0.0108
+    пулированный член                0.5792          +0.0067
+    ансамбль, мёртвая зона везде     0.6198          -0.0007
+
+**Why this is a new entry rather than a repeat of items 176, 182, 191 and 213.** Those four record
+standalone gains dying in the ensemble by DILUTION: each entered as one more correlated member of
+an unweighted mean, at error correlations of 0.90 to 0.97, and the mean paid for its disagreement.
+The proposal that prompted this made a structural argument that it would escape that -- it operates
+AFTER the mean, on its output, so there is nothing left to dilute it -- **and that argument is
+correct.** It died anyway, of a different cause: the ensemble's other members already supply the
+cross-enzyme correction, so there is nothing left to add. **A gain measured over a weak baseline
+can vanish over a strong one with no dilution involved at all**, and "it sits after the averaging"
+is therefore not a defence against the ensemble. That is the reusable part.
+
+**Two substitutions, both conservative, both declared before the run.** The auxiliary predictions
+`p_1..p_4` come from the pooled member rather than from the ensemble, because the ensemble is saved
+only on labelled cells while the stacker needs all four enzymes on each row -- a weaker auxiliary
+signal, so the true version could only be better. And the baseline is `мёртвая зона везде` at
+0.6198 rather than the shipped configuration at 0.6342, so the real headroom is smaller still.
+Neither substitution can rescue a result at -0.0007 with sign 1/4.
+
+**What is left standing.** CYP2C9's ordering is substantially improvable from CYP3A4's prediction
+-- +0.03 of rank, sign 4/4, on two different single members. The ensemble already reaches it by
+other means, so there is nothing to ship; but it is the sharpest per-enzyme cross-talk this log has
+measured, and it is consistent with CYP2C9-CYP3A4 being the most correlated label pair at 0.705.
+
+**270. Pre-registration: the `max_features` sweep, the first HistGB hyperparameter this log has
+ever touched.** Written and committed before `verify/k82_maxfeat.py` runs. Item 266 established
+that the knob is reachable inside the pin; this measures it.
+
+**Three checks done first, because the knob would be worthless if any failed.**
+
+    oof.json под sklearn 1.8.0 против закоммиченного   тот же SHA-256, пустой diff
+    max_features=1.0 против отсутствия параметра        max |d| = 0.00e+00, бит в бит
+    max_features меняет предсказания вообще             max |d| до 0.72, ро с 1.0 до 0.9635
+
+The second is what makes the sweep safe: **the default is a no-op**, so nothing already published
+moves. The third is what makes it worth running -- and on a single fold of CYP3A4 rank is already
+monotone in the knob, 0.7271 / 0.7295 / 0.7313 / 0.7372 at 1.0 / 0.5 / 0.3 / 0.1, the same
+direction item 140 found on a different learner.
+
+**The design.** Grid `max_features` in {1.0, 0.3, 0.1, 0.03}, matching item 140's spacing with one
+extension below it to find where the trend turns over. Both HistGB members -- the per-enzyme
+booster and the pooled booster -- four seeds, macro rank primary and macro ST-RAE after the affine
+pair secondary. About three hours, one serial process.
+
+**A free anchor.** Because `max_features=1.0` is bit-identical to omitting the parameter, the
+per-enzyme member at 1.0 must reproduce `results/preds/oof.json` exactly: macro-4 **0.565046**. The
+script asserts it.
+
+**Adopted only after two arms, in the order item 269 established the hard way.**
+
+    арм 1  лучшее mf бьёт 1.0 более чем на 0.0052 при знаке не менее 3/4, НА ЧЛЕНЕ
+           -> иначе конец
+    арм 2  тот же выигрыш на АНСАМБЛЕ, тот же порог, и пара не хуже своего пола 0.007
+           -> только это разрешает подачу
+
+Item 269 is the reason arm 2 is not optional: a gain of +0.0108 over a single member came out at
+-0.0007 over the ensemble, and the failure was redundancy rather than dilution. **A member-level
+number here means nothing about the submission.**
+
+**A second knob deliberately NOT swept.** The dead-zone pass refits under `DZ_KW`, its own pinned
+copy of the same estimator. If `max_features` helps the base fit it plausibly helps the refit, but
+that is a separate parameter on a separate stage, and item 77's lesson about stacking measured
+effects applies. It is left for after arm 2, if arm 2 passes.
+
+**The prediction, and it is not optimistic.** Item 140's +0.0123 was measured on a hand-rolled
+booster whose UNsubsampled arm scored 0.5522 against HistGB's 0.5651 -- the knob was repairing a
+deficit HistGB may not have, since its binning, `l2_regularization=1.0` and 31-leaf cap already
+regularise. And item 158 measured the same knob on the pooled arm of that booster at 0.5416 against
+0.5420, which is nothing. **I expect the per-enzyme member to gain +0.003 to +0.008, straddling the
+floor, and the pooled member to gain nothing.** If the per-enzyme member clears, I expect arm 2 to
+fail for the same reason item 269 failed.
+
+**271. Item 267 is a duplicate of item 22, and the way it happened is worth more than the item
+was.** Found while sweeping candidate families; no computation.
+
+**Item 22, written 31 August**, `h1_geometry.py`, reports the same three numbers item 267 spent an
+hour re-measuring on 8 September:
+
+    ряд                        пункт 22   пункт 267
+    leave-one-out                 0.450      0.4500
+    кластерное разбиение          0.435      0.4348
+    ТЕСТ                          0.587      0.5873
+
+and states the conclusion item 267 presented as its finding, in almost the same words: **"The test
+is closer to the training set than the training set is to itself, so no re-slicing reaches it."**
+It also has the tail, on a slightly different threshold and against the random split rather than
+leave-one-out -- share keeping a relative above 0.7 is 0.005 for the cluster split, 0.033 for
+random, 0.101 for the test -- and the same reading, that the split earns its keep in the tail and
+not in the median. Item 91 later extended that to descriptor space, and item 267 cites item 91
+without noticing that its own headline was already in item 22.
+
+**Item 267's attribution decomposition is also already implied.** It made a point of the control
+"train against itself at the same comparison size" and of splitting the 0.152 gap into 0.015 from
+the split and 0.137 from the test set. Both fall straight out of item 22's four-number table:
+0.450 - 0.435 and 0.587 - 0.450. The arithmetic was there; nobody, including me, had subtracted.
+
+**What survives of item 267:** the Butina size distribution printed explicitly (4592 singletons,
+67 pairs, 23 triples, tail to 9), and the >=0.65 threshold chosen because it is the similarity at
+which Butina groups two molecules. Both are decoration on item 22. Even the 93.6 per cent figure
+was already written down -- in `verify/k32_anchor.py`'s own docstring, on 31 August.
+
+**How it happened, which is the part worth keeping.** The rule this repository runs on is SEARCH
+THE JOURNAL BEFORE EVALUATING AN IDEA, and item 118 is its cautionary tale. Over the preceding two
+days that rule was applied five times to PROPOSALS -- a five-agent sweep before the max_features
+work, a three-agent sweep before the per-enzyme L1 arm, a five-agent sweep before the family
+search -- and it worked every time, killing four candidates of five on each pass. It was not
+applied to item 267, because item 267 did not arrive as a proposal to be evaluated. **It arrived as
+a measurement to be run, prompted by an outside reading, and measurements felt exempt.** They are
+not. The rule is about the JOURNAL's contents, not about the shape of the request.
+
+**And the far more useful thing that the same search turned up, which item 267 should have found
+and did not.** `verify/k32_anchor.py` exists, written the same day as item 22, and it is the
+construction item 267 declared impossible. Its docstring is sharper than either item: our
+cross-validation is **"not a weak version of the test's regime, it is the mirror image of it"**,
+because the test is about 132 analogue series built around parents that sit INSIDE the training
+set at median similarity 0.587, while Butina assigns a whole cluster to one fold and so holds a
+compound's analogues out along with it. Item 129 supplies the population that makes the mirror
+constructible: the training set is a diversity screen of 4375 singletons glued to a **CYP3A4-only
+analogue campaign of 530 compounds**, two thirds of which do have a close neighbour. The anchor
+split holds out analogues while keeping one member in training, so a held-out compound faces the
+model with a labelled near relative -- exactly as a test compound will.
+
+**That is the second split, already built.** It answers only for CYP3A4, because the campaign is
+one enzyme, and it has been pointed at exactly one feature block in its life.
+
+**272. Pre-registration: the contribution ledger re-measured by KNOCKOUT from the shipped
+configuration, instead of by addition to a weak baseline.** Written and committed before
+`verify/k83_loo.py` runs. Not a deployment decision -- a re-audit of the scoreboard.
+
+**Why.** The scoreboard's four contributions were each measured as an ADDITION to whatever baseline
+existed when they were proposed:
+
+    мёртвая зона во всех членах   +0.0197   пункты 164, 213
+    механистический блок          +0.0163   пункт 81
+    пулирование контрастом        +0.0141   пункты 84, 132
+    ствол пятым членом            +0.0054   пункт 120
+                          сумма    0.0555   против общего +0.0579, расхождение 0.0024
+
+**Item 269 is the reason that reconciliation cannot be trusted as it stands.** It measured a gain
+of +0.0108 over one member, +0.0067 over a stronger one, and **-0.0007 over the ensemble** -- not
+by dilution but by redundancy, the other members already carrying the information. By that rule the
+size of every ledger entry depends on the baseline it was measured over and the order it was added
+in, and an agreement to 0.0024 between four such numbers and a total may be luck rather than
+additivity. **Nobody has ever knocked a component OUT of the finished model.**
+
+**A correction to the arithmetic that prompted this, made before the run so it cannot be tuned
+afterwards.** The outside proposal computed the gap as 0.6342 - 0.5651 = 0.0691 against the same
+0.0555, giving 0.0136. That mixes the two tables at the top of this file which it says explicitly
+are not comparable line by line: 0.5651 and 0.6230 come from stacking saved predictions
+(`k46_five`), 0.6342 from recomputing the members with the submission's own code (`k58_dzsubmit`),
+which additionally applies `_trunk_clip` (defect 3 of item 202). Most of the extra 0.0112 is the
+measurement system, not non-additivity. **The proposal is right; its number is not.**
+
+**The design.** Reference is the shipped configuration -- `oof_members(mode="ансамбль5", dead=True)`,
+`dz_pass`, and `_keep`, so `SOLO = {"CYP3A4": ("GP",)}` applies. Four seeds. Knockouts:
+
+    K1  без мёртвой зоны        те же члены, проход не применяется
+    K2  без пулированного члена
+    K3  без ствола
+    K4  без MECH                четыре пересчитываемых члена на FP+DESC
+    K5  без GP                  не в реестре, но SOLO делает его ВСЕМ плечом CYP3A4
+    K6  без гребневой           не в реестре, для полноты
+
+K1, K2, K3, K5 and K6 are recombinations of one member build and cost nothing beyond it. **K4 is a
+PARTIAL knockout and is labelled as such**: the trunk is a torch model trained on DESC+MECH and
+committed as predictions, so it keeps its mechanistic block. K4 therefore under-states MECH's cost.
+
+**Two structural facts to expect, not results.** Removing the pooled member or the trunk changes
+nothing on CYP3A4, because `SOLO` already excludes them there -- so the pooled member's contribution
+to the SUBMISSION lives on three enzymes, not four, exactly as item 268 argued. And K5 is
+degenerate on CYP3A4: dropping the GP leaves the shipped arm empty, so the script falls back to all
+remaining members there and says so.
+
+**The prediction.** I expect the knockouts to be SMALLER than the ledger's additions, because
+components overlap and each was measured over a baseline that lacked the others. Specifically:
+dead zone -0.012 to -0.020 (it is applied inside every member and should hold up best); MECH -0.005
+to -0.012 (understated by the trunk); pooling -0.005 to -0.010 (three enzymes of four, and the
+other members overlap it); trunk -0.002 to -0.005. **And I expect the sum of the knockouts to come
+in BELOW the 0.0579 trajectory**, which would mean the ledger is subadditive and its entries are
+upper bounds on what each component is worth today.
+
+**273. `max_features` passes arm 1 on the per-enzyme member and fails on the pooled one, exactly as
+item 270 predicted -- and the whole thing was behind a version check nobody re-ran.**
+`verify/k82_maxfeat.py`, four seeds, under scikit-learn 1.8.0 inside the existing pin. Nothing
+deployed; arm 2 decides that.
+
+    член          mf     Δранг       sd   знак     Δпара
+    поферментно  0.30   +0.0060   0.0023   4/4    -0.0049
+    поферментно  0.10   +0.0084   0.0016   4/4    -0.0071
+    поферментно  0.03   +0.0037   0.0021   4/4    -0.0026
+    пул          0.30   -0.0005   0.0046   1/4    -0.0001
+    пул          0.10   -0.0031   0.0025   0/4    +0.0011
+    пул          0.03   -0.0079   0.0030   0/4    +0.0061
+
+**Arm 1 passes on the per-enzyme member.** +0.0084 at `max_features=0.1`, sd 0.0016, sign 4/4,
+against a paired floor of 0.0052 -- and **rank and the metric move together**, the pair improving by
+0.0071 against its own floor of 0.007. That simultaneity is rare in this log; most raw-metric gains
+here reverse by rank.
+
+**The curve is unimodal and turns over.** +0.0060, +0.0084, +0.0037 as the knob goes 0.3, 0.1, 0.03.
+An effect that peaks and declines is what a regularisation parameter looks like; a monotone drift
+would have been the shape to distrust.
+
+**The pooled member fails, monotonically.** -0.0005, -0.0031, -0.0079. Indicator dilution is the
+obvious candidate -- the four enzyme columns are in the candidate set at 100, 76, 34 and 11 per cent
+of split searches across the grid, and item 132 says pooling works by contrast through exactly those
+columns -- but that is a hypothesis this run does not test, and items 151 and 158 already raised and
+refuted a version of it on a different learner. **What is measured is the loss, not the reason.**
+
+**Item 270's prediction was accurate.** It said "per-enzyme +0.003 to +0.008, pooled nothing"; the
+per-enzyme member came in at +0.0084, just above the stated range, and the pooled member at -0.0031.
+
+**Two controls held.** `max_features=1.0` is bit-identical to omitting the parameter (max |d| =
+0.00e+00), so nothing already published moves; and the per-enzyme member at 1.0 reproduced
+`results/preds/oof.json` at macro-4 **0.565046**, the value item 270 pre-registered to six digits.
+
+**How this was reachable at all.** Item 140 measured this knob at +0.0123 on a hand-rolled booster
+in August and closed it with "the pinned scikit-learn's `HistGradientBoostingRegressor` has no
+`max_features` at all -- checked". That was checked against the INSTALLED 1.3.2, not against the pin
+`>=1.3,<1.9`; the parameter arrived in 1.4 (item 266). Step zero of this run regenerated
+`oof.json` under 1.8.0 and got the **same SHA-256 and an empty diff**, which is the first
+confirmation of `pyproject.toml`'s documented bit-for-bit range since it was written.
+
+**ARM 2 IS REQUIRED AND IS NOT OPTIONAL.** The per-enzyme member is one of five, and item 269
+measured a +0.0108 member-level gain arriving at -0.0007 over the ensemble, by redundancy. A
+member-level +0.0084 says nothing about the submission until it is measured there. The dead-zone
+pass's own copy of the estimator is a separate knob and stays unswept until arm 2 reports.
+
+**274. The contribution ledger, re-measured by knockout: the dead zone and the trunk reproduce
+their entries almost exactly, MECH is worth under half of its, and POOLING IS WORTH NOTHING.**
+`verify/k83_loo.py`, four seeds, conditions from item 272. Nothing deployed.
+
+Reference is the shipped configuration (five members, dead zone in all, `SOLO` on CYP3A4), macro
+rank 0.6373 / 0.6339 / 0.6352 / 0.6379 over seeds 0-3.
+
+    выбивание                 Δранг ср.       sd   знак     Δпара   реестр
+    K1 без мёртвой зоны         -0.0198   0.0007    4/4   +0.0225   +0.0197
+    K4 без MECH (частичное)     -0.0070   0.0012    4/4   +0.0073   +0.0163
+    K2 без пула                 +0.0008   0.0005    0/4   -0.0018   +0.0141
+    K3 без ствола               -0.0056   0.0004    4/4   +0.0051   +0.0054
+    K5 без GP                   -0.0126   0.0015    4/4   +0.0172   ---
+    K6 без гребневой            +0.0035   0.0003    0/4   -0.0010   ---
+
+    сумма четырёх строк реестра  +0.0315   против суммы добавлений 0.0555
+
+**The knockout design is roughly ten times more precise than the design it replaces, and that is a
+result in itself.** Standard deviations here are 0.0003 to 0.0015, against the 0.0052 paired floor
+item 259 derived. The floor is right for arms fitted INDEPENDENTLY; a knockout and its reference
+share every fitted member and differ only in which of them are averaged, so almost all the variance
+cancels. **+0.0008 at sd 0.0005 is not "inside the floor", it is significantly positive.** Any
+future comparison of ensemble compositions should be done this way.
+
+**Two entries reproduce almost digit for digit**, by a measurement design with nothing in common
+with the one that produced them. The dead zone: -0.0198 against +0.0197. The trunk: -0.0056 against
++0.0054. **These are the strongest confirmations in the log**, because addition-to-a-weak-baseline
+and knockout-from-the-finished-model are different experiments and they agreed.
+
+**MECH holds at 43 per cent**: -0.0070 against +0.0163. And this is the PARTIAL knockout -- the
+trunk is committed as predictions from a torch model trained on DESC+MECH and keeps its mechanistic
+block -- so the true figure lies between -0.0070 and -0.0163 and the entry is an over-statement of
+unknown size.
+
+**Pooling does not survive at all.** Its knockout costs **+0.0008**, sign 0 of 4 -- removing the
+pooled member makes the shipped ensemble very slightly BETTER, on rank and on the pair
+simultaneously. The ledger's third-largest line, at +0.0141, is worth zero in the finished model.
+
+**This is not a contradiction of items 84, 125, 131 and 132, and the distinction matters.** Pooling
+by contrast is real: item 131 showed that zeroing the enzyme indicator costs 0.076 of rank against
+per-enzyme training, item 132 that handing over the level for free recovers none of it. **What died
+is not the mechanism but the MEMBER'S MARGINAL VALUE**, and it died of the same cause as item 269 --
+redundancy. By the time four other members are averaged, whatever the pooled booster contributes is
+already there. Item 269 measured cross-enzyme stacking at +0.0108 over one member and -0.0007 over
+the ensemble; this is the same shape, applied to a member of the ensemble itself.
+
+**A second member is also net-negative.** Removing the ridge is worth **+0.0035 at sign 0/4 and sd
+0.0003**, improving rank and the pair together. It has never been in the ledger, and item 218's
+subset enumeration -- which found the Gaussian process alone beating the five-member mean on CYP3A4
+-- was run on one enzyme only.
+
+**The obvious follow-up, now cheap.** All six configurations above are recombinations of ONE member
+build per seed; the expensive part is already cached. A full enumeration of all 31 subsets on all
+four enzymes, which item 218 did for CYP3A4 alone, costs one member build per seed and nothing more.
+**That, not this item, is what could change the submission**, and it should be pre-registered
+separately because choosing a subset by its out-of-fold score is exactly the selection that item
+245 warns about.
+
+**The prediction in item 272 was right on three of five and wrong on the one that mattered.** Dead
+zone -0.012 to -0.020 (got -0.0198), MECH -0.005 to -0.012 (got -0.0070), sum below 0.0579 (got
+0.0315). Trunk was predicted -0.002 to -0.005 and came in at -0.0056, just outside. Pooling was
+predicted -0.005 to -0.010 and came in at **+0.0008**.
+
+**And the outside proposal that prompted this is vindicated in substance while its arithmetic
+stays wrong.** It computed the additivity gap as 0.0136 by mixing two tables this file says are not
+comparable. The gap is **0.0240** -- 0.0555 of additions against 0.0315 of knockouts -- and it is
+larger than the number it argued from.
+
+**275. A five-agent "new information source" sweep returns five kills, and the shape of the five is
+the finding: the unused-signal space is exhausted, not unlucky.** Each candidate was screened
+against the journal, the code and the raw data before any build. No computation beyond distribution
+reads. Two of the sweep's own premises were wrong and are corrected here.
+
+    кандидат                              вердикт        куда упёрлось
+    Emax как вторая ось                   пункты 71, 72  нет динамического диапазона
+    плечо преинкубации как вспом. цель    пункт 196      +0.0008, ниже пола; плечи коллинеарны
+    форензика прямых меток                пункт 105      «нет всплеска цензурирования», ноль заглушек
+    структура партий/планшетов            пункты 160,13  OCNT_Batch --- лот на молекулу, не группа
+    столбцы значимости скрина как вес     пункты 179,226 -0.0099, проигрывает своей перестановке
+
+**The single lesson across all five: every "information the model is not given" turns out to be
+degenerate, collinear, absent, or anti-informative.** Emax is near-constant (median -0.98 to -1.03,
+every compound a near-complete inhibitor, so no partial-inhibitor axis exists). The preincubation
+arm is 0.99/0.97/0.91/0.95 collinear with the direct arm, and where it differs it is Delta, which
+the TDI track already models. The direct labels have no stub or censoring structure (item 105
+reproduced to the digit); the "1238 poisoned" note is the TDI track, which carries zero direct
+labels. The screen's significance columns as a reliability weight lose to their own shuffle, because
+the compounds where two measurements disagree carry signal, not noise (items 179, 226). And batch
+identity does not group anything -- `OCNT_Batch` embeds the molecule name, one lot per compound --
+while `plate_id` lives on the screen, not the labels, and the blinded test carries neither, so any
+batch- or plate-conditioned quantity is blind on the test by construction.
+
+**Two premises the sweep was launched on were false, recorded because a wrong premise that survives
+is worse than a dead idea.** (1) "No script reads the Emax file" -- six do (`k13_channels.py`,
+`f6_data.py`, `k36_ceiling.py`, `k49_hill.py`, `k50_fumic.py`, `docs/tex/figs.py`), and
+`src/trunkdose.py` already encodes `EMAX_SPREAD` from it. (2) `OCNT_Batch` was taken for an assay
+batch id; it is a per-compound lot id with the molecule name inside the string. Both were checkable
+in one grep and were not checked before the sweep -- the same class of error as item 267's duplicate.
+
+**What this says for the innovation angle, stated plainly.** This is the fourth broad idea-sweep in
+three days, and the aggregate is now unambiguous: the search space of new modelling swings and new
+input signals is picked clean, and it is picked clean because the project already visited it. That
+is not a defeat -- it is the result. The distinctive, defensible contributions are the ones already
+in hand: the dead zone as a metric-derived majoriser (item 213, the strongest single effect and the
+only one confirmed by two independent designs), the knockout ledger and its finding that a
+contribution measured by addition is not its value in the finished model (item 274), the test
+geometry -- our cross-validation is the mirror image of the test, not a weak version of it (items
+22, 267) -- and the TDI reframe plus the 1055 stub labels (item 234 neighbourhood, §10). A
+pre-registered, exhaustively negative map of what does NOT work is itself unusual in a competition
+and is worth presenting as such.
+
+**One cheap diagnostic the sweep surfaced, and it is diagnostic, not a swing.** The redundancy trap
+(items 269, 274) can be quantified directly: the pairwise error-correlation matrix of the committed
+out-of-fold member predictions bounds what any new member could add before it is built. Worth
+computing once as a standing answer to "would a new member survive the ensemble", but it produces a
+ceiling, not a gain.
+
+**276. The masthead caveat cited the noise figure item 253 had already halved, and compared a
+difference against a single-score noise. Rewritten from the journal's own later numbers.** Raised
+by an outside review; no new computation, only a consistency fix flagged before the 24 September
+interim leaderboard.
+
+The masthead still read: "single-score leaderboard noise on 750 molecules is 0.08 (item 147); our
+gain by pair is 0.0583; the whole project gain sits inside one measurement's noise." Two errors.
+
+**The 0.08 was superseded.** Item 253 found item 147 averaged four per-enzyme percentile bounds as
+though the enzymes' sampling errors moved together; the measured cross-enzyme correlation of a
+single score's error is **0.02**, so averaging four near-independent errors halves the spread. The
+corrected sampling half-width on the SHIPPED configuration (item 256) is **0.0414** at n=750 and
+0.0598 at the n=375 live leaderboard -- not 0.08.
+
+> Forward note added 13 September (item 294), numbers above deliberately unchanged: "the SHIPPED
+> configuration" meant the one shipping on 10 September. Items 282-285 changed it, item 287
+> recomputed the band accordingly, and the current figures are half-width **0.0442** at n=750 and
+> 0.0660 at n=375. The argument of this item is unaffected -- the gain 0.0583 still exceeds the
+> single-score half-width -- but the two numbers in it are historical from 11 September onward.
+
+**And the comparison was the wrong one.** 0.0583 is a DIFFERENCE between two configurations, and its
+noise is the noise of a difference, not of a single score. The leaderboard scores every entry on the
+same test compounds, so per-compound error cancels in the difference: the paired floor is
+$\sqrt2\cdot0.0036 = 0.0052$ (item 259, seed covariance zero), and the paired test bootstrap gives
+sd 0.0074 to 0.0201. **The gain clears that by a wide margin -- and it even exceeds the corrected
+single-score half-width 0.0414, so the old "inside one measurement's noise" is false on its own
+terms now, not merely pessimistic.**
+
+The honest two-line statement, now in the masthead: the absolute score is unpredictable to about
+$\pm0.04$ (sampling over which 750 are revealed), our position relative to a similar submission is
+pinned to about $\pm0.02$, and by rank we are outside the noise -- which the leaderboard does not
+show. The stale figure had propagated into the write-up drafted from this section; fixing the
+masthead is what keeps that from happening again before the reveal.
+
+**277. The shrinkage lambda grid is pinned at its upper edge on three enzymes of four; extending it
+above 1.0 is a fix, not a bet, and it is verified before it ships.** Raised by an outside review.
+Honest about provenance: the numbers below were measured while answering that review, so this is a
+decision to ship a checked fix, not a blind pre-registration -- the two acceptance conditions were
+confirmed, not awaited.
+
+`fit_shrinkage`'s lambda grid was `np.linspace(0.2, 1.0, 41)`, capped at 1.0. The submitted
+predictions are 0.32-0.71 as wide as the labels (over-compressed), so the objective wants to EXPAND
+them (lambda > 1), and the reported optimum sat at the 1.0 boundary on CYP1A2/CYP2C9/CYP2D6 with the
+"оптимум на краю сетки" warning firing. `src/shrinkchoice.py:53` already says in a comment that the
+grid edge lies.
+
+**Measured, extending the grid to 2.0 (it saturates by 1.6, and 2.0 is identical):**
+
+    δ                λ до 1.0                λ расширенной        макро ST-RAE       ранг
+    δ = 0        [1.00 1.00 1.00 0.96]   [1.10 1.18 1.10 0.96]   0.6392 -> 0.6357   Спирмен 1.0000
+    δ подаётся   [1.00 1.00 1.00 0.88]   [1.02 1.16 1.10 0.88]   0.6638 -> 0.6571   Спирмен 1.0000
+
+**Condition 1, monotone: met.** lambda stays strictly positive, so the map is strictly increasing
+and every per-enzyme Spearman is 1.0000 before and after -- rank is untouched, which is the point.
+**Condition 2, interior optimum: met.** After extension the optima are 1.02-1.18, well inside 2.0,
+so the boundary warning no longer fires.
+
+**What it is and is not worth.** It improves our own out-of-fold macro ST-RAE by 0.0035 (delta=0) to
+0.0067 (shipped delta), and because it is monotone it changes ONLY the raw score, never rank. The
+raw score is the leaderboard-visible number that item 276 puts at plus or minus 0.04 of sampling
+noise, so this is a correct fix to a boundary artefact worth a within-noise crumb of raw score, not
+a rank lever. It is shipped because a boundary-pinned parameter is a defect regardless of its size.
+The shipped shifts are `+0.11 / +0.18 / +0.01 / +0.24` (an earlier review misquoted CYP2D6 as
+-0.19, which is `k5_shift`'s raw covariate estimate, not the fitted shift). `shrinkchoice.LAMGRID`
+is left capped at 1.0 on purpose: it drives `fit_apply`, which produces the "pair" number across the
+whole journal, and moving it would shift published figures for no gain in rank.
+
+**278. Pre-registration: the 31-subset enumeration, honestly nested, which is the only open move
+that can change the submission.** Written and committed BEFORE `verify/k84_subsets.py` runs -- this
+one is blind, unlike 277. It is the follow-up item 274 named: knockout put the pooled member at
++0.0008 and the ridge at +0.0035 (both net-negative in the finished model, sign 0/4, sd 0.0003-0.0005),
+so at least two of five members may be dead weight on some enzymes, and item 218 already ships the
+Gaussian process ALONE on CYP3A4.
+
+**The arms.** For each enzyme independently, all 31 non-empty subsets of the five dead-zone-passed
+members {поферментно, пул, GP, гребневая, ствол}; a subset's prediction is the unweighted mean of
+its members, matching the ensemble.
+
+**The nested protocol, which is the whole point (item 245).** Member predictions are already
+out-of-fold on all rows (five Butina folds). Outer loop over those five folds: for outer fold k,
+rank every subset per enzyme on the rows NOT in k (their OOF predictions), pick the best subset per
+enzyme, and apply it to fold k. Concatenate across k -> an honest OOF prediction under selection,
+because the subset is chosen on rows disjoint from the fold it is scored on. Choosing the subset on
+the same rows it is scored on -- the naive enumeration -- is exactly item 245's selection
+contamination and is reported ALONGSIDE only as the in-sample ceiling, never as the result.
+
+**The baseline** is the shipped composition scored the same honest way: GP alone on CYP3A4 (`SOLO`),
+the five-member mean on the other three. Reference points reported but not adopted: always-all-five,
+and the fixed item-274 winner.
+
+**Adopted for the submission if and only if, over four seeds:**
+
+    1. средний нест. макро-ранг выше подаваемого более чем на парный пол 0.0052;
+    2. знак держится не менее чем в 3 сидах из 4;
+    3. И выбор устойчив: один и тот же поферментный субсет выбран не менее чем в 3 из 5
+       внешних фолдов И в 3 из 4 сидов --- иначе ячейка объявляется ничьёй и остаётся на
+       подаваемом правиле (страховка по логике пункта 218: два члена держат от невезения GP).
+
+**The correlation matrix item 275 queued falls out for free** from the saved per-compound member
+predictions and is computed in the same run, as the standing ceiling on any future member.
+
+**The prediction, written to be wrong.** Item 274's knockout already says pooled and ridge are net
+negative, so I expect honest per-enzyme selection to drop them on the three non-CYP3A4 enzymes,
+CYP3A4 to stay GP-alone, and the nested macro-rank gain over the shipped composition to land in
+**[0.003, 0.008]** -- positive and clearing the floor, but SMALLER than item 274's in-sample knockout
+sum of +0.0315, because selection variance on five folds eats part of it. If the nested gain is
+below the floor while the in-sample ceiling is well above it, that gap IS item 245 in miniature and
+is the more instructive outcome.
+
+**279. Pre-registration: the 3D shape block, arm 2 over the ensemble -- the one feature change with
+both a measurement and an address.** Written and committed before `verify/k85_shape2.py` runs, and
+before k84 (item 278) reports, so it is blind on both. Raised by an outside review that verified
+against the journal; I reproduced every claim it rests on.
+
+**What is already true, checked line by line.** `data/shape3d.npz` exists (train 4905x16, test
+750x16, computed 30 August), sixteen ETKDG-conformer descriptors including `bN_arom_ang_min/mean` --
+the basic nitrogen's angle to the aromatic system, i.e. the Glu216 salt-bridge geometry in three
+dimensions. `src/shape3d.py` and `src/ablshape.py` build and score it; `src/submit.py` references it
+**zero times**, so it is not shipped. Measured four seeds (item 165, line 4753):
+
+    блок формы, Δранг     1A2       2C9       2D6       3A4
+                       +0.0060   -0.0003   +0.0087   -0.0008
+    пол фермента (165)  0.0061    0.0071    0.0049    0.0033
+
+**It helps 2D6 at 1.8x its own floor with sign 4/4, and 1A2 at its floor, and nothing elsewhere.**
+It was closed by item 119 on MACRO (+0.0034, under the 0.0036 macro floor) -- before item 165
+recorded the per-enzyme floors, and item 165 itself says the mechanism "was never used to read it:
+the block was thrown in globally and scored globally." So it was closed by aggregation, not by
+measurement, and the per-enzyme claim on 2D6 has never been refuted.
+
+**Why arm 2 is required and is the whole question.** The +0.0087 is on the BARE per-enzyme member.
+Items 269, 273 and 274 all show member-level gains dying over the ensemble; the shape block must be
+tested where it would ship -- inside the five-member composition, 2D6's rank with a shape-augmented
+per-enzyme member against the same ensemble with the plain one. The claim is **per-enzyme on 2D6
+against floor 0.0049**, not macro: the macro floor 0.0036 will not see it, which is exactly the
+mistake item 119 made.
+
+**The design.** `verify/k85_shape2.py`: rebuild the per-enzyme member on `FP+DESC+MECH+shape3d`
+(2311 columns, the `с формой` arm of `ablshape`), dead-zone-pass it, substitute it for the plain
+per-enzyme member in the shipped composition, four seeds. Report all four enzymes; 3A4 ships GP
+alone (`SOLO`) so shape cannot touch it, and 2C9/3A4 are near-zero at member level, so the live
+cells are 2D6 and 1A2.
+
+**Dependency on k84, stated so it is not a moving target.** The baseline is the SHIPPED composition.
+If item 278's enumeration changes 2D6's composition, arm 2 re-baselines to whatever 2D6 actually
+ships, and the shape-augmented member is substituted into THAT.
+
+**Adopted into the per-enzyme member if and only if, four seeds:** 2D6 ensemble rank gain exceeds
+its floor 0.0049 at sign 3/4 or better, AND no other enzyme falls more than its own floor.
+
+**Prediction, written to be wrong.** Two forces oppose. The salt-bridge geometry is genuinely 3D and
+the other four members carry no 3D channel, so unlike item 269's cross-enzyme stacking it is NOT
+redundant with what the ensemble already knows -- that argues it survives. But it enters one member
+of five in an unweighted mean, and items 176/182/191 show member gains shrinking three- to five-fold
+by that dilution alone. **I expect dilution to win and the 2D6 ensemble gain to land in [0.002,
+0.006], straddling the floor and more likely just under.** If it clears 0.0049 it is the first
+feature block in the project to survive to the ensemble, which is why it is worth the run despite
+the prior. Runs after k84 finishes -- not concurrently, because this machine has been OOM-killed by
+concurrent member builds before.
+
+**280. The nested subset enumeration: +0.0040 macro, below the pre-registered floor -- but the run
+demonstrates its own floor was the wrong instrument, and it turns up a CYP3A4 lead that contradicts
+item 218.** `verify/k84_subsets.py`, four seeds, conditions from item 278.
+
+    нест. минус подаётся, макро-ранг   +0.0040   sd 0.0012   знак 4/4
+    условие 1 (> 0.0052)               НЕТ
+    условие 2 (знак >= 3/4)            ДА
+
+**By the letter of item 278, not adopted:** +0.0040 < 0.0052. My prediction ([0.003, 0.008],
+clearing the floor) was half right -- positive and sign 4/4, but under the bar.
+
+**The run is the proof that the bar was too coarse, which is the outside review's exact point.** The
+sd is **0.0012**, so +0.0040 is about six sigma. The 0.0052 floor (item 259) is the paired floor for
+INDEPENDENTLY fitted arms; a subset comparison shares every member and fold with its baseline, so
+almost all variance cancels and the honest statement is "significantly positive, below the
+pre-registered effect-size floor". The floor and the effect size are different questions, and the
+pre-registration conflated them. **Future composition comparisons should carry the shared-structure
+sd, not the 0.0052 floor** -- item 274 said this once and this run is the second instance.
+
+**The nested-to-ceiling gap is item 245 made visible, as designed:** nested +0.0040 against the
+in-sample ceiling +0.0078, a gap of 0.0038 that is pure selection contamination.
+
+**Per enzyme, selection helps three and overfits the fourth:**
+
+    фермент   нест-подаётся ранг      sd    знак    пол
+    CYP1A2         +0.0061         0.0032   4/4   0.0061
+    CYP2C9         +0.0091         0.0004   4/4   0.0071
+    CYP2D6         -0.0030         0.0064   2/4   0.0049
+    CYP3A4         +0.0039         0.0017   4/4   0.0033
+
+CYP2D6 is where the five members are most tied, and per-fold selection there costs more variance
+than it buys -- so the macro +0.0040 is the net of three clean gains and one selection loss. The
+subsets consistently drop **пул and гребневая**, matching item 274's knockout from the other
+direction; the error-correlation matrix (item 275, delivered by this run) says why -- поферментно
+and пул are **0.989** correlated, nearly the same estimator, and every member pair sits at 0.91-0.99:
+
+              пофе    пул     GP    греб   ство
+      пофе   1.000  0.989  0.930  0.930  0.929
+       пул   0.989  1.000  0.930  0.930  0.932
+        GP   0.930  0.930  1.000  0.931  0.913
+      греб   0.930  0.930  0.931  1.000  0.924
+      ство   0.929  0.932  0.913  0.924  1.000
+
+The least-correlated pair is GP-ствол at 0.913. **This is the standing ceiling item 275 queued:**
+any new member correlated above ~0.91 with the existing mean is capped low before it is built.
+
+**A CYP3A4 lead that must NOT be acted on yet, because it contradicts item 218.** The nested search
+picks `GP+ствол` on CYP3A4 in **20 of 20** folds-times-seeds, and as a FIXED rule (no selection)
+`GP+ствол` beats the shipped `GP`-alone by **+0.0039** (sd 0.0017, sign 4/4, above CYP3A4's floor
+0.0033). But item 218's own exhaustive 31-subset enumeration on CYP3A4 put `GP`-alone FIRST at rank
+0.8153 with the full ensemble fourteenth, i.e. `GP+ствол` ranked BELOW `GP`-alone. **The GP-alone
+baselines match exactly (0.8153 here and there), so the discrepancy is not the baseline** -- it is
+almost certainly the trunk member, which has been rebuilt since item 218. Until that is reconciled,
+the CYP3A4 change is a contradiction to resolve, not a result to ship: two exhaustive enumerations
+of the same subsets disagree on the same enzyme, and one of them is wrong.
+
+**What ships: nothing, per item 278.** The composition is left as it is. The two things worth a
+separate, blind pre-registration are the CYP2C9 cell (+0.0091 at sd 0.0004 is the largest clean
+composition effect measured, and the shipped all-five is plainly not its optimum) and the CYP3A4
+`GP+ствол`-versus-item-218 contradiction, on fresh seeds so the hypothesis and the test do not share
+data.
+
+**281. The shape block does not survive to the ensemble: its +0.0087 on CYP2D6 dilutes to +0.0004,
+and CYP2D6 is exactly the enzyme where that had to happen.** `verify/k85_shape2.py`, four seeds,
+conditions from item 279. Nothing adopted.
+
+    фермент   Δранг ансамбля      sd    знак    пол      член (пункт 165)
+    CYP1A2         +0.0014     0.0014   3/4   0.0061         +0.0060
+    CYP2C9         -0.0009     0.0002   0/4   0.0071         -0.0003
+    CYP2D6         +0.0004     0.0011   2/4   0.0049         +0.0087
+    CYP3A4         +0.0000     0.0000   0/4   0.0033         -0.0008
+
+**Condition of item 279 (CYP2D6 gain above 0.0049 at sign 3/4): NO.** The member-level +0.0087 comes
+into the five-member mean as **+0.0004**, a twenty-two-fold shrink -- deeper than the three- to
+five-fold that items 176/182/191 recorded and deeper than item 279's own [0.002, 0.006] guess. The
+prediction was right in direction (dilution wins) and wrong in size, and k84 says why: item 280
+measured CYP2D6 as the enzyme where the five members are most tied, the one where subset selection
+OVERFIT. A signal carried by a single member averages away hardest precisely where the members are
+most interchangeable, so the enzyme the shape block helps most standalone is the enzyme that dilutes
+it most in the ensemble. CYP3A4 is +0.0000 to the digit because it ships the Gaussian process alone,
+so the per-enzyme member -- shape-augmented or not -- never enters it; that zero is the control that
+says the harness is correct.
+
+**This closes the shape block the right way.** Item 119 retired it on a macro average before
+per-enzyme floors existed; item 165 kept its +0.0087 on CYP2D6 alive as a member-level fact and named
+the wrong aggregation. The outside review was right to reopen it and right about the protocol -- arm
+2 over the ensemble, per-enzyme claim -- and the honest arm 2 says the member-level effect is real
+and does not reach the submission. `data/shape3d.npz` stays unshipped, now for a measured reason
+rather than a mis-aggregated one.
+
+**Three feature and composition swings this session, three that do not change the ranking:** the
+nested subset enumeration (+0.0040, under the floor, item 280), the shape block (this item), and
+max_features arm 2 (queued, predicted to fail for the same reason). The only changes that shipped are
+the lambda-grid boundary fix (item 277, raw score only, rank untouched) and the masthead correction
+(item 276, documentation). **The submission's ranking is where it was, and that is the result:** the
+member-level gains are real and the ensemble is redundancy-bound, which items 269, 274, 280 and 281
+now say four times with four different interventions. The defensible claim for the write-up is not a
+new number, it is that boundary -- measured, quantified by the 0.91-0.99 member error-correlation
+matrix, and reproduced on demand.
+
+**282. Pre-registration: the CYP2C9 composition, fixed subset from seeds 0-3, tested on fresh seeds
+4-7.** Written and committed before `verify/k86_cyp2c9.py` runs. This is the honest follow-up to
+item 280's largest clean per-enzyme effect (CYP2C9 nested +0.0091), done the only way that is not
+item 245: fix the subset the hypothesis-generating seeds chose, and test it as a FIXED rule on seeds
+the choice never saw.
+
+**The hypothesis, from the cached seeds 0-3.** Over all 31 subsets, CYP2C9's best is **`GP+ствол`**
+at mean rank 0.6980, against the shipped all-five at 0.6856 -- **+0.0124 in-sample**, and the shipped
+composition ranks ninth of thirty-one. Second is `поферментно+GP+ствол` at 0.6978, a tie within
+0.0002. The mechanism is coherent and not a coincidence of this enzyme: CYP2C9 has the fewest labels
+(1285), and the two members that survive are exactly the two trained on the 247-column DESC+MECH
+(the Gaussian process and the trunk), while the two dropped are the high-dimensional boosters on 2295
+columns that overfit the smallest training set. Dropping them is dropping the overfitters.
+
+**The test.** `k86_cyp2c9.py` builds the five dead-zone-passed members for FRESH seeds 4, 5, 6, 7
+(seeds 0-3 generated the hypothesis and are not reused), and scores the FIXED rule `GP+ствол` against
+the shipped all-five on CYP2C9. No per-fold selection, so no selection variance -- the only thing
+measured is whether the specific subset transfers. Reported alongside: the full 31-subset enumeration
+on the fresh seeds (does it independently pick `GP+ствол`?), and a check that shipping `GP+ствол` on
+CYP2C9 only leaves the other three enzymes untouched.
+
+**Adopted for the submission (CYP2C9 only) if and only if, over the four fresh seeds:** the fixed
+`GP+ствол` rule beats the shipped all-five on CYP2C9 by more than CYP2C9's own floor **0.0071** at
+sign 3/4 or better. The paired shared-structure sd is reported for significance, but the adoption bar
+is the effect-size floor, not mere significance -- a change smaller than the enzyme's own noise is
+not worth shipping even if it is real.
+
+**Prediction.** The in-sample +0.0124 will shrink -- part of it is seed-0-3 luck -- but `GP+ствол` is
+a fixed rule with no selection variance, and the all-five being ninth of thirty-one is a large
+structural fact rather than a marginal pick. **I expect the fresh-seed fixed gain in [0.006, 0.011],
+clearing the 0.0071 floor.** If it does, it is the first composition change to ship this session, and
+the first thing all week to change the submission's ranking. If it comes in significant but under
+0.0071, it is recorded as real-but-too-small and not adopted.
+
+**And it re-tests item 218's contradiction as a by-product.** The fresh-seed build regenerates the
+trunk-bearing members, so if `GP+ствол` also beats `GP`-alone on CYP3A4 on these seeds, item 280's
+disagreement with item 218 resolves in k84's favour; if not, the trunk member is the culprit. Either
+way the fresh seeds settle which of the two exhaustive enumerations was right.
+
+**283. CYP2C9 adopts GP+ствол, confirmed on fresh seeds with no shrinkage, and the same run
+supersedes item 218 on CYP3A4. The first composition change to ship since the submission was
+frozen.** `verify/k86_cyp2c9.py`, seeds 4-7 (fresh: seeds 0-3 generated the hypothesis in item 280
+and were not reused), conditions from item 282.
+
+    CYP2C9, фикс. GP+ствол минус подаваемый all5
+    сид 4    +0.0155        сид 6    +0.0106
+    сид 5    +0.0121        сид 7    +0.0116
+                      среднее +0.0125   sd 0.0021   знак 4/4   пол 0.0071
+
+**Condition of item 282 (> 0.0071 at sign 3/4): met, and cleanly.** The fresh-seed mean +0.0125 is
+within 0.0001 of the in-sample +0.0124 -- **no shrinkage at all**, which is what a real structural
+effect looks like rather than a fitted one. The fresh 31-subset enumeration independently re-selects
+the GP+ствол core on all four seeds (twice exactly GP+ствол, twice поферментно+GP+ствол, the two
+seeds-0-3 leaders). The mechanism holds: CYP2C9 has the fewest labels (1285), so the two
+low-dimensional members on 247-column DESC+MECH survive and the two high-dimensional boosters that
+overfit are dropped.
+
+**The by-product resolves item 280's contradiction with item 218, in item 280's favour.** On the
+same fresh seeds, CYP3A4 `GP+ствол` beats the shipped `GP`-alone by **+0.0044** (sd 0.0013, sign 4/4,
+above CYP3A4's floor 0.0033). Item 218 enumerated all 31 subsets and put `GP`-alone first -- but that
+was with an EARLIER trunk; the current trunk (committed 3 September, "reproduces bit for bit") makes
+`GP+ствол` the better arm. Item 218 was right for the trunk it had and is superseded by the one that
+ships. The trunk was the culprit, exactly as item 280 guessed.
+
+**Both changes ship.** `SOLO` becomes `{CYP2C9: (GP, ствол), CYP3A4: (GP, ствол)}`. CYP2C9 is the
+formally pre-registered adoption (item 282); CYP3A4 is a by-product confirmed on the same fresh seeds
+against its own floor, with clean train/test separation (hypothesis from seeds 0-3, test on 4-7), and
+it corrects a documented error rather than introducing a guess. Macro rank moves by
+`(0 + 0.0125 + 0 + 0.0044)/4 = +0.0042`, above the 0.0036 macro floor -- **the first shippable macro
+improvement this session, and it is a composition change, not a feature.**
+
+**What it cost and what stayed safe.** The fresh seeds needed the trunk, which existed only for seeds
+0-3; it was trained for 4-7 on MPS (about 25 minutes, two passes), and the predictions were merged
+INTO the committed trunk files additively -- seeds 0-3 verified byte-identical, the golden digest
+`2d93c19815e14261` intact, `tests/test_split.py` green. Nothing that ships on seed 0 moved except the
+`SOLO` rule itself.
+
+**One honesty note on the number.** The +0.0042 is the unbiased estimate over the four fresh seeds. The submission ships on seed 0, where it realises as +0.0035 (CYP2C9 +0.0125, CYP3A4 +0.0016) -- CYP3A4's gain is seed-dependent (+0.0016 on seed 0 against +0.0044 averaged), so the shipped realisation sits just under the 0.0036 macro floor while the effect-size estimate sits just over it. Both are positive on every seed; the fresh-seed average is the honest effect size, the seed-0 value is the one draw that ships.
+
+**And it does not reopen the closed cells.** CYP1A2 and CYP2D6 were NOT tested on fresh seeds; k84
+found CYP1A2's пофе+GP+ство only borderline stable and CYP2D6's selection net-negative, so neither is
+adopted. Two cells change, two stay.
+
+**284. Pre-registration: the CYP1A2 composition, fixed subset from seeds 0-3, on fresh seeds 4-7.**
+Written and committed before the fresh-seed result is computed -- and this one is genuinely
+uncertain, unlike CYP2C9. The fresh members are already cached (`members_seed4-7.json` from k86), so
+the test is arithmetic, minutes not hours.
+
+**The hypothesis, from seeds 0-3.** CYP1A2's best of 31 subsets is **`поферментно+GP+ствол`** at mean
+rank 0.5692 against the shipped all-five at 0.5615 -- **+0.0077 in-sample**, all-five sixth of
+thirty-one. It keeps the per-enzyme booster and drops the ridge (and the pooled member); CYP1A2 has
+more labels than CYP2C9 (1412 vs 1285), so its per-enzyme booster overfits less and is worth keeping,
+which is a coherent variant of the same "drop the overfitters" mechanism.
+
+**Why this is weaker than CYP2C9 and may not survive.** The in-sample +0.0077 is only 1.26 times
+CYP1A2's floor 0.0061, against CYP2C9's 1.75 times; item 280 recorded CYP1A2's пофе+GP+ство as only
+13 of 20 folds-times-seeds stable, borderline. A margin that thin over the floor is exactly what
+shrinks below it on fresh seeds.
+
+**The test.** Fixed `поферментно+GP+ствол` vs the shipped all-five on CYP1A2, seeds 4-7 (seeds 0-3
+generated the hypothesis and are not reused), from the cached members. Reported with the fresh
+31-subset enumeration (does it re-select the same subset?).
+
+**Adopted for the submission (CYP1A2 only) if and only if, over the four fresh seeds:** the fixed
+rule beats all-five on CYP1A2 by more than CYP1A2's floor **0.0061** at sign 3/4 or better.
+
+**Prediction.** Shrinkage from +0.0077 lands it near or below the floor -- I put it at a coin flip,
+more likely NOT adopted, at fresh gain in [0.003, 0.007]. If it clears, a third composition cell
+changes and the mechanism ("small-data enzymes drop their high-dimensional members") holds on three
+of four enzymes. If it does not, CYP1A2 stays on the full ensemble and the honest record is that the
+effect was real in-sample but too thin to survive an unbiased test -- which is itself the point of
+running it on fresh seeds.
+
+**285. CYP1A2 adopts поферментно+GP+ствол -- it passes on fresh seeds, against my prediction, but
+by a thin margin honestly recorded. Three of four cells now change.** Fresh seeds 4-7 from the
+cached members, conditions from item 284.
+
+    CYP1A2, фикс. поферментно+GP+ствол минус all5
+    сид 4    +0.0044        сид 6    +0.0086
+    сид 5    +0.0071        сид 7    +0.0070
+                      среднее +0.0068   sd 0.0017   знак 4/4   пол 0.0061
+
+**Condition of item 284 (> 0.0061 at sign 3/4): met.** But thinly: the mean clears the floor by
+0.0007, and the one-sided 95% lower bound is +0.0047, BELOW the floor. So the effect is
+significantly positive (sign 4/4, t about 8) but marginal in size -- a real cell, not a clean one
+like CYP2C9's +0.0125. **My item-284 prediction ("coin flip, more likely NOT adopted") was too
+pessimistic**; the fresh gain landed in the predicted [0.003, 0.007] band but on the passing side.
+The fresh enumeration re-selects the поферментно+GP+ствол core on all four seeds. Per the
+pre-registered rule it adopts.
+
+**The shipped macro, computed against the RIGHT baselines.** An earlier draft of this arithmetic
+used the five-member mean as CYP3A4's baseline, which is wrong: CYP3A4 already ships GP-alone
+(SOLO), so its change is GP-alone to GP+ствол, +0.0016 on seed 0, not the +0.0129 that all-five to
+GP+ствол would suggest. The correct per-enzyme changes over the SHIPPED composition, seed 0:
+
+    CYP1A2   all5 -> пофе+GP+ство     +0.0103
+    CYP2C9   all5 -> GP+ство          +0.0125
+    CYP2D6   не меняется               0.0000
+    CYP3A4   GP-один -> GP+ство       +0.0016
+    МАКРО                             +0.0061
+
+The fresh-seed unbiased estimate is +0.0059 (1A2 +0.0068, 2C9 +0.0125, 3A4 +0.0044, over four). Both
+sit comfortably above the 0.0036 macro floor -- with all three cells, the composition change is
+worth about +0.006 of macro rank, where two days ago the whole session had shipped nothing.
+
+**`SOLO` becomes `{CYP1A2: (поферментно, GP, ствол), CYP2C9: (GP, ствол), CYP3A4: (GP, ствол)}`.**
+Three of four enzymes now drop members; only CYP2D6 keeps the full ensemble, because k84 measured its
+selection net-negative. The pattern is one mechanism seen three times: the enzyme drops the members
+that overfit its training set, and how many it drops scales with how few labels it has -- CYP2C9
+(1285) drops both boosters, CYP1A2 (1412) keeps the per-enzyme booster and drops the ridge, CYP3A4's
+analog campaign drops everything but GP and the trunk.
+
+**Not selection over cells.** Each cell was pre-registered with its own floor and tested on fresh
+seeds it did not generate; three passed and one (CYP2D6) was measured net-negative and left alone.
+Adopting the three that passed their independent pre-registered tests is not cherry-picking -- the
+one that failed is on the record too.
+
+**286. Pre-registration: max_features arm 2 over the ensemble, on fresh seeds -- now a CYP2D6
+question, because the SOLO changes removed the per-enzyme member from the other three cells.**
+Written and committed before `verify/k87_maxfeat2.py` runs. This is the arm 2 that item 273 required
+and item 270 pre-registered, updated for the composition that now ships.
+
+**What changed the target.** Items 282-285 dropped the per-enzyme booster from CYP2C9 and CYP3A4
+(both ship GP+ствол) and kept it on CYP1A2 (пофе+GP+ствол) and CYP2D6 (all five). So max_features on
+the per-enzyme member can only reach CYP1A2 and CYP2D6 in the shipped composition. The member-level
+(rank) effect of mf=0.1 on those two, from k82:
+
+    CYP1A2   +0.0039   sd 0.0090   знак 2/4   пол 0.0061   (слабо, шумно)
+    CYP2D6   +0.0149   sd 0.0026   знак 4/4   пол 0.0049   (сильно, 3x пола)
+
+**CYP2D6 is the whole question, and it is the worst possible cell for it.** The +0.0149 is the
+strongest feature/parameter effect measured on CYP2D6, on the enzyme with the largest gap. But CYP2D6
+is also where k84 found the five members most tied, and where item 281's shape block diluted +0.0087
+to +0.0004 over the ensemble -- a twenty-two-fold shrink. Arm 2 pits the strongest member-level
+effect against the worst dilution.
+
+**The test.** `k87_maxfeat2.py` rebuilds the per-enzyme member with `max_features=0.1` and its
+dead-zone pass under scikit-learn 1.8.0, fresh seeds 4-7, substitutes it into the shipped composition
+(CYP1A2 пофе+GP+ствол, CYP2D6 all five), and scores CYP1A2 and CYP2D6 ensemble rank against the
+cached plain per-enzyme member. The baseline is clean: mf=1.0 under 1.8.0 is bit-identical to the
+cached 1.3.2 member (item 273).
+
+**Adopted into the per-enzyme member if and only if, over the four fresh seeds:** CYP2D6 ensemble
+rank gain exceeds its floor 0.0049 at sign 3/4 (primary), or CYP1A2 exceeds 0.0061 at sign 3/4; and
+neither cell falls more than its own floor.
+
+**Prediction.** Dilution wins, as it did for the shape block. CYP2D6's +0.0149 member effect enters
+one member of five in the mean and lands near +0.002-0.004, below its 0.0049 floor; CYP1A2's
+member-level +0.0039 is already sub-floor and noisy (2/4), so it fails too. **I expect arm 2 to fail
+on both cells**, making max_features the fourth intervention (with cross-enzyme stacking, the pooled
+member, and the shape block) that is real at member level and dies over the ensemble. If CYP2D6
+somehow clears its floor, it is the first parameter change to survive, and worth it on the enzyme
+that needs it most.
+
+**287. max_features arm 2 fails, the fourth intervention to die over the ensemble -- and an outside
+reading splits that death into two mechanisms measured separately, one curable and one not.**
+`verify/k87_maxfeat2.py`, fresh seeds 4-7, conditions from item 286. Nothing adopted.
+
+    фермент   Δранг ансамбля      sd    знак    пол      член (k82)
+    CYP1A2         -0.0021     0.0030   1/4   0.0061       +0.0039 (2/4, шум)
+    CYP2D6         +0.0011     0.0012   3/4   0.0049       +0.0149 (4/4)
+
+**The measurement is CYP2D6 alone.** CYP1A2's member-level max_features was +0.0039 at sd 0.0090,
+sign 2/4 -- noise (item 286 said so), and its negative over the ensemble is noise staying noise, not
+dilution. CYP2D6's member-level +0.0149 (three times its floor, sign 4/4) is the real effect, and it
+arrives over the ensemble at **+0.0011** -- a thirteen-fold shrink, below the floor. Predicted
+[0.002, 0.004]; came in lower. **Fourth confirmation of the boundary**, after cross-enzyme stacking
+(269), the pooled member (274) and the shape block (281): real at member level, dead over the
+ensemble.
+
+**But "dead over the ensemble" is two mechanisms, and an outside reading decomposed item 281's own
+table to show it.** Splitting each member-level effect into its 1/N averaging share and the residual:
+
+    фермент   член      1/5 члена   над ансамблем   остаток сверх усреднения
+    CYP1A2   +0.0060     +0.0012        +0.0014      нет --- ровно усреднение
+    CYP2D6   +0.0087     +0.0017        +0.0004      вчетверо ниже 1/N --- избыточность
+    CYP3A4   -0.0008        —           +0.0000      SOLO, контроль (член не входит)
+
+On CYP1A2 the shape block lost exactly its 1/N averaging share and nothing more; on CYP2D6 it lost a
+further four-fold, which is the redundancy k84 measured independently (CYP2D6 is where the five
+members are most tied and where subset selection went net-negative). **The honest caveat, which the
+reading itself states:** over the ensemble both cells are statistically indistinguishable from zero
+(+0.0014 at sd 0.0014, +0.0004 at sd 0.0011), so the averaging-versus-redundancy split is a reading
+of the point estimates consistent with the data, not an established fact.
+
+**Why the distinction matters for the writeup and for the next run.** Averaging is curable and
+redundancy is not. Averaging shrinks with fewer members -- and after items 282-285 the shipped
+compositions are CYP1A2 three members, CYP2C9/CYP3A4 two, only CYP2D6 five -- and with wider
+insertion, since a 3D block can enter both the per-enzyme booster and the Gaussian process, both of
+which read DESC+MECH. **k85 measured its dilution on the five-member compositions that no longer
+exist; any future feature arm 2 must be run against the new SOLO, or it measures a dilution that is
+gone.** It does not reopen the shape block -- three members with the block in two projects to about
++0.0040 against CYP1A2's floor 0.0061, still short -- but the claim for the entry changes from
+"features die of redundancy" to "of averaging on three enzymes of four and of redundancy on CYP2D6,
+measured apart, with CYP3A4's +0.0000 as the SOLO control."
+
+**The falsification band was recomputed on the new composition** (`verify/k79_bandfix.py` over the
+regenerated `oof_submitted.json`): shipped-transform macro pair 0.6506 (plain pair 0.6375 against the
+old 0.6416, so the composition improved the pair too), band n=750 **[0.6114, 0.6997]** half-width
+0.0442, n=375 [0.5945, 0.7265] half-width 0.0660. It shifted down from item 256's [0.6263, 0.7090] by
+the composition gain. One honest edge, from the same outside reading: the band's centre is the seed-0
+realisation, and seed 0 is inside the 0-3 set that generated the composition hypothesis, so the
+effect SIZE (fresh seeds) is clean while this particular REALISATION is partly selected -- the band
+covers the draw over which 750 are revealed, not that selection.
+
+**288. Pre-registration: the estimator-family screen -- the one axis with measured headroom, tested
+by the cheap precomputable gate before any ensemble arm is built.** Written and committed before
+`verify/k88_family.py` runs. This is not an adoption test; it is sieve one of three, and it decides
+only whether a new family EARNS an ensemble arm.
+
+**Why.** Item 280's correlation matrix put every current member pair at 0.91-0.99, and the least
+correlated pair -- GP and the trunk at 0.913 -- share the same 247 DESC+MECH columns, so decorrelation
+in this project comes from the ESTIMATOR FAMILY, not from features. The best-linear-mix ceiling
+(variance x (1+rho)/2, elasticity ~0.012 pair per one per cent of error) gives a new member at
+rho=0.913 up to 0.027 of pair, above the 0.020 paired leaderboard floor -- the only axis with a
+ceiling over that floor. Four families ship (boosting twice, exact GP, ridge, torch MLP); a fifth has
+never been tried, and kNN (items 100, 107) and pretrained embeddings (three times) are closed.
+
+**The screen.** Build out-of-fold predictions on seed 0, per enzyme, for candidate families NOT in
+the ensemble: random forest and extra-trees (bagged trees, a different bias from boosting), SVR with
+an RBF kernel, and kernel ridge with an RBF kernel (kernel methods distinct from the linear ridge).
+For each, measure two numbers per enzyme: its standalone rank, and the correlation of its
+out-of-fold ERROR with the five-member mean's error.
+
+**Passes the gate (earns an ensemble arm) if and only if:** mean error-correlation with the ensemble
+across the four enzymes is **below 0.93**, AND its standalone macro rank is within 0.02 of the
+weakest current member, so it is decorrelated without being so weak it would drag an unweighted mean.
+A family at rho >= 0.93, or far below the accuracy band, is closed here without an ensemble build --
+exactly the precomputable refusal the ceiling licenses.
+
+**Prediction.** The tree families (RF, extra-trees) will correlate high with the boosters (same
+feature matrix, same tree bias family) -- rho ~0.95+, closed. The kernel methods on DESC+MECH will
+correlate high with the GP (same columns, same kernel family) -- rho ~0.93+, closed. **I expect all
+four to fail the gate**, because the reviewer's own diagnosis is that decorrelation needs a genuinely
+different family and these are near-neighbours of families already present. If one surprises, it is
+the first candidate in weeks with a ceiling above the leaderboard floor and gets a pre-registered
+ensemble arm. Either way the screen costs minutes and the refusal is measured, not assumed.
+
+**289. The estimator-family axis is closed by the screen -- decorrelation and accuracy trade off,
+and no family is both. The last axis with a ceiling above the leaderboard floor, measured shut
+without an ensemble build.** `verify/k88_family.py`, seed 0, conditions from item 288.
+
+    семейство         ρ ошибки ср.   ранг макро   слабейший член 0.5776   вердикт
+    случайный лес         0.963         0.5532        -0.0244            закрыт
+    экстра-деревья        0.950         0.5535        -0.0242            закрыт
+    SVR-RBF               0.898         0.5156        -0.0620            закрыт
+    ядровая гребн.-RBF    0.661         0.4402        -0.1374            закрыт
+
+**None passes, and the split says why my prediction was half wrong.** I predicted all four fail
+(right) with the kernels failing on correlation (~0.93+); instead the tree families failed on
+correlation (0.95-0.96, the boosters' tree bias on the same matrix) while the kernel families
+DECORRELATED cleanly -- SVR at 0.898, kernel ridge at 0.661, both below the 0.93 gate -- and failed
+on ACCURACY instead. Decorrelation from the estimator family is real, exactly as the outside reading
+diagnosed; it just does not come free.
+
+**The trade-off is airtight, checked by tuning rather than assumed.** Sweeping kernel ridge's kernel
+width, its accuracy peaks at macro rank 0.5417 (gamma 0.001, error-correlation 0.859) and collapses
+as the kernel narrows; it never reaches the weakest current member (0.5776), let alone the Gaussian
+process (0.627). The weakness is not a hyperparameter artefact: **the accurate RBF-kernel-on-DESC+MECH
+niche is already occupied optimally by the exact GP**, and any cruder kernel method is strictly
+worse. So a kernel method is either tuned toward the GP (accurate and correlated) or away from it
+(decorrelated and weak), with no point that is both -- and the tree families sit in the boosters'
+niche the same way.
+
+**What this does to the best-linear-mix ceiling.** The 0.027-of-pair ceiling at rho=0.913 (item 288)
+assumed a new member at ENSEMBLE accuracy. Empirically no family reaches rho<0.93 at ensemble
+accuracy, because the accurate region of every estimator family present -- trees, RBF kernel, linear,
+MLP -- is already occupied by a member. The ceiling is real and unreachable: decorrelation is
+available (kernel ridge at 0.66) and accuracy is available (the GP at 0.627), never together.
+
+**The consequence, stated plainly for the writeup.** This was the one axis with a measured headroom
+above the 0.020 paired leaderboard floor, and it is now closed by a precomputable screen that cost
+minutes and built no ensemble arm -- the refusal item 288 licensed. With features closed by dilution
+(items 281, 287), compositions paid and shipped (282-285), and estimator families closed by the
+accuracy-decorrelation trade-off here, **every axis the project can reach before 3 November is now
+measured shut, and the submission's +0.006 of macro rank this week is the whole of what was
+available.** That is not fatigue; it is a map with every edge walked to its end and the reason
+written at each one.
+
+**290. The external-CYP auxiliary-head trunk is closed BY RANK over the ensemble -- the channel is
+real, the vehicle sinks it. The last item-267-pattern gap, measured shut without a build.**
+`verify/k89_exttrunk.py`, seeds 0-3, against the shipped composition (`oof_members` ансамбль5 +
+`dz_pass` + `_keep`/SOLO). Prediction and criterion pre-registered before the run.
+
+This settles a within-session audit finding: `src/trunkext.py` (item 66) -- the shared trunk with
+8004 external ChEMBL CYP pIC50 rows in the auxiliary head instead of the screen -- is the artefact
+that most directly instantiates the "one shared trunk, two tasks, the second external" proposal, and
+it had been scored ONLY in raw ST-RAE (channel -0.0176, 4/4) and never converted to rank after the
+affine pair, nor inserted into the ensemble. Item 66's own last line said "still not settled." Per
+CLAUDE.md / item 77 a raw ST-RAE number is not evidence, so the decisive measurement was never taken
+-- the item-267 shape (shelved by assumption, the deciding number never computed). The committed
+predictions (`results/preds/trunk_ext.json`, seeds 0-3, lambda 0 and 3.0) let it be closed in the
+decisive currency with no training, exactly as item 117 re-read item 68's saved predictions by rank.
+
+    арм (над ансамблем, 4 сида)          Δранг ср.      sd    знак>0    Δпара ср.   вердикт
+    INSERT lam3 (внешний ствол доп.)      -0.0104     0.0007    0/4      +0.0158    не проходит
+    SWAP lam3 (вместо screen-ствола)      -0.0164     0.0013    0/4      +0.0174    не проходит
+    INSERT lam0 (контроль: строки, канал off) -0.0189 0.0008    0/4      +0.0192    не проходит
+
+    канал вспом. головы над ансамблем (INSERT lam3 - lam0):   +0.0085 ранга, знак 4/4
+    канал соло (standalone lam3 - lam0):                      +0.0147 ранга, знак 4/4
+    внешний ствол соло 0.5270  против screen-ствола 0.5966
+
+**The channel is real -- this half vindicates the proposal.** The external-CYP auxiliary head lifts
+the trunk's own rank by +0.0147 standalone (sign 4/4) and contributes +0.0085 of rank over the
+ensemble (INSERT lam3 - INSERT lam0, sign 4/4). So item 66's -0.0176 was NOT an affine-pair artefact;
+the external labels carry genuine, rank-surviving information, and "external data is dead" (the
+row-merge closures, items 60-61, 77, 144, 157) was over-generalised to this route. The user's
+distinction -- transfer a representation vs merge rows -- was correct that far.
+
+**The vehicle sinks it, which is the other half.** The external trunk is a much weaker member than
+the shipped screen trunk (standalone 0.5270 vs 0.5966), so inserting a SECOND neural trunk drags the
+ensemble down -0.0189 (the lam0 control: external rows present, auxiliary term off), and the +0.0085
+channel recovers only part of that. Net INSERT lam3 = -0.0104, sign 0/4; SWAP is worse (-0.0164); the
+pair-ST-RAE also worsens (+0.0158). This is item 269 exactly: a real channel that escapes averaging
+dilution still dies because the member is redundant/weak against the existing five, whose contrast is
+already vested in the pooled member (item 274 knockout +0.0008). Pre-registered prediction ("lands
+like the screen trunk: survives standalone, sub-floor as a member") confirmed on all four seeds.
+
+**Caveat and scope.** Seeds 0-3 are the same seeds item 66 used; this is a re-scoring of committed
+predictions in the decisive currency, legitimate exactly as item 117, not a fresh-seed confirmation.
+A PASS would have warranted fresh seeds (which would need the external CSVs, no longer in the tree);
+a FAIL closes the external-trunk proposal honestly, and it failed cleanly. The multi-task branch's
+other open-by-rank gap -- multi-task trees (item 188) inserted into the current ensemble -- is
+measured separately in `verify/k90_multitask.py`.
+
+**291. Pre-registration (blind): multi-task trees over the ensemble -- the symmetric gap to 290.**
+`verify/k90_multitask.py`, seeds 0-3, committed predictions `results/preds/oof_multi.json`. Item 188
+measured multi-task trees at +0.0069 macro rank over the per-enzyme reference AT MEMBER LEVEL, but
+never inserted them into the current shipped ensemble and scored by rank over it -- the same
+item-267 shape as 290 for the internal (not external) multi-task route. This inserts the honest-form
+member (multi-task on 1A2/2C9/2D6, independent on 3A4, per item 188's negative-transfer result on the
+data-rich enzyme) as an extra member, with a control (`независимо`, same DecisionTree-boosting
+learner) so the multi-task-specific channel is INSERT(multi) - INSERT(незав), parallel to 290's
+lambda3 - lambda0. Learner and dead-zone caveat: ablmulti's learner is not the shipped HistGB member
+and its predictions carry no dead-zone pass, so this is insertion-with-control, not a clean swap.
+Criterion for adoption: macro ensemble RANK gain > 0.007, sign 4/4. Prediction: INSERT does NOT pass
+-- the member sits in the boosters' niche (rho ~0.95, item 289) beside the per-enzyme booster and the
+pool, so the +0.0069 member-level gain is eaten by redundancy over the ensemble (item 269); the
+control INSERT(незав) <= 0 and the channel small and positive. A FAIL closes "multi-task earns an
+ensemble place" by measurement; a PASS warrants fresh seeds.
+
+**292. Multi-task trees are closed by rank over the ensemble -- same anatomy as 290: the channel is
+real, the vehicle is redundant. Multi-task (proposal B) is now measured shut from both ends.**
+`verify/k90_multitask.py`, seeds 0-3, as pre-registered in 291.
+
+    арм (над ансамблем, 4 сида)          Δранг ср.      sd     знак>0   Δпара ср.   вердикт
+    INSERT multi (honest form)            -0.0062     0.0009    0/4      +0.0107    не проходит
+    INSERT multi (pure, все четыре)       -0.0067     0.0007    0/4      +0.0128    не проходит
+    INSERT незав (контроль, тот же учитель) -0.0121   0.0016    0/4      +0.0102    не проходит
+    SWAP поф->multi (honest)              -0.0082     0.0009    0/4      +0.0120    не проходит
+
+    канал многозадачности (INSERT multi - INSERT незав):   +0.0059 ранга, знак 4/4
+    standalone multi(honest) 0.5727  против незав 0.5615:   +0.0112 ранга (item 188 воспроизведён)
+
+**The channel is real, and item 188 reproduces.** Standalone, the multi-task member beats the
+independent per-enzyme member by +0.0112 rank (item 188 measured +0.0069; the honest form here, multi
+on 1A2/2C9/2D6 and independent on 3A4, is stronger than the pure form). Over the ensemble the
+multi-task-specific channel is +0.0059 (INSERT multi - INSERT незав, sign 4/4). Multi-task structure
+genuinely helps relative to a plain second booster -- the mechanism is not a mirage.
+
+**But the vehicle is redundant, so it dies over the ensemble.** Inserting ANY boosting-family member
+costs -0.0121 (the control: a second independent per-enzyme booster), because it lands in the
+boosters' niche (rho ~0.95, item 289) beside поферментно and пул, whose contrast is already vested
+(item 274). The +0.0059 multi-task channel recovers only half of that, so net INSERT multi = -0.0062,
+sign 0/4; SWAP -0.0082; pair-ST-RAE worsens. This is item 269 again, and the exact parallel to 290:
+a real channel (there external labels, here shared-leaf structure) killed by a redundant/weak member.
+
+**Consequence: the transfer/multi-task audit is closed by measurement, not by association.** The
+within-session audit split proposal B into external-auxiliary multi-task (290) and internal
+multi-task (292); both now have their decisive rank-over-ensemble number, and both fail the 0.007
+criterion 0/4 while confirming a real underlying channel. Together with the representation-transfer
+half (encoder embeddings closed by rank, items 61/68/117/154; fine-tuning and CYP-adjacent
+pretraining low-prior per items 166/189/269/289), every branch the audit raised is now measured shut.
+The one lever left with a live claim above the floor is neither proposal -- it is docking (a function
+of the ligand-cavity pair, escaping the saturated ligand-only channel by construction; item 168 and
+memory), whose prior is already lowered after ablsite and which costs ~20000 runs.
+
+**293. What was on disk was not what we had measured: the submission is rebuilt on the shipped
+composition, the validator gate that guarded it turns out never to have been able to fire, and the
+classification track gets its first falsifiable prediction. Plus five documentation defects, one of
+them mine.** `src/submit.py` (gate fix, commit fde6b22), `verify/k91_mccband.py`, four seeds where
+stated. No modelling axis is involved: every number below is delivery of gains already measured.
+
+**The gate could not fire, and this is the worst defect of the four.** `src/submit.py`'s own
+docstring promises to "refuse to write anything the validator rejects". Both organisers' validators
+are typed `-> tuple[bool, list[str]]` and return `(ok, errors)`; the gate tested `isinstance(res,
+list)` and then `getattr(res, "errors", [])`, so a TUPLE fell through both, `bad` was always empty
+and the `SystemExit` was unreachable. A second arm, `except TypeError`, printed "принято" without
+looking at the result at all. Proven rather than argued, before and after, by direct call on a copy
+of the file with one molecule deleted:
+
+    validator returns            (False, ["Missing 1 expected molecule(s): ['OCNT-2535825']"])
+    old logic -> bad = []        -> printed "принято", would have shipped it
+    new logic -> passed = False  -> refuses
+
+So the headline guarantee was inoperative on the only expensive artefact in the repository, for as
+long as the gate has existed. The rebuild below is the first build in the project's history written
+through a gate that can actually refuse.
+
+**The files on disk were two composition commits and one grid commit stale.** They were dated
+7 September and built when `SOLO` was `{"CYP3A4": ("GP",)}` -- i.e. before items 282-285 (+0.0059
+macro rank on fresh seeds 4-7, floor 0.0036) and before item 277. Rebuilt with defaults, which is
+the shipped arm; the 7 September build is archived at
+`results/submission/prev_2026-09-12-pre282/`. Fitted transform, all four optima INTERIOR so item
+277's grid is live in a submission for the first time:
+
+    фермент   lambda   сдвиг предсказаний   состав
+    CYP1A2     1.08          +0.130         поферментно+GP+ствол (3 из 5)
+    CYP2C9     1.22          +0.170         GP+ствол (2 из 5)
+    CYP2D6     1.10          +0.010         все пять
+    CYP3A4     1.04          +0.240         GP+ствол (2 из 5)
+
+**The rebuild verifies itself, and the check is sharper than "it ran".** Rank must move on exactly
+the three enzymes whose COMPOSITION changed and must not move on CYP2D6, whose composition did not
+-- because there the only change is a strictly increasing map, which preserves Spearman exactly.
+Fitting new = lambda*old + c against the archived build:
+
+    фермент   подогнанная lambda   max|остаток|   Spearman    строгих инверсий пар
+    CYP2D6           1.1000          1.78e-15    1.0000000000          0
+    CYP1A2           1.0868          3.14e-01    0.9928212350     10 392
+    CYP2C9           1.2506          4.98e-01    0.9772806701     17 828
+    CYP3A4           0.9784          6.31e-01    0.9788141982     17 321
+
+CYP2D6 is an EXACT affine image of the old build -- the fitted lambda reproduces the logged 1.10 and
+the residual is at machine epsilon -- while the other three carry real residuals and tens of
+thousands of strict pair inversions. CYP3A4's fitted lambda is BELOW one, which rules out "it is
+merely rescaled" there on its own. The TDI files are bit-identical (360 and 285 positives, 0 of 750
+disagreements), as they must be: the direct-inhibition composition does not enter the bundle's gate.
+
+**Provenance, which this artefact had none of.** `results/submission/submission.meta.json` is now
+written PROGRAMMATICALLY (not transcribed): commit, branch, the dirty-tree listing with the note
+that none of the dirty files enter `submit.py` or its imports, sha256 of both CSVs, the SOLO and
+delta actually used, the fold digest checked against the golden `2d93c19815e14261` (4703 clusters,
+matched), and library versions inside the reproducing window (sklearn 1.3.2, numpy 1.26.4, torch
+2.13.0).
+
+**A planned step was removed by checking instead of running.** The band was to be recomputed, on the
+suspicion that `oof_submitted.json` would silently re-describe a cached arm -- the failure of items
+246/253/255. It does not: the cache carries its own provenance string naming the shipped three-cell
+SOLO, `band.json` (11 September 12:40) POSTDATES item 277's commit (10 September 20:33), and the
+rebuild changed only test predictions, not the out-of-fold arm. So `k79_bandfix` did not need
+re-running and was not re-run. The cache's stamp is nevertheless now derived from `SB.SOLO` rather
+than hard-coded, because the `else` branch would have re-created it saying "SOLO на CYP3A4".
+
+**The classification track gets a falsifiable prediction for the first time, and it is wide.**
+`verify/k91_mccband.py`, seed 0, 1000 resamples, organisers' protocol (`BOOTSTRAP_SAMPLES = 1000`,
+`BOOTSTRAP_SEED = 0`). The shipped bundle's per-compound out-of-fold probabilities existed NOWHERE --
+`bundle.json`/`tdicalib.json` hold only summary records, `oof_tdif.json` holds other arms, and
+`tdi_probs.json` is the direct classifier retired on 6 September -- so the arm is recomputed with
+k76's own functions and the missing artefact is now saved as `results/preds/bundle_oof.json`.
+
+    плечо (сид 0)   MCC     CI организаторов      полоса раскрытия n=750
+    CYP3A4        +0.3578   [+0.3200, +0.3961]    [+0.3074, +0.4129]
+    CYP2D6        +0.1282   [+0.0768, +0.1777]    [+0.0724, +0.1764]
+    макро         +0.2425   [+0.2121, +0.2717]    [+0.2048, +0.2803]
+
+Point estimates sit within seed spread of item 250's four-seed means (0.3510 / 0.1235 / 0.2373), as
+recorded before the run. **Two quantities, deliberately kept apart, because conflating them is
+exactly what cost the masthead item 276**: the organisers' CI (with replacement, at the set's own n,
+half-width 0.0298 macro) answers "how uncertain is our MCC on THIS set"; the reveal band (without
+replacement, to test size, half-width 0.0377 at n=750 and 0.0593 at n=375) answers "how much does it
+move with WHICH set we get". They may not be added.
+
+**And the reveal band is wider than the track's entire measured history**, which was the
+pre-registered reading and is the result rather than a disappointment:
+
+    эталон                        величина   полоса n=750 шире в   n=375
+    калибровка Платта (235)        +0.0133          2.8x            4.5x
+    связка (250)                   +0.0127          3.0x            4.7x
+    макро-пол трека                +0.0076          5.0x            7.8x
+
+So 25 September will tell us our LEVEL on the classification track and cannot tell us which of our
+arms is better: no single reveal distinguishes the bundle from Platt from the bare classifier by
+MCC. Zero degenerate resamples anywhere, at label rates 0.327 and 0.217, so the band is not an
+artefact of degeneracy. One caveat to carry: n=750 assumes 750 LABELLED compounds per enzyme, while
+the blind test is 750 compounds in TOTAL and the per-enzyme labelled counts are unknown to us -- so
+reality is likely closer to n=375, and the band is wider than the headline row, not narrower.
+
+**Five documentation defects, corrected in the same commit because this file is part of the claim.**
+
+  (1) The masthead said "а ранг на лидерборде не показывают". FALSE, and it changes strategy: the
+      organisers' pinned README states secondary metrics MAE, R^2, Spearman rho and Kendall's tau
+      ARE reported with bootstrap confidence intervals. The project's own currency is externally
+      checkable on 25 September, so a RANK prediction must be pre-registered, not only an ST-RAE band.
+  (2) The scoreboard named Platt calibration as the shipped TDI arm. Superseded on 6 September by
+      the bundle (item 250); the table understated what ships by +0.0127 macro MCC. Row added with
+      the four-seed absolutes from `bundle.json` (0.3510 / 0.1235 / 0.2373) and a note that its own
+      comparator stands at 0.3427 / 0.1065 / 0.2246 -- a DIFFERENT run of the same arm than item
+      235's row, so arms may be compared only within one run.
+  (3) The scoreboard still advertised the quantum block against the TDI SHIFT as "не запущено, а не
+      закрыто". Item 242 closed it, with the shuffled control scoring higher than either real arm.
+      That is the THIRD instance of the scoreboard lagging the journal in the way items 202 and 234
+      already charged for; quantum is now in the closed list for both potency (186) and shift (242).
+  (4) Item 80's licence, "a post-isotonic score ... is the conservative bound, since isotonic spans a
+      wider class of monotone maps", does not hold as written, and item 31 -- written EARLIER --
+      already measured why: on the glued out-of-fold vector five maps are in play, Kendall tau_b
+      falls to 0.917-0.959, 1.86-3.71 % of pairs strictly reverse and Spearman against the labels
+      drops 0.007-0.015 on all four enzymes. What survives is narrower: the distortion is nearly
+      common-mode, so an arm DIFFERENCE is safe; a single arm's post-isotonic number is not a bound.
+  (5) `submit.py` printed "пункт 218" beside the per-enzyme composition it actually takes from items
+      282-285 (print string only, no numerical effect).
+
+**The fifth defect is mine and belongs in the record.** Asked what was left to try, I proposed
+re-measuring post-processing richer than the affine pair -- an axis standing in plain text in this
+file's own "что закрыто и переоткрывать не надо" list, with its ceiling (0.0076, items 77/128)
+printed beside it. The project's first rule is to search this file before evaluating an idea, and
+the list that exists precisely to make that cheap is the thing I did not read. It cost nothing only
+because the probe read it; the same class of error produced item 267 eleven items ago.
+
+**294. Pre-registration for the 24-25 September reveal, on the arm that actually ships -- including,
+for the first time, a RANK prediction, which item 293 made both necessary and possible. Two LIVE
+statements were still quoting a band item 287 had already superseded.** `verify/k92_rankband.py`
+(new), `band.json` (item 287), `verify/k91_mccband.py` (item 293). Nothing here is a gain; it is the
+apparatus that makes the one external measurement of this project readable, and it cannot be built
+after the reveal.
+
+**What is new here and what is not, stated first because I got it wrong in draft.** The recomputed
+ST-RAE band is NOT this item's finding: item 287 measured it on the new composition and wrote down
+that it shifts down from item 256's by the composition gain. What this item adds is three things --
+the rank band, which had never been computed in any form; the propagation of item 287's band into
+the two *live* statements that still cited item 256 (the masthead and METHOD); and the restatement
+of the shrinkage bet's price. Crediting 287's measurement to this item would have been the same
+bookkeeping error the file charges elsewhere.
+
+**Why a rank prediction is new.** Until item 293 the masthead asserted that the leaderboard does not
+show rank, so there was no reason to predict it. The organisers' pinned README says the opposite:
+secondary metrics (MAE, R^2, Spearman rho, Kendall tau) are reported WITH bootstrap confidence
+intervals. Rank is the currency almost every result in this file is measured in, and on 25 September
+it becomes externally checkable for the only time. A prediction without a band is not falsifiable,
+and no band on rank had ever been computed -- items 246/253/255/256 are ST-RAE, item 291 is MCC.
+
+**The rank band, on the shipped out-of-fold arm** (`oof_submitted.json`: ансамбль5 + dead zone +
+SOLO 1A2=пофе+GP+ствол, 2C9/3A4=GP+ствол, seed 0). The affine pair is strictly increasing, so
+Spearman is identical before and after it (item 277 measured exactly 1.0000 on all four), which is
+why an out-of-fold rank band describes what goes to the leaderboard:
+
+    фермент      n     rho      CI организаторов        полоса раскрытия n=750    n=375
+    CYP1A2    1412   +0.5721   [+0.5360, +0.6070]   [+0.5367, +0.6083]   [+0.5078, +0.6357]
+    CYP2C9    1285   +0.6997   [+0.6663, +0.7307]   [+0.6715, +0.7263]   [+0.6503, +0.7481]
+    CYP2D6    1493   +0.4800   [+0.4388, +0.5189]   [+0.4430, +0.5185]   [+0.4062, +0.5484]
+    CYP3A4    2335   +0.8217   [+0.8045, +0.8369]   [+0.7982, +0.8440]   [+0.7794, +0.8525]
+    МАКРО              +0.6433  [+0.6257, +0.6581]  [+0.6276, +0.6590]   [+0.6155, +0.6696]
+
+Cross-check that the arm is the right one: macro +0.6433 reproduces the reference ensemble rank
+0.6434 measured independently by `k89`/`k90` at seed 0.
+
+**And the rank band behaves oppositely to the MCC band, which is the finding.** Macro half-width is
+0.0157 at n=750 and 0.0270 at n=375, against the project's own rank claims:
+
+    заявление                  величина   полоса n=750 (0.0157)
+    траектория от базы          +0.0579   УЖЕ полосы в 3.7 раза
+    мёртвая зона во всех членах +0.0197   УЖЕ полосы в 1.3 раза
+    состав (282-285)            +0.0059   шире полосы в 2.7 раза
+    макро-пол                   +0.0036   шире полосы в 4.3 раза
+
+So by rank the project's two large claims are falsifiable on a single reveal and its small ones are
+not -- the exact opposite of the classification track, where item 291's MCC band came out 2.8 to 5.0
+times every gain ever measured there. Macro-averaging four near-independent Spearmans is what buys
+it: the per-enzyme half-widths are 0.0229 to 0.0378, the macro one 0.0157.
+
+**Two quantities, kept apart, as items 276 and 291 require.** The organisers' CI (with replacement,
+at the set's own n) answers "how uncertain is this number on THIS set of compounds"; the reveal band
+(without replacement, to test size) answers "how much does it move with WHICH compounds we get".
+They may not be added, and the second is the one a prediction is judged against.
+
+**The shrinkage bet, restated because both halves had drifted.** Its price is measured and is
+**0.0131 of macro ST-RAE** on the shipped arm -- `band.json`'s `macro_oof` minus `macro_plain`
+(0.6506 against 0.6375) -- carried almost entirely by CYP3A4 (+0.0430) and CYP2C9 (+0.0154), with
+CYP1A2 (-0.0038) and CYP2D6 (-0.0021) marginally against the tilt, the latter because item 256 set
+its delta to zero. The GAIN side has no number on this arm: the +0.0473 quoted beside it in METHOD
+came from a posterior for a delta vector since retired and was never recomputed on this ensemble.
+Published as: price 0.0131, measured; expected return, unquantified. The previously published
+0.0223 is withdrawn.
+
+**PRE-REGISTERED, before any reveal.** Judged on the arm now on disk
+(`submission.meta.json`, sha256 recorded):
+
+  1. macro ST-RAE lands inside [0.6114, 0.6997] at n=750 (and [0.5945, 0.7265] at n=375) -- with
+     item 287's own caveat carried forward, since a pre-registration is where it belongs: the band's
+     CENTRE is the seed-0 realisation, and seed 0 is inside the 0-3 set that generated the
+     composition hypothesis, so the effect SIZE is clean on fresh seeds 4-7 while this particular
+     realisation is partly selected. The band covers the draw over which 750 are revealed, not that
+     selection, so a centre-hugging score is weaker evidence than it looks;
+  2. macro Spearman lands inside [0.6276, 0.6590] at n=750, per-enzyme inside the table above;
+  3. the per-enzyme rank ORDER is 3A4 > 2C9 > 1A2 > 2D6, and this is the sharpest of the three --
+     the four bands do not overlap, so a reordering falsifies something real;
+  4. macro MCC lands inside [+0.2048, +0.2803] (item 291), and the reveal will NOT tell us whether
+     the bundle beat Platt, because that band is wider than the difference.
+
+**What the reveal cannot settle, recorded so a number is not over-read.** It cannot price the
+shrinkage bet: item 130 measured that prediction quality contaminates a shift estimate by only 2 to
+12 per cent while the unknown test denominator absorbs the rest, and on CYP2D6 it absorbs all of it.
+Only a PAIRED shrink-versus-no-shrink contrast on the same 750 would price it, which needs a second
+submission slot. Whether the interim round allows one is not answerable from this repository and
+nobody has asked the organisers; that question forks item 145's whole plan and must be asked by a
+human before 24 September. Second: a score inside a band confirms nothing -- the band is a sampling
+band and does not cover distribution shift (item 123, chi^2 2.838, ESS ceiling 26.1 per cent; item
+129, test nearest-neighbour median 0.587 against <=0.450 on any re-split of training). Only a score
+OUTSIDE it falsifies, and what it falsifies is the named assumption "the test is a sample like ours".
+
+**The stale LIVE figures, with the historical records left alone.** Item 287 recomputed the band on
+11 September, but the masthead and METHOD went on publishing item 256's ([0.6263, 0.7090] and
+[0.6126, 0.7322]) as current for two more days, and METHOD also published the 0.0223 price. Both are
+corrected in this commit; item 276, whose argument quotes the 0.0414 half-width in the present
+tense, gets a forward pointer rather than an edit. Item 256's and 276's own tables stay where they
+are: the defect is never that an item recorded what was true then, it is a LIVE sentence quoting it
+after it stopped being true -- the same defect as items 202, 234 and 293's five, and the reason it
+survived here is that item 287 corrected the measurement without anyone sweeping the sentences that
+depended on it.
+
+**295. Pre-registration (blind): the co-crystal overlay contrast over the ensemble -- the cheap
+go/no-go that item 199 asked for and nobody ran, and the gate on a ~20000-run docking campaign.**
+Written and committed before `verify/k93_overlay.py` runs. Not an adoption test on its own: it is
+the first rung of the structural ladder, and it decides whether a POSE carries cavity information
+that a guessed cavity did not.
+
+**Why it is worth running when so much has died.** Item 168 separates two things the file used to
+conflate: descriptors OF THE ENZYME are closed by arithmetic (a one-hot is a sufficient statistic
+for four enzymes all seen in training), while the INTERACTION form -- ligand columns conditioned on
+a known site -- is the one that works and exists for exactly one enzyme. An overlay onto a cavity's
+own **bound** co-crystal ligand is the cheapest quantity of the second kind: a function of the
+(ligand, cavity) PAIR, not of the ligand alone, and therefore outside the class that returned zero
+six consecutive times (item 189). Item 199 built it, passed its design check on three enzymes of
+four, and explicitly said the ablation was worth running. It never was. Features are on disk
+(`data/overlay.npz`, train 4905x4 and test 750x4, zero NaN), so this is a scoring run, not a project.
+
+**The precondition, measured before pre-registering rather than assumed.** Univariate Spearman of
+each cavity's CONTRAST column (per-molecule centring across the four cavities) against that enzyme's
+own label, with the off-diagonals for the live column:
+
+    фермент   контраст   сырой скор     вне диагонали (колонка 1A2 против чужих меток)
+    CYP1A2     +0.173      +0.149       2C9 +0.033, 2D6 -0.027, 3A4 +0.029
+    CYP2D6     +0.040      +0.016
+    CYP2C9     +0.002      +0.077
+    CYP3A4     +0.002      +0.082
+
+Centring HELPS CYP1A2 (+0.149 -> +0.173) and KILLS 2C9/3A4 (+0.077 -> +0.002, +0.082 -> +0.002),
+which is item 199's size-removal check reappearing from the other side: on those two the raw score
+was mostly bulk. The 1A2 column beats its own off-diagonals by five-fold, so its signal is
+cavity-specific rather than a disguised volume descriptor.
+
+**Live cells are exactly two, and for a structural reason that halves the experiment.** The arm
+rebuilds the PER-ENZYME member, and after items 282-285 that member is kept only on CYP1A2
+(поферментно+GP+ствол) and CYP2D6 (all five). CYP2C9 and CYP3A4 ship GP+ствол, so the per-enzyme
+member does not enter them at all and this arm cannot move them by construction -- they are reported
+as an internal control that must read exactly 0.0000, not as cells that might pass.
+
+**Arms.** All three append to the shared block `FP+DESC+MECH+X`, rebuilding only the per-enzyme
+member, dead-zone-passed, exactly as `k85_shape2.py` does; the other four members and the folds come
+from the cached `members_seed{s}.json`, so this is the paired shared-structure comparison of item
+280 and its sd should be ~0.0005-0.0015.
+
+    A  ЦЕЛЕВАЯ        одна колонка: контраст СВОЕЙ полости
+    B  НЕВЕРНАЯ ИЗОФОРМА (контроль)  одна колонка: контраст ЧУЖОЙ полости (сдвиг на 1)
+    C  НЕНАПРАВЛЕННАЯ  все четыре колонки контраста каждому ферменту
+
+Arm B is the control item 199 demanded and it is NOT a permutation: only a wrong-CAVITY column
+distinguishes real pocket complementarity from a volume descriptor that any cavity would supply.
+Arm C exists because item 179 measured that targeting bought nothing -- there the undirected arm
+(all sixteen shape columns to every enzyme) had the best macro of four, so the undirected form must
+be tested or the experiment repeats a known mistake in reverse.
+
+**Seeds, stated honestly.** Seeds 4-7, whose member caches exist. They are FRESH for this
+hypothesis -- no overlay arm has ever been run on any seed, and the precondition above used the full
+label set, not any fold structure -- but they are the seeds that CONFIRMED the composition (items
+283-285), so they are not virgin in every sense. A pass here is therefore provisional and must be
+re-confirmed on genuinely new seeds 8-11, which cost about four to six hours because both the trunk
+and the whole member cache would have to be built there.
+
+**ACCEPTANCE, fixed before the run.** Adopted only if, on CYP1A2 or CYP2D6:
+
+  1. Δ rank over the shipped composition exceeds that enzyme's floor (1A2 0.0061, 2D6 0.0049);
+  2. sign holds on at least 3 of the 4 seeds;
+  3. **arm A beats arm B** -- the targeted column beats the wrong-cavity one. Without this the gain
+     is a volume descriptor and is refused regardless of size;
+  4. CYP2C9 and CYP3A4 read 0.0000 exactly, confirming the harness does what it claims.
+
+**PREDICTION, written before the numbers exist.** Nothing passes. CYP1A2 is the only cell with a
+live precondition, and a univariate +0.173 is not obviously enough after the per-enzyme member is
+diluted into a three-member mean -- four consecutive interventions with real member-level gains
+arrived at -0.0007, +0.0014, +0.0004 and +0.0011 over the ensemble, the last from a member-level
++0.0149. CYP2D6 at +0.040 is very likely noise, and it is also the enzyme where item 281 measured a
+22-fold dilution. If anything passes it is CYP1A2, and I expect arm C to beat arm A on macro while
+neither clears a floor. A failure here lowers the docking prior further and should be written that
+way; a pass on 1A2 makes the campaign worth its cost but re-aims it, since B1 was pointed at 2D6.

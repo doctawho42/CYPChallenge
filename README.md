@@ -11,6 +11,11 @@ with a justification for each part, the verification protocol, and a list of wha
 already been tried and does not work. Everything else in this repository is the code
 those numbers came from.
 
+**[`METHOD.md`](METHOD.md)** is the method write-up in English: the loss derived from the
+competition's own metric, the conjunction the classification label folds into, what we made of the
+released data, the apparatus that tells an effect from a noise floor, a catalogue of what we tried
+and closed, and a falsifiable prediction for the interim reveal. Roughly twenty minutes.
+
 ## Getting started
 
 ```bash
@@ -123,7 +128,7 @@ the document.
   but they also select for a different skill than the leaderboard pays for — every saved
   ablation has been re-scored under weights matching the test's regime, and six of seven
   keep their ordering.
-- **Check the log before evaluating an idea, not after.** `verify/README.md` is 243
+- **Check the log before evaluating an idea, not after.** `verify/README.md` is 289
   numbered items and several proposals have been re-derived from scratch that were already
   built, run and measured in it.
 - Negative results are recorded and stay in the repository. They are now the majority of
