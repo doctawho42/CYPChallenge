@@ -11401,6 +11401,15 @@ error committed in public, and with twelve hours between attempts it would also 
     TDI                  12   MCC    0.4502            0.2430     250
                               MCC    0.3576 (худший)
 
+**ITEM 300 WITHDRAWS THE COMPARISON IN THIS TABLE.** The regression row is not a model's score: the
+per-enzyme boards carry rho ~ 0 and R2 down to -22.09 beside the best ST-RAE anywhere (0.3306 on
+CYP2C9), which is the signature of CALIBRATION PROBES -- submissions of one prediction vector under
+several affine transforms, used to solve the blind set's moments out of the returned R2 and rho. So
+"our CYP3A4 alone matches the leader's macro" compares our model against somebody's instrument
+reading. The participant count is also wrong: the board shows one visible row per sub-tab, not one
+entrant. What survives untouched is the reasoning about WHY out-of-fold and leaderboard numbers are
+incomparable, and item 300 adds an outside measurement of the mechanism.
+
 **Those columns are not comparable, and the reason is measured rather than argued.** ST-RAE clips
 each error to the credible band and divides by the spread of `y_true`, so a wider band and a wider
 spread both lower it independently of model quality:
@@ -11476,3 +11485,127 @@ it. A denominator effect should appear on all four enzymes at once. If the score
 band with the drop concentrated on 3A4 and 2C9, the bet paid; if it lands below with all four moving
 together, item 294's first assumption was wrong and the band was never the right interval. Without
 this split a score below the band is ambiguous, and item 294 as written would have read it as a win.
+
+**300. The leaderboard is mostly not model performance -- the visible numbers are calibration probes
+that reverse-engineer the blind label distribution. Seven competitors read: one is ahead of us, five
+of our own nulls are independently reproduced, and nobody is doing structure.**
+Sources: the challenge Space's FAQ, `config.py` and `submission.py`; both boards including every
+per-enzyme sub-tab; and seven public participant repositories, four of them read by subagents.
+`verify/k94_leaderboard.py` keeps the dated board snapshot and reproduces our side of every
+comparison below.
+
+**What the board actually shows.** The per-enzyme regression rows carry Spearman ~ 0 -- and once
+R2 = -22.09 -- beside the lowest ST-RAE seen anywhere (0.3306 on CYP2C9, against our 0.5549). Those
+are not models. `blind_benchmark.py` in `jeremycheminf/openadmet_scripts` documents the method and
+credits team briford / SuperCowPowers: solve **R2 = 2*rho*k - k^2 - b^2** from three
+affine-transformed submissions of ONE prediction vector, and the live half's true mean and sd fall
+out, because rho is invariant under the transform while R2 is not. The recovered constants, now
+public:
+
+    фермент   среднее закрытой   sd закрытой   наше обучающее среднее   наш обучающий sd
+    CYP1A2          4.412            1.553              4.955               1.030
+    CYP2C9          4.830            1.101              4.581               0.782
+    CYP2D6          3.107            1.599              4.784               0.916
+    CYP3A4          4.880            1.272              4.096               1.093
+
+`Ray16/cyp-challenge` hardcodes the same four pairs plus OOF-to-blind Pearson ratios
+1.32/1.23/1.66/1.07, labels them "a strong PRIOR -- verify against our own leaderboard feedback",
+and then applies them unconditionally. So three teams now run on probed moments.
+
+**The sd is larger on all four, which is the one thing item 294 pre-registered and got right.**
+ST-RAE divides by the spread of `y_true`, so a wider blind spread lowers everyone's score, ours
+included. The means move in BOTH directions (1A2 and 2D6 down, 2C9 and 3A4 up), so the "test is
+shifted down" reading I took from the single CYP2D6 figure the README happened to quote was wrong.
+
+**Where we stand, on numbers computed with the organisers' own metric.** Only three of the seven
+compute it at all:
+
+    команда              OOF macro ST-RAE   OOF macro MCC   оговорка
+    jeremy (ансамбль)          0.604            0.312        выложенный набор 0.614 / 0.283
+    МЫ                         0.6421           0.2430       Butina 5-fold, сиды 0-3
+    Safi-ullah-majid           0.755            --           смещён: замерен на holdout,
+                                                             по которому GBM делали early stopping
+    adlvdl                     0.860            0.1872       вложенная 5x5 scaffold CV
+    Ray16                      нет              нет          их "official ST-RAE" -- это Pearson rho
+    nkwork9999                 нет              --           только MAE, случайный holdout
+
+One competitor is ahead of us on both tracks. Four are behind or do not measure. That is the first
+external placement this project has ever had, and it is neither the disaster nor the triumph the
+board's raw numbers suggested.
+
+**The charge item 299 laid against our CYP2D6 TDI cell is dropped: the enzyme is hard for everyone.**
+Per-enzyme MCC, ours beside theirs -- us 0.1282, Safi-ullah-majid 0.126, adlvdl 0.1155, nkwork9999
+0.0854. Item 299 wrote that "the entire shortfall is CYP2D6" and read it as our deficiency. It is
+universal, and our CYP3A4 (0.3578) is the second best of the four teams.
+
+**An outside team explains the band-width coupling item 299 only described.** `adlvdl` measured, on
+the same data, median credible-interval width and the fraction below pIC50 4 per endpoint: CYP1A2
+0.33 / 16.4%, CYP2C9 0.53 / 20.2%, CYP2D6 **0.27** / 8.6%, CYP3A4 0.38 / **40.4%**. Their below-4
+fractions agree with ours to the decimal (item 299's own run prints 0.164 / 0.202 / 0.086 / 0.404).
+Their reading inverts the naive one: **CYP2D6 scores worst partly BECAUSE it is the best-measured
+endpoint** -- the narrowest band forgives least -- while CYP3A4 looks strong partly because two
+fifths of it sits in the region the soft threshold downweights. They also measured nearest-neighbour
+potency enrichment of the test set against the training pool: CYP3A4 25.9x, CYP2C9 21.2x, CYP1A2
+6.0x, CYP2D6 only **1.6x**.
+
+**Five of our own nulls, reproduced by people who had not read this journal.** 3D shape and polarity
+descriptors (Jazzy, USR, USRCAT, PMI) "weakest standalone model and net-negative for the ensemble"
+-- our item 281. Tabular models on ECFP4 correlating r ~ 0.9 with the LightGBM baseline -- our
+member redundancy of 0.91-0.99. Pseudo-labelling from the single-concentration screen: 99.0% of
+CYP2D6 candidates outside the calibration range and CYP1A2 degrading monotonically with pseudo-weight
+(MAE 0.726 -> 0.997), reverted -- the cleanest kill any of them published. Fine-tuning an encoder
+losing to the frozen encoder as a feature extractor. And `Ray16`'s `run_decompress.py` reporting that
+variance-matching WORSENS the score, which our own run reproduced at +0.2228 of macro.
+
+**Three of my own claims died this session and one experiment measured the wrong thing.** I asserted
+twice that this metric is dominated by band occupancy rather than ordering; the best per-enzyme
+constant scores macro 0.9948 against our model's 0.6421, with bands containing only 8-30% of points,
+so on our distribution the metric does reward ordering and the claim is false. I called our shipped
+predictions too compressed; stretching them to our own training moments costs +0.2228. And I then
+stretched them onto the probed blind moments and scored that against OUR labels, which is a
+tautology -- any move away from the distribution you are scored on hurts -- so that number tests
+nothing about the blind set. Recorded because all three were mine and two were stated to the team
+before being checked.
+
+**Nobody is doing structure, and one competitor says why that matters.** None of the seven uses
+docking, MD or quantum chemistry as a FEATURE. `RishyanthReddy` docked ten literature inactivators
+-- not the training set -- and states the result enters no model. `adlvdl` puts docking in
+"deliberately not doing" for the interim, names 3D structural information as one of the two things
+its own PXR entry most missed, and reports that **most PXR top-ten finishers used it**. Item 298
+launched the campaign on a prior lowered twice by our own measurements (179, 296); this is the first
+outside evidence and it points the other way. It is evidence about a different challenge's
+finishers, not about our ablation, and it changes no acceptance condition in 298.
+
+**The one axis this project has never touched.** Tabular foundation models -- TabPFN, TabICL -- are
+`jeremy`'s strongest single models and are absent from this entire journal (grep: zero hits for
+TabPFN, TabICL, foundation, in-context). Item 289's screen contained random forest, extra-trees,
+SVR-RBF and kernel ridge, so this is not a closed question re-opened. But 289's trade-off is the
+prior: every family so far is either accurate and correlated or decorrelated and weak, and
+in-context learning on our own 2295-column matrix has to be measured against that, not assumed past
+it.
+
+**PRE-REGISTERED (blind), and the reason it must be: estimate the blind moments OURSELVES, without
+probing.** The probed constants are public, so using them costs nothing and proves nothing; and they
+describe the **live half only**, which is split by chemical series and therefore explicitly not
+guaranteed to represent the full 750. The legitimate estimator uses only test SMILES and our own
+labels: for each of the 750 test compounds take its nearest training neighbour by Tanimoto on the
+same Morgan counts the split uses, transfer that neighbour's label per enzyme, and read off the mean
+and sd. Its bias is then calibrated leave-one-out on the training set, where the true moments are
+known.
+
+  1. The estimator is usable only if, on the training LOO calibration, it recovers each enzyme's
+     true mean to within 0.15 and its true sd to within 0.20. Otherwise it is too biased to test
+     anyone's numbers and the item says so instead of quoting them.
+  2. **PREDICTION, written before the run.** Nearest-neighbour transfer is a shrinkage estimator --
+     it can only emit labels that already exist and averaging over near-duplicates compresses
+     spread -- so I expect every estimated sd to fall BELOW the probed one, and the LOO calibration
+     to show that same sd deficit on training. I expect the direction on CYP2D6 to agree (test mean
+     below our training mean) because the 1.6x neighbour enrichment says its test compounds do not
+     sit beside potent training analogues.
+  3. **Asymmetry of the verdict, fixed now so it cannot be chosen afterwards.** Agreement within 0.3
+     of the four probed means corroborates the probe from a source that never touched the
+     leaderboard. DISAGREEMENT is ambiguous -- it could be the live-half/full-750 difference rather
+     than a bad probe -- so a mismatch may not be reported as refuting briford's numbers.
+
+Whatever it returns, nothing from the probed constants enters the submission before the 25 September
+reveal: the reveal is one full-test figure and the only honest test of a placement bet.
