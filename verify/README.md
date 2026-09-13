@@ -11117,3 +11117,79 @@ are: the defect is never that an item recorded what was true then, it is a LIVE 
 after it stopped being true -- the same defect as items 202, 234 and 293's five, and the reason it
 survived here is that item 287 corrected the measurement without anyone sweeping the sentences that
 depended on it.
+
+**295. Pre-registration (blind): the co-crystal overlay contrast over the ensemble -- the cheap
+go/no-go that item 199 asked for and nobody ran, and the gate on a ~20000-run docking campaign.**
+Written and committed before `verify/k93_overlay.py` runs. Not an adoption test on its own: it is
+the first rung of the structural ladder, and it decides whether a POSE carries cavity information
+that a guessed cavity did not.
+
+**Why it is worth running when so much has died.** Item 168 separates two things the file used to
+conflate: descriptors OF THE ENZYME are closed by arithmetic (a one-hot is a sufficient statistic
+for four enzymes all seen in training), while the INTERACTION form -- ligand columns conditioned on
+a known site -- is the one that works and exists for exactly one enzyme. An overlay onto a cavity's
+own **bound** co-crystal ligand is the cheapest quantity of the second kind: a function of the
+(ligand, cavity) PAIR, not of the ligand alone, and therefore outside the class that returned zero
+six consecutive times (item 189). Item 199 built it, passed its design check on three enzymes of
+four, and explicitly said the ablation was worth running. It never was. Features are on disk
+(`data/overlay.npz`, train 4905x4 and test 750x4, zero NaN), so this is a scoring run, not a project.
+
+**The precondition, measured before pre-registering rather than assumed.** Univariate Spearman of
+each cavity's CONTRAST column (per-molecule centring across the four cavities) against that enzyme's
+own label, with the off-diagonals for the live column:
+
+    фермент   контраст   сырой скор     вне диагонали (колонка 1A2 против чужих меток)
+    CYP1A2     +0.173      +0.149       2C9 +0.033, 2D6 -0.027, 3A4 +0.029
+    CYP2D6     +0.040      +0.016
+    CYP2C9     +0.002      +0.077
+    CYP3A4     +0.002      +0.082
+
+Centring HELPS CYP1A2 (+0.149 -> +0.173) and KILLS 2C9/3A4 (+0.077 -> +0.002, +0.082 -> +0.002),
+which is item 199's size-removal check reappearing from the other side: on those two the raw score
+was mostly bulk. The 1A2 column beats its own off-diagonals by five-fold, so its signal is
+cavity-specific rather than a disguised volume descriptor.
+
+**Live cells are exactly two, and for a structural reason that halves the experiment.** The arm
+rebuilds the PER-ENZYME member, and after items 282-285 that member is kept only on CYP1A2
+(поферментно+GP+ствол) and CYP2D6 (all five). CYP2C9 and CYP3A4 ship GP+ствол, so the per-enzyme
+member does not enter them at all and this arm cannot move them by construction -- they are reported
+as an internal control that must read exactly 0.0000, not as cells that might pass.
+
+**Arms.** All three append to the shared block `FP+DESC+MECH+X`, rebuilding only the per-enzyme
+member, dead-zone-passed, exactly as `k85_shape2.py` does; the other four members and the folds come
+from the cached `members_seed{s}.json`, so this is the paired shared-structure comparison of item
+280 and its sd should be ~0.0005-0.0015.
+
+    A  ЦЕЛЕВАЯ        одна колонка: контраст СВОЕЙ полости
+    B  НЕВЕРНАЯ ИЗОФОРМА (контроль)  одна колонка: контраст ЧУЖОЙ полости (сдвиг на 1)
+    C  НЕНАПРАВЛЕННАЯ  все четыре колонки контраста каждому ферменту
+
+Arm B is the control item 199 demanded and it is NOT a permutation: only a wrong-CAVITY column
+distinguishes real pocket complementarity from a volume descriptor that any cavity would supply.
+Arm C exists because item 179 measured that targeting bought nothing -- there the undirected arm
+(all sixteen shape columns to every enzyme) had the best macro of four, so the undirected form must
+be tested or the experiment repeats a known mistake in reverse.
+
+**Seeds, stated honestly.** Seeds 4-7, whose member caches exist. They are FRESH for this
+hypothesis -- no overlay arm has ever been run on any seed, and the precondition above used the full
+label set, not any fold structure -- but they are the seeds that CONFIRMED the composition (items
+283-285), so they are not virgin in every sense. A pass here is therefore provisional and must be
+re-confirmed on genuinely new seeds 8-11, which cost about four to six hours because both the trunk
+and the whole member cache would have to be built there.
+
+**ACCEPTANCE, fixed before the run.** Adopted only if, on CYP1A2 or CYP2D6:
+
+  1. Δ rank over the shipped composition exceeds that enzyme's floor (1A2 0.0061, 2D6 0.0049);
+  2. sign holds on at least 3 of the 4 seeds;
+  3. **arm A beats arm B** -- the targeted column beats the wrong-cavity one. Without this the gain
+     is a volume descriptor and is refused regardless of size;
+  4. CYP2C9 and CYP3A4 read 0.0000 exactly, confirming the harness does what it claims.
+
+**PREDICTION, written before the numbers exist.** Nothing passes. CYP1A2 is the only cell with a
+live precondition, and a univariate +0.173 is not obviously enough after the per-enzyme member is
+diluted into a three-member mean -- four consecutive interventions with real member-level gains
+arrived at -0.0007, +0.0014, +0.0004 and +0.0011 over the ensemble, the last from a member-level
++0.0149. CYP2D6 at +0.040 is very likely noise, and it is also the enzyme where item 281 measured a
+22-fold dilution. If anything passes it is CYP1A2, and I expect arm C to beat arm A on macro while
+neither clears a floor. A failure here lowers the docking prior further and should be written that
+way; a pass on 1A2 makes the campaign worth its cost but re-aims it, since B1 was pointed at 2D6.
