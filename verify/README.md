@@ -11609,3 +11609,99 @@ known.
 
 Whatever it returns, nothing from the probed constants enters the submission before the 25 September
 reveal: the reveal is one full-test figure and the only honest test of a placement bet.
+
+**301. The estimator passes its gate and disagrees with the probed constants by 0.38 to 1.66 of
+pIC50 -- and the pre-registered asymmetry forbids calling that a refutation. Our estimate says the
+blind set is MORE potent than training, which is what its construction implies.**
+`verify/k95_moments.py`, gate and prediction fixed in item 300 and committed as `2dd5bc5` before the
+run. No leaderboard feedback, no external database: test SMILES and our own labels only.
+
+**The gate passes, and by a wider margin than I expected.** Leave-one-out on the training set, where
+the true moments are known, at the pre-registered k=1:
+
+    фермент   ист.ср   LOO ср    сдвиг   ист.sd   LOO sd   отнош.
+    CYP1A2     4.955    4.893   -0.062    1.030    1.048    1.017
+    CYP2C9     4.581    4.593   +0.013    0.782    0.757    0.968
+    CYP2D6     4.784    4.833   +0.049    0.916    0.876    0.957
+    CYP3A4     4.096    4.104   +0.008    1.093    1.093    1.000
+
+Every mean shift is inside 0.15 and every sd difference inside 0.20, so the estimator is usable by
+item 300's own rule. It is in fact very nearly UNBIASED, which matters for reading what follows.
+
+**The estimate, and the probed constants beside it.**
+
+    фермент   наша ср   наш sd   зонд ср   зонд sd   |разн. ср|   сходство тест / обуч.
+    CYP1A2      5.402    1.140     4.412     1.553        0.990        0.517 / 0.400
+    CYP2C9      5.410    1.007     4.830     1.101        0.580        0.518 / 0.441
+    CYP2D6      4.767    1.027     3.107     1.599        1.660        0.471 / 0.351
+    CYP3A4      5.260    1.201     4.880     1.272        0.380        0.538 / 0.458
+
+**Prediction 1 confirmed 4 of 4, and my MECHANISM for it was wrong.** I predicted every estimated sd
+would fall below the probed one because nearest-neighbour transfer compresses spread. It does fall
+below, all four times -- but the LOO table shows the estimator does not compress at all at k=1 (sd
+ratios 0.948 to 1.021). So the sd shortfall is not an artefact of my estimator; it is a real
+disagreement. Right answer, wrong reason, and the reason was the part I could check.
+
+**Prediction 2 passed on the letter and failed on the substance, which I am recording as a failure.**
+I predicted CYP2D6's estimate would come in below our training mean. It does -- 4.767 against 4.784
+-- by 0.017, which is noise. The prediction's intent was that 2D6's test compounds sit LOWER, in the
+direction of the probed 3.107. They do not: the estimate is indistinguishable from training, and the
+gap to the probe is 1.66. Calling this confirmed because an inequality held would be the kind of
+scoring this file exists to prevent.
+
+**Prediction 3: agreement within 0.3 on the means, 0 of 4.** So under item 300's fixed asymmetry the
+verdict is that the disagreement is AMBIGUOUS and may not be reported as refuting briford's numbers,
+because they describe the live half of 375 while this estimator covers all 750 and series splitting
+does not guarantee representativeness. That rule was written before the numbers existed and it binds
+here.
+
+**What can be said instead is the price of reconciling them, computed rather than asserted.** If our
+estimate of the full 750 is right, then live + blinded = all, so the blinded half must carry
+mean = 2*(our 750) - (probed live):
+
+    фермент   тогда закрытая   доля обуч. меток ниже неё   макс. обуч. метка
+    CYP1A2             6.391                     0.9540               7.949
+    CYP2C9             5.989                     0.9735               7.473
+    CYP2D6             6.427                     0.9632               7.535
+    CYP3A4             5.640                     0.9452               7.187
+
+Reconciliation therefore requires the blinded half to centre above 95 per cent of our training
+labels on every enzyme at once. That is a conditional consequence, not a measurement -- our 750
+estimate is itself an estimate -- and it is the sharpest honest statement available. An earlier
+draft of this item asserted the 95 per cent figure in a print statement without computing it; the
+script now computes it, because asserting a number in output is the defect this file charges against
+others.
+
+**Direction, and why it is the chemically expected one.** Our estimate puts the blind set at or above
+training on all four (+0.45, +0.83, -0.02, +1.16). The test set is an analog expansion of the top 25
+hits per enzyme, ten chemisimilars each -- enrichment in actives is how it was BUILT. The probed
+constants put CYP1A2 and CYP2D6 below training instead. Supporting our side: the test-to-training
+nearest-neighbour similarity is HIGHER than training's own LOO similarity on every enzyme (0.517
+against 0.400, and so on), so the transfer operates on closer analogues for test compounds than for
+the training compounds the gate was calibrated on.
+
+**POST HOC robustness, labelled as such because item 300 fixed k=1 and binary Tanimoto.** Count-based
+MinMax changes nothing (largest move 0.066). Averaging neighbours does: at k=5 the sds roughly halve
+and the means fall by up to 0.64. But the LOO table at each k shows the sd collapse happens on
+TRAINING too (ratios 0.45 to 0.65 at k=3 and k=5), so it is estimator shrinkage, not information, and
+k=1 is the only arm that passes the gate. The mean drift is different: on training the mean is
+unbiased at every k (all shifts within 0.06), while on test it moves -- so the drift reflects the
+test set's own neighbourhood structure, that a test compound's NEAREST analogue is more potent than
+its third or fifth. Which arm better estimates the test mean is not settled by this run, and is not
+claimed.
+
+**The sensitivities and the disagreements run opposite ways, which is the luckiest fact here.**
+CYP2D6 is where the probe's claim is most extreme (1.66) and where our estimate is most stable
+across k (4.814 / 4.773 / 4.754, range 0.06). CYP3A4 is where our estimate is most k-sensitive (0.64)
+and where the disagreement is smallest (0.38). So the result is firmest exactly where it matters.
+
+**What this does and does not license.** It does not license shipping a placement based on either
+set of numbers: item 300 already committed that nothing from the probed constants enters the
+submission before 25 September, and this item adds no reason to change that -- our own estimate
+disagrees with them, so the two candidate placements now bracket rather than agree. What it does
+license is a sharp reading of the reveal. Item 294 pre-registered macro ST-RAE inside
+[0.6114, 0.6997]; item 300 predicted below 0.6114 on a wider-denominator argument that the probed
+sds support and our own estimate does NOT (our sds are 1.01 to 1.20 against training's 0.78 to 1.09
+-- wider, but far less so). If the reveal lands below 0.6114 the wide-denominator reading wins; if it
+lands inside the band with CYP2D6 the worst cell, our estimate does; and if CYP2D6 comes back far
+better than out-of-fold, the probed 3.107 does.
