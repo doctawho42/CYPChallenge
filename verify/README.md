@@ -11193,3 +11193,85 @@ arrived at -0.0007, +0.0014, +0.0004 and +0.0011 over the ensemble, the last fro
 22-fold dilution. If anything passes it is CYP1A2, and I expect arm C to beat arm A on macro while
 neither clears a floor. A failure here lowers the docking prior further and should be written that
 way; a pass on 1A2 makes the campaign worth its cost but re-aims it, since B1 was pointed at 2D6.
+
+**296. The overlay contrast is refused: the signal is real and cavity-specific on CYP1A2, and a
+quarter of the floor. The pair-function class is not empty -- its magnitude is.**
+`verify/k93_overlay.py`, seeds 4-7, acceptance and prediction fixed in item 295 before the run.
+
+    арм                  фермент   Δранг ср.       sd   знак      пол   вердикт
+    A целевая             CYP1A2     +0.0017   0.0011   4/4   0.0061       нет
+    A целевая             CYP2D6     -0.0007   0.0011   2/4   0.0049       нет
+    B неверная изоформа   CYP1A2     +0.0007   0.0024   2/4   0.0061       нет
+    B неверная изоформа   CYP2D6     -0.0006   0.0023   2/4   0.0049       нет
+    C ненаправленная      CYP1A2     +0.0007   0.0024   2/4   0.0061       нет
+    C ненаправленная      CYP2D6     +0.0002   0.0022   3/4   0.0049       нет
+
+**The harness control passed exactly, which is why the rest can be read.** CYP2C9 and CYP3A4 came
+out at **+0.000000** on all three arms, to every printed digit -- the per-enzyme member is not kept
+on them after items 282-285, so the arm cannot move them, and item 295's condition 4 asserted that
+in advance rather than discovering it afterwards.
+
+**The interesting half: on CYP1A2 the targeted arm BEATS its wrong-isoform control**, +0.0017 at
+sign 4/4 against +0.0007 at 2/4. That is the discrimination item 199 asked for and a permutation
+control could not have supplied: the signal is complementarity to a *particular* cavity, not a
+disguised volume descriptor. So the class of (ligand, cavity) pair functions is not empty, which
+matters, because six consecutive ligand-only blocks returned nothing at all.
+
+**The decisive half: +0.0017 against a floor of 0.0061.** A quarter of the bar, and the univariate
+precondition was +0.173 -- roughly a hundred-fold collapse between a raw correlation with the label
+and a rank gain over the shipped three-member composition. On CYP2D6 the targeted arm does not beat
+its control at all (-0.0007 against -0.0006), so the enzyme with the mechanistic address has no
+proxy support whatever. Both cells: **ОТКЛОНЕНО** by the rule written in 295.
+
+**My prediction was right on the outcome and wrong on a detail, recorded because the detail was a
+claim.** I wrote that nothing would pass (right), that CYP1A2 was the only live cell (right), and
+that arm C would beat arm A on macro (**wrong** -- C came in at +0.0007 against A's +0.0017 on
+1A2). The item-179 analogy I reasoned from -- where the undirected shape arm beat the targeted one
+-- did not carry over. Targeting works here and still does not reach the floor, which is a different
+failure from the one I expected.
+
+**What this does to the docking campaign, stated as item 295 required.** The prior drops, and
+specifically: the cheap proxy fires on CYP1A2 while B1 in `docs/md_task_spec.md` is aimed at
+CYP2D6's Glu216 chemotype, where the proxy is flat AND fails its own control. So a ~20000-run
+campaign aimed at 2D6 now has no proxy support at all, and one aimed at 1A2 would be chasing a
+quantity measured at a quarter of that enzyme's floor. That is not a refutation of docking -- a real
+pose can carry what an overlay onto one reference ligand cannot -- but it is no longer a cheap bet
+with a green light in front of it, and the spec must say so.
+
+**297. The number of submissions is one, it was published all along, and I looked in the wrong
+place. That settles item 145's fork and closes the delta bet permanently rather than deferring it.**
+Source: the organisers' announcement post, quoted verbatim.
+
+  > "We will not accept multiple leaderboard submissions from the same team/lab."
+  > "Team/Lab refers to 'a collection of people who cooperate intensively to prepare a submission'."
+  > "Half of the test set will be used for a live leaderboard, split by chemisimilar series, such
+  > that all compounds from a parent end up in either the live leaderboard or the fully blinded set."
+  > "There will be an interim leaderboard at the halfway mark, at which participants' performance on
+  > the full test set will be revealed only once."
+
+**Item 145's plan had two branches and the second one is now the operative one.** It read: "if more
+than one submission is allowed, one per-enzyme and one pooled -- the DIFFERENCE between their scores
+is worth more than either rank... if only one, submit the best and pre-register now what leaderboard
+score would falsify the out-of-fold estimate." One is allowed. So the paired contrast is not merely
+unavailable this round -- **it is unavailable for the whole challenge**, and with it goes the only
+clean external measurement of pooling's contrast assumption (item 132) and the only way to price the
+shrinkage bet (item 130: prediction quality contaminates a shift estimate by 2-12 per cent while the
+unknown test denominator absorbs the rest). Item 294's price of 0.0131 is therefore the last word on
+that bet rather than an interim figure: its return will never be measured. Pre-registration was the
+correct response to the fork, and item 294 happens to have taken it.
+
+**A new caveat on item 294's n=375 row, and it goes the wrong way for us.** The live half is split
+**by chemical series**, with every compound from a parent kept on one side. Item 294's reveal bands
+resampled compounds at RANDOM, and a series-clustered split has strictly higher variance than simple
+random sampling at the same n. So the n=375 figures -- macro ST-RAE [0.5945, 0.7265] and macro rank
+[0.6155, 0.6696] -- are **lower bounds on the spread**, and a score outside them is weaker evidence
+against the sampling assumption than the interval implies. The n=750 rows are unaffected: the interim
+reveal is the full test set.
+
+**And the process failure is mine.** I told the team twice that this question could only be answered
+by a human asking on Discord, having grepped the organisers' tutorial submodule -- 23 files, no rules
+section, README a single initial commit -- and concluded from its silence that the rule was
+unpublished. The rule was on the announcement page the whole time. `openadmet.org/blindchallenges/`
+returns 403 to an unauthenticated fetch, which is the only part of that search genuinely blocked.
+Absence of a statement in the code repository is not absence of the statement; this file has charged
+that error against others (items 202, 234, 293) and it is the same one.
