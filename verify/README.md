@@ -11242,6 +11242,14 @@ with a green light in front of it, and the spec must say so.
 place. That settles item 145's fork and closes the delta bet permanently rather than deferring it.**
 Source: the organisers' announcement post, quoted verbatim.
 
+**ITEM 299 WITHDRAWS THIS ITEM'S OPERATIVE HALF, read it first.** The quotes below are accurate and
+the process lesson stands. What is wrong is what I took them to MEAN: submissions are rate-limited
+to one every twelve hours with the latest valid one counting, so the rule is one ENTRY per team, not
+one upload per challenge. Everything here that follows from "one submission" -- that the paired
+contrast is unavailable for the whole challenge, that the 0.0131 price is the last word, that item
+145's fork is settled on its second branch -- is withdrawn. The n=375 caveat at the end is unaffected
+and is in fact load-bearing in 299.
+
   > "We will not accept multiple leaderboard submissions from the same team/lab."
   > "Team/Lab refers to 'a collection of people who cooperate intensively to prepare a submission'."
   > "Half of the test set will be used for a live leaderboard, split by chemisimilar series, such
@@ -11354,3 +11362,117 @@ the last member of the one class that was still open. That closes the (ligand, c
 lever empirically rather than by argument -- a boundary the write-up can cite, and the strongest
 remaining statement of the form "we looked where the theory said to look, with the control that
 distinguishes signal from bulk, and the magnitude was not there."
+
+**299. The rule was read at the wrong source a second time: submissions are not one, they are one
+every twelve hours -- and the first external numbers now exist. Item 297's operative half is
+withdrawn, and the boards say the comparison everyone wants cannot yet be made.**
+`verify/k94_leaderboard.py` reproduces every number below and keeps the board snapshot as a dated
+constant, because boards move. Sources: the challenge space's own FAQ tab, and `config.py` /
+`submission.py` in the `openadmet/cyp-challenge` space.
+
+**What the rule actually says.** Submissions are rate-limited to one every twelve hours; only the
+latest valid submission counts; a new one overwrites the previous; `submission.py` enforces the
+interval (`HOURS_BETWEEN_SUBMISSIONS = 12`) and carries no per-team quota anywhere. The announcement
+sentence item 297 quoted correctly forbids one team holding SEVERAL ENTRIES -- it is a one-account
+rule, not a one-upload rule. Phase state: `CURRENT_PHASE = 1`, live board only; the interim board is
+phase 2, and 25 September is the one-time full-test figure.
+
+**The process failure is the same one twice running, and that is the part worth keeping.** In 297 I
+inferred a missing rule from the tutorial repository's silence. Here I inferred the rule's MEANING
+from one sentence of the announcement without opening the FAQ, which answers it in a line. Both
+times the correction came from a source I had not read, not from a source that did not exist. The
+first error made us more cautious than the rules required; so did the second. Item 297 charged this
+pattern against items 202, 234 and 293, and it has now charged it against itself twice.
+
+**But resubmission is not selection, and this is where item 297's surviving caveat does the work.**
+The live board is scored on half the test set -- 375 compounds, split by chemical series so that all
+compounds from a parent land on one side. Item 294's n=375 rank band has half-width **0.0270**, and
+because it resampled compounds at random it is a LOWER bound under series clustering. Every gain
+this project has left is smaller than that: composition +0.0059, the trunk +0.0045, the overlay
++0.0017. So the live board can confirm that a file is accepted and that nothing is catastrophically
+broken; it cannot choose between two arms. Tuning on a move below ~0.03 of rank would be item 77's
+error committed in public, and with twelve hours between attempts it would also be slow.
+
+**The boards on 13 September 2026.**
+
+    борд         участников   лучший на борде         наш OOF   пункт
+    регрессия             1   ST-RAE 0.4075            0.6421     294
+                              ранг   0.7747            0.6434     294
+    TDI                  12   MCC    0.4502            0.2430     250
+                              MCC    0.3576 (худший)
+
+**Those columns are not comparable, and the reason is measured rather than argued.** ST-RAE clips
+each error to the credible band and divides by the spread of `y_true`, so a wider band and a wider
+spread both lower it independently of model quality:
+
+    фермент      n   |y-ср|   ширина  в полосе   ST-RAE     ранг
+    CYP1A2    1412    0.751    0.583     0.242   0.7594   0.5721
+    CYP2C9    1285    0.593    0.708     0.460   0.5549   0.6997
+    CYP2D6    1493    0.631    0.492     0.203   0.8403   0.4800
+    CYP3A4    2335    0.896    0.878     0.375   0.4135   0.8217
+    макро                                        0.6421   0.6434
+
+Width and ST-RAE run nearly inverse across the four, and **our CYP3A4 alone scores 0.4135 at rank
+0.8217 -- essentially the leader's macro (0.4075 at 0.7747)**. Their whole board row sits inside our
+best enzyme's row rather than above it. The test set is an analog expansion of the top 25 hits per
+enzyme, ten chemisimilars each, assayed in 12-point dose-response: enriched in actives and therefore
+wider in spread than a Butina-split out-of-fold on the training set. The rank column is scale-free
+and so immune to the denominator argument, but it is not immune to composition: Spearman rises when
+true values are spread wider relative to noise. Both columns are biased the same way, so the honest
+statement is that no comparison exists until we appear on the same board. The rank 0.6434 here
+reproduces item 294's 0.6433, so the pipeline is not the source of the gap.
+
+**The leader's method, published by them.** Chemprop v2 with multi-modal feature fusion, Chemeleon
+fingerprints, dropout 0.2, **multitarget rather than per-endpoint models**, Bemis-Murcko scaffold
+cross-validation, training restricted to molecular weight 160-600, CPU only with 12 GB, and an
+**affine transformation applied to the CYP2D6 predictions**. Evidential-loss uncertainty is on their
+own "did not help" list. Two of our closed items arrived at independently: multitarget (item 292,
+refused by rank over the ensemble) and the affine map (item 77, ours applies to all four enzymes).
+Their MA-R2 of **-0.0109** at rank 0.7747 is the signature of exactly the failure the affine pair
+fixes -- ordering without scale -- so 0.4075 is reachable with no calibration at all, which is
+further evidence that this metric is dominated by band occupancy rather than point accuracy.
+
+**A suspicion I raised and my own script refuted the same hour.** The board's accuracy, precision
+and recall invert to a test TDI prevalence of **0.1622** (median over all twelve rows, range
+0.1480-0.1827 -- an estimate, since those are macro-averaged rounded ratios). We ship True at 0.38
+on CYP2D6 and 0.48 on CYP3A4, two to three times that, which looked like a plain defect:
+
+    фермент   prev   MCC подача    доля   MCC опт    доля   MCC под prev    доля
+    CYP3A4   0.327       0.3578   0.473    0.3639   0.470         0.3443   0.327
+    CYP2D6   0.217       0.1282   0.356    0.1600   0.502         0.1367   0.217
+    макро                0.2430            0.2620                 0.2405
+
+Prevalence-matching makes it **worse** (0.2405 against 0.2430), and the MCC optimum for CYP3A4 sits
+at a positive rate of 0.470 by itself. A high positive rate is what maximises MCC for a weak
+classifier, not a bug. The shipped rule is 0.0190 of macro below its own optimum, which is inside
+item 291's MCC band (half-width 0.0298) and was selected on the points it is scored on, so it is
+refused for the usual two reasons. **What survives is sharper than what I suspected:** the 0.11 gap
+to the board's last place is not calibration and it is not both enzymes -- CYP3A4 at 0.3578 is
+already inside the board's range, and the entire shortfall is CYP2D6 at 0.1282.
+
+**Two facts that change plans, each recorded as the kind of evidence it is.** External data and
+pretrained models are explicitly permitted, with disclosure required only for PROPRIETARY data --
+so items 290-292 were never a rules problem, they failed on measurement, and the standing ban on
+looking up the 750 test compounds is a separate thing and unchanged. And `config.py` carries
+`STRUCTURE_TRACK_LIVE = False` with `STRUCTURE_DATASET_SIZE = 184`, a pose track disabled now and
+described as launching mid-challenge. That is CONFIG, not an announcement, and is not to be cited as
+a promise -- but if it opens, the campaign running as item 298 stops being only a feature source:
+prepared receptors, 3D ligands and a resumable smina pipeline are the seed of an entry in a third
+track, independently of whether the ablation passes.
+
+**PRE-REGISTERED for the 25 September reveal, appended to item 294's list, and it CONTRADICTS one of
+294's own assumptions on purpose.** Item 294's band assumes the test's label spread and band widths
+resemble the training set's. The table above is a reason to doubt it in a named direction, so:
+
+  1. macro ST-RAE lands **below** item 294's band, i.e. under 0.6114, because the denominator is
+     wider -- not because the shrink bet paid;
+  2. macro rank lands **above** our out-of-fold 0.6434, and the gap to 0.7747 comes in under 0.13;
+  3. macro MCC lands below the board's floor of 0.3576, with the shortfall carried by CYP2D6 and
+     CYP3A4 landing inside the board's range.
+
+**How to tell (1) from the shrink bet, since both push the same way.** The bet's price is carried
+almost entirely by CYP3A4 (+0.0430) and CYP2C9 (+0.0154), with CYP1A2 and CYP2D6 slightly against
+it. A denominator effect should appear on all four enzymes at once. If the score lands below the
+band with the drop concentrated on 3A4 and 2C9, the bet paid; if it lands below with all four moving
+together, item 294's first assumption was wrong and the band was never the right interval. Without
+this split a score below the band is ambiguous, and item 294 as written would have read it as a win.
