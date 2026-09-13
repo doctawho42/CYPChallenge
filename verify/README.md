@@ -49,15 +49,21 @@
 пункта 147 (полуширина 0.08) исправил пункт 253: она усредняла четыре поферментные перцентильные
 границы так, будто ошибки ферментов ходят вместе, тогда как измеренная кросс-ферментная корреляция
 ошибки одного счёта --- 0.02, и усреднение четырёх почти независимых ошибок сокращает разброс вдвое.
-Корректная полоса на ПОДАВАЕМОЙ конфигурации (пункт 256): раскрытие n=750 --- [0.6263, 0.7090],
-полуширина **0.0414**; живой лидерборд n=375 --- [0.6126, 0.7322], полуширина 0.0598. Это
-sampling-полоса абсолютного счёта, а не то, с чем сравнивается наш прирост.
+Корректная полоса на ПОДАВАЕМОЙ конфигурации, пересчитанная 11 сентября на составе, который
+подаётся СЕЙЧАС (`results/preds/band.json`, пункты 282--285 и 277): раскрытие n=750 ---
+[0.6114, 0.6997], полуширина **0.0442**; живой лидерборд n=375 --- [0.5945, 0.7265], полуширина
+0.0660. Это sampling-полоса абсолютного счёта, а не то, с чем сравнивается наш прирост.
+
+Здесь до 13 сентября стояли числа пункта 256 --- [0.6263, 0.7090] и [0.6126, 0.7322], --- верные
+для состава, который подавался ТОГДА. Сдвиг 0.013 макро, то есть размером с саму смену состава: это
+была полоса другого плеча, а не округление. Таблица внутри пункта 256 оставлена как запись о том,
+что было верно тогда; убрано только ЖИВОЕ утверждение, цитировавшее её (пункт 294).
 
 Наш прирост 0.0583 --- это РАЗНОСТЬ двух конфигураций, и сравнивать её надо с шумом РАЗНОСТИ, а не
 одиночного счёта. Лидерборд считает все подачи на одних и тех же молекулах, поэтому поштучный шум в
 разности сокращается: парный пол --- $\sqrt2\cdot0.0036 = $ **0.0052** (пункт 259, ковариация плеч
 по сидам нулевая), парный бутстрэп по тесту --- sd 0.0074–0.0201. Прирост 0.0583 лежит ВНЕ этого с
-большим запасом, и даже больше исправленной полуширины одиночного счёта 0.0414.
+большим запасом, и даже больше исправленной полуширины одиночного счёта 0.0442.
 
 **Итого, честно: абсолютный счёт непредсказуем до $\pm0.04$, положение относительно похожей подачи
 определено до $\pm0.02$, и по рангу мы вне шума --- причём РАНГ ЛИДЕРБОРД ПОКАЗЫВАЕТ.** Прежнее «весь
@@ -10215,6 +10221,12 @@ single score's error is **0.02**, so averaging four near-independent errors halv
 corrected sampling half-width on the SHIPPED configuration (item 256) is **0.0414** at n=750 and
 0.0598 at the n=375 live leaderboard -- not 0.08.
 
+> Forward note added 13 September (item 294), numbers above deliberately unchanged: "the SHIPPED
+> configuration" meant the one shipping on 10 September. Items 282-285 changed it, item 287
+> recomputed the band accordingly, and the current figures are half-width **0.0442** at n=750 and
+> 0.0660 at n=375. The argument of this item is unaffected -- the gain 0.0583 still exceeds the
+> single-score half-width -- but the two numbers in it are historical from 11 September onward.
+
 **And the comparison was the wrong one.** 0.0583 is a DIFFERENCE between two configurations, and its
 noise is the noise of a difference, not of a single score. The leaderboard scores every entry on the
 same test compounds, so per-compound error cancels in the difference: the paired floor is
@@ -11004,3 +11016,104 @@ file's own "что закрыто и переоткрывать не надо" l
 printed beside it. The project's first rule is to search this file before evaluating an idea, and
 the list that exists precisely to make that cheap is the thing I did not read. It cost nothing only
 because the probe read it; the same class of error produced item 267 eleven items ago.
+
+**294. Pre-registration for the 24-25 September reveal, on the arm that actually ships -- including,
+for the first time, a RANK prediction, which item 293 made both necessary and possible. Two LIVE
+statements were still quoting a band item 287 had already superseded.** `verify/k92_rankband.py`
+(new), `band.json` (item 287), `verify/k91_mccband.py` (item 293). Nothing here is a gain; it is the
+apparatus that makes the one external measurement of this project readable, and it cannot be built
+after the reveal.
+
+**What is new here and what is not, stated first because I got it wrong in draft.** The recomputed
+ST-RAE band is NOT this item's finding: item 287 measured it on the new composition and wrote down
+that it shifts down from item 256's by the composition gain. What this item adds is three things --
+the rank band, which had never been computed in any form; the propagation of item 287's band into
+the two *live* statements that still cited item 256 (the masthead and METHOD); and the restatement
+of the shrinkage bet's price. Crediting 287's measurement to this item would have been the same
+bookkeeping error the file charges elsewhere.
+
+**Why a rank prediction is new.** Until item 293 the masthead asserted that the leaderboard does not
+show rank, so there was no reason to predict it. The organisers' pinned README says the opposite:
+secondary metrics (MAE, R^2, Spearman rho, Kendall tau) are reported WITH bootstrap confidence
+intervals. Rank is the currency almost every result in this file is measured in, and on 25 September
+it becomes externally checkable for the only time. A prediction without a band is not falsifiable,
+and no band on rank had ever been computed -- items 246/253/255/256 are ST-RAE, item 291 is MCC.
+
+**The rank band, on the shipped out-of-fold arm** (`oof_submitted.json`: ансамбль5 + dead zone +
+SOLO 1A2=пофе+GP+ствол, 2C9/3A4=GP+ствол, seed 0). The affine pair is strictly increasing, so
+Spearman is identical before and after it (item 277 measured exactly 1.0000 on all four), which is
+why an out-of-fold rank band describes what goes to the leaderboard:
+
+    фермент      n     rho      CI организаторов        полоса раскрытия n=750    n=375
+    CYP1A2    1412   +0.5721   [+0.5360, +0.6070]   [+0.5367, +0.6083]   [+0.5078, +0.6357]
+    CYP2C9    1285   +0.6997   [+0.6663, +0.7307]   [+0.6715, +0.7263]   [+0.6503, +0.7481]
+    CYP2D6    1493   +0.4800   [+0.4388, +0.5189]   [+0.4430, +0.5185]   [+0.4062, +0.5484]
+    CYP3A4    2335   +0.8217   [+0.8045, +0.8369]   [+0.7982, +0.8440]   [+0.7794, +0.8525]
+    МАКРО              +0.6433  [+0.6257, +0.6581]  [+0.6276, +0.6590]   [+0.6155, +0.6696]
+
+Cross-check that the arm is the right one: macro +0.6433 reproduces the reference ensemble rank
+0.6434 measured independently by `k89`/`k90` at seed 0.
+
+**And the rank band behaves oppositely to the MCC band, which is the finding.** Macro half-width is
+0.0157 at n=750 and 0.0270 at n=375, against the project's own rank claims:
+
+    заявление                  величина   полоса n=750 (0.0157)
+    траектория от базы          +0.0579   УЖЕ полосы в 3.7 раза
+    мёртвая зона во всех членах +0.0197   УЖЕ полосы в 1.3 раза
+    состав (282-285)            +0.0059   шире полосы в 2.7 раза
+    макро-пол                   +0.0036   шире полосы в 4.3 раза
+
+So by rank the project's two large claims are falsifiable on a single reveal and its small ones are
+not -- the exact opposite of the classification track, where item 291's MCC band came out 2.8 to 5.0
+times every gain ever measured there. Macro-averaging four near-independent Spearmans is what buys
+it: the per-enzyme half-widths are 0.0229 to 0.0378, the macro one 0.0157.
+
+**Two quantities, kept apart, as items 276 and 291 require.** The organisers' CI (with replacement,
+at the set's own n) answers "how uncertain is this number on THIS set of compounds"; the reveal band
+(without replacement, to test size) answers "how much does it move with WHICH compounds we get".
+They may not be added, and the second is the one a prediction is judged against.
+
+**The shrinkage bet, restated because both halves had drifted.** Its price is measured and is
+**0.0131 of macro ST-RAE** on the shipped arm -- `band.json`'s `macro_oof` minus `macro_plain`
+(0.6506 against 0.6375) -- carried almost entirely by CYP3A4 (+0.0430) and CYP2C9 (+0.0154), with
+CYP1A2 (-0.0038) and CYP2D6 (-0.0021) marginally against the tilt, the latter because item 256 set
+its delta to zero. The GAIN side has no number on this arm: the +0.0473 quoted beside it in METHOD
+came from a posterior for a delta vector since retired and was never recomputed on this ensemble.
+Published as: price 0.0131, measured; expected return, unquantified. The previously published
+0.0223 is withdrawn.
+
+**PRE-REGISTERED, before any reveal.** Judged on the arm now on disk
+(`submission.meta.json`, sha256 recorded):
+
+  1. macro ST-RAE lands inside [0.6114, 0.6997] at n=750 (and [0.5945, 0.7265] at n=375) -- with
+     item 287's own caveat carried forward, since a pre-registration is where it belongs: the band's
+     CENTRE is the seed-0 realisation, and seed 0 is inside the 0-3 set that generated the
+     composition hypothesis, so the effect SIZE is clean on fresh seeds 4-7 while this particular
+     realisation is partly selected. The band covers the draw over which 750 are revealed, not that
+     selection, so a centre-hugging score is weaker evidence than it looks;
+  2. macro Spearman lands inside [0.6276, 0.6590] at n=750, per-enzyme inside the table above;
+  3. the per-enzyme rank ORDER is 3A4 > 2C9 > 1A2 > 2D6, and this is the sharpest of the three --
+     the four bands do not overlap, so a reordering falsifies something real;
+  4. macro MCC lands inside [+0.2048, +0.2803] (item 291), and the reveal will NOT tell us whether
+     the bundle beat Platt, because that band is wider than the difference.
+
+**What the reveal cannot settle, recorded so a number is not over-read.** It cannot price the
+shrinkage bet: item 130 measured that prediction quality contaminates a shift estimate by only 2 to
+12 per cent while the unknown test denominator absorbs the rest, and on CYP2D6 it absorbs all of it.
+Only a PAIRED shrink-versus-no-shrink contrast on the same 750 would price it, which needs a second
+submission slot. Whether the interim round allows one is not answerable from this repository and
+nobody has asked the organisers; that question forks item 145's whole plan and must be asked by a
+human before 24 September. Second: a score inside a band confirms nothing -- the band is a sampling
+band and does not cover distribution shift (item 123, chi^2 2.838, ESS ceiling 26.1 per cent; item
+129, test nearest-neighbour median 0.587 against <=0.450 on any re-split of training). Only a score
+OUTSIDE it falsifies, and what it falsifies is the named assumption "the test is a sample like ours".
+
+**The stale LIVE figures, with the historical records left alone.** Item 287 recomputed the band on
+11 September, but the masthead and METHOD went on publishing item 256's ([0.6263, 0.7090] and
+[0.6126, 0.7322]) as current for two more days, and METHOD also published the 0.0223 price. Both are
+corrected in this commit; item 276, whose argument quotes the 0.0414 half-width in the present
+tense, gets a forward pointer rather than an edit. Item 256's and 276's own tables stay where they
+are: the defect is never that an item recorded what was true then, it is a LIVE sentence quoting it
+after it stopped being true -- the same defect as items 202, 234 and 293's five, and the reason it
+survived here is that item 287 corrected the measurement without anyone sweeping the sentences that
+depended on it.

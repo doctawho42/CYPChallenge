@@ -304,16 +304,40 @@ test-sized molecule sample gives a band for each.
 
 | Sample | Predicted macro ST-RAE | sd | 95 per cent band |
 |---|---|---|---|
-| interim reveal, full test, n = 750 | 0.6666 | 0.0209 | 0.6263 – 0.7090 |
-| live leaderboard, n = 375 | 0.6691 | 0.0307 | 0.6126 – 0.7322 |
+| interim reveal, full test, n = 750 | 0.6537 | 0.0228 | 0.6114 – 0.6997 |
+| live leaderboard, n = 375 | 0.6562 | 0.0333 | 0.5945 – 0.7265 |
+
+**Restated 13 September (item 294); the measurement is item 287's.** This table used to carry
+0.6666 / 0.6691 with bands 0.6263 – 0.7090 and 0.6126 – 0.7322, which are item 256's figures on the
+composition that shipped *then*. Item 287 recomputed the band on 11 September over the regenerated
+`oof_submitted.json`, on the composition that ships *now* (items 282–285, plus item 277's lambda
+grid); the numbers above are that recomputation, read from `results/preds/band.json`. The shift is
+0.013 of macro — the same size as the composition change itself — so the old row was not a rounding
+difference but a band belonging to a different arm. What item 294 did was not measure it again but
+notice that this table had gone on quoting the superseded one for two days. Item 256's own table is
+left standing where it is, as the record of what was true then. One caveat travels with the band,
+from item 287: its centre is the seed-0 realisation and seed 0 is inside the set that generated the
+composition hypothesis, so the effect size is clean on fresh seeds while this centre is partly
+selected.
 
 The band carries two named assumptions, not one. The first is that the test's label spread and band
 widths resemble the training set's — that is what makes it a sampling band. The second is newer and
 sharper: the submitted predictions are transformed by an affine pair fitted under an *assumed* shift
-of the test distribution, and measured against our own labels that bet costs **0.0223 of macro
-ST-RAE**, against an expected gain of +0.0473 if the assumed shift is real. It is close to an
-even-money bet on a quantity nobody can observe before the reveal. A score below the band means the
-bet paid; a score above it is where to look first.
+of the test distribution, and measured against our own labels that bet **costs 0.0131 of macro
+ST-RAE** on the arm that ships. It is a bet on a quantity nobody can observe before the reveal.
+A score below the band means the bet paid; a score above it is where to look first.
+
+Both halves of that trade were restated on 13 September, and only one of them has a number. The
+cost is measured, and it is now 0.0131 rather than the 0.0223 published here before: it is
+`band.json`'s own `macro_oof` minus `macro_plain` (0.6506 against 0.6375) on the shipped
+composition, and per enzyme it is carried almost entirely by CYP3A4 (+0.0430) and CYP2C9 (+0.0154),
+with CYP1A2 (−0.0038) and CYP2D6 (−0.0021) very slightly *against* the tilt — CYP2D6 because item
+256 set its delta to zero, so there is nothing left to pay there. The **gain** side is a different
+matter: the +0.0473 once quoted beside it comes from `src/shrinkchoice.py`'s posterior for a delta
+vector that has since been retired, and it has never been recomputed on this ensemble or this
+composition. So it must not be set against the 0.0131 as though the two were commensurable. The
+honest statement before the reveal is that the bet's price is 0.0131 and measured, and its expected
+return is unquantified on the arm that ships.
 
 The first version of this band was computed on the wrong model. Three configurations were in play:
 a four-member ensemble at macro 0.6599, a five-member one at 0.6459, and the one that actually
