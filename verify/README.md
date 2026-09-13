@@ -11769,8 +11769,19 @@ Renumbering would silently desynchronise every map from a pose back to a label -
 already pinned in `shape3d.py` and `quantum.py`, and the files on disk match (tr_0: 21 atoms, 9 of
 them hydrogens, one conformer). A full rebuild is deferred until the campaign frees the cores.
 
-**Cost I imposed, stated because it is mine.** Chunk times rose from a 1933 s mean over the first
-seven to 2316, 2509 and 2701 s for the last three, monotonically, alongside my own runs competing
-for the machine -- Tanimoto matrices in item 301, four PDB downloads, repeated `uv run` starts. The
-campaign ETA has been revised upward five times today (21, 24.7, 27.5, 28, 31.6 h) and every
-revision was my estimate being optimistic, not the run degrading on its own.
+**The campaign is slowing, and the cause was mostly NOT me -- corrected an hour after I wrote the
+opposite.** Chunk times rose monotonically from a 1933 s mean over the first seven to 2178, 2352,
+2316, 2509, 2701 s. This item first blamed my own runs (Tanimoto matrices in item 301, four PDB
+downloads, repeated `uv run` starts), which was a causal claim made without looking. Looking:
+`ps -Ao pcpu,args -r` shows two `scripts/typed_edit/match_scale_sweep.py` processes from ANOTHER
+session -- a different repository -- holding 63 to 68 per cent of a core each for **one hour
+forty-nine minutes**, against my own runs which lasted seconds to tens of seconds. Seven smina at
+~65 per cent plus those two is ~560 per cent of eight cores, so the machine is full but not
+thirty-fold oversubscribed: the load average of 238 is an artefact, not a queue. Free memory pages
+were 5081 against 212601 active, which is the likelier throttle. The ETA has been revised upward
+five times today (21, 24.7, 27.5, 28, 31.6, now 33.7 h) and those revisions were my estimates being
+optimistic -- but the slowdown itself is contention I do not control, and attributing it to myself
+without measuring was the same reflex as the heme, pointed inward instead of outward.
+
+**A related alarm of mine that also dissolved: 4WNV needs nothing.** Its receptor is verified, the
+heme is present in all four, and the first 4WNV job (number 191 of 380) is still 163 chunks away.
