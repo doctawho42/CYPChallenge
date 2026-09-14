@@ -31,9 +31,9 @@ product.
 
 Out-of-fold performance, Butina-clustered five-fold split, four seeds:
 
-    трек            метрика                 значение
-    регрессия       macro ST-RAE            0.6459
-    регрессия       macro Spearman          0.6342
+    track           metric                  value
+    regression      macro ST-RAE            0.6459
+    regression      macro Spearman          0.6342
     TDI             MCC CYP3A4              0.3510
     TDI             MCC CYP2D6              0.1235
     TDI             macro MCC               0.2373
@@ -54,22 +54,22 @@ That sentence is not a slogan; it is what the log says once the interventions ar
 piles. Everything we tried that modelled *how the assay produces a number* paid. Everything we tried
 that added a *descriptor of the molecule* did not.
 
-    вошло в подачу (модель измерения)                 прирост ранга   знак
-    мёртвая зона во всех членах                            +0.0197    4/4
-    механистический блок                                   +0.0163    4/4
-    пулирование контрастом                                 +0.0141    4/4
-    ствол пятым членом                                     +0.0054    4/4
-    уравнение прибора (скрининговая голова)                +0.0308    4/4
+    shipped (the measurement model)                    rank gain   sign
+    dead zone in every member                            +0.0197    4/4
+    mechanistic block                                    +0.0163    4/4
+    contrast pooling                                     +0.0141    4/4
+    trunk as a fifth member                              +0.0054    4/4
+    instrument equation (screening head)                 +0.0308    4/4
 
-    отвергнуто (матрица признаков)              над ансамблем   пол   как член   пункт
-    3D-форма: PBF, NPR, асферичность, PMI (16)        +0.0004  0.0049   +0.0087     281
-    рукотворные блоки активного центра, 2D6           −0.0094  0.0049         —     179
-    перекрытие с со-кристальной позой (контраст)      +0.0017  0.0061         —     296
-    внешние CYP-панели, вспомогательная голова        −0.0104      —    +0.0085     290
-    мультитаск-деревья                                −0.0062      —    +0.0059     292
-    SMARTCyp, сайты метаболизма (16)                  +0.0009      —         —     179
-    квантовый блок: HOMO/LUMO/щель/Фукуи (10)             ~0       —         —     186
-    CYP2C19 пятой изоформой как донор                 −0.0082      —         —     153
+    refused (the feature matrix)              over ensemble  floor  as member   item
+    3D shape: PBF, NPR, asphericity, PMI (16)       +0.0004 0.0049    +0.0087    281
+    hand-built active-site blocks, 2D6              −0.0094 0.0049          —    179
+    overlay with the co-crystal pose (contrast)     +0.0017 0.0061          —    296
+    external CYP panels, auxiliary head             −0.0104      —    +0.0085    290
+    multi-task trees                                −0.0062      —    +0.0059    292
+    SMARTCyp, sites of metabolism (16)              +0.0009      —          —    179
+    quantum block: HOMO/LUMO/gap/Fukui (10)             ~0       —          —    186
+    CYP2C19 as a fifth-isoform donor                −0.0082      —          —    153
 
 The right-hand columns are the point. Three of these arms carry a **real** signal as a standalone
 member — the shape block +0.0087 on CYP2D6, the external-panel channel +0.0085 at sign 4/4, the
@@ -126,11 +126,11 @@ touch. We optimised them on purpose.
 We do not ship predictive intervals, and we say so rather than dress up what we have. What we do
 have is a quantified answer to "is this number real", used as a gate on every claim.
 
-    поле шума (четыре сида)                        значение
-    макро по рангу                                   0.0036
+    noise floor (four seeds)                          value
+    macro, by rank                                   0.0036
     CYP1A2 / CYP2C9 / CYP2D6 / CYP3A4     0.0061 / 0.0071 / 0.0049 / 0.0033
-    парный (разность двух подач)                     0.0052
-    MCC: CYP3A4 / CYP2D6 / макро          0.0281 / 0.0419 / 0.0076
+    paired (difference of two submissions)           0.0052
+    MCC: CYP3A4 / CYP2D6 / macro          0.0281 / 0.0419 / 0.0076
 
 Nothing below its floor is reported as a result. The split seed alone moves macro ST-RAE by 0.016 —
 more than a typical effect — which is why every claim is quoted over four seeds and why the sign
@@ -160,11 +160,11 @@ returns **0.2820 / 0.2683 / 0.3139 / 0.2319** against the recorded 0.2820 / 0.26
 similarities (0.517 / 0.518 / 0.471 / 0.538) match those from a different script, written days
 apart for a different question, to every printed digit.
 
-    фермент   медиана спорных   медиана сходства   доля ниже 0.4
-    CYP1A2              0.295              0.517           0.287
-    CYP2C9              0.281              0.518           0.351
-    CYP2D6              0.317              0.471           0.420
-    CYP3A4              0.234              0.538           0.215
+    enzyme    median contested   median similarity   share below 0.4
+    CYP1A2               0.295               0.517             0.287
+    CYP2C9               0.281               0.518             0.351
+    CYP2D6               0.317               0.471             0.420
+    CYP3A4               0.234               0.538             0.215
 
 The two share no input beyond the molecules — one is built from where five models argue, the other
 from fingerprint distance — and both rank **CYP2D6 worst**. So do the rank (0.480), the band widths
@@ -288,11 +288,11 @@ directly reusable by anyone else working on this challenge.
 **The credible band is a deterministic function of the label.** Isotonic regression from the label
 alone onto the band width:
 
-    фермент       n   rho(y, ширина)   R2 изотоники   ст.откл. доли метки в полосе
-    CYP1A2     1412           -0.885          0.963                          0.057
-    CYP2C9     1285           -0.899          0.928                          0.063
-    CYP2D6     1493           -0.558          0.955                          0.087
-    CYP3A4     2335           -0.928          0.970                          0.088
+    enzyme        n   rho(y, width)   R2 isotonic   sd of label position in band
+    CYP1A2     1412          -0.885         0.963                          0.057
+    CYP2C9     1285          -0.899         0.928                          0.063
+    CYP2D6     1493          -0.558         0.955                          0.087
+    CYP3A4     2335          -0.928         0.970                          0.088
 
 The width is recovered to within three per cent of its variance, and the label sits at a nearly
 fixed relative position inside its own band — the standard deviation of `(y − lo)/w` is under 0.09
@@ -309,12 +309,12 @@ why our dead-zone refit against `clip(p, lo, hi)` is the largest single effect i
 the above as "get the potent compounds right, the weak ones are nearly free" is natural and false.
 Share of the ST-RAE numerator by potency quartile, on the submitted ensemble:
 
-    фермент   кв.1 слабые     кв.2     кв.3   кв.4 сильные   полупорог кв.1   полупорог кв.4
-    CYP1A2         37.1 %    9.6 %   12.5 %         40.8 %            0.537            0.098
-    CYP2C9         27.9 %    9.9 %   12.8 %         49.5 %            0.546            0.128
-    CYP2D6         29.2 %    9.6 %   10.2 %         51.0 %            0.245            0.105
-    CYP3A4         16.0 %   20.9 %   22.4 %         40.7 %            1.233            0.069
-    среднее        27.6 %   12.5 %   14.4 %         45.5 %
+    enzyme     q1 weakest      q2       q3   q4 potent   half-threshold q1   half-threshold q4
+    CYP1A2         37.1 %   9.6 %   12.5 %      40.8 %               0.537               0.098
+    CYP2C9         27.9 %   9.9 %   12.8 %      49.5 %               0.546               0.128
+    CYP2D6         29.2 %   9.6 %   10.2 %      51.0 %               0.245               0.105
+    CYP3A4         16.0 %  20.9 %   22.4 %      40.7 %               1.233               0.069
+    mean           27.6 %  12.5 %   14.4 %      45.5 %
 
 **The penalty is U-shaped, not monotone.** The potent quartile dominates at 45.5 per cent, as the
 closed form predicts — there is almost no forgiveness there. But the weak quartile is second at
