@@ -11958,3 +11958,72 @@ refuters assigned to the sign-rule finding, so the scoring recorded it as confir
 it treated "nobody objected" as "nobody could object". The finding was right, and its arithmetic
 was checked by hand rather than trusted on its status. That defect was mine, and it has the same
 shape as the defect it was scoring.
+
+**305. Amendment to item 298, fixed before any number exists: the block contains 202 affinities
+that are POSITIVE, and centring turns each of them into damage across all four of its row's
+columns.** The campaign finished at 20:00 on 14 September, 380 of 380 chunks, harvest 5652/5652 on
+every cavity with the item 304 gate silent. The block is aligned: the finite rows equal
+`lig3d_index.ok_train` exactly on all four cavities. Then the values themselves were looked at.
+
+**What is there.** Vina affinities are negative, and the medians are: -8.38, -8.65, -8.78, -8.97.
+The maxima are **+129.51** on CYP1A2, +73.84 on CYP2C9, +17.18 on CYP2D6, +2.15 on CYP3A4. 202
+positive values in 188 rows of the training block, 15 in 14 rows of the test block. A positive
+score is not a weak binder: it is net repulsion, which is smina reporting that the ligand could not
+be placed, numerically, instead of failing.
+
+**The mechanism is size, and it is sharp.** By heavy-atom band: at most 25 atoms, 0.3 per cent of
+molecules affected (10 of 3215); 26 to 35, 9.8 per cent (164 of 1670); 36 and above, **82.4 per
+cent** (14 of 17). Median heavy atoms 29 among the affected against 24 among the rest. And 188 of
+the 202 are on CYP1A2, the narrowest and flattest of the four cavities, against 2 on CYP3A4, the
+largest. So "this ligand does not fit this pocket" -- which is a statement about the (ligand,
+cavity) pair, the very class this campaign was built to test, and not numerical noise.
+
+**Why it cannot be left alone.** The feature is the row-centred contrast, so one positive value
+moves the row mean and lands on all four columns. Measured on the block: against per-column sd of
+0.80 to 3.04, the contrast reaches +75.87 on CYP1A2, -44.58 on CYP2D6 and -51.49 on CYP3A4. The
+last two are not their own values; they are CYP1A2's clash arriving through the mean. Twenty-five
+to ninety sigma, in a ridge fit.
+
+**The journal had never touched this, and that is a verified negative rather than an unasked
+question.** Controls first: `docking` 22 lines, `cavity` 36, `affinit` 9 -- the search reads the
+file. Against that, `clash` 0 and `positive affinity` 0. An earlier attempt at the same search used
+"докинг" as its control and returned 0, which proved nothing at all, because the journal's prose is
+English now. Recorded because a control that cannot return a positive answer is not a control.
+
+**Three policies, and their costs measured before choosing.** Leave as is: imputation stays 0.061
+per cent and the gate passes, but the feature carries the outliers above. Mark the positives
+missing, which is item 298's own "a docking run may fail" reading: imputation becomes **3.894 per
+cent** on train and **1.867 per cent** on test, both above the pre-registered 1 per cent, so the
+pre-registered gate fires and there is no verdict at all -- a defined and honest outcome, and an
+empty one for 204 CPU-hours. Clip the positives to 0.0: imputation unchanged at 0.061 per cent, the
+contrast bounded to [-3.31, +8.96] on CYP1A2, and the other 4714 rows moved by **exactly 0.00e+00**,
+verified rather than asserted. Raising `MAX_IMPUTED_FRAC` is not among the options: item 304 names
+it as the worse branch, in writing, hours earlier.
+
+**Decision: both arms, and the amendment is written here before either runs.** `--clash keep` is
+item 298 literally. `--clash zero` is this amendment. Separate output files, both reported, and the
+difference between them is itself the measurement of how much the clash scores were worth. Running
+only the repaired arm would be feature repair after sight of the data; running only the literal arm
+would measure an optimiser penalty and call it chemistry.
+
+**The rule, fixed now.** Any affinity strictly greater than zero becomes exactly 0.0, identically
+on train and test, before centring, and only on the copy that is centred. `raw` stays untouched in
+both arms, because item 298's third prediction -- CYP3A4's raw affinities against heavy-atom count
+-- is a property of the docking and must be scored on the same material either way. Touches 202 of
+19608 train values (1.030 per cent) and 15 of 3000 test values (0.500 per cent). Item 298's four
+acceptance conditions are unchanged and are applied to each arm separately; an arm passes only on
+its own terms.
+
+**PREDICTION, written before any number exists.** Nothing passes in either arm -- item 298's
+prediction stands unchanged. The two arms differ most on CYP1A2, because 188 of the 202 clashes sit
+there, and agree within the per-enzyme floor on CYP2D6, where there are three. If the literal arm
+passes where the clipped one does not, that is evidence the gain rode on outliers rather than on
+pocket complementarity, and it will be reported as such rather than as a pass.
+
+**The instrument that found this also killed it.** The review panel of item 304 raised exactly this
+-- "no bound on the affinity values; smina clash scores up to +129.51 are finite, pass every gate,
+and corrupt all four contrast columns of their row through the row mean" -- and the refuters killed
+it. That is the second wrong status from my own scoring in one day: the first recorded a finding as
+confirmed on zero votes because both its refuters had died. One false confirm and one false kill,
+and both were caught by looking at the data rather than by reasoning about the finding. A review
+panel is an instrument, and this is its first measured error rate.
