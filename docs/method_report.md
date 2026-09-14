@@ -147,6 +147,36 @@ unpredictable to about ±0.04, while our position relative to a *similar* submis
 about ±0.02. Anyone comparing two entries a few thousandths apart on this leaderboard is reading
 noise, ours included.
 
+**What we do ship per compound is a reliability flag, built from two statistics that need no
+labels.** For each of the 750 blinded molecules: how often the five members disagree about its
+ordering against the others, and how far it sits from the training rows labelled for that enzyme.
+Neither uses a label, a leaderboard score or an external lookup — only the test structures and our
+own committed predictions. Zero model fits; it is arithmetic over predictions already on disk.
+
+Its control matters more than its output. The aggregate contested rate it computes must reproduce a
+figure we published earlier from a cache that no longer exists, and an independent implementation
+returns **0.2820 / 0.2683 / 0.3139 / 0.2319** against the recorded 0.2820 / 0.2683 / 0.3139 /
+0.2319 — exact on all four enzymes. A second agreement arrived unasked: its nearest-neighbour
+similarities (0.517 / 0.518 / 0.471 / 0.538) match those from a different script, written days
+apart for a different question, to every printed digit.
+
+    фермент   медиана спорных   медиана сходства   доля ниже 0.4
+    CYP1A2              0.295              0.517           0.287
+    CYP2C9              0.281              0.518           0.351
+    CYP2D6              0.317              0.471           0.420
+    CYP3A4              0.234              0.538           0.215
+
+The two share no input beyond the molecules — one is built from where five models argue, the other
+from fingerprint distance — and both rank **CYP2D6 worst**. So do the rank (0.480), the band widths
+(narrowest, so the metric forgives least), the TDI cell, and the train-to-test consistency ratio.
+Five unrelated measurements landing on one enzyme is the clearest signal in the project about where
+its remaining difficulty lives.
+
+It changes no prediction, and we would rather say that plainly than let a diagnostic be mistaken for
+a gain: the pairs where members disagree are **hard, not mis-ordered** — the ensemble mean already
+scores 0.58 there, well above a coin — so repairing them would demand new information rather than a
+rearrangement of what we hold.
+
 ## 5. How claims were tested
 
 Every intervention in this project went through the same harness, and the harness is the part we
@@ -249,7 +279,58 @@ single-concentration screen degrading accuracy monotonically with pseudo-weight.
 - **A campaign is still running.** Docking 5652 ligands into four cavities was pre-registered blind,
   with a written prediction that nothing passes. Whatever it returns will be in the journal.
 
-## 9. A note on metric robustness
+## 9. A closed form for the metric, and the correction that goes with it
+
+Section 2 carries the finding we would most want cited, because it is about the problem. This one is
+about the *scoring function*, it took five minutes and fitted nothing, and it is the part most
+directly reusable by anyone else working on this challenge.
+
+**The credible band is a deterministic function of the label.** Isotonic regression from the label
+alone onto the band width:
+
+    фермент       n   rho(y, ширина)   R2 изотоники   ст.откл. доли метки в полосе
+    CYP1A2     1412           -0.885          0.963                          0.057
+    CYP2C9     1285           -0.899          0.928                          0.063
+    CYP2D6     1493           -0.558          0.955                          0.087
+    CYP3A4     2335           -0.928          0.970                          0.088
+
+The width is recovered to within three per cent of its variance, and the label sits at a nearly
+fixed relative position inside its own band — the standard deviation of `(y − lo)/w` is under 0.09
+everywhere. So `lo` and `hi` are the label plus and minus a function of the label.
+
+**Therefore ST-RAE is a potency-weighted absolute error.** The forgiveness threshold is about
+**1.25 pIC50 below a label of 3.5 and about 0.13 above 4.6** — a fifty-fold difference in what
+counts as a miss, determined entirely by how potent the compound is. That is a much simpler
+statement than "soft-thresholded error against a confidence band", and it has a direct consequence
+for modelling: a model fitted to minimise unweighted error is optimising the wrong loss, which is
+why our dead-zone refit against `clip(p, lo, hi)` is the largest single effect in the project.
+
+**And the obvious inference from it is wrong, which is why this section has two halves.** Reading
+the above as "get the potent compounds right, the weak ones are nearly free" is natural and false.
+Share of the ST-RAE numerator by potency quartile, on the submitted ensemble:
+
+    фермент   кв.1 слабые     кв.2     кв.3   кв.4 сильные   полупорог кв.1   полупорог кв.4
+    CYP1A2         37.1 %    9.6 %   12.5 %         40.8 %            0.537            0.098
+    CYP2C9         27.9 %    9.9 %   12.8 %         49.5 %            0.546            0.128
+    CYP2D6         29.2 %    9.6 %   10.2 %         51.0 %            0.245            0.105
+    CYP3A4         16.0 %   20.9 %   22.4 %         40.7 %            1.233            0.069
+    среднее        27.6 %   12.5 %   14.4 %         45.5 %
+
+**The penalty is U-shaped, not monotone.** The potent quartile dominates at 45.5 per cent, as the
+closed form predicts — there is almost no forgiveness there. But the weak quartile is second at
+27.6 per cent, and the two middle quartiles together supply only 26.9. The weak end is not free in
+practice because the median absolute residual there runs 1.27 to 1.67 pIC50, which overruns even a
+threshold of half a log unit. The forgiveness at that end differs **fivefold between enzymes** —
+a half-threshold of 0.245 on CYP2D6 against 1.233 on CYP3A4 — and the cost tracks it exactly:
+CYP3A4, the most forgiven, is the only enzyme whose weak quartile is cheap at 16.0 per cent, while
+CYP2D6 with the tightest bands pays 29.2 per cent there despite being the enzyme where every model
+does worst.
+
+So effort belongs at **both** ends and the middle can be left alone — a different prescription from
+the one the closed form alone implies. We record the pair together because the first half without
+the second would have sent us, and anyone reading it, to optimise the wrong region.
+
+## 10. A note on metric robustness
 
 Offered as an observation about the scoring function, not as a complaint about anyone.
 
