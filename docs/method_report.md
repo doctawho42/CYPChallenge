@@ -201,7 +201,7 @@ would defend as the contribution.
   **+0.0008 at sign 0/4** as a marginal member. The table of contributions is not additive and we
   stopped presenting it as though it were.
 
-The journal is public and runs to item 304. Most of it records something that did not work, and we
+The journal is public and runs to item 305. Most of it records something that did not work, and we
 think that is the useful part — a correct idea takes one item, a wrong one takes three (proposal,
 refutation, correction to the refutation).
 

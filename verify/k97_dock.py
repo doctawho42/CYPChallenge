@@ -48,7 +48,8 @@ volume confound from the docking side. It needs no model fit, so it is reported 
 ablation is skipped for want of member caches.
 
 Reads data/dock.npz (built by `uv run python src/dock.py --assemble-only`), data/feats.npz,
-results/preds/members_seed{4..7}.json. Writes results/logs/k97_dock.json.
+results/preds/members_seed{4..7}.json. Writes results/logs/k97_dock.json (--clash keep, the literal item 298) or
+results/logs/k97_dock_zero.json (--clash zero, item 305's amendment). Both arms are reported.
 """
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
@@ -76,15 +77,32 @@ def contrast(S_raw):
     return S_raw - S_raw.mean(axis=1, keepdims=True)
 
 
-def load_contrast(path):
-    """Centre, then impute. Returns (C, n_imputed, raw). Policy pre-registered in the docstring."""
+def load_contrast(path, clash="keep"):
+    """Centre, then impute. Returns (C, n_imputed, raw, n_clash). Policy pre-registered above.
+
+    `clash` implements item 305's amendment, fixed before any number existed. A positive Vina score
+    is not a weak binder: it is net repulsion, i.e. the ligand does not fit the cavity, and smina
+    reports that numerically instead of failing. Its MAGNITUDE is an optimiser penalty on no scale
+    -- +129.51 is not "eight times less bindable" than +17 -- while centring spreads one such value
+    across all four of the row's columns. "keep" is the literal item 298. "zero" clips every
+    positive affinity to 0.0, the physical boundary between binding and not.
+
+    `raw` is returned UNTOUCHED under both policies, deliberately: it feeds the alignment check and
+    item 298's third prediction (volume confound), which is a property of the docking rather than
+    of this amendment and must be scored on the same material in both arms.
+    """
     z = np.load(path, allow_pickle=True)
     raw = z["train"].astype(np.float64)
-    C = contrast(raw)
+    pos = np.isfinite(raw) & (raw > 0)
+    src = raw
+    if clash == "zero":
+        src = raw.copy()
+        src[pos] = 0.0
+    C = contrast(src)
     bad = ~np.isfinite(C).all(axis=1)
     C[bad] = 0.0
     C[~np.isfinite(C)] = 0.0
-    return C, int(bad.sum()), raw
+    return C, int(bad.sum()), raw, int(pos.sum())
 
 
 def heavy_atoms(smiles):
@@ -129,6 +147,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default="4,5,6,7",
                     help="сиды с готовым кэшем членов; свежие для ЭТОЙ гипотезы (пункт 298)")
+    ap.add_argument("--clash", choices=("keep", "zero"), default="keep",
+                    help="положительные аффинности (клинчи): keep --- буквальный пункт 298, "
+                         "оставить; zero --- поправка пункта 305, обнулить. Докладываются ОБА.")
     a = ap.parse_args()
     seeds = [int(x) for x in a.seeds.split(",") if x.strip()]
 
@@ -139,9 +160,12 @@ def main():
         return
 
     rows = pd.read_csv(D + "rows.csv")
-    C, n_imp, raw = load_contrast(src)
+    C, n_imp, raw, n_clash = load_contrast(src, a.clash)
     frac = n_imp / len(C)
     print(f"контраст докинга: {C.shape}, импутировано строк {n_imp} ({frac:.3%})", flush=True)
+    print(f"клинчи (аффинность > 0): {n_clash} значений, политика '{a.clash}' --- "
+          + ("оставлены как есть, буквальный пункт 298" if a.clash == "keep"
+             else "обнулены, поправка пункта 305"), flush=True)
     if C.shape[0] != len(rows):
         print(f"  СТОП: {C.shape[0]} строк против {len(rows)} в rows.csv --- блок не выровнен",
               flush=True)
@@ -198,8 +222,11 @@ def main():
             "B неверная изоформа": [C[:, [(e + 1) % 4]] for e in range(4)],
             "C ненаправленная": [C for _ in range(4)]}
 
-    dst = RES + "logs/k97_dock.json"
+    # One file per clash policy: item 305 runs both arms and neither may overwrite the other.
+    dst = RES + ("logs/k97_dock.json" if a.clash == "keep"
+                 else f"logs/k97_dock_{a.clash}.json")
     out = json.load(open(dst)) if _pl.Path(dst).exists() else {"seeds": {}}
+    out["клинчи"] = {"политика": a.clash, "значений": n_clash}
     out["импутировано"] = {"строк": n_imp, "доля": frac}
     out["объёмный конфаунд"] = vol
     print(f"\n  {'сид':>3s} {'арм':>20s} {'фермент':>8s} {'подаётся':>9s} {'+докинг':>9s} "
