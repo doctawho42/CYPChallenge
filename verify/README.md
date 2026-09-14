@@ -110,7 +110,7 @@ confidence intervals». Текст организаторов оперативе
 по-прежнему не взяты. Поферментно связка не берёт НИЧЕГО (+0.0083 на 3A4 при поле 0.0281, +0.0170
 на 2D6 при 0.0419) --- заявление строго макро, как и писал пункт 244.
 
-Числа связки --- четырёхсидовые средние из `results/preds/bundle.json`, где её комп��ратор
+Числа связки --- четырёхсидовые средние из `results/preds/bundle.json`, где её компаратор
 «метка+Платт» стоит на 0.3427/0.1065/0.2246. Это ДРУГОЙ прогон того же плеча, чем строка пункта
 235 выше (0.3379/0.1169/0.2274); расхождение --- сидовая и прогонная дисперсия, не дефект, и
 дельты между плечами внутри одного прогона (+0.0083/+0.0170/+0.0127) совпадают с пунктом 250
@@ -11785,3 +11785,74 @@ without measuring was the same reflex as the heme, pointed inward instead of out
 
 **A related alarm of mine that also dissolved: 4WNV needs nothing.** Its receptor is verified, the
 heme is present in all four, and the first 4WNV job (number 191 of 380) is still 163 chunks away.
+
+**303. Two label-free statistics, made per-compound, and they agree on which enzyme not to trust.
+Zero fits: the whole thing is arithmetic over predictions already committed.**
+`verify/k96_reliability.py`. Not a correction and not a score move -- item 207 closed that -- but the
+first artefact in this project that says *where* a submission is unreliable using only the test set.
+
+**The control first, because without it nothing below counts.** The aggregate train-side contested
+rate must reproduce item 208's column, computed there by `k61` from a member cache that no longer
+exists on disk. Recomputed here from `members_seed0.json`, four members, independent implementation:
+
+    фермент      здесь   пункт 208    разность
+    CYP1A2      0.2820      0.2820     -0.0000
+    CYP2C9      0.2683      0.2683     -0.0000
+    CYP2D6      0.3139      0.3139     +0.0000
+    CYP3A4      0.2319      0.2319     -0.0000
+
+Exact on all four. And a second reproduction falls out unasked: the test-side nearest-neighbour
+similarities here (0.517 / 0.518 / 0.471 / 0.538) match item 301's to every printed digit, from a
+different script written for a different question.
+
+**Per-compound contested share, training side.** Item 207 and 208 report one number per enzyme; this
+is the distribution behind it.
+
+    фермент       мин   квант25   медиана   квант75      макс
+    CYP1A2      0.013     0.196     0.295     0.355     0.719
+    CYP2C9      0.002     0.185     0.281     0.343     0.675
+    CYP2D6      0.011     0.243     0.317     0.385     0.685
+    CYP3A4      0.003     0.166     0.234     0.288     0.791
+
+The spread is wide: on every enzyme some compounds sit under 0.02 and others over 0.65, so the
+aggregate hides a factor of thirty. A submission-level "57 to 62 per cent accurate on contested
+pairs" is therefore not a uniform statement about the file.
+
+**Distance to the training set, test side, per enzyme.** The pool is restricted to rows labelled for
+that enzyme, because a neighbour carrying no label for it says nothing about what the model learned.
+
+    фермент      пул   медиана   квант25   доля<0.4   доля<0.3
+    CYP1A2      1412     0.517     0.380      0.287      0.091
+    CYP2C9      1285     0.518     0.341      0.351      0.107
+    CYP2D6      1493     0.471     0.333      0.420      0.125
+    CYP3A4      2335     0.538     0.429      0.215      0.031
+
+**The two statistics are independent and they converge.** One is built from where five models argue,
+the other from fingerprint distance to the training rows; they share no input beyond the molecules.
+Both rank CYP2D6 worst -- highest median contested share (0.317) and lowest median similarity
+(0.471), with 42 per cent of its test compounds below 0.4 against CYP3A4's 21.5. That is the same
+enzyme that carries the worst rank (0.480), the narrowest credible bands (median width 0.27, so the
+metric forgives least there), the weakest TDI cell, and the only train-to-test contested ratio above
+one in item 208 (1.14). Five unrelated measurements pointing at one enzyme is not a coincidence to
+be explained away; it is the project's hardest cell, located from five directions.
+
+**What this is not.** Item 207 measured that contested pairs are hard rather than mis-ordered -- the
+mean scores 0.58 on them, well above a coin -- so "a cascade would have to be right where five
+diverse models jointly are not, which is a demand for new information, not a rearrangement of what
+is present". Item 217 confirmed on four seeds that routing among members is closed, and item 181
+measured the pairwise objective as adding nothing on top of the dead zone (0.5910 against 0.5966).
+Anything here that looked like a score gain would be those three refutations ignored.
+
+**What is deliberately absent.** The contested share on the TEST rows is not computed. It needs the
+four members refitted on the test design against `clip(plain, lo, hi)`, and the cache holds only the
+dead-zone-passed predictions, not the plain ones -- `k61` did those sixteen fits and did not save
+them. That is a run of its own, and the cost is now known to be small (the Gaussian process is an
+exact Cholesky at 1285 to 2335 rows, seconds per fit), so the reason for deferring it is scheduling
+against the docking campaign rather than expense.
+
+**Why it is worth having at all, stated against the obvious objection.** It changes no prediction.
+What it does is answer, for each of 750 blinded compounds, "how much should this row be trusted",
+using nothing but the test structures and our own committed predictions -- no labels, no leaderboard
+feedback, no external lookup. Item 206 measured that our cross-validation is structurally blind to
+the test's analog structure, which is exactly the condition under which a label-free statement about
+the test is worth more than usual.
