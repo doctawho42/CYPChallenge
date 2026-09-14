@@ -16,6 +16,12 @@ competition's own metric, the conjunction the classification label folds into, w
 released data, the apparatus that tells an effect from a noise floor, a catalogue of what we tried
 and closed, and a falsifiable prediction for the interim reveal. Roughly twenty minutes.
 
+**[`docs/method_report.md`](docs/method_report.md)** is the short version written for the
+organisers and linked from the leaderboard: what ships, the closed form we derived for the
+challenge's own metric, the uncertainty apparatus, what we refused and why, and the limitations
+stated plainly. Roughly ten minutes, and the place to start if you are judging rather than
+reproducing.
+
 ## Getting started
 
 ```bash
@@ -23,7 +29,7 @@ uv sync                             # environment, exact versions from uv.lock
 git submodule update --init         # organisers' repo, holds the official metric
 bash data/fetch.sh                  # challenge data (~7 MB, not stored in git)
 uv run python src/feats.py          # features: fingerprint, descriptors, mechanistic block
-uv run python src/score.py          # scores the saved predictions, macro ST-RAE 0.7729 / 0.7673
+uv run python src/score.py          # scores the ablation: six feature sets, macro ST-RAE 0.7729 / 0.7673
 ```
 
 If you do not have [uv](https://docs.astral.sh/uv/) yet:
@@ -43,7 +49,7 @@ written in Russian, assumes nothing, and covers the traps specific to this repos
 | `docs/` | the document and its sources (`tex/`, built with XeLaTeX), archive of earlier versions |
 | `src/` | the pipeline: features, baselines, ablations, TDI, decision layer |
 | `eda/` | data exploration and the figures for the document |
-| `verify/` | twenty-six verification scripts, see `verify/README.md` |
+| `verify/` | 112 verification scripts, see `verify/README.md` |
 | `results/` | run logs and saved out-of-fold predictions |
 | `data/` | challenge data, not stored in git, see `data/README.md` |
 | `tests/` | the golden-value guard on the cross-validation split |
@@ -128,9 +134,9 @@ the document.
   but they also select for a different skill than the leaderboard pays for — every saved
   ablation has been re-scored under weights matching the test's regime, and six of seven
   keep their ordering.
-- **Check the log before evaluating an idea, not after.** `verify/README.md` is 289
-  numbered items and several proposals have been re-derived from scratch that were already
-  built, run and measured in it.
+- **Check the log before evaluating an idea, not after.** `verify/README.md` runs to item 303
+  and several proposals have been re-derived from scratch that were already built, run and
+  measured in it.
 - Negative results are recorded and stay in the repository. They are now the majority of
   that file and some of the most useful content here.
 - The environment is pinned for a reason: scikit-learn 1.3.2 through 1.8.0 reproduce
