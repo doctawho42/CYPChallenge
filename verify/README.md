@@ -1,229 +1,249 @@
 # Verification
 
-## Табло
+*On language. This scoreboard and the prose of every numbered item are in English. The tables
+inside the items keep Russian column headers, deliberately: this is a lab notebook written as the
+work happened, retyping several hundred tables would rewrite that record and risk a digit in
+transit, and the numbers themselves are the part that matters. The recurring column headers, which
+covers most of what a reader meets: `фермент` enzyme, `ранг` rank, `пара` the ST-RAE score after the
+affine pair, `пол` noise floor, `знак` the sign count across seeds, `сид` seed, `пункт` item,
+`прирост` gain, `среднее` mean, `макро` macro, `рука` arm, `контроль` control, `ствол` trunk,
+`пул` pooled, `поферментно` per-enzyme, `мёртвая зона` dead zone, `ворота` gate, `сдвиг` shift,
+`доля` share, `база` base.*
 
-Этот файл --- журнал дефектов, и читается он соответственно: верная идея получает один пункт,
-неверная получает три (выдвижение, опровержение, поправка к опровержению). Соотношение при
-чтении выходит три к одному в пользу провалов при положительном итоге. Табло существует, чтобы
-состояние проекта не приходилось складывать в голове из двухсот сорока пунктов.
+## Scoreboard
 
-**Где мы.** Ранг --- Спирмен с истиной, пара --- ST-RAE после аффинной пары. Больше ранг лучше,
-меньше пара лучше.
+This file is a defect log and reads like one: a correct idea earns one item, a wrong one earns
+three (proposal, refutation, correction to the refutation). At a positive outcome the reading
+ratio comes out three to one in favour of the failures. The scoreboard exists so that the state
+of the project need not be reassembled in one's head from three hundred items.
 
-    конфигурация                                 пара      ранг   прирост   сидов   пункт
-    база FP+DESC+MECH, поферментно, HistGB     0.7150    0.5651         —       1     эталон
-    ансамбль из четырёх членов                 0.6819    0.6009   +0.0358       4       120
-    ансамбль из пяти                           0.6758    0.6063   +0.0412       4   120, 215
-    пять, мёртвая зона в четырёх членах        0.6567    0.6230   +0.0579       4  164, 215
-                                                                                 (нижняя оценка)
+**Where we are.** Rank is Spearman against the truth; pair is ST-RAE after the affine pair.
+Higher rank is better, lower pair is better.
 
-**Мёртвая зона внесена в подачу и включена по умолчанию (пункты 204, 205).** Числа ниже сняты
-кодом самой подачи на сиде 0 и НЕ сравнимы построчно с таблицей выше: там складывались
-сохранённые предсказания из ablate/ablpool/ablgp, здесь члены пересчитываются, и вдобавок
-применяется `_trunk_clip`, которого нет в k46_five (дефект 3 пункта 202).
+    configuration                                pair      rank      gain   seeds    item
+    base FP+DESC+MECH, per-enzyme, HistGB      0.7150    0.5651         —       1     ref
+    four-member ensemble                       0.6819    0.6009   +0.0358       4     120
+    five-member ensemble                       0.6758    0.6063   +0.0412       4   120, 215
+    five, dead zone in four members            0.6567    0.6230   +0.0579       4  164, 215
+                                                                                 (lower bound)
 
-    конфигурация (verify/k58_dzsubmit.py)          пара      ранг   прирост  сидов  пункт
-    пять, без прохода                            0.6658    0.6145         —      4    213
-    пять, проход в четырёх членах                0.6483    0.6297   +0.0152      4    213
-    пять, проход во ВСЕХ пяти (подаётся)         0.6459    0.6342   +0.0197      4    213
+**The dead zone is in the submission and on by default (items 204, 205).** The numbers below were
+taken by the submission's own code at seed 0 and are NOT comparable row by row with the table
+above: there, saved predictions from ablate/ablpool/ablgp were combined, here the members are
+recomputed, and `_trunk_clip` is applied as well, which k46_five does not have (defect 3 of item 202).
 
-Знак 4/4 в обеих руках и во всех шестнадцати поферментных ячейках; ранг и метрика растут
-одновременно. Вклад перепроецированного ствола +0.0045 при знаке 4/4 и макро-поле 0.0036 ---
-на грани, и цитировать его без пола нельзя.
+    configuration (verify/k58_dzsubmit.py)         pair      rank      gain  seeds   item
+    five, no pass                                0.6658    0.6145         —      4    213
+    five, pass in four members                   0.6483    0.6297   +0.0152      4    213
+    five, pass in ALL five (shipped)             0.6459    0.6342   +0.0197      4    213
 
-**Итого траектория: +0.0579 ранга и -0.0583 пары от базовой модели** (0.5651 -> 0.6230 и
-0.7150 -> 0.6567). Здесь стояло «-0.050 пары» --- ошибка на 0.0083, больше макро-пола по паре;
-исправлено 6 сентября.
+Sign 4/4 in both arms and in all sixteen per-enzyme cells; rank and metric rise together. The
+re-projected trunk's contribution is +0.0045 at sign 4/4 against a macro floor of 0.0036 ---
+marginal, and it cannot be quoted without the floor.
 
-**Счёт сходился, пока его не проверили выбиванием, и ПУНКТ 274 ЕГО ОТМЕНИЛ.** Сумма названных
-вкладов --- мёртвая зона +0.0197, механистический блок +0.0163, пулирование +0.0141, ствол пятым
-+0.0054 --- даёт +0.0555 против общего +0.0579, расхождение 0.0024. Но эти четыре числа мерялись
-ДОБАВЛЕНИЕМ к разным базам. Померенные ВЫБИВАНИЕМ из подаваемой конфигурации они дают +0.0315:
-мёртвая зона и ствол воспроизводятся почти точно (-0.0198 и -0.0056), MECH стоит 43 процента
-своей строки, **а пулирование не стоит ничего (+0.0008, знак 0/4)**. Строка «пулирование
-контрастом» ниже описывает настоящий МЕХАНИЗМ (пункты 131, 132), но не предельную ценность ЧЛЕНА
-в готовом ансамбле. Читать таблицу вкладов как аддитивную нельзя.
+**Trajectory in total: +0.0579 of rank and -0.0583 of pair from the base model** (0.5651 -> 0.6230
+and 0.7150 -> 0.6567). This said "-0.050 of pair" before --- an error of 0.0083, larger than the
+macro floor on the pair; corrected on 6 September.
 
-**И главная оговорка ко всему разделу, переписанная 10 сентября (пункт 276): прежняя формулировка
-сравнивала разность с шумом одиночного счёта и вдобавок цитировала вдвое завышенное число.** Полосу
-пункта 147 (полуширина 0.08) исправил пункт 253: она усредняла четыре поферментные перцентильные
-границы так, будто ошибки ферментов ходят вместе, тогда как измеренная кросс-ферментная корреляция
-ошибки одного счёта --- 0.02, и усреднение четырёх почти независимых ошибок сокращает разброс вдвое.
-Корректная полоса на ПОДАВАЕМОЙ конфигурации, пересчитанная 11 сентября на составе, который
-подаётся СЕЙЧАС (`results/preds/band.json`, пункты 282--285 и 277): раскрытие n=750 ---
-[0.6114, 0.6997], полуширина **0.0442**; живой лидерборд n=375 --- [0.5945, 0.7265], полуширина
-0.0660. Это sampling-полоса абсолютного счёта, а не то, с чем сравнивается наш прирост.
+**The arithmetic added up until it was checked by knockout, and ITEM 274 CANCELLED IT.** The sum of
+the named contributions --- dead zone +0.0197, mechanistic block +0.0163, pooling +0.0141, trunk as
+fifth member +0.0054 --- gives +0.0555 against a total of +0.0579, a discrepancy of 0.0024. But
+those four numbers were measured by ADDING to different bases. Measured by KNOCKOUT from the shipped
+configuration they give +0.0315: the dead zone and the trunk reproduce almost exactly (-0.0198 and
+-0.0056), MECH is worth 43 per cent of its row, **and pooling is worth nothing at all (+0.0008, sign
+0/4)**. The row "contrast pooling" below describes the real MECHANISM (items 131, 132), but not the
+marginal value of that MEMBER in the finished ensemble. The contributions table must not be read as
+additive.
 
-Здесь до 13 сентября стояли числа пункта 256 --- [0.6263, 0.7090] и [0.6126, 0.7322], --- верные
-для состава, который подавался ТОГДА. Сдвиг 0.013 макро, то есть размером с саму смену состава: это
-была полоса другого плеча, а не округление. Таблица внутри пункта 256 оставлена как запись о том,
-что было верно тогда; убрано только ЖИВОЕ утверждение, цитировавшее её (пункт 294).
+**And the main caveat to this whole section, rewritten on 10 September (item 276): the earlier
+wording compared a difference against the noise of a single score, and quoted a figure twice too
+large as well.** Item 147's band (half-width 0.08) was corrected by item 253: it averaged four
+per-enzyme percentile bounds as though the enzymes' errors moved together, whereas the measured
+cross-enzyme correlation of a single score's error is 0.02, and averaging four nearly independent
+errors halves the spread. The correct band on the SHIPPED configuration, recomputed on 11 September
+on the composition that ships NOW (`results/preds/band.json`, items 282--285 and 277): the reveal at
+n=750 --- [0.6114, 0.6997], half-width **0.0442**; the live leaderboard at n=375 --- [0.5945, 0.7265],
+half-width 0.0660. This is a sampling band on the absolute score, not the thing our gain is measured
+against.
 
-Наш прирост 0.0583 --- это РАЗНОСТЬ двух конфигураций, и сравнивать её надо с шумом РАЗНОСТИ, а не
-одиночного счёта. Лидерборд считает все подачи на одних и тех же молекулах, поэтому поштучный шум в
-разности сокращается: парный пол --- $\sqrt2\cdot0.0036 = $ **0.0052** (пункт 259, ковариация плеч
-по сидам нулевая), парный бутстрэп по тесту --- sd 0.0074–0.0201. Прирост 0.0583 лежит ВНЕ этого с
-большим запасом, и даже больше исправленной полуширины одиночного счёта 0.0442.
+Until 13 September this carried item 256's numbers --- [0.6263, 0.7090] and [0.6126, 0.7322] ---
+correct for the composition that shipped THEN. A shift of 0.013 macro, the size of the composition
+change itself: that was a band for a different arm, not a rounding. The table inside item 256 is
+left as a record of what was true then; only the LIVE claim quoting it was removed (item 294).
 
-**Итого, честно: абсолютный счёт непредсказуем до $\pm0.04$, положение относительно похожей подачи
-определено до $\pm0.02$, и по рангу мы вне шума --- причём РАНГ ЛИДЕРБОРД ПОКАЗЫВАЕТ.** Прежнее «весь
-выигрыш внутри шума одного замера» неверно на обоих счётах.
+Our gain of 0.0583 is a DIFFERENCE between two configurations, and it must be compared against the
+noise of a DIFFERENCE, not of a single score. The leaderboard scores every submission on the same
+molecules, so per-compound noise cancels in the difference: the paired floor is
+$\sqrt2\cdot0.0036 = $ **0.0052** (item 259, the covariance of the arms across seeds is zero), and
+the paired bootstrap over the test gives sd 0.0074–0.0201. The gain of 0.0583 lies OUTSIDE that with
+a wide margin, and is larger even than the corrected single-score half-width of 0.0442.
 
-Здесь до 12 сентября стояло «а ранг на лидерборде не показывают», и это неверно: pinned README
-организаторов (`CYP-Challenge-Tutorial/README.md`, раздел Challenge Tracks) говорит прямо ---
-«**Secondary metrics** (MAE, R², Spearman ρ, Kendall's τ) are also reported with bootstrap
-confidence intervals». Текст организаторов оперативен, наш --- нет. Следствие не косметическое:
-собственная валюта проекта --- ранг --- становится ВНЕШНЕ проверяемой на раскрытии 25 сентября,
-поэтому предрегистрировать надо не только полосу ST-RAE, но и ранговое предсказание.
+**Honestly, in sum: the absolute score is unpredictable to $\pm0.04$, the position relative to a
+similar submission is pinned to $\pm0.02$, and by rank we are outside the noise --- and THE
+LEADERBOARD DOES SHOW RANK.** The earlier "the whole gain sits inside the noise of one measurement"
+is wrong on both counts.
 
-**Что стоит в конвейере и сколько стоит.**
+Until 12 September this said "and rank is not shown on the leaderboard", which is false: the
+organisers' pinned README (`CYP-Challenge-Tutorial/README.md`, section Challenge Tracks) says
+plainly --- "**Secondary metrics** (MAE, R², Spearman ρ, Kendall's τ) are also reported with
+bootstrap confidence intervals". The organisers' text is current, ours was not. The consequence is
+not cosmetic: the project's own currency --- rank --- becomes EXTERNALLY checkable at the reveal on
+25 September, so the pre-registration must cover not only the ST-RAE band but the rank prediction.
 
-    вклад                                  прирост ранга   сидов   пункт   статус
-    мёртвая зона во всех членах                  +0.0197       4 164,213   в подаче есть
-    ствол пятым членом                           +0.0054       4     120   в подаче есть
-    механистический блок                         +0.0163       4      81   в подаче есть
-                        он же в режиме теста     +0.0313       4     119
-    пулирование контрастом                       +0.0141       4  84,132   в подаче есть
-    GP и гребневая как члены                  своя ошибка      4  92,100   в подаче есть
-    поферментный состав по ферментам             +0.0059       4 282-285   в подаче есть
-                        1A2 пофе+GP+ств, 2C9/3A4 GP+ств --- на СВЕЖИХ сидах 4-7; заменяет SOLO 218
-    скрининг, ОДИНОЧНАЯ модель                  +0.0290       4 158,177   см. ниже
-                        он же в ансамбле       +0.0014       4     182   ниже пола
-    панель NCGC, поферментно                  считается        —     157   НЕ в подаче
-    пятьдесят битов = 80 % фингерпринта                —       1 150,156   интерпретация
+**What is in the pipeline and what it is worth.**
 
-**Классификационный трек --- треть лидерборда, и до 5 сентября его в табло не было.**
-Метрика MCC, четыре сида, полы из пункта 235 (3A4 0.0281, 2D6 0.0419, макро 0.0076).
+    contribution                             rank gain   seeds    item   status
+    dead zone in every member                  +0.0197       4 164,213   in the submission
+    trunk as fifth member                      +0.0054       4     120   in the submission
+    mechanistic block                          +0.0163       4      81   in the submission
+                    the same in test regime    +0.0313       4     119
+    contrast pooling                           +0.0141       4  84,132   in the submission
+    GP and ridge as members                 own error        4  92,100   in the submission
+    per-enzyme composition by enzyme           +0.0059       4 282-285   in the submission
+                    1A2 per-enz+GP+trunk, 2C9/3A4 GP+trunk --- on FRESH seeds 4-7; replaces SOLO 218
+    screening, SINGLE model                    +0.0290       4 158,177   see below
+                    the same in the ensemble   +0.0014       4     182   below the floor
+    NCGC panel, per-enzyme                  computed          —     157   NOT in the submission
+    fifty bits = 80 % of the fingerprint            —         1 150,156   interpretation
 
-    конфигурация                                  3A4      2D6    макро   пункт
-    структурный классификатор + plug-in        0.3143   0.1137   0.2140     228
-    он же + калибровка Платта                  0.3379   0.1169   0.2274     235
-    СВЯЗКА: ворота(ансамбль) * сдвиг (ПОДАЁТСЯ) 0.3510   0.1235   0.2373     250
-    оракул порога (не для подачи)              0.3635   0.1589   0.2612     235
+**The classification track is a third of the leaderboard, and until 5 September it was not on this
+scoreboard at all.** Metric MCC, four seeds, floors from item 235 (3A4 0.0281, 2D6 0.0419, macro 0.0076).
 
-**Здесь до 12 сентября подаваемой была помечена калибровка Платта. Это устарело с 6 сентября:
-пункт 250 принял связку по предрегистрации пункта 244, и `src/submit.py` строит её по умолчанию
-(`--no-bundle` отключает).** Табло занижало подаваемое плечо на +0.0127 макро.
+    configuration                                 3A4      2D6    macro   item
+    structural classifier + plug-in            0.3143   0.1137   0.2140     228
+    the same + Platt calibration               0.3379   0.1169   0.2274     235
+    BUNDLE: gate(ensemble) * shift (SHIPPED)   0.3510   0.1235   0.2373     250
+    threshold oracle (not for submission)      0.3635   0.1589   0.2612     235
 
-Калибровка забрала +0.0133 макро при поле 0.0076; связка забрала ещё +0.0127 при знаке 6/8 сверх
-неё; оракул порога показывает +0.0472 при знаке 8/8, то есть три четверти доступного на пороге
-по-прежнему не взяты. Поферментно связка не берёт НИЧЕГО (+0.0083 на 3A4 при поле 0.0281, +0.0170
-на 2D6 при 0.0419) --- заявление строго макро, как и писал пункт 244.
+**Until 12 September this marked Platt calibration as the shipped arm. That has been out of date
+since 6 September: item 250 adopted the bundle under item 244's pre-registration, and
+`src/submit.py` builds it by default (`--no-bundle` turns it off).** The scoreboard was understating
+the shipped arm by +0.0127 macro.
 
-Числа связки --- четырёхсидовые средние из `results/preds/bundle.json`, где её компаратор
-«метка+Платт» стоит на 0.3427/0.1065/0.2246. Это ДРУГОЙ прогон того же плеча, чем строка пункта
-235 выше (0.3379/0.1169/0.2274); расхождение --- сидовая и прогонная дисперсия, не дефект, и
-дельты между плечами внутри одного прогона (+0.0083/+0.0170/+0.0127) совпадают с пунктом 250
-точно. Сравнивать плечи можно только внутри одного прогона.
+Calibration took +0.0133 macro against a floor of 0.0076; the bundle took another +0.0127 at sign
+6/8 on top of it; the threshold oracle shows +0.0472 at sign 8/8, so three quarters of what is
+available at the threshold is still untaken. Per enzyme the bundle takes NOTHING (+0.0083 on 3A4
+against a floor of 0.0281, +0.0170 on 2D6 against 0.0419) --- the claim is strictly macro, exactly
+as item 244 wrote.
 
-**Метка --- конъюнкция, и это объясняет разрыв между эндпоинтами (пункты 234, 238):**
+The bundle's numbers are four-seed means from `results/preds/bundle.json`, where its comparator
+"label+Platt" stands at 0.3427/0.1065/0.2246. That is a DIFFERENT run of the same arm than item
+235's row above (0.3379/0.1169/0.2274); the discrepancy is seed and run variance, not a defect, and
+the deltas between arms within one run (+0.0083/+0.0170/+0.0127) agree with item 250 exactly. Arms
+can be compared only within a single run.
 
-    is_TDI  <=>  (Delta > log10 2)  И  (pi_TDI > 4.301)
+**The label is a conjunction, and that explains the gap between the endpoints (items 234, 238):**
 
-    фермент   ворота закрыты   MCC одних ворот   MCC одного сдвига   ворота восстановлены
-    CYP3A4             0.398           +0.5667             +0.6875                 53.7 %
-    CYP2D6             0.058           +0.1302             +0.9010                  1.2 %
+    is_TDI  <=>  (Delta > log10 2)  AND  (pi_TDI > 4.301)
 
-Ворота могут только вычёркивать. На 3A4 они вычёркивают 39.8 % строк, и опознание их ---
-чистый вопрос о потенции; **предсказанные ворота в одиночку дают 0.3043 против 0.315 у всего
-подаваемого классификатора**, то есть на 3A4 наш классификатор TDI есть порог по потенции.
-На 2D6 ворота вычёркивают 5.8 %, выигрывать нечем, и весь счёт --- слабая модель сдвига.
+    enzyme     gate closed   MCC of gate alone   MCC of shift alone   gate recovered
+    CYP3A4           0.398             +0.5667              +0.6875           53.7 %
+    CYP2D6           0.058             +0.1302              +0.9010            1.2 %
 
-**Про скрининг --- строка, которую легко прочитать неверно, и её один раз уже так прочитали.**
-+0.0290 относится к **одиночной** модели (пункт 177). Пункт 182 померил тот же арм ПЯТЫМ ЧЛЕНОМ
-ансамбля и получил +0.0058 на базовом составе и +0.0014 на лучшем --- второе ниже макро-пола
-0.0036. Диагноз там же: корреляция ошибок арма с ансамблем 0.935--0.969, он ошибается на тех же
-соединениях, а среднее платит за несогласие, которого нет. **Так что это не «измеренный выигрыш,
-который забыли завести».** Не измерен ровно один вариант: скрининг ВНУТРИ поферментного члена, а
-не шестым рядом (флаг `--screen` в `src/submit.py`); механизм предсказывает тот же ноль.
+The gate can only strike rows out. On 3A4 it strikes out 39.8 % of them, and recognising it is a
+pure question about potency; **the predicted gate alone gives 0.3043 against 0.315 for the whole
+shipped classifier**, so on 3A4 our TDI classifier is a threshold on potency. On 2D6 the gate
+strikes out 5.8 %, there is nothing to win, and the entire score is a weak shift model.
 
-**Шумовые полы.** Макро 0.007 при фиксированном сиде (пункт 70); посидовый разброс макро 0.016
-(f3). Поферментные полы **больше макро** и до сих пор нигде не были записаны (пункт 165):
+**On the screening row --- one that is easy to read wrongly, and has been read that way once
+already.** The +0.0290 refers to the **single** model (item 177). Item 182 measured the same arm as
+a FIFTH MEMBER of the ensemble and got +0.0058 on the base composition and +0.0014 on the best ---
+the latter below the macro floor of 0.0036. The diagnosis is in the same item: the arm's error
+correlation with the ensemble is 0.935--0.969, it errs on the same compounds, and a mean pays for
+disagreement that is not there. **So this is not "a measured gain someone forgot to wire in".**
+Exactly one variant is unmeasured: screening INSIDE the per-enzyme member rather than as a sixth
+row (the `--screen` flag in `src/submit.py`); the mechanism predicts the same zero.
 
-    фермент   sd по сидам при неизменной руке
-    CYP1A2                             0.0061
-    CYP2C9                             0.0071
-    CYP2D6                             0.0049
-    CYP3A4                             0.0033
-    МАКРО                              0.0036
+**Noise floors.** Macro 0.007 at a fixed seed (item 70); the across-seed spread of the macro is
+0.016 (f3). The per-enzyme floors are **larger than the macro** and had never been written down
+anywhere until item 165:
 
-Макро усредняет четыре фермента и потому тише каждого из них. **Поферментное заявление нельзя
-мерить макро-полом.**
+    enzyme    sd across seeds with the arm unchanged
+    CYP1A2                                    0.0061
+    CYP2C9                                    0.0071
+    CYP2D6                                    0.0049
+    CYP3A4                                    0.0033
+    MACRO                                     0.0036
 
-**Пол по MCC на классификационном треке (пункт 235), измерен по четырём сидам подаваемой руки:**
+The macro averages four enzymes and is therefore quieter than any of them. **A per-enzyme claim
+cannot be measured against the macro floor.**
 
-    фермент                       пол по MCC
+**The MCC floor on the classification track (item 235), measured over four seeds of the shipped
+arm:**
+
+    enzyme                         MCC floor
     CYP3A4                            0.0281
     CYP2D6                            0.0419
-    МАКРО                             0.0076
+    MACRO                             0.0076
 
-Макро-пол MCC совпал с макро-полом ранга (0.0076 против 0.007) на другом треке и другой метрике.
-И здесь **макро-заявление нельзя предъявлять как поферментное**: пункт 235 даёт +0.0133 макро при
-поле 0.0076 и НЕ проходит ни на одном отдельном ферменте.
+The macro MCC floor came out equal to the macro rank floor (0.0076 against 0.007) on a different
+track and a different metric. Here too **a macro claim must not be presented as a per-enzyme one**:
+item 235 gives +0.0133 macro against a floor of 0.0076 and does NOT pass on any single enzyme.
 
-**Что закрыто за ночь 2 сентября, семь измерений подряд, все с контролями.** Ни одно не «не
-сработало» --- у каждого назван механизм, и два из них сходятся в одном утверждении.
+**Closed overnight on 2 September, seven measurements in a row, all with controls.** Not one of them
+"failed to work" --- each has a named mechanism, and two of them converge on the same statement.
 
-    193  низкий ранг из двух видов      -0.016 макро; +0.0227 на CYP2C9, где меток меньше всех
-    194  обучение на декорреляцию       корреляция 0.939 -> -0.302, ансамбль не растёт НИ ПРИ ЧЁМ
-    195  сплит по моде                  вредит и там, где гейт 184 дал лицензию: цена строк
-    196  ограничение Delta >= 0         вредит; свободная версия нейтральна (пункт 125 снова)
-    197  правило TDI по совместному     калибровка лучше втрое, AUC и MCC хуже
-    198  незапиненная инициализация     сломала контроль, таблица выглядела правдоподобной
-    199  наложение на со-кристаллы      контраст снял размер на трёх ферментах из четырёх
+    193  low rank of two kinds         -0.016 macro; +0.0227 on CYP2C9, which has the fewest labels
+    194  training for decorrelation    correlation 0.939 -> -0.302, the ensemble does not rise AT ALL
+    195  split by mode                 hurts even where gate 184 licensed it: the price of rows
+    196  constraint Delta >= 0         hurts; the free version is neutral (item 125 again)
+    197  TDI rule from the joint       calibration is three times better, AUC and MCC worse
+    198  unpinned initialisation       broke the control, and the table looked plausible
+    199  overlay onto the co-crystals  the contrast removed size on three enzymes of four
 
-**Ансамбль упирается в данные, а не в модель, и это измерено четырьмя независимыми способами:**
-пункты 176, 182 и 191 --- три одиночных выигрыша подряд, не дошедших до ансамбля при корреляции
-ошибок 0.90--0.97; пункт 194 --- члены можно развести до антикорреляции, и это не помогает. Все
-члены упираются в одни и те же 1285--2335 строк.
+**The ensemble is bound by the data and not by the model, measured four independent ways:** items
+176, 182 and 191 --- three single-model gains in a row that did not reach the ensemble, at error
+correlations of 0.90--0.97; item 194 --- the members can be driven to anti-correlation, and that does
+not help either. Every member runs into the same 1285--2335 rows.
 
-**Главные открытые вопросы.**
+**The main open questions.**
 
-  почему пулирование выигрывает на HistGB и разворачивается на обычных деревьях (158, 166);
-  переносится ли что-либо из этого в тестовый режим --- проверить нечем (123, 129, 147);
-  скрининг ВНУТРИ поферментного члена не измерен --- единственный неизмеренный вариант,
-  и механизм пункта 182 предсказывает для него ноль (158, 177, 182);
-  три четверти выигрыша на пороге TDI не взяты: оракул +0.0472 против +0.0133 у калибровки (235);
-  на классификационном треке ПОЛ, а не моделирование --- связывающее ограничение: дважды
-  найдено настоящее улучшение упорядочения (+0.0196 и +0.0214 AUC, знак 4/4), и оба раза
-  MCC вдвое ниже пола 0.0281; курс обмена AUC в MCC около 0.5, значит доказуемым станет
-  только прирост от +0.05 AUC (241, 243).
+  why pooling wins on HistGB and reverses on ordinary trees (158, 166);
+  whether any of this carries into the test regime --- there is nothing to check it with (123, 129, 147);
+  screening INSIDE the per-enzyme member is unmeasured --- the one remaining variant,
+  and item 182's mechanism predicts zero for it (158, 177, 182);
+  three quarters of the gain at the TDI threshold is untaken: the oracle is +0.0472 against calibration's +0.0133 (235);
+  on the classification track the FLOOR, not the modelling, is the binding constraint: twice
+  a genuine improvement in ordering was found (+0.0196 and +0.0214 AUC, sign 4/4), and both times
+  the MCC came in at half the floor of 0.0281; the exchange rate from AUC into MCC is about 0.5, so
+  only a gain from +0.05 AUC upward will become provable (241, 243).
 
-**Что закрыто и переоткрывать не надо.** Постобработка сверх аффинной пары (77, 128 --- потолок
-0.0076), предобученные представления (61, 117, 154 --- три чекпойнта), FCFP (101), kNN (107),
-краевая регрессия (114), точное байесово действие (126), серийный слой (133), координата фермента
-(154), logD и LipE (154), хи-квадрат-DRO (154), ChEMBL как внешний источник (77 --- все три
-способа обращения), CYP2C19 как пятая изоформа (153), квантовый блок --- и против ПОТЕНЦИИ (186),
-и против СДВИГА TDI (242), оба раза с проходящими контролями.
+**Closed, and not to be reopened.** Post-processing beyond the affine pair (77, 128 --- a ceiling of
+0.0076), pretrained representations (61, 117, 154 --- three checkpoints), FCFP (101), kNN (107),
+regression onto the band edges (114), the exact Bayes action (126), the series layer (133), an
+enzyme coordinate (154), logD and LipE (154), chi-squared DRO (154), ChEMBL as an external source
+(77 --- all three ways of using it), CYP2C19 as a fifth isoform (153), and the quantum block --- both
+against POTENCY (186) and against the TDI SHIFT (242), each time with controls that passed.
 
-**Этот раздел назывался «Не запущено, а не закрыто» и держал квантовый блок против сдвига как
-последний незапущенный вариант. Исправлено 12 сентября: пункт 242 его закрыл, и табло отстало от
-журнала --- в третий раз тем же способом, что в пунктах 202 и 234.** Признаки лежат и никуда не
-делись (`data/quantum.npz`, 4905x10 плюс 750 тестовых, homo/lumo/gap/dipole/q_basicN/q_aromN_min/
-fukui_minus/cone_free/n_arom_N/has_donor, ноль NaN), но прогон состоялся.
+**This section used to be called "Not run, rather than closed" and held the quantum block against
+the shift as the last unrun variant. Corrected on 12 September: item 242 closed it, and the
+scoreboard had fallen behind the journal --- for the third time, the same way as in items 202 and
+234.** The features are still there (`data/quantum.npz`, 4905x10 plus 750 test rows,
+homo/lumo/gap/dipole/q_basicN/q_aromN_min/fukui_minus/cone_free/n_arom_N/has_donor, zero NaN), but
+the run happened.
 
-Против ПОТЕНЦИИ блок закрыт дважды (пункт 186, четыре сида с перестановочным контролем: ни один
-фермент не берёт свой пол, настоящий блок неотличим от перемешанного). Против СДВИГА
-Delta = pi_TDI - pi_dir его закрыл пункт 242 (`verify/k73_quantshift.py`, четыре сида, восемь
-клеток), и закрыл с полным набором контролей:
+Against POTENCY the block is closed twice over (item 186, four seeds with a permutation control: no
+enzyme clears its own floor, and the real block is indistinguishable from the shuffled one). Against
+the SHIFT Delta = pi_TDI - pi_dir it was closed by item 242 (`verify/k73_quantshift.py`, four seeds,
+eight cells), and closed with the full set of controls:
 
-    прирост Спирмена по Delta к базе      среднее   знак
-    +квант                                -0.0018    3/8
-    +квант ОСТАТОК                        +0.0035    5/8
-    +квант перемешан (контроль)           +0.0041    4/8
-    +10 колонок гауссова шума (контроль)  -0.0033    3/8
+    Spearman gain on Delta over the base       mean   sign
+    +quantum                                -0.0018    3/8
+    +quantum RESIDUAL                        +0.0035    5/8
+    +quantum shuffled (control)              +0.0041    4/8
+    +10 columns of Gaussian noise (control)  -0.0033    3/8
 
-**Перемешанный блок набирает больше любого настоящего плеча** --- полный ноль. Остаточная рука
-(блок минус его собственная вневыборочная реконструкция) существовала потому, что 9 из 10 колонок
-восстанавливаются из DESC+MECH вне фолда при $R^2>0.5$ (медиана 0.68), и она тоже ничего не даёт.
-Так что «физика у сдвига --- реакционная способность, а признаки уже на диске, это прогон, а не
-проект» было верным рассуждением с неверным исходом: прогон сделан, исход отрицательный.
+**The shuffled block scores higher than any real arm** --- a complete zero. The residual arm (the
+block minus its own out-of-fold reconstruction) existed because 9 of the 10 columns are recoverable
+from DESC+MECH out of fold at $R^2>0.5$ (median 0.68), and it gives nothing either. So "the physics
+of the shift is reactivity, the features are already on disk, this is a run and not a project" was
+sound reasoning with an unsound outcome: the run was made and the outcome is negative.
 
-Отдельно `src/quantum.py` падает на `xtb-python`, которого нет в реестре, но файл от более раннего
-прогона на месте --- это к воспроизводимости, а не к открытости вопроса.
+Separately, `src/quantum.py` fails on `xtb-python`, which is not in the registry, but the file from
+an earlier run is in place --- that is a reproducibility matter, not an open question.
 
 
-Forty-three scripts in four groups. `f*` was a sweep over everything that had been computed
+One hundred and twelve scripts in four groups. `f*` was a sweep over everything that had been computed
 and written by that point; `g*` answers four questions raised against the document; `h*`
 tests two claims the document made about geometry and about reactivity; `k*` began as a
 group about post-hoc rescaling of the predictions and about how far the test set sits from
