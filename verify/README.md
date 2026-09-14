@@ -11306,8 +11306,28 @@ that error against others (items 202, 234, 293) and it is the same one.
 
 **298. Pre-registration (blind): docking into the four cavities -- the last open structural lever,
 at a prior lowered twice, with the cost measured rather than asserted.** `src/dock.py` writes the
-block, the ablation mirrors `verify/k93_overlay.py` exactly. Written and committed before the run
-starts. The team chose the full variant knowing the cost.
+block and the ablation is `verify/k97_dock.py`, which mirrors `verify/k93_overlay.py` exactly. The
+team chose the full variant knowing the cost.
+
+**Correction to this item's own timeline, 14 September.** It said "Written and committed before the
+run starts", and neither half survives checking. `src/dock.py` had to exist to be run, but it was
+committed at 13:27 on 13 September in `30f30f8` -- its only commit -- while the chunk files are
+stamped 12:46, which is when `main()` cut them, so the commit is 41 minutes LATE rather than early.
+The ablation did not exist at all until 14 September, written with the run at 268 of 380 chunks.
+What the pre-registration actually rests on is unharmed, and is the claim that should have been
+made: both were written before `data/dock.npz` existed, hence before any affinity could be looked
+at, and none of the four conditions below has moved. Recorded rather than quietly fixed, because a
+pre-registration is worth exactly as much as its timeline.
+
+**The one place the ablation cannot copy k93, fixed blind.** `data/overlay.npz` is dense -- measured
+0 NaN over 4905x4 -- and `data/dock.npz` cannot be: three rows have no 3D structure at all
+(`data/lig3d_train.sdf` holds 4902 records against 4905), and a docking run may fail. Centring is a
+row operation, so one NaN makes all four of a row's columns NaN. Policy, fixed before the block
+existed: centre first, then set every remaining NaN to 0.0 -- no preference among the four pockets,
+the only filling that does not invent an affinity for a molecule we never docked. A run that has to
+impute more than one per cent of rows refuses to print a verdict at all. Item 304 is why that gate
+matters more than it looked: it was about to fire at 53.72 per cent, on a defect in the harvest
+rather than anything in the chemistry.
 
 **Why it is not the class that keeps returning zero.** Item 168: descriptors OF THE ENZYME are
 closed by arithmetic, while a quantity of the (ligand, cavity) PAIR is not a re-encoding of the
@@ -11876,3 +11896,65 @@ using nothing but the test structures and our own committed predictions -- no la
 feedback, no external lookup. Item 206 measured that our cross-validation is structurally blind to
 the test's analog structure, which is exactly the condition under which a label-free statement about
 the test is worth more than usual.
+
+**304. A defect in the instrument, found before any result existed: the harvest was silently
+discarding 54 per cent of a finished docking campaign, and every gate the pipeline had said the run
+was clean.** `src/dock.py`'s `parse_scores` read each pose file with
+`Chem.ForwardSDMolSupplier(out_sdf, removeHs=False)`, leaving RDKit's default `sanitize=True`.
+smina writes poses back without the charge and hydrogen bookkeeping that makes their valences
+legal, so RDKit returned `None` and the `m is None` skip on the next line dropped them without a
+word.
+
+**Measured on the campaign already on disk, not hypothesised.** Per cavity: 4902 train poses
+present, 2270 harvested, 2632 lost. The lost set is the SAME set on 2HI4, 1R9O and 4WNV -- compared
+as sets, not as counts -- so the failure is a property of the molecule and not of the run. Both
+passes read the same 4902 records, so nothing was missing from the files. `sanitize=False` recovers
+4902 of 4902 on all three.
+
+**Why nothing caught it.** Every chunk exited `rc=0`. `chunk_done` counts `$$$$` terminators, and
+every chunk was genuinely complete. The poses are intact on disk. The loss happened entirely at
+harvest, and no step compared what was read against what was written. This is the class this
+journal keeps recording, and the ninth instance of it in one day: a step that could not report
+failure, whose silence was read as data.
+
+**What it would have cost.** `verify/k97_dock.py`'s imputation gate would have fired at 53.72 per
+cent against its 1 per cent threshold and refused a verdict -- 204 CPU-hours producing no answer.
+The worse branch is the one where the threshold gets raised instead, and the campaign is judged on
+an unexplained 46 per cent subsample.
+
+**The bias mechanism offered with the finding does not hold, and is recorded because it was
+persuasive.** It said the dropped molecules were those carrying a protonated or otherwise
+four-valent nitrogen, and that this would damage CYP2D6 specifically, 2D6 being the one cavity of
+the four that binds through a salt bridge to a protonated nitrogen. Measured on the input SMILES:
+0.3 per cent of the dropped carry an N with charge +1 or four connections, against 1.1 per cent of
+the kept -- the opposite direction, and both shares negligible. The over-valence is real but it is
+in the POSE file: on a sample of 400 dropped molecules the errors are 230 "Explicit valence for
+atom N, 4, is greater than permitted" and 170 the same for "C, 5". What predicts the drop is not
+recoverable from the input chemistry, and a second story is not being substituted for the first. It
+also stops mattering: the fix loses nothing, so no subsample is left to be biased.
+
+**Alignment, now anchored instead of assumed.** The 4902 recovered indices equal
+`data/lig3d_index.npz:ok_train` exactly as sets, and `bad_train` is `[107, 4350, 4368]` -- the three
+rows the 3D pass never built. After the fix the block carries three NaN rows out of 4905, 0.061 per
+cent.
+
+**Fix, in three parts, and no re-docking.** `parse_scores` takes `sanitize=False`; it reads only
+`_Name` and one float property, so it never needed sanitised chemistry. The assembly now reports a
+harvest rate per cavity and refuses to save a block that lost anything at all. And
+`verify/k97_dock.py` checks the block's finite rows against `lig3d_index.ok_train`, which turns its
+old shape-equality test into one that would have reported this immediately, as 2632 missing rows.
+The poses are intact, so `uv run python src/dock.py --assemble-only` is enough.
+
+**One more fix in the ablation, small and unrelated.** k93's sign rule,
+`(d > 0).sum() >= 0.75 * len(d)`, equals item 298's "at least 3 of the 4 seeds" only at four seeds;
+at two it becomes 2-of-2 and at one, 1-of-1. It now requires at least three seeds and three
+positives, which changes no number at four.
+
+**How this was found, and the caveat on that.** Six independent reviewers over the new ablation,
+one per dimension, then two OPPOSED refuters per finding -- one attacking the mechanism, one
+granting it and attacking the consequence. Three dimensions came back clean and seven findings were
+killed. Two of the 24 agents failed with an API safeguard error, and both happened to be the
+refuters assigned to the sign-rule finding, so the scoring recorded it as confirmed on zero votes:
+it treated "nobody objected" as "nobody could object". The finding was right, and its arithmetic
+was checked by hand rather than trusted on its status. That defect was mine, and it has the same
+shape as the defect it was scoring.

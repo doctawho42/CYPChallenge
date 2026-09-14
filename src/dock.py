@@ -109,7 +109,14 @@ def chunk_done(out_sdf, n_expected):
 def parse_scores(out_sdf):
     """name -> best affinity. smina writes minimizedAffinity on each pose."""
     out = {}
-    for m in Chem.ForwardSDMolSupplier(out_sdf, removeHs=False):
+    # sanitize=False is load-bearing, not tidiness. smina writes poses back without the charge and
+    # hydrogen bookkeeping RDKit needs to validate valences, so with the default sanitize=True a
+    # large share of ligands come back as None and the `m is None` skip below drops them SILENTLY
+    # even though the docking run succeeded rc=0 and the pose is on disk. Measured on the finished
+    # campaign, identically on 2HI4, 1R9O and 4WNV: 2270 harvested out of 4902 poses present, the
+    # same 2632 names lost on all three, i.e. a property of the molecule rather than of the run.
+    # This function reads only `_Name` and one float property, so it needs no sanitised chemistry.
+    for m in Chem.ForwardSDMolSupplier(out_sdf, removeHs=False, sanitize=False):
         if m is None:
             continue
         nm = m.GetProp("_Name") if m.HasProp("_Name") else None
@@ -200,20 +207,47 @@ def main():
     te = pd.read_csv(D + "cyp-challenge-TEST-BLINDED.csv")
     A = {"tr": np.full((len(rows), len(CYPS)), np.nan),
          "te": np.full((len(te), len(CYPS)), np.nan)}
+    # Harvest rate per cavity, and it is load-bearing rather than decoration. The first version of
+    # parse_scores left RDKit's default sanitize=True, so 2632 of the 4902 train poses per cavity
+    # came back None and were dropped by its `m is None` skip -- silently, with every chunk rc=0 and
+    # every pose sitting on disk. Nothing here noticed. The loss would have surfaced only far
+    # downstream, as a 54 per cent NaN rate in an ablation that then refuses a verdict, and the
+    # obvious "fix" at that point would have been to relax the threshold and measure a 204-CPU-hour
+    # campaign on an unexplained subsample. So count what was read against what was written, per
+    # cavity, and refuse to save a block whose harvest lost anything at all.
+    harvest = {}
     for enz in enzymes:
         e = CYPS.index(enz)
         pdb, _ = CAVITY[enz]
+        n_pose = n_got = 0
         for tag in ("tr", "te"):
             for c in chunks[tag]:
                 out = f"{work}{pdb}_{os.path.basename(c).replace('.sdf','')}.sdf"
                 if not os.path.exists(out):
                     continue
-                for nm, v in parse_scores(out).items():
+                with open(out) as fh:
+                    n_pose += sum(1 for line in fh if line.startswith("$$$$"))
+                got = parse_scores(out)
+                n_got += len(got)
+                for nm, v in got.items():
                     if "_" not in nm:
                         continue
                     t, i = nm.split("_", 1)
                     if t == tag:
                         A[tag][int(i), e] = v
+        harvest[enz] = (n_got, n_pose)
+
+    print("\nсбор по полостям (разобрано / поз на диске):", flush=True)
+    lost = []
+    for enz, (g, p) in harvest.items():
+        print(f"  {enz:>8s} {g:6d} / {p:6d} = {(g / p if p else float('nan')):7.2%}", flush=True)
+        if p and g < p:
+            lost.append(f"{enz} -{p - g}")
+    if lost:
+        print("\nСТОП: разбор потерял позы, которые лежат на диске: " + ", ".join(lost) +
+              "\nБлок НЕ сохранён. Докинг перезапускать НЕ нужно --- потеря происходит на разборе,"
+              "\nа позы целы; починить parse_scores и повторить --assemble-only.", flush=True)
+        return
     cov = {c: (int(np.isfinite(A['tr'][:, i]).sum()), int(np.isfinite(A['te'][:, i]).sum()))
            for i, c in enumerate(CYPS)}
     print("\nпокрытие (train, test) по ферментам:", cov, flush=True)
