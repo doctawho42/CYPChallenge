@@ -12463,7 +12463,7 @@ exists or the grep for it fails loudly.
 
 **The count above is the THIRD attempt at it, and the first two disagreed --- so the number is
 reported with its method, not on its own.** My first pass classified by looking 110 characters back
-from each line number for a filename: it over-included, missed `submit.py:400` entirely, and
+from each line number for a filename: it over-included, missed "`submit.py:400`" entirely, and
 misattributed the 230 citation to item 180, which carries no line citation at all. My second pass
 resolved each file from a token on the SAME line: it correctly found 400 and pinned every item
 number, and it missed 395/593/375/598 completely, because those sentences name the file in a
