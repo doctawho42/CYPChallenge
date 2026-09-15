@@ -12774,14 +12774,30 @@ branch that filters every member, so every default build --- including the one w
 `submission.meta.json` records --- fits and ships the same composition. The defect is reachable only
 through `--no-deadzone`, which no shipped build has used.
 
-**And the diagnostic that should have caught it is a false friend.** The per-enzyme line prints
-`{len(parts)} член(ов) из пяти` against `SOLO`'s list. Under `--no-deadzone` that count is the
-number actually shipped, so it reads as a larger number beside the `SOLO` names --- which is exactly
-the disagreement, printed as though it were a fact. A reader would have to know the fit used a
-different set to see anything wrong. **A count that is correct about the wrong quantity is worse
-than no count.** Not fixed here: which composition `--no-deadzone` ought to ship is a modelling
-decision, and the flag exists to measure the dead zone's own contribution, so the answer is not
-obviously "filter both".
+**What is visible and what is not, corrected by the session that found the defect after this item
+first claimed the opposite.** The per-enzyme line prints `SOLO`'s names and `{len(parts)} член(ов)
+из пяти` on one line. Under `--no-deadzone` every enzyme ships five members --- per-enzyme, pooled,
+GP and ridge unconditionally, plus the trunk, whose `_keep` passes for all three `SOLO` enzymes ---
+so the line reads:
+
+    фермент   строка при --no-deadzone                  по умолчанию
+    CYP1A2    поферментно+GP+ствол (5 член(ов) из пяти)  ... (3 член(ов) из пяти)
+    CYP2C9    GP+ствол (5 член(ов) из пяти)              GP+ствол (2 член(ов) из пяти)
+    CYP3A4    GP+ствол (5 член(ов) из пяти)              GP+ствол (2 член(ов) из пяти)
+
+**So the only visible symptom is a line that contradicts itself** --- two names beside five members
+--- and a reader needs to know nothing about the fit to see that something is off. By default the
+same line agrees with itself. **What no printed line reveals is WHICH composition the shrinkage was
+fitted on**, and that is the part that cannot be recovered from the output at all.
+
+This item first said "a count that is correct about the wrong quantity is worse than no count",
+which is wrong twice: the count is not silently wrong, it is loudly inconsistent with the names
+beside it, and taking it away would remove the one symptom there is. Withdrawn, on a reading I asked
+for and then had to accept against my own wording.
+
+Not fixed here: which composition `--no-deadzone` ought to ship is a modelling decision, and the
+flag exists to measure the dead zone's own contribution, so the answer is not obviously "filter
+both".
 
 **Two defects of mine in `src/recalib.py`, from the same session, both reproduced here before being
 accepted, both fixed.** First, `git_state` ran git in the CALLER's working directory: invoked from
