@@ -12655,6 +12655,26 @@ all. This is exactly the gap the meta was created to close --- "нельзя б�
 and nothing can produce it again. Not fixed here; it needs its own change, and `src/recalib.py`'s
 `git_state()` and `sha256()` are the shape a writer would take.
 
+**And the stronger form, because "has no writer" reads as "not any more".** The citation-fix session
+proposed the test and both of us ran it independently: `git log --all -S` for those field names over
+every `.py` on every ref returns **zero commits**, so a writer never existed rather than having been
+deleted. Controls, because a search that finds nothing proves nothing: the same form returns 6
+commits for `plugin_threshold` and 4 for `fit_shrinkage`. The only mention of `submission.meta` in
+any Python source in this repository's entire history is the docstring line in `src/recalib.py`
+added on 15 September --- mine, and not a writer. The meta itself arrived in `2ea8735`, a commit
+about items 296 and 297: the same pattern as item 307's `caltwo` outputs riding in on a commit about
+Free-Wilson. **An artefact that enters on an unrelated commit is an artefact nobody is looking at.**
+
+**A lesson from the commit gate of this very change, handed back by the citation-fix session because
+its guard cannot express it.** That guard only ever asks "does this line hold this symbol"; it never
+asks whether a string is ABSENT. My gate did ask that --- it asserted `METHOD.md`'s stale "no
+sampling band at all" was gone --- and it correctly stopped the commit, because the replacement
+QUOTES the old sentence in order to record what it used to say. The right invariant is "appears
+once, inside quotes", not "appears zero times". **In a file that records its own corrections, "the
+bad string is gone" is never the right thing to check.** Third time in one day: the item counter
+that also matched bolded decimals, the pull-request body whose heading lost its count while the
+prose kept it, and this.
+
 **What this cost, and what it bought, because the instrument failed and that belongs in the
 record.** Eight agents, three completed, five failed --- two on network errors and three on output
 validation --- for 1.4 million subagent tokens, 248 tool calls and 68 minutes. The synthesis never
