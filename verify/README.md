@@ -12436,9 +12436,10 @@ that the cited line still holds the symbol the sentence attributes to it:
 **Six stale references into `src/submit.py`, not one of them noticed, because the diff that moved
 them was a diff to `submit.py` and the file that started lying was this one.** `src/submit.py` is now
 1183 lines and the citations date from when it was about a third of that. One case is worse than an
-offset: the transductive standardisation of item 202's defect 2 survives at line 1050 only as a
-COMMENT, because `be25415` closed that defect --- so a reader following the citation finds neither
-the line nor the code. **The honest rule is therefore: cite a SYMBOL, not a line, in either
+offset: the transductive standardisation of item 202's defect 2 survives only as a COMMENT beside
+`_desc_scaled`, because `be25415` closed that defect --- so a reader following the citation finds
+neither the line nor the code. (That sentence cited the comment's line number until the audit above
+was applied to the sentence itself.) **The honest rule is therefore: cite a SYMBOL, not a line, in either
 direction.** A symbol either exists or the grep for it fails loudly.
 
 **Two corrections to my own audit, both found by checking rather than by reading.** Item 253's
@@ -12451,3 +12452,40 @@ about the board.
 
 **Cost: one afternoon, no compute.** The board pull is seconds and the transform is one pass over
 750 rows.
+
+**AMENDMENT, written before the file went to the board: the checker for the prediction above exists
+and its pass rules are fixed inside it.** `verify/k101_prereg308.py`, committed while the
+recalibrated submission was still sitting on disk unuploaded --- the same order as `k99_lam0.py`,
+and for the same reason: a rule written after the number arrives is not a rule. Three rules, with
+their tolerances and the reason for each:
+
+    правило              порог                                смысл
+    1. РАНГ (резкое)     |Δро| <= 0.0005 на всех четырёх      преобразование монотонно; сдвиг
+                                                              ранга опровергает подачу, а не
+                                                              только арифметику
+    2. НАПРАВЛЕНИЕ       макро R2 растёт хотя бы на +0.30      иначе диагноз о масштабе неверен
+    3. ВЕЛИЧИНА          макро R2 внутри [0.40, 0.60]         закрытая форма даёт 0.5001 и 0.5031
+
+Rule 1 expects exactly zero; the tolerance exists only because the board rounds to four places.
+Rule 3's band is deliberately wide, and the reason is the defect this item already records: the
+MAE-to-RMSE assumption is strictly violated on CYP1A2 and CYP2D6, so the per-cell figures there do
+not deserve two decimals. **ST-RAE is reported but NOT predicted** --- with no credible bands on the
+test set there was never a closed form for it, and inventing a target afterwards would be the
+tuning this item forbade.
+
+**The control is the part that makes the rest mean anything, and it was exercised in both
+directions.** If the recalibrated file has not been uploaded, the board still carries the OLD
+submission and every comparison would "confirm" the state before the change; so the script checks
+our row's submission timestamp against the recorded `2026-09-15 10:01 UTC` and REFUSES, exiting 2,
+rather than rendering a verdict. Three runs, because a checker that can only refuse looks like a
+working control and is not one: the real snapshot refuses (exit 2); a copy with the timestamp
+altered renders the full table and correctly scores 1 of 3, since the numbers behind it are still
+the old ones (exit 1); and a copy with one Spearman moved by 0.01 reports that cell as СДВИНУЛСЯ
+(exit 1), which is the only run that proves the sharp rule can fail at all.
+
+**And a measurement error of mine inside that verification, worth recording because it is the
+session's recurring one in miniature.** I first read the rank-broken run's exit status through a
+`| sed` filter, so `$?` carried sed's status and reported 0 where the script exits 1 --- a status
+that could not have been anything else, read as evidence about the script. Re-measured without the
+pipe, all three codes are correct, and the harness was checked against a deliberate `sys.exit(7)`
+to show it can see a different number at all.
