@@ -130,6 +130,7 @@ TUT = tutorial()
 
 import argparse
 import json
+import time
 
 import numpy as np
 import pandas as pd
@@ -142,6 +143,7 @@ from gp import prepare as gp_prepare, gp_predict
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression, RidgeCV
 from reweight import tilt
+import submeta
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
 TDI_CYPS = ["CYP3A4", "CYP2D6"]          # the only two the organisers score
@@ -856,8 +858,24 @@ def fit_shrinkage(P, y, mask, delta=(0.0, 0.0, 0.0, 0.0)):
     return out
 
 
+def _provenance(a, argv, lams, fold, clusters, cls, verdicts, paths, elapsed_s):
+    """What submeta.build needs, taken from what main() holds once the gate has passed.
+
+    Kept out of main() so tests/test_submission_meta.py can exercise it in milliseconds: it
+    runs at the end of a 161-to-230-minute run, where a slip would cost that run's record.
+    """
+    return dict(paths=paths, argv=list(argv), mode=a.mode, solo=SOLO, cyps=CYPS,
+                deadzone=a.deadzone, bundle=a.bundle, delta=a.delta, lams=lams,
+                grid=(float(GRID.min()), float(GRID.max())),
+                positives={c: int(cls[f"{c}_is_TDI"].sum()) for c in TDI_CYPS},
+                total_rows=int(len(cls)), digest=fold_digest(fold), clusters=int(clusters),
+                golden=TRUNK_FOLD_DIGEST, gate=dict(verdicts), git=submeta.git_state(),
+                versions=submeta.versions(), elapsed_s=elapsed_s)
+
+
 def main():
     global LO, HI
+    t0 = time.monotonic()      # the provenance record's runtime is measured from here
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-shrink", dest="shrink", action="store_false",
                     help="не применять усадку (поведение до пункта 252). Флаг ВКЛЮЧЁН по "
@@ -963,9 +981,10 @@ def main():
     print(f"  тест {Xte.shape}, обучение {X.shape}", flush=True)
 
     lams = None
+    fold = clusters = None
     if a.shrink:
         print("подбираю усадку вне выборки на обучающих данных", flush=True)
-        fold, _ = butina_folds(list(rows.SMILES))
+        fold, clusters = butina_folds(list(rows.SMILES))
         d = [float(x) for x in str(a.delta).split(",")]
         if len(d) == 1:
             d = d * 4
@@ -1136,6 +1155,7 @@ def main():
     from validation.tdi_validation import validate_tdi_submission
     ids = set(te.Molecule_Name)
     ok = True
+    verdicts = {}
 
     def _verdict(res):
         """Normalise a validator's return into (passed, errors).
@@ -1166,6 +1186,7 @@ def main():
             res = fn(path)
             print(f"  {name}: валидатор без expected_ids, проверка только по файлу", flush=True)
         passed, bad = _verdict(res)
+        verdicts[name] = passed
         if not passed:
             ok = False
             print(f"  {name}: ОТКЛОНЕНО")
@@ -1175,7 +1196,15 @@ def main():
             print(f"  {name}: принято")
     if not ok:
         raise SystemExit("валидатор отверг файл; ничего не отправлять")
-    print(f"\nготово:\n  {ap_}\n  {tp_}")
+
+    # Provenance (item 309): written beside the files, and only for files the gate accepted.
+    # The split is recorded even when no shrinkage pass needed the folds.
+    if fold is None:
+        fold, clusters = butina_folds(list(rows.SMILES))
+    mp_ = a.outdir + "submission.meta.json"
+    submeta.write(mp_, **_provenance(a, _sys.argv[1:], lams, fold, clusters, cls, verdicts,
+                                     [ap_, tp_], elapsed_s=time.monotonic() - t0))
+    print(f"\nготово:\n  {ap_}\n  {tp_}\n  {mp_}")
 
 
 if __name__ == "__main__":

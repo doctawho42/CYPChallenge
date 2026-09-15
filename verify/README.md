@@ -12135,8 +12135,8 @@ tree whose leaves carry local (E, h) instead of a constant" from speculation to 
 a defect now measured", and after item 306 it was the last open lever in the mechanistic work
 order. Four things close it, three of them already in this file, and the fourth was on disk.
 
-**One: the target is not on the submission path.** `src/submit.py:661` pins
-`TRUNK_MODE = "twohead"`, used on the test path at 1009-1010. `g_of_pi` is defined at
+**One: the target is not on the submission path.** `src/submit.py` pins `TRUNK_MODE = "twohead"`,
+and `main` passes it to `TR.fit_predict_test` on the test path. `g_of_pi` is defined at
 `src/trunk.py:148` and called at exactly one site, line 392, which sits inside the `else` of
 `if mode == "twohead"` at 377-379. So `CAL_E` and `CAL_H` are never executed for a shipped
 prediction. A better calibration improves a branch the submission does not run.
@@ -12147,7 +12147,7 @@ CYP3A4 clearing its floor for the first time in this file. Item 176 cashed that 
 five-member ensemble: **rank moves -0.0008 and -0.0004**, "nothing, an eighth of the macro floor".
 The parametric leaf would have to ride that same channel, so it starts below zero.
 
-**Three: the standard harness cannot see the defect.** `SOLO` at `src/submit.py:585-587` keeps the
+**Three: the standard harness cannot see the defect.** `SOLO` in `src/submit.py` keeps the
 per-enzyme member only on CYP1A2 and CYP2D6; CYP2C9 and CYP3A4 ship GP+ствол. Item 169's five-fold
 slope swing is a CYP3A4 phenomenon. A leaf built into the per-enzyme member and measured the cheap
 way would read exactly 0.000000 on the one enzyme it was designed to fix -- the same
