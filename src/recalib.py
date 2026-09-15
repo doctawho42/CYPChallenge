@@ -55,9 +55,25 @@ def git_state():
 
     core.quotepath=false because git quotes non-ASCII paths by default, which made an
     earlier audit report "no such file" for files that were plainly there.
+
+    Two defects the meta-writer session found here by measurement, both fixed:
+
+    `cwd=ROOT`, because git was running in the CALLER's directory. Invoked from /tmp this
+    returned commit "" and branch "" with no error at all, so the provenance of a shipped
+    file could silently record nothing; a non-zero exit now records the error instead of a
+    blank, since a blank is indistinguishable from a clean answer.
+
+    And the dirty tree is split on a trailing newline only. `.strip()` on the whole output
+    ate the first column of the FIRST entry, turning " M f" into "M f" -- in porcelain the
+    first column is the index and the second the worktree, so that is not cosmetic: it
+    reports a different state of the file. The fingerprint is visible in both committed
+    metas, whose first entry lacks the space every later entry has.
     """
     def run(*a):
-        return subprocess.run(a, capture_output=True, text=True).stdout.strip()
+        r = subprocess.run(a, capture_output=True, text=True, cwd=ROOT)
+        if r.returncode != 0:
+            return f"<git failed: {r.returncode} {r.stderr.strip()[:80]}>"
+        return r.stdout.rstrip("\n")
     return {
         "commit": run("git", "rev-parse", "HEAD"),
         "branch": run("git", "rev-parse", "--abbrev-ref", "HEAD"),

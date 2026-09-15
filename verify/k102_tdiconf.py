@@ -42,8 +42,10 @@ Controls, because a check that cannot fail is not a check:
   * the enumeration window and the prefilter are both checked for bindingness, so that
     "no other table is consistent" cannot be an artefact of where the search looked.
 
-Runtime: about a minute. Reads the snapshot, the TDI training file and the submission
-files; writes nothing.
+Runtime: about two minutes (measured 2m09s twice on this machine; the docstring said "about a
+minute" until it was timed, and a documented runtime is what decides whether the next reader dares
+run a script at all). Reads the snapshot, the TDI training file and the submission files; writes
+nothing.
 """
 
 import sys as _sys, pathlib as _pl
