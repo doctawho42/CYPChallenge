@@ -352,7 +352,7 @@ was at fault it is said so explicitly.
 10. There are **fourteen** verification scripts, not twenty-three, in both this file and
     the top-level README. (Eight more were added later, in the `h*` and `k*` groups; the
     current count is twenty-five and both files say so.)
-11. `f12_cvhard.py` could never have run to completion as committed: line 34 referenced an
+11. `f12_cvhard.py` could never have run to completion as committed: it referenced an
     undefined `fRES`. Fixed, and the script now reproduces the documented -0.153.
 12. The test-set clustering figures in §2 (194 groups, median size two, 55 groups of five
     or more) come from a Butina threshold of about 0.48. The repository works at 0.35,
@@ -4740,7 +4740,7 @@ pooled boosting, the Gaussian process and the ridge -- **four**. Item 121 wired 
 trunk in as a fifth behind `--mode ансамбль5`, and that is what `src/submit.py` builds. So item
 162's 0.6196, the best number in this file, belonged to a configuration that is not submitted.
 
-Both `submit.py` (line 230) and `abldzens.py` combine members by an unweighted mean, so the five-
+Both `submit.py` and `abldzens.py` combine members by an unweighted `np.mean`, so the five-
 member ensemble is `(4 * четыре + ствол) / 5` exactly and can be composed from saved predictions in
 minutes rather than recomputed in hours. The composition check passes: the plain five-member arm
 reproduces item 120's rank of **0.6063** to the fourth decimal.
@@ -5527,8 +5527,9 @@ exited **code 0**, so the status file read as three successful completions. Only
 showed two `unrecognized arguments` errors. The runner now takes arguments as an array. A queue
 whose failures look like successes is worse than no queue.
 **183. The ensemble is combined by a mean, the metric is not minimised by a mean, and the mean wins
-anyway.** `verify/k55_combine.py`. `src/submit.py` line 230 and `src/abldzens.py` line 147 both use
-`np.mean`, and in 182 items nothing else had been tried, so the operator was worth one measurement.
+anyway.** `verify/k55_combine.py`. `src/submit.py` (on the out-of-fold and the test path alike) and
+`src/abldzens.py` both use `np.mean`, and in 182 items nothing else had been tried, so the operator
+was worth one measurement.
 
 The mathematics says it should not be a mean. The loss is the distance from a point to an interval,
 and differentiating an expected distance-to-a-set gives `-P(lo > p) + P(hi < p)`, so the minimiser
@@ -6257,15 +6258,19 @@ with no flags therefore builds the four-member ensemble, while the scoreboard li
 guessed, because item 120's +0.0054 for the trunk is the difference between them.
 
 **Defect 2: the ridge member that ships is not the ridge member that was measured.** `_oof_ridge`
-standardises on the training rows (`_desc_scaled(X[m])`, line 395); the test path standardises on
-training and test together (`_desc_scaled(np.vstack([X[m], Xte]))`, line 593). Two consequences and
-the second is worse than the first. The shipped member is a different estimator from the measured
+standardises on the training rows (`_desc_scaled(X[m])`); the test path in `main` standardised on
+training and test together (`_desc_scaled(np.vstack([X[m], Xte]))`). Two consequences and the
+second is worse than the first. The shipped member is a different estimator from the measured
 one, at per-enzyme floors of 0.0033 to 0.0071, so the difference is not free. And it is a
-transductive use of the test set: the test features enter the training-time scaling.
+transductive use of the test set: the test features enter the training-time scaling. **Closed by
+`be25415` on 4 September:** the test path now builds that member's design with `_dz_design`, which
+fits on the training rows alone, and the transductive call survives in `main` only inside the
+comment above it that opens "Дефект 2 пункта 202" --- quoted there, never run.
 
 **Defect 3: the composition study does not clip the trunk and the submission does.** `_trunk_clip`
 bounds the trunk's output to the enzyme's label range plus or minus two units, and `src/submit.py`
-applies it (lines 375 and 598). `verify/k46_five.py` contains no clip at all. Re-composed with the
+applies it on both the out-of-fold path, in `_oof_trunk`, and the test path, in `main`.
+`verify/k46_five.py` contains no clip at all. Re-composed with the
 clip, seed 0 gives **0.6741 / 0.6077** against the published **0.6824 / 0.6063** -- 0.008 of pair,
 larger than the macro floor. The scoreboard's five-member row therefore describes a configuration
 adjacent to the submitted one rather than the submitted one.
@@ -8515,8 +8520,8 @@ this paragraph.
      218   SOLO: один GP на CYP3A4          max по 4 ферментам,         ЗАМЕНЁН 283
                                             затем max из 31 подмножества
 
-Item 218's constant is in `src/submit.py:400` and it is the only one of the three that ships. Its
-+0.0098 of rank on CYP3A4 was judged against a per-enzyme floor of 0.0033; corrected for the
+Item 218's constant is `SOLO` in `src/submit.py`, and it is the only one of the three that ships.
+Its +0.0098 of rank on CYP3A4 was judged against a per-enzyme floor of 0.0033; corrected for the
 winner's curse it is +0.006 to +0.008, and a one-enzyme change enters macro at a quarter weight,
 about +0.002. **The decision stands on cross-validation grounds and is not being reversed here** --
 it costs nothing and the sign is right -- but it must stop being quoted as a leaderboard-relevant
