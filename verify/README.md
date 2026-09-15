@@ -12425,29 +12425,65 @@ that file is edited, which shows up in the same diff" --- was falsified within t
 it.** Every external line citation in this file was resolved against the file it names, by checking
 that the cited line still holds the symbol the sentence attributes to it:
 
-    ссылка                                   символ          держится
-    src/trunk.py 148 и 392                   g_of_pi         да
-    src/abldzens.py 147                      np.mean         да
-    validation/activity_validation.py 74-77  откат по числу  да
-    src/submit.py 395 и 593                  _desc_scaled    НЕТ --- реально 760, 777, 1050
-    src/submit.py 375 и 598                  _trunk_clip     НЕТ --- реально 700, 757, 1061
-    src/submit.py 230 (пункты 180 и 183)     np.mean         НЕТ --- реально 656 и 1062
+    ссылка                                   пункт   символ         держится
+    src/trunk.py 148 и 392                     307   g_of_pi        да
+    src/abldzens.py 147                        183   np.mean        да
+    src/submit.py 661, 585                     307   TRUNK_MODE, SOLO  да
+    src/shrinkchoice.py 53                     277   OFFGRID        да
+    src/submit.py 542                          257   внутри _oof_one   да
+    validation/activity_validation.py 74-77    308   откат по числу да
+    src/submit.py 395 и 593                    202   _desc_scaled   НЕТ --- реально 760, 777, 1050
+    src/submit.py 375 и 598                    202   _trunk_clip    НЕТ --- реально 700, 757, 1061
+    src/submit.py 230                      164, 183  np.mean        НЕТ --- реально 656 и 1062
+    src/submit.py 400                          245   константа 218  НЕТ --- строка ПУСТА, SOLO на 585
+    verify/f12_cvhard.py 34                 "Ещё      fRES           НЕТ --- убран в 137c671
+                                          тринадцать"
 
-**Six stale references into `src/submit.py`, not one of them noticed, because the diff that moved
-them was a diff to `submit.py` and the file that started lying was this one.** `src/submit.py` is now
-1183 lines and the citations date from when it was about a third of that. One case is worse than an
-offset: the transductive standardisation of item 202's defect 2 survives only as a COMMENT beside
-`_desc_scaled`, because `be25415` closed that defect --- so a reader following the citation finds
-neither the line nor the code. (That sentence cited the comment's line number until the audit above
-was applied to the sentence itself.) **The honest rule is therefore: cite a SYMBOL, not a line, in either
-direction.** A symbol either exists or the grep for it fails loudly.
+**Seven stale citations into `src/submit.py` over six distinct locations, and one into
+`verify/f12_cvhard.py`, not one of them noticed --- because the diff that moved them was a diff to
+the source while the file that started lying was this one.** `src/submit.py` is now 1183 lines and
+the citations date from when it was about a third of that.
 
-**Two corrections to my own audit, both found by checking rather than by reading.** Item 253's
-`src/submit.py:_oof_one`, line 542 is SOUND: `_oof_one` spans 512-594 so 542 is inside it, and the
-item's claim is that `sample_weight` is ABSENT, which the file confirms at zero occurrences --- my
-first pass counted it as rot because the needle I searched for was the very string whose absence is
-the claim. That same pass also MISSED `submit.py:230`, which is cited twice. The six stale references
-are left for a separate change: they are pre-existing, mechanical, and do not belong in a commit
+**Two of them were never right in the first place.** In `61182bd`, the commit that WROTE item 202's
+defect-2 and defect-3 citations, line 600 held `_desc_scaled(np.vstack([X[m], Xte]))` and line 605
+held `_trunk_clip` --- while the item cites 593 and 598. Off by seven on the day they were written,
+so "rot" is the wrong word for those two: they were born wrong, and nothing since has checked them.
+A line number is not merely fragile; it is unverifiable by reading, which is why nobody read it.
+
+**And one case is worse than an offset.** Item 202's defect 2 was CLOSED by `be25415`, and what
+survives at the cited place is a COMMENT --- in `main()`'s test path, in a block that opens "Дефект 2
+пункта 202: раньше здесь стояло", between `gp_prepare` and `gp_predict`; `_desc_scaled` occurs
+there only inside the comment's own text, while its definition and its live call in `_oof_ridge` are
+elsewhere entirely. A reader following the citation finds neither the line, nor the code, nor the
+symbol. (This sentence first cited the comment's line number, then said the comment sat "beside
+`_desc_scaled`". Both were wrong, and the second was corrected by the citation-fix session reading
+the code rather than the sentence.)
+
+**The honest rule is therefore: cite a SYMBOL, not a line, in either direction.** A symbol either
+exists or the grep for it fails loudly.
+
+**The count above is the THIRD attempt at it, and the first two disagreed --- so the number is
+reported with its method, not on its own.** My first pass classified by looking 110 characters back
+from each line number for a filename: it over-included, missed `submit.py:400` entirely, and
+misattributed the 230 citation to item 180, which carries no line citation at all. My second pass
+resolved each file from a token on the SAME line: it correctly found 400 and pinned every item
+number, and it missed 395/593/375/598 completely, because those sentences name the file in a
+preceding clause. **Neither audit could have found what the other found.** A reliable one has to
+resolve the file from paragraph context, which is exactly the trap this item warned the citation-fix
+session about, and then fell into. Two further traps for any such checker, both real: a NEGATIVE
+claim (item 257 says the pooled member "fits with no `sample_weight`", and `sample_weight` has zero
+occurrences, so a needle search reports a sound citation as rot) and this item's own quotations of
+the broken citations as strings.
+
+**Corrections to my own audit, every one found by checking rather than by reading.** Item **257**'s
+`src/submit.py:_oof_one`, line 542 is SOUND: by the AST `_oof_one` spans **512-553**, so 542 is
+inside it, and the item's claim is that `sample_weight` is ABSENT, which the file confirms at zero
+occurrences --- my first pass counted it as rot because the needle I searched for was the very
+string whose absence is the claim. Three numbers in the sentence that stood here were wrong: the
+item was 253, the span ended at 594, and the same pass MISSED `submit.py:230`. The span came from
+taking the next top-level `def` as the end, which is `_keep` at 595, with forty lines of something
+else in between; the AST answers the question the heuristic only approximated. The stale citations
+are left for a separate change --- they are pre-existing, mechanical, and do not belong in a commit
 about the board.
 
 **Cost: one afternoon, no compute.** The board pull is seconds and the transform is one pass over
