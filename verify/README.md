@@ -12304,7 +12304,8 @@ lies within 0.03 of ours --- the same ordering by the board's own measure --- ma
 therefore does not determine the score, and our particular loss is not in the ordering. That is the
 whole case, and it stands without any use of probed constants.
 
-**Why the affine pair could not have caught this.** `fit_shrinkage` (`src/submit.py:808-856`) fits
+**Why the affine pair could not have caught this.** `fit_shrinkage`, called once on
+`oof_predictions`' output in `main`, fits
 its shift and lambda against the credible bands of OUR labels. It calibrates to the TRAINING
 distribution and has no access to the test one; it is not a defect in that function. Item 277 already
 raised its `GRID` ceiling to 2.0 for a related reason, and two of the four multipliers needed here
@@ -12747,3 +12748,54 @@ a free-text field for numbers, which invited multi-line content that then failed
 And the decisive evidence was item 299's, already on disk. **A sixty-eight-minute run whose answer
 was already written down is not a triumph** --- what it actually bought was verification and four
 defects found in this file, which is a smaller and more honest claim.
+
+**310. `--no-deadzone` fits the affine pair on one composition and ships another. The default run is
+NOT affected, so nothing shipped is wrong --- but the flag is a trap, and the print that would have
+exposed it says the right number for the wrong reason.** Found by the session writing the
+provenance writer, while moving lines in `src/submit.py`; verified here by reading the code rather
+than by accepting the report.
+
+**The mechanism, by symbol.** `fit_shrinkage` is fitted on `oof_predictions`' output, and
+`oof_predictions` averages only the members that pass `_keep` --- the `SOLO` filter of items
+282-285. On the test path the composition is assembled twice over, under a condition:
+
+    ветвь теста          что добавляется              проходит ли через _keep
+    dz_targets не None   каждый член мёртвой зоны     ДА, для каждого
+    dz_targets None      пул, GP, гребневая           НЕТ, ни для одного
+    любая                ствол (режим ансамбль5)      ДА
+
+So with the dead zone on, the fitted composition and the shipped composition are the same set. With
+it off, the pair is fitted on the `SOLO`-filtered average while the full five members ship. **The
+lambda and shift applied to the submission would then belong to a different estimator than the one
+being corrected.**
+
+**Why nothing shipped is wrong.** `ap.set_defaults(deadzone=True)`, and the dead-zone loop is the
+branch that filters every member, so every default build --- including the one whose sha256
+`submission.meta.json` records --- fits and ships the same composition. The defect is reachable only
+through `--no-deadzone`, which no shipped build has used.
+
+**And the diagnostic that should have caught it is a false friend.** The per-enzyme line prints
+`{len(parts)} член(ов) из пяти` against `SOLO`'s list. Under `--no-deadzone` that count is the
+number actually shipped, so it reads as a larger number beside the `SOLO` names --- which is exactly
+the disagreement, printed as though it were a fact. A reader would have to know the fit used a
+different set to see anything wrong. **A count that is correct about the wrong quantity is worse
+than no count.** Not fixed here: which composition `--no-deadzone` ought to ship is a modelling
+decision, and the flag exists to measure the dead zone's own contribution, so the answer is not
+obviously "filter both".
+
+**Two defects of mine in `src/recalib.py`, from the same session, both reproduced here before being
+accepted, both fixed.** First, `git_state` ran git in the CALLER's working directory: invoked from
+`/tmp` it returned commit `""` and branch `""` **with no error**, against the real commit from
+inside the checkout. A provenance record whose failure mode is silent blankness is worse than one
+that refuses, so it now runs with `cwd=ROOT` and records `<git failed: ...>` instead of a blank.
+Second, it called `.strip()` on the whole of `git status --porcelain`, which ate the first column of
+the FIRST entry only --- `" M f"` became `"M f"`. That is not cosmetic: column one is the index and
+column two the worktree, so the record was reporting a different state of the file. Now split on a
+trailing newline alone. The fingerprint is visible in **both** committed metas, whose first entry
+lacks the space every later entry carries --- which is also the best evidence that whatever wrote
+`submission.meta.json` once had this same bug, even though no writer for it survives on any ref.
+
+`results/submission/recal.meta.json` is regenerated with the fix: the recalibrated CSV is bit
+identical afterwards (`0e1740c4...` unchanged), so only the provenance moved. It now records the
+branch it was built on rather than `main`, which is honest and also means it wants regenerating once
+this lands --- written down here so that does not become a quiet inaccuracy.
