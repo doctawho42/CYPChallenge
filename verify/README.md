@@ -212,8 +212,11 @@ not help either. Every member runs into the same 1285--2335 rows.
 0.0076), pretrained representations (61, 117, 154 --- three checkpoints), FCFP (101), kNN (107),
 regression onto the band edges (114), the exact Bayes action (126), the series layer (133), an
 enzyme coordinate (154), logD and LipE (154), chi-squared DRO (154), ChEMBL as an external source
-(77 --- all three ways of using it), CYP2C19 as a fifth isoform (153), and the quantum block --- both
-against POTENCY (186) and against the TDI SHIFT (242), each time with controls that passed.
+(77 --- all three ways of using it), CYP2C19 as a fifth isoform (153), the quantum block --- both
+against POTENCY (186) and against the TDI SHIFT (242) --- and, since 15 September, **docking into
+the four cavities (298, 305, 306)**: 22608 runs over 204 CPU-hours, both clash policies, every live
+cell under its floor, and in the literal reading the targeted arm beaten by its own wrong-isoform
+control. Each time with controls that passed.
 
 **This section used to be called "Not run, rather than closed" and held the quantum block against
 the shift as the last unrun variant. Corrected on 12 September: item 242 closed it, and the
@@ -12027,3 +12030,85 @@ it. That is the second wrong status from my own scoring in one day: the first re
 confirmed on zero votes because both its refuters had died. One false confirm and one false kill,
 and both were caught by looking at the data rather than by reasoning about the finding. A review
 panel is an instrument, and this is its first measured error rate.
+
+**306. Docking is a null, in both readings of the block, and the (ligand, cavity) lever closes with
+it.** 22608 runs, 204 CPU-hours, two policies for the 202 clash scores, four seeds each. Every live
+cell is under its floor in both arms, and in the literal reading the targeted arm is beaten by its
+own wrong-isoform control. `verify/k97_dock.py --clash {keep,zero}`, scored by
+`verify/k98_clash_arms.py`, which was committed before either arm had written a result.
+
+    policy  arm                  enzyme     Δrank      sd   sign    floor   verdict
+    keep    A целевая            CYP1A2   -0.0003  0.0010    2/4   0.0061   нет
+    keep    B неверная изоформа  CYP1A2   +0.0008  0.0025    3/4   0.0061   нет
+    keep    A целевая            CYP2D6   -0.0001  0.0023    3/4   0.0049   нет
+    keep    B неверная изоформа  CYP2D6   +0.0002  0.0014    2/4   0.0049   нет
+    zero    A целевая            CYP1A2   +0.0008  0.0007    4/4   0.0061   нет
+    zero    B неверная изоформа  CYP1A2   -0.0005  0.0008    1/4   0.0061   нет
+    zero    A целевая            CYP2D6   -0.0022  0.0015    0/4   0.0049   нет
+    zero    B неверная изоформа  CYP2D6   -0.0012  0.0002    0/4   0.0049   нет
+
+**Condition 4 is exact, which is the harness certifying itself.** CYP2C9 and CYP3A4 read
++0.000000 with sd 0.000000 in every arm of both policies -- 0.0000 by construction, because the
+per-enzyme member does not enter those two cells at all (items 282--285). A non-zero there would
+have meant a defect in the stand rather than a result.
+
+**Two independent computations agree.** `k98` recomputes every delta from the per-seed records and
+compares against the summary `k97` wrote for itself: **0 discrepancies** in both arms. That check
+exists because twice on 14 September a wrong status survived unrecomputed (item 304).
+
+**What the amendment changed, and what it did not.** On CYP1A2 the clashes were not inert: under
+`keep` the targeted arm LOSES to its wrong-isoform control (-0.0003 against +0.0008), and clipping
+them turns that around into the targeted arm winning with the sign holding **4 of 4** seeds. So
+item 305's repair did recover an ordering that the outliers had inverted. And it changes nothing
+that matters: the recovered effect is +0.0008 against a floor of 0.0061, **one seventh of the bar**.
+The clashes mattered qualitatively and not at all quantitatively, which is the cleanest form the
+answer could have taken -- had only the repaired arm been run, +0.0008 with sign 4/4 would have
+looked like a signal worth chasing.
+
+**Item 305's own measurement.** Every |keep - zero| difference is below the enzyme's floor: CYP1A2
+-0.0011 / +0.0013 / +0.0007 on arms A / B / C against 0.0061, CYP2D6 +0.0021 / +0.0014 / +0.0004
+against 0.0049. By the reading fixed before the numbers existed, this is the first of the three
+cases: the clash scores never decided anything, the amendment was insurance, and item 298's
+conclusion stands on both readings of the block rather than on the one that happened to be
+convenient.
+
+**Predictions, scored. Item 298 got three right and one wrong.**
+
+  - "Nothing passes" -- CONFIRMED, eight live cells across two policies, none within a factor of
+    seven of its floor.
+  - "CYP1A2 is again the only cell with any signal" -- CONFIRMED: it is the only cell where the
+    targeted arm beats its control at all, and only once the clashes are removed.
+  - "I expect docking to BEAT the overlay proxy there -- more than +0.0017" -- **REFUTED.** The
+    repaired arm gives +0.0008 and the literal arm -0.0003; the cheap co-crystal overlay of item
+    296 remains ahead at +0.0017. Twenty thousand docking runs did not buy what one superposition
+    onto a reference ligand already gave, and the honest reading is that the dilution arithmetic
+    was worse than predicted rather than better.
+  - "CYP2D6's targeted arm again fails to beat its control" -- CONFIRMED in both policies, and in
+    the repaired arm it is negative on 0 of 4 seeds.
+  - "CYP3A4's RAW affinities correlate with heavy-atom count more strongly than the other three" --
+    CONFIRMED at -0.679 against -0.612, -0.420 and +0.469, identical in both arms because `raw` is
+    untouched by the amendment. Item 199's volume confound reappears from the docking side.
+
+**Item 305's prediction was half wrong, and the wrong half is mine.** It said the two arms would
+differ most on CYP1A2, "because 188 of the 202 clashes sit there". They differ most on **CYP2D6**
+(+0.0021 against CYP1A2's -0.0011), which has three clashes. The reasoning confused where the
+clashes ARE with where centring puts them: a clash on CYP1A2 moves that row's mean and therefore
+lands on all four columns, so the cavity that suffers need not be the cavity that failed. The
+second half -- that the arms agree within the per-enzyme floor -- held.
+
+**What this closes, in item 298's own words and not in stronger ones.** Item 298 called docking
+"the sixth structural null and the last member of the one class that was still open", and that
+phrase appears exactly once in this journal, so it is its claim rather than an established count.
+Taken at face value it closes the (ligand, cavity) pair-function lever empirically rather than by
+argument -- item 168 separated descriptors OF THE ENZYME (closed by arithmetic) from quantities of
+the PAIR, item 189 collected six ligand-only nulls, item 179 tried a guessed cavity, item 296 tried
+a co-crystal overlay, and this tried a docked pose in the real cavity with the wrong-isoform
+control built into the feature.
+
+**What it does NOT close, stated so the boundary is not overread.** This is Vina scoring, a rigid
+receptor, one pose per ligand (`--num_modes 1`), exhaustiveness 8, and a single co-crystal box per
+isoform. Ensemble docking over multiple structures and the MD pilot specified for the team are a
+different protocol, and this result is evidence about the cheap end of that ladder rather than
+about all of it. What it does say is that the cheap end is exhausted: a better pose would have to
+buy more than a hundredfold on the dilution from a univariate correlation to a rank gain over a
+three-member mean, and nothing measured here suggests it can.
