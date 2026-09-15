@@ -12436,8 +12436,7 @@ that the cited line still holds the symbol the sentence attributes to it:
     src/submit.py 375 и 598                    202   _trunk_clip    НЕТ --- реально 700, 757, 1061
     src/submit.py 230                      164, 183  np.mean        НЕТ --- реально 656 и 1062
     src/submit.py 400                          245   константа 218  НЕТ --- строка ПУСТА, SOLO на 585
-    verify/f12_cvhard.py 34                 "Ещё      fRES           НЕТ --- убран в 137c671
-                                          тринадцать"
+    verify/f12_cvhard.py 34   "Thirteen more"  fRES           НЕТ --- убран в 137c671
 
 **Seven stale citations into `src/submit.py` over six distinct locations, and one into
 `verify/f12_cvhard.py`, not one of them noticed --- because the diff that moved them was a diff to
@@ -12485,6 +12484,16 @@ taking the next top-level `def` as the end, which is `_keep` at 595, with forty 
 else in between; the AST answers the question the heuristic only approximated. The stale citations
 are left for a separate change --- they are pre-existing, mechanical, and do not belong in a commit
 about the board.
+
+**A fifth correction, and it is item 305's own lesson committed inside the item that records it.**
+The table's `f12_cvhard.py` row labelled its section "Ещё тринадцать" --- a Russian label for a
+heading that reads `## Thirteen more, found while setting up the environment`. A grep for either
+never finds the other, so the row was useless as the pointer it was meant to be. Item 305 says
+exactly this: "a control proving `grep` works must use a pattern the file certainly contains, in the
+language it is actually written in --- the journal's prose is English now, so a Russian control
+returns zero either way." The masthead is English, the tables are Russian, and a cross-reference
+from a table INTO the prose has to switch languages at the boundary. Caught by the citation-fix
+session, not by me.
 
 **Cost: one afternoon, no compute.** The board pull is seconds and the transform is one pass over
 750 rows.
