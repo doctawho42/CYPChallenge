@@ -12583,12 +12583,66 @@ behaviour, landing as an obstacle. The default now carries date AND time
 what it is actually for: an explicit `--out` naming a file that already exists. **A guard that fires
 on the normal path does not protect the artefact, it trains people to pass `--force`.**
 
-**309. The TDI decision threshold does NOT move, and the decisive evidence was already in this file
-before the question was asked again. The board's implied test prevalence of 0.1622 against our 0.38
-and 0.48 positive rates is real and is not a defect: a high positive rate is what maximises MCC for
-a weak classifier.** The question was reopened because the classification track is a third of the
-leaderboard and our CYP2D6 cell reads 0.1255 on the board against CYP3A4's 0.4416. It is closed on
-five independent grounds, four of them pre-existing:
+**309. The TDI decision threshold does NOT move. Our over-call on CYP2D6 is far WORSE than item 299
+estimated --- the test prevalence there is 0.069 against the 0.389 we call positive, a fivefold
+over-call, not the twofold the macro figure suggested --- and the threshold still does not move,
+because what a threshold change would buy is not determined by anything the board publishes.** The
+question was reopened because the classification track is a third of the leaderboard and our CYP2D6
+cell reads 0.1255 against CYP3A4's 0.4416. It is closed on five independent grounds, four of them
+pre-existing.
+
+**First, the correction, because this item's own supporting script refuses the number item 299 and
+my earlier draft both quoted.** Item 299 inverted the board's MACRO accuracy, precision and recall
+to a test prevalence of 0.1622. `verify/k102_tdiconf.py` inverts them PER ENZYME instead and gets
+**0.0693 on CYP2D6 and 0.2880 on CYP3A4** --- a 4.2-fold spread, which is exactly the condition
+under which a macro-average of ratios cannot invert to a single prevalence. The defect on our own
+row is 0.0071. Item 299's own prose calls its figure "an estimate, since those are macro-averaged
+rounded ratios"; the per-enzyme reading shows how much that costs, and it costs the whole shape of
+the CYP2D6 story.
+
+Two things that reading rests on, both established by checks that can fail rather than by
+assumption. **The scored set is the live HALF, 375 rows, and n=750 is refused by our own call
+counts:** at n=750 the inversion implies 293.17 predicted positives on CYP2D6 where the file
+contains exactly 285, and 379.04 against 360 --- impossible, since the scored rows are a subset of
+what we submitted. At n=375 both land inside their bounds, and at n=750 candidate tables pass the
+metric screen but fail that count screen outright --- the one constraint in the inversion capable of
+failing is the one that refuses 750. **The second determination is independent of the first, and
+prettier.** Per bootstrap resample F1 IS the harmonic mean of precision and recall identically, so
+the published F1 minus H(published precision, recall) is a pure Jensen curvature term and must scale
+as 1/n. It does: `gap*n` holds at **-0.3319** and **-0.2957** with 4 and 3 per cent spread across a
+fivefold range of n. Inverting it gives **n = 383 and 372**, and [310, 501] and [302, 482] once
+four-decimal rounding and two standard deviations of a SINGLE published figure are allowed. The live
+half is inside both; the full test set is outside both. Neither the search window nor the prefilter
+bound the answer anywhere --- the reported fractions stay well below one --- so "no other table is
+consistent" is not an artefact of where the search looked. **And which tab is which enzyme is
+settled four ways that do not depend on each other:** L1 distance to our own out-of-fold MCC (0.0865
+against 0.5457 for the swap), the field itself (median MCC 0.1833 against 0.3833, with `partial_15`
+the lower of the two for 84 of 90 entrants), the organisers' config order, and our own implied
+positive rate (L1 0.0363 against 0.2145). The script refuses to invert at all unless all four agree.
+
+**The point-estimate reading of the board is refused outright, and the refusal needs no assumption
+about n.** For any single 2x2 table F1 is identically the harmonic mean of precision and recall. The
+board's is not: the gap is -0.000868 on CYP2D6 and -0.000796 on CYP3A4, seven and eight times the
+four-decimal rounding box. The reason is that the board publishes BOOTSTRAP MEANS ---
+`config.BOOTSTRAP_SAMPLES = 1000`, aggregated by `average_bootstrap_results_by_endpoint` with
+`.agg(["mean", "std"])` into the `_mean` columns a leaderboard row is built from --- and a mean of
+ratios is not the ratio of means. `k94_leaderboard.py`'s `implied_prevalence`, which every prevalence
+figure in this file descends from, models the board as point metrics. **So it was never testing the
+table; it was testing an aggregation the organisers do not use.** The machinery making that claim is
+validated against the organisers' own `bootstrap_metrics` on the same seed-0 resample indices, agreeing
+to 5.55e-17 over 1000 resamples times five metrics, and a synthetic table shows the same checks
+passing on point metrics and failing on bootstrap means in the board's direction and magnitude.
+
+**And the fifth ground, which is new and is what actually closes it.** With the table recovered, what
+a threshold move buys can be bounded exactly, because a threshold on one score makes the positive
+sets nested and MCC linear and increasing in TP at fixed call count. Removing one compound from our
+CYP2D6 calls moves MCC by at most 0.0199 against item 235's floor of 0.0419; the smallest tightening
+whose DETERMINED band can even reach that floor is three compounds, and over every table consistent
+with the board that band is **[-0.0780, 0.1458]** --- it contains zero and it contains negative
+values. Where inside it the truth falls needs the ORDER of our test scores within the moved slice,
+and the board carries five aggregates per enzyme and no probabilities. **The prize is not small; it
+is undetermined.** That is a stronger reason to leave the threshold alone than item 299's, and it
+survives the correction that demolished item 299's number.
 
   1. **Item 299 already measured it.** Sweeping the positive rate on the shipped bundle's
      out-of-fold probabilities: prevalence-matching makes macro MCC **worse**, 0.2405 against the
@@ -12625,8 +12679,12 @@ CYP3A4 -0.0135 and it HELPS CYP2D6 +0.0085. The macro verdict of -0.0025 is carr
 CYP3A4. Item 299's own prose scopes the first of these correctly; the docstring drops the scope.
 **So the honest reading is "no measurable difference", not "the shipped rule is optimal".** A third
 gap, worth naming because it means the suspicion was never actually tested on its own terms: k94's
-prevalence-matched arm is matched to the TRAINING prevalence (0.327 / 0.217), not to the
-board-implied 0.1622 that raised the suspicion. Nothing has measured a rule matched to 0.16.
+prevalence-matched arm is matched to the TRAINING prevalence (0.327 / 0.217), not to any figure
+recovered from the board. **This paragraph said "nothing has measured a rule matched to 0.16", which
+was the wrong complaint:** 0.16 is the macro artefact, and the targets a prevalence-matched rule
+would actually aim at are 0.069 and 0.288 per enzyme. So the untested arm is not the one the
+sentence named, and it is a different arm on each enzyme --- which is also why matching helped one
+and hurt the other in item 299's sweep.
 
 **It is also mechanically blocked, and the block was re-established independently.**
 `results/preds/tdi_probs.json` holds 2346 and 1495 values --- exactly the training rows carrying a
