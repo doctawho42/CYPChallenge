@@ -12769,11 +12769,46 @@ which is better than a journal entry, because it travels with the artefact.
 310's runtime correction gives: a documented runtime is what tells the next reader whether a rerun
 is affordable at all.
 
-**What remains open.** The record now exists for runs made from here on; the committed
-`submission.meta.json` describing the shipped files was still assembled by hand, so it cannot be
-regenerated retrospectively --- the writer closes the gap forward, not backward. And 41 tests pass
-on `main` at tree `bc59db44`, which is the tree the two-head merge check predicted before either
-pull request landed.
+**What remains open, and it is narrower than the first draft of this sentence claimed.** That draft
+said the hand-made record "cannot be regenerated retrospectively", which implies nothing in it was
+ever confirmed. Not so, and the correction is measured: **eleven of its checkable values were
+re-derived here from the real submitted files and every one matched** --- both sha256, both row
+counts at 750, the split digest `2d93c19815e14261` with its 4703 clusters, the positive calls 360
+and 285, and both validator verdicts recomputed with `expected_ids`. The control, run in the same
+pass, returns a mismatch on a deliberately wrong value, so the eleven agreements are not the
+comparison's only possible answer.
+
+So the backward gap is three things, not everything:
+
+    не подтверждено назад     чем только и подтверждалось бы
+    лямбды и сдвиги           полным прогоном submit.py (161-230 минут); в сверке они
+                              были СКОПИРОВАНЫ, поэтому совпадение доказало формат
+    три ключа UNDERIVABLE     ничем: это суждения и ручной шаг, не измерения
+    первая запись             ИСПОРЧЕНА, но восстановима однозначно: git печатал
+    грязного дерева           ` M verify/README.md` --- изменён в дереве, НЕ проиндексирован;
+                              сохранённое `M verify/README.md` как porcelain XY читается
+                              наоборот, как проиндексированный
+
+The last row is the one worth keeping in view, and it says more than "unverified". **The corruption
+inverts the meaning rather than losing a character**, and the original is recoverable exactly ---
+which the citation-fix session established by measurement and I reproduced in a scratch repository
+before taking it. Three states, what `git status --porcelain` prints and what stripping the whole
+output leaves:
+
+    состояние                       git печатает    после strip      пробелов в начале
+    изменён, не проиндексирован     ` M a.txt`      `M a.txt`        0 (столбец съеден)
+    проиндексирован                 `M  a.txt`      `M  a.txt`       0 (не изменилось)
+    проиндексирован и изменён       `MM a.txt`      `MM a.txt`       0 (не изменилось)
+
+Only the first state strips to a single space before the filename, which is the form the record
+stores --- so the original was ` M`, and what was written down says `M ` instead. In porcelain the
+first column is the index: the stored value therefore asserts the file was STAGED when git had said
+it was not. **A defect that reverses a fact is worse than one that drops a character, and this one
+is legible only because its eleven sound neighbours keep the space it lost.** **The writer closes the gap forward; backward, what could be
+checked has been checked and holds, and what could not is now named rather than implied.**
+
+And 41 tests pass on `main` at tree `bc59db44`, which is the tree the two-head merge check predicted
+before either pull request landed.
 
 **A lesson from the commit gate of this very change, handed back by the citation-fix session because
 its guard cannot express it.** That guard only ever asks "does this line hold this symbol"; it never
@@ -12784,6 +12819,24 @@ once, inside quotes", not "appears zero times". **In a file that records its own
 bad string is gone" is never the right thing to check.** Third time in one day: the item counter
 that also matched bolded decimals, the pull-request body whose heading lost its count while the
 prose kept it, and this.
+
+**And then a fourth time, in the gate for the paragraph immediately above this one --- after the
+lesson was already written here.** Refining the backward-gap sentence, I asserted that the withdrawn
+phrase "cannot be regenerated retrospectively" now appeared zero times. It appears once, inside my
+own quotation of it, in the sentence that withdraws it: 793 double quotes precede it, so the parity
+test puts it inside a quoted span. Exactly the shape recorded two paragraphs up, written again by
+the person who had just recorded it. **Writing a lesson down is not the same as having learnt it**,
+and the only reason neither instance shipped is that both gates refused before the commit --- the
+check caught what the reading did not, twice.
+
+**And a fifth time, which corrects the lesson itself rather than repeating it.** Rewritten as
+"appears once, inside quotes", the gate then failed on the paragraph above: writing THAT paragraph
+added a second quotation of the same withdrawn phrase, so the count was two. **The invariant was
+never about the count.** It is a property of each occurrence --- *every* occurrence must sit inside
+a quoted span --- and pinning the total was the residue of the very habit being corrected. A file
+that records its own corrections accumulates quotations of what it withdrew, so any invariant that
+counts them is wrong the moment the record grows. The gate now tests parity per occurrence, which is
+the form that survives the next withdrawal.
 
 **What this cost, and what it bought, because the instrument failed and that belongs in the
 record.** Eight agents, three completed, five failed --- two on network errors and three on output
