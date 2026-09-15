@@ -12729,6 +12729,52 @@ added on 15 September --- mine, and not a writer. The meta itself arrived in `2e
 about items 296 and 297: the same pattern as item 307's `caltwo` outputs riding in on a commit about
 Free-Wilson. **An artefact that enters on an unrelated commit is an artefact nobody is looking at.**
 
+**CLOSED the same day, and closed by the same instrument that opened it.** `src/submeta.py` exists
+and `src/submit.py` calls `submeta.write` once the organisers' validators have accepted both files
+--- after the gate, not before it, so a record is only written for files that passed. The `-S` test
+that returned **zero** commits for `гейт_валидатора` and `архив_предыдущего` now returns two; the
+control still returns six for `plugin_threshold`. An absence established by a search is overturned
+by that search and not by a different one, which is the only way the overturning means anything.
+
+**What the record re-derives, what it merely formats, and what no run can know.** Regenerated from
+the real submitted files, 37 of its 45 values match the hand-made one:
+
+    пересчитано и совпало     sha256 и 750 строк обоих файлов, digest и 4703 кластера,
+                              число положительных, оба вердикта валидаторов
+    скопировано               лямбды и сдвиги --- совпадение доказывает ФОРМАТ, не расчёт,
+                              потому что произвести их может только fit_shrinkage
+    невоспроизводимо          архив_предыдущего (верхний уровень) --- ручной шаг;
+                              замечание в git --- суждение о том, что грязные файлы
+                              не входят в импорты submit.py;
+                              замечание в гейт_валидатора --- ремарка про fde6b22
+
+The third row is the honest one, and `submeta`'s own docstring states it rather than leaving it to
+be discovered: those three are judgements and manual steps, not measurements, so no run can know
+them. **They are named as data, not as prose:** `tests/test_submission_meta.py` carries them in an
+`UNDERIVABLE` mapping keyed by where each one sits, which turns "omitted" into something a test can
+hold. (This row first listed the `fde6b22` remark as a key of its own; it is the `замечание` inside
+`гейт_валидатора`, and two of the three are `замечание` in different nodes rather than three
+differently-named fields. Corrected against the test rather than against my reading of it.)
+
+**Two things in it that close item 310 and my own defects rather than merely describing them.**
+`submeta.git_state` points git at the repository with `-C` instead of trusting the caller's
+directory, and records a failure AS a failure instead of an empty commit --- and it splits
+`status --porcelain` without stripping the whole output first, naming in its docstring the column
+that stripping ate. Both of my defects, fixed in the code that replaces mine rather than only
+written up. And `_composition` emits a `SOLO_на_тесте` key when the dead zone is off, so item 310's
+fitted-versus-shipped disagreement is recorded in the provenance OF THE RUN WHERE IT HAPPENS ---
+which is better than a journal entry, because it travels with the artefact.
+
+`время_прогона` is there because the user asked for it, and it earns its place for the reason item
+310's runtime correction gives: a documented runtime is what tells the next reader whether a rerun
+is affordable at all.
+
+**What remains open.** The record now exists for runs made from here on; the committed
+`submission.meta.json` describing the shipped files was still assembled by hand, so it cannot be
+regenerated retrospectively --- the writer closes the gap forward, not backward. And 41 tests pass
+on `main` at tree `bc59db44`, which is the tree the two-head merge check predicted before either
+pull request landed.
+
 **A lesson from the commit gate of this very change, handed back by the citation-fix session because
 its guard cannot express it.** That guard only ever asks "does this line hold this symbol"; it never
 asks whether a string is ABSENT. My gate did ask that --- it asserted `METHOD.md`'s stale "no
