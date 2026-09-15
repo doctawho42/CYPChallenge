@@ -36,7 +36,7 @@ Everything below carries the sample it was measured on, the number of split seed
 floor it is judged against. Where a conclusion of ours was later overturned by our own measurement,
 it is said so; that history is in the journal deliberately and is quoted here for the same reason.
 
-The code is at the repository root; `verify/README.md` is the journal, numbered to item 306, and is
+The code is at the repository root; `verify/README.md` is the journal, numbered past item 300, and is
 the primary record. This document is a reading of it, not a substitute.
 
 ---
@@ -223,7 +223,7 @@ result, it is not deployed, and it is not a prediction of the leaderboard score.
 
 ## The apparatus
 
-What this project offers is methodological rather than architectural: an instrument for telling an effect from a floor, pointed at its own ideas, which then closed most of them. The journal, `verify/README.md`, runs to item 306; negative results are the majority.
+What this project offers is methodological rather than architectural: an instrument for telling an effect from a floor, pointed at its own ideas, which then closed most of them. The journal, `verify/README.md`, runs past item 300; negative results are the majority.
 
 **Noise floors are measured per metric, not assumed.** Item 70 measured the pipeline's chaotic sensitivity at a fixed seed and fixed folds: two arms whose tilt targets coincide on CYP2D6 to within 0.01 still differ there by 0.0071 in ST-RAE. That 0.007 is the fixed-seed macro floor. Changing only the split seed moves macro ST-RAE by 0.016 (`verify/f3_seeds.py`), more than most effects measured here.
 
@@ -259,7 +259,7 @@ Two of item 244's three bundled arms were that argmax column: +0.0187 (6/8) and 
 
 ## What we tried and closed
 
-The project's journal (`verify/README.md`) runs to item 306, and most of them record something that did not work. Two conventions govern the catalogue. A gain counts only after the affine pair — a per-fold shrink-and-shift fitted to the metric — has run: item 77 found five separately measured raw improvements collapsing into a band of 0.013 once it did, three of them reversing sign. And every claim is quoted against a noise floor: 0.007 macro ST-RAE at fixed seed (item 70), 0.0036 macro rank and 0.0033 to 0.0071 per enzyme over four seeds (item 165), 0.0033 to 0.0071 per enzyme (item 165), 0.0281 on CYP3A4 and 0.0419 on CYP2D6 for MCC (item 235), normally over four split seeds.
+The project's journal (`verify/README.md`) runs past item 300, and most of them record something that did not work. Two conventions govern the catalogue. A gain counts only after the affine pair — a per-fold shrink-and-shift fitted to the metric — has run: item 77 found five separately measured raw improvements collapsing into a band of 0.013 once it did, three of them reversing sign. And every claim is quoted against a noise floor: 0.007 macro ST-RAE at fixed seed (item 70), 0.0036 macro rank and 0.0033 to 0.0071 per enzyme over four seeds (item 165), 0.0033 to 0.0071 per enzyme (item 165), 0.0281 on CYP3A4 and 0.0419 on CYP2D6 for MCC (item 235), normally over four split seeds.
 
 | Idea | What was measured | Why it failed | Item |
 |---|---|---|---|
