@@ -12489,3 +12489,29 @@ session's recurring one in miniature.** I first read the rank-broken run's exit 
 that could not have been anything else, read as evidence about the script. Re-measured without the
 pipe, all three codes are correct, and the harness was checked against a deliberate `sys.exit(7)`
 to show it can see a different number at all.
+
+**The checker also needed a guard against destroying the thing it measures against, and finding
+that out took three defects of mine in a row.** `--pull` writes the snapshot it scores, and the
+snapshot it scores AGAINST is `results/leaderboard_2026-09-15.json`, the committed anchor for every
+number in this item. Written naively, a pull on 15 September lands on exactly that filename. The
+three, in the order they were caught:
+
+    дефект                                       чем поймано
+    pulled_utc заводился как None и не заполнялся никогда   чтением собственного кода
+    путь по умолчанию не под .gitignore          git check-ignore с контролем
+    датированное имя затирало бы якорь           рассуждением до запуска, не после
+    и, при починке, snap остался неопределённым  статической проверкой
+
+The last one is the instructive one: restructuring the order removed `snap = pull()` and left the
+two lines below it referring to a name that no longer existed. `--pull` would have crashed at
+precisely the moment it was needed --- after the upload --- and the only reason it did not ship is
+that a static check saw it. Nothing was run between those edits.
+
+**The guard is proven OFFLINE, in three halves, because a guard whose test costs a network round
+trip is a guard nobody exercises twice.** The CLI was moved behind a `main()` that returns its exit
+code, so a harness can stub `pull` and observe whether it is reached: an existing target refuses
+BEFORE the pull; a free name passes the guard and reaches it; and `--force` on the anchor also
+reaches it. Without the third half a guard that refuses ALWAYS would look identical to one that
+works. Zero network requests, and the anchor verifies unchanged at sha256 `99cf308e8766...`
+afterwards. The destination is now resolved and guarded before the network call rather than after,
+for the same reason.

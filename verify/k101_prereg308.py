@@ -49,6 +49,7 @@ _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
 from cyppaths import RES
 
 import argparse
+import datetime
 import json
 import urllib.request
 
@@ -78,9 +79,19 @@ MIN_R2_RISE = 0.30
 R2_BAND = (0.40, 0.60)
 
 
-def pull():
-    """Fetch every board tab through the Space's own Gradio endpoints and save it dated."""
-    snap = {"pulled_utc": None, "source": BASE + "/partial_N", "boards": {}}
+def utcstamp():
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def pull(stamp):
+    """Fetch every board tab through the Space's own Gradio endpoints.
+
+    Stamped by the caller, because a pulled board is EVIDENCE and not a scratch file: the boards
+    move on their own -- item 308 records our position sliding from 102/163 to 103/164 inside one
+    afternoon while not one number of ours changed -- so a snapshot without a time is not evidence
+    of anything. The caller stamps it so the filename and the record inside cannot disagree.
+    """
+    snap = {"pulled_utc": stamp, "source": BASE + "/partial_N", "boards": {}}
     for n in range(9, 18):
         ep = f"partial_{n}"
         req = urllib.request.Request(f"{BASE}/{ep}", data=json.dumps({"data": []}).encode(),
@@ -181,21 +192,46 @@ def verdict(snap):
     return held == 3
 
 
-if __name__ == "__main__":
+def main(argv=None):
+    """Returns the exit code rather than calling sys.exit, so the guard below is testable.
+
+    The anchor guard is the one branch that must never be exercised by actually hitting the
+    network -- a test that pulls the live board to check that it refuses to overwrite is a test
+    nobody runs twice. With the CLI behind a function, a harness can stub `pull` and prove both
+    halves offline: that an existing target refuses BEFORE the pull, and that a free one reaches it.
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument("--snap", default="", help="снимок доски на диске")
     ap.add_argument("--pull", action="store_true", help="стянуть свежий снимок и сохранить")
-    ap.add_argument("--out", default=RES + "leaderboard_fresh.json")
-    a = ap.parse_args()
+    ap.add_argument("--out", default="", help="куда писать; по умолчанию с датой пулла")
+    ap.add_argument("--force", action="store_true",
+                    help="разрешить перезапись существующего снимка")
+    a = ap.parse_args(argv)
     if not a.snap and not a.pull:
         raise SystemExit("нужен либо --snap <путь>, либо --pull")
     if a.pull:
-        snap = pull()
-        json.dump(snap, open(a.out, "w"), ensure_ascii=False, indent=1)
-        print(f"снимок сохранён: {a.out}, вкладок {len(snap['boards'])}\n")
+        # Resolve and guard the destination BEFORE the network call, not after. A pull on 15
+        # September lands on leaderboard_2026-09-15.json, which is the committed anchor every
+        # comparison in item 308 is measured against; and a guard that can only be exercised by
+        # first spending a network round trip is a guard nobody will exercise.
+        stamp = utcstamp()
+        out = a.out or (RES + "leaderboard_" + stamp[:10] + ".json")
+        if _pl.Path(out).exists() and not a.force:
+            raise SystemExit(
+                f"{out} уже существует, и перезаписан не будет.\n"
+                f"Снимок доски --- свидетельство, а не черновик: затерев его, вы потеряете якорь,\n"
+                f"к которому привязаны сравнения пункта 308. Укажите --out другим именем,\n"
+                f"или --force, если перезапись действительно нужна.")
+        snap = pull(stamp)
+        json.dump(snap, open(out, "w"), ensure_ascii=False, indent=1)
+        print(f"снимок сохранён: {out}, вкладок {len(snap['boards'])}, тянут {snap['pulled_utc']}\n")
     else:
         snap = json.load(open(a.snap))
         print(f"снимок: {a.snap}, тянут {snap.get('pulled_utc')}\n")
     if not control(snap):
-        _sys.exit(2)
-    _sys.exit(0 if verdict(snap) else 1)
+        return 2
+    return 0 if verdict(snap) else 1
+
+
+if __name__ == "__main__":
+    _sys.exit(main())
