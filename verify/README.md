@@ -12551,3 +12551,12 @@ reaches it. Without the third half a guard that refuses ALWAYS would look identi
 works. Zero network requests, and the anchor verifies unchanged at sha256 `99cf308e8766...`
 afterwards. The destination is now resolved and guarded before the network call rather than after,
 for the same reason.
+
+**And then a fifth defect, found by asking what happens NEXT rather than what had just been
+checked.** The submission window opens at 22:01 UTC on 15 September --- still the 15th in UTC ---
+so a date-only default name resolves to `leaderboard_2026-09-15.json`, the anchor, and the guard
+would have refused at precisely the moment someone was trying to score the upload. Correct
+behaviour, landing as an obstacle. The default now carries date AND time
+(`leaderboard_2026-09-15T2205Z.json`), so an ordinary run cannot collide, and the guard is left for
+what it is actually for: an explicit `--out` naming a file that already exists. **A guard that fires
+on the normal path does not protect the artefact, it trains people to pass `--force`.**

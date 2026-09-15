@@ -215,7 +215,14 @@ def main(argv=None):
         # comparison in item 308 is measured against; and a guard that can only be exercised by
         # first spending a network round trip is a guard nobody will exercise.
         stamp = utcstamp()
-        out = a.out or (RES + "leaderboard_" + stamp[:10] + ".json")
+        # Date AND time in the default name. A date alone collides on the day that matters most:
+        # the submission window opens at 22:01 UTC on 15 September, still the 15th in UTC, so a
+        # dated default would resolve to leaderboard_2026-09-15.json -- the anchor -- and the
+        # guard below would refuse at exactly the moment someone is trying to score the upload.
+        # The guard stays, for an explicit --out that names an existing file; it should not be
+        # something an ordinary run walks into.
+        auto = RES + "leaderboard_" + stamp[:10] + "T" + stamp[11:13] + stamp[14:16] + "Z.json"
+        out = a.out or auto
         if _pl.Path(out).exists() and not a.force:
             raise SystemExit(
                 f"{out} уже существует, и перезаписан не будет.\n"
