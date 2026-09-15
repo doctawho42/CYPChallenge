@@ -216,7 +216,10 @@ enzyme coordinate (154), logD and LipE (154), chi-squared DRO (154), ChEMBL as a
 against POTENCY (186) and against the TDI SHIFT (242) --- and, since 15 September, **docking into
 the four cavities (298, 305, 306)**: 22608 runs over 204 CPU-hours, both clash policies, every live
 cell under its floor, and in the literal reading the targeted arm beaten by its own wrong-isoform
-control. Each time with controls that passed.
+control. And **more freedom in the instrument link (169, 189, 211, 307)** --- the parametric leaf,
+closed without being built: the trunk's two-site arms were already on disk, committed and
+unwritten-up, and not one cell of either clears its floor, with the CYP3A4-targeted variant gaining
++0.0000 at 1/4 on CYP3A4 itself. Each time with controls that passed.
 
 **This section used to be called "Not run, rather than closed" and held the quantum block against
 the shift as the last unrun variant. Corrected on 12 September: item 242 closed it, and the
@@ -12112,3 +12115,95 @@ different protocol, and this result is evidence about the cheap end of that ladd
 about all of it. What it does say is that the cheap end is exhausted: a better pose would have to
 buy more than a hundredfold on the dilution from a univariate correlation to a rank gain over a
 three-member mean, and nothing measured here suggests it can.
+
+**307. The parametric leaf is closed without being built, and the run that answers it has been
+sitting in this repository, committed and unwritten-up, since 2 September.** Item 169 promoted "a
+tree whose leaves carry local (E, h) instead of a constant" from speculation to "the direct fix for
+a defect now measured", and after item 306 it was the last open lever in the mechanistic work
+order. Four things close it, three of them already in this file, and the fourth was on disk.
+
+**One: the target is not on the submission path.** `src/submit.py:661` pins
+`TRUNK_MODE = "twohead"`, used on the test path at 1009-1010. `g_of_pi` is defined at
+`src/trunk.py:148` and called at exactly one site, line 392, which sits inside the `else` of
+`if mode == "twohead"` at 377-379. So `CAL_E` and `CAL_H` are never executed for a shipped
+prediction. A better calibration improves a branch the submission does not run.
+
+**Two: the whole channel has already been measured over the ensemble, and it is nothing.** Item 174
+found the coupled screening channel with a free offset worth **+0.031 of rank** on four seeds, with
+CYP3A4 clearing its floor for the first time in this file. Item 176 cashed that out over the
+five-member ensemble: **rank moves -0.0008 and -0.0004**, "nothing, an eighth of the macro floor".
+The parametric leaf would have to ride that same channel, so it starts below zero.
+
+**Three: the standard harness cannot see the defect.** `SOLO` at `src/submit.py:585-587` keeps the
+per-enzyme member only on CYP1A2 and CYP2D6; CYP2C9 and CYP3A4 ship GP+ствол. Item 169's five-fold
+slope swing is a CYP3A4 phenomenon. A leaf built into the per-enzyme member and measured the cheap
+way would read exactly 0.000000 on the one enzyme it was designed to fix -- the same
+by-construction zero as item 298's condition 4, and for the same reason.
+
+**Four: item 169 contains no rank number at all.** Lines 4898-4961 hold zero occurrences of "rank"
+against four of "residual" (control run). Every quantity in it -- +1.365 transport, 2.100 against
+0.736, 0.612 residual sd -- is a standard deviation in screening-readout units. Under this file's
+own rule that only rank survives, item 169 raises a prior and supplies no evidence of the kind that
+decides anything.
+
+**And the measurement that settles it was already here.** `src/trunk.py` implements `caltwo`,
+`caltwo3a4` and `caltwoshift` (lines 318-328, CLI choices at 553), and
+`results/preds/trunk_caltwo.json` and `trunk_caltwo3a4.json` were committed on 2 September in
+`a97bed4` -- a commit whose subject is about Free-Wilson. The string `caltwo` occurs **zero** times
+in this journal, against 15 for `calshift` as a control. Recomputed from those committed files,
+rank, four seeds, matched lambdas, trunk standalone:
+
+    λ = 0.3        1A2      2C9      2D6      3A4    макро   пара макро
+    calshift    0.4818   0.6148   0.4020   0.7425   0.5600       0.7796
+    caltwo      0.4852   0.6182   0.4012   0.7445   0.5623       1.0212
+    caltwo3a4   0.4862   0.6162   0.4025   0.7425   0.5620       0.8754
+
+    Δ caltwo    +0.0035  +0.0035  -0.0008  +0.0020  +0.0022    знаки 3/4 3/4 1/4 4/4
+    Δ caltwo3a4 +0.0045  +0.0015  +0.0005  +0.0000  +0.0020    знаки 4/4 3/4 2/4 1/4
+    пол          0.0061   0.0071   0.0049   0.0033
+
+    λ = 3.0
+    Δ caltwo    +0.0050  +0.0020  -0.0080  +0.0025  +0.0002    знаки 4/4 2/4 0/4 3/4
+    Δ caltwo3a4 +0.0040  +0.0040  -0.0048  +0.0010  +0.0012    знаки 3/4 3/4 1/4 3/4
+    пара макро: calshift 0.9206, caltwo 1.3824, caltwo3a4 1.0355
+
+**Not one cell in either mode at either lambda clears its own floor.** The sharpest is CYP1A2
++0.0050 at 4/4 under λ = 3.0, against a floor of 0.0061. And the decisive cell is the one built for
+the purpose: `caltwo3a4` makes the link two-site **on CYP3A4 specifically**, and on CYP3A4 it gains
+**+0.0000 at 1/4 signs**. Meanwhile the pair metric is destroyed -- macro 1.0212 against calshift's
+0.7796 -- which is item 189's "пара 0.89 против 0.78" reproduced and worse.
+
+**These runs also lack the control that would have made a positive result admissible.** `calshift`
+carries λ = 0; `caltwo` and `caltwo3a4` carry only 0.3 and 3.0. Items 174 and 175 both rest on the
+identity control at λ = 0 showing that the change does nothing without a screening term. So even
+had the numbers been positive, they could not have been adopted as written.
+
+**A defect in the record, which is why this item exists at all.** Item 189's table files
+"двухсайтовая форма в стволе --- пара 0.89 против 0.78" and attributes it to item 178; item 211's
+summary table does the same. (Cited by item rather than by line on purpose: an absolute line number
+inside this same file is broken by the next insertion above it, and writing this item shifted both
+of those citations by three.)
+But item 178 is `verify/k52_twosite.py`, a bench scoring nested one-site against two-site fits on a
+cross-validated residual, and a trunk-level pair number cannot come from its table. The trunk runs
+that produced it have no item of their own and rode into the repository on an unrelated commit. The
+journal has been leaning on a measurement it never wrote down.
+
+**The mechanism was named in advance, twice.** Item 189: "Physics helps as a constraint on the loss
+or the link; it does not help as columns, and it does not help as extra freedom in the link." Item
+211: "Only the simplest kinetic object pays. Every elaboration loses." A per-leaf (E, h) is
+strictly more freedom in the link than a two-site form, and the two-site form is the arm measured
+above. Item 175 is the third reading: freeing the instrument with one extra parameter (`calaff`)
+moved rank +0.0012 at 2/4 and -0.0010 at 3/4. The only calibration change that ever paid, item
+174's, added the **smallest** possible parameter, one offset per enzyme.
+
+**What is closed, and what is not.** Closed: more freedom in the instrument link as a route to
+rank, on this data, by four independent arguments and one recomputed measurement. Not closed: item
+169's diagnosis itself, which stands -- the CYP3A4 calibration really is population-dependent by a
+factor of five, and that remains the right reading of `CAL_H`'s 1.968 outlier. What fails is the
+inference from a real instrument defect to a rank gain, in a pipeline where the instrument is not
+on the submission path.
+
+**Cost of closing it this way: none.** No run was made. The estimate a fresh build would have
+needed -- a screening likelihood ported into a tree learner, per-fold leaf-local fits on roughly 40
+to 58 paired rows per leaf against the ~900 per half that item 169 used, plus 4.5 hours per
+measured arm -- is recorded here so the next proposal has to beat it rather than restate it.
