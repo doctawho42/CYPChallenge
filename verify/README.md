@@ -67,8 +67,8 @@ half-width 0.0660. This is a sampling band on the absolute score, not the thing 
 against.
 
 **The n=375 band has now been SCORED against the live board, and it FAILED: 0.8149 against an upper
-bound of 0.7265, outside by +0.0884 (item 308).** Of item 293's four pre-registered predictions one
-held --- the per-enzyme rank ORDER, the one item 293 itself called the sharpest --- and of the three
+bound of 0.7265, outside by +0.0884 (item 308).** Of item 294's four pre-registered predictions one
+held --- the per-enzyme rank ORDER, the one item 294 itself called the sharpest --- and of the three
 misses two were in the BETTER direction (macro Spearman 0.6935 against a ceiling of 0.6590, macro MCC
 0.2836 against 0.2803). Only the scale-sensitive metric missed, and it missed by twenty times the
 macro floor. That pattern is the diagnosis: the ordering is better than we predicted and the scale is
@@ -11098,7 +11098,7 @@ Cross-check that the arm is the right one: macro +0.6433 reproduces the referenc
     макро-пол                   +0.0036   шире полосы в 4.3 раза
 
 So by rank the project's two large claims are falsifiable on a single reveal and its small ones are
-not -- the exact opposite of the classification track, where item 291's MCC band came out 2.8 to 5.0
+not -- the exact opposite of the classification track, where item 293's MCC band came out 2.8 to 5.0
 times every gain ever measured there. Macro-averaging four near-independent Spearmans is what buys
 it: the per-enzyme half-widths are 0.0229 to 0.0378, the macro one 0.0157.
 
@@ -11508,7 +11508,7 @@ on CYP2D6 and 0.48 on CYP3A4, two to three times that, which looked like a plain
 Prevalence-matching makes it **worse** (0.2405 against 0.2430), and the MCC optimum for CYP3A4 sits
 at a positive rate of 0.470 by itself. A high positive rate is what maximises MCC for a weak
 classifier, not a bug. The shipped rule is 0.0190 of macro below its own optimum, which is inside
-item 291's MCC band (half-width 0.0298) and was selected on the points it is scored on, so it is
+item 293's MCC band (half-width 0.0298) and was selected on the points it is scored on, so it is
 refused for the usual two reasons. **What survives is sharper than what I suspected:** the 0.11 gap
 to the board's last place is not calibration and it is not both enzymes -- CYP3A4 at 0.3578 is
 already inside the board's range, and the entire shortfall is CYP2D6 at 0.1282.
@@ -12263,7 +12263,9 @@ is committed rather than quoted as a constant because the boards move: our own p
 **Where we actually are.** 103rd of 164 on the regression board at macro ST-RAE 0.8149, against a
 board median of 0.7423, with macro MAE 0.9752, macro $R^2$ 0.0985 and macro Spearman 0.6935.
 
-**Item 293's pre-registration, scored.** Lower is better for ST-RAE, higher for the rest:
+**Item 294's pre-registration, scored.** Lower is better for ST-RAE, higher for the rest.
+(Cited as item 293 until the TDI readers checked it: 293 is the rebuild and the MCC band, 294 is the
+four-point reveal pre-registration. The masthead carried the same error and is corrected with it.)
 
     предсказание              полоса              факт    вердикт
     макро ST-RAE (n=375)      [0.5945, 0.7265]  0.8149    ВНЕ +0.0884, хуже
@@ -12425,29 +12427,318 @@ that file is edited, which shows up in the same diff" --- was falsified within t
 it.** Every external line citation in this file was resolved against the file it names, by checking
 that the cited line still holds the symbol the sentence attributes to it:
 
-    ссылка                                   символ          держится
-    src/trunk.py 148 и 392                   g_of_pi         да
-    src/abldzens.py 147                      np.mean         да
-    validation/activity_validation.py 74-77  откат по числу  да
-    src/submit.py 395 и 593                  _desc_scaled    НЕТ --- реально 760, 777, 1050
-    src/submit.py 375 и 598                  _trunk_clip     НЕТ --- реально 700, 757, 1061
-    src/submit.py 230 (пункты 180 и 183)     np.mean         НЕТ --- реально 656 и 1062
+    ссылка                                   пункт   символ         держится
+    src/trunk.py 148 и 392                     307   g_of_pi        да
+    src/abldzens.py 147                        183   np.mean        да
+    src/submit.py 661, 585                     307   TRUNK_MODE, SOLO  да
+    src/shrinkchoice.py 53                     277   OFFGRID        да
+    src/submit.py 542                          257   внутри _oof_one   да
+    validation/activity_validation.py 74-77    308   откат по числу да
+    src/submit.py 395 и 593                    202   _desc_scaled   НЕТ --- def; вызов в
+                                                                    _oof_ridge; в main только
+                                                                    внутри комментария
+    src/submit.py 375 и 598                    202   _trunk_clip    НЕТ --- def; вызов на пути
+                                                                    вне фолда и на тестовом
+    src/submit.py 230                      164, 183  np.mean        НЕТ --- в oof_predictions
+                                                                    и в main, ни одно не 230
+    src/submit.py 400                          245   константа 218  НЕТ --- строка ПУСТА, SOLO
+                                                                    определён ниже
+    verify/f12_cvhard.py 34   "Thirteen more"  fRES           НЕТ --- убран в 137c671, в файле нет
 
-**Six stale references into `src/submit.py`, not one of them noticed, because the diff that moved
-them was a diff to `submit.py` and the file that started lying was this one.** `src/submit.py` is now
-1183 lines and the citations date from when it was about a third of that. One case is worse than an
-offset: the transductive standardisation of item 202's defect 2 survives at line 1050 only as a
-COMMENT, because `be25415` closed that defect --- so a reader following the citation finds neither
-the line nor the code. **The honest rule is therefore: cite a SYMBOL, not a line, in either
-direction.** A symbol either exists or the grep for it fails loudly.
+The right-hand column names SYMBOLS and not the line numbers they moved to, and that is the point:
+the table is indented, so the citation guard treats it as a table and skips it by design --- which
+means a cell saying "реально 760, 777, 1050" would be an absolute line number that nothing will ever
+check, inside the item that forbids them. The citation-fix session raised it; the cells now say what
+a grep can confirm.
 
-**Two corrections to my own audit, both found by checking rather than by reading.** Item 253's
-`src/submit.py:_oof_one`, line 542 is SOUND: `_oof_one` spans 512-594 so 542 is inside it, and the
-item's claim is that `sample_weight` is ABSENT, which the file confirms at zero occurrences --- my
-first pass counted it as rot because the needle I searched for was the very string whose absence is
-the claim. That same pass also MISSED `submit.py:230`, which is cited twice. The six stale references
-are left for a separate change: they are pre-existing, mechanical, and do not belong in a commit
+**Seven stale citations into `src/submit.py` over six distinct locations, and one into
+`verify/f12_cvhard.py`, not one of them noticed --- because the diff that moved them was a diff to
+the source while the file that started lying was this one.** `src/submit.py` is now 1183 lines and
+the citations date from when it was about a third of that.
+
+**Two of them were never right in the first place.** In `61182bd`, the commit that WROTE item 202's
+defect-2 and defect-3 citations, line 600 held `_desc_scaled(np.vstack([X[m], Xte]))` and line 605
+held `_trunk_clip` --- while the item cites 593 and 598. Off by seven on the day they were written,
+so "rot" is the wrong word for those two: they were born wrong, and nothing since has checked them.
+A line number is not merely fragile; it is unverifiable by reading, which is why nobody read it.
+
+**And one case is worse than an offset.** Item 202's defect 2 was CLOSED by `be25415`, and what
+survives at the cited place is a COMMENT --- in `main()`'s test path, in a block that opens "Дефект 2
+пункта 202: раньше здесь стояло", between `gp_prepare` and `gp_predict`; `_desc_scaled` occurs
+there only inside the comment's own text, while its definition and its live call in `_oof_ridge` are
+elsewhere entirely. A reader following the citation finds neither the line, nor the code, nor the
+symbol. (This sentence first cited the comment's line number, then said the comment sat "beside
+`_desc_scaled`". Both were wrong, and the second was corrected by the citation-fix session reading
+the code rather than the sentence.)
+
+**The honest rule is therefore: cite a SYMBOL, not a line, in either direction.** A symbol either
+exists or the grep for it fails loudly.
+
+**The count above is the THIRD attempt at it, and the first two disagreed --- so the number is
+reported with its method, not on its own.** My first pass classified by looking 110 characters back
+from each line number for a filename: it over-included, missed "`submit.py:400`" entirely, and
+misattributed the 230 citation to item 180, which carries no line citation at all. My second pass
+resolved each file from a token on the SAME line: it correctly found 400 and pinned every item
+number, and it missed 395/593/375/598 completely, because those sentences name the file in a
+preceding clause. **Neither audit could have found what the other found.** A reliable one has to
+resolve the file from paragraph context, which is exactly the trap this item warned the citation-fix
+session about, and then fell into. Two further traps for any such checker, both real: a NEGATIVE
+claim (item 257 says the pooled member "fits with no `sample_weight`", and `sample_weight` has zero
+occurrences, so a needle search reports a sound citation as rot) and this item's own quotations of
+the broken citations as strings.
+
+**Corrections to my own audit, every one found by checking rather than by reading.** Item **257**'s
+`src/submit.py:_oof_one`, line 542 is SOUND: by the AST `_oof_one` spans **512-553**, so 542 is
+inside it, and the item's claim is that `sample_weight` is ABSENT, which the file confirms at zero
+occurrences --- my first pass counted it as rot because the needle I searched for was the very
+string whose absence is the claim. Three numbers in the sentence that stood here were wrong: the
+item was 253, the span ended at 594, and the same pass MISSED `submit.py:230`. The span came from
+taking the next top-level `def` as the end, which is `_keep` at 595, with forty lines of something
+else in between; the AST answers the question the heuristic only approximated. The stale citations
+are left for a separate change --- they are pre-existing, mechanical, and do not belong in a commit
 about the board.
+
+**A fifth correction, and it is item 305's own lesson committed inside the item that records it.**
+The table's `f12_cvhard.py` row labelled its section "Ещё тринадцать" --- a Russian label for a
+heading that reads `## Thirteen more, found while setting up the environment`. A grep for either
+never finds the other, so the row was useless as the pointer it was meant to be. Item 305 says
+exactly this: "a control proving `grep` works must use a pattern the file certainly contains, in the
+language it is actually written in --- the journal's prose is English now, so a Russian control
+returns zero either way." The masthead is English, the tables are Russian, and a cross-reference
+from a table INTO the prose has to switch languages at the boundary. Caught by the citation-fix
+session, not by me.
 
 **Cost: one afternoon, no compute.** The board pull is seconds and the transform is one pass over
 750 rows.
+
+**AMENDMENT, written before the file went to the board: the checker for the prediction above exists
+and its pass rules are fixed inside it.** `verify/k101_prereg308.py`, committed while the
+recalibrated submission was still sitting on disk unuploaded --- the same order as `k99_lam0.py`,
+and for the same reason: a rule written after the number arrives is not a rule. Three rules, with
+their tolerances and the reason for each:
+
+    правило              порог                                смысл
+    1. РАНГ (резкое)     |Δро| <= 0.0005 на всех четырёх      преобразование монотонно; сдвиг
+                                                              ранга опровергает подачу, а не
+                                                              только арифметику
+    2. НАПРАВЛЕНИЕ       макро R2 растёт хотя бы на +0.30      иначе диагноз о масштабе неверен
+    3. ВЕЛИЧИНА          макро R2 внутри [0.40, 0.60]         закрытая форма даёт 0.5001 и 0.5031
+
+Rule 1 expects exactly zero; the tolerance exists only because the board rounds to four places.
+Rule 3's band is deliberately wide, and the reason is the defect this item already records: the
+MAE-to-RMSE assumption is strictly violated on CYP1A2 and CYP2D6, so the per-cell figures there do
+not deserve two decimals. **ST-RAE is reported but NOT predicted** --- with no credible bands on the
+test set there was never a closed form for it, and inventing a target afterwards would be the
+tuning this item forbade.
+
+**The control is the part that makes the rest mean anything, and it was exercised in both
+directions.** If the recalibrated file has not been uploaded, the board still carries the OLD
+submission and every comparison would "confirm" the state before the change; so the script checks
+our row's submission timestamp against the recorded `2026-09-15 10:01 UTC` and REFUSES, exiting 2,
+rather than rendering a verdict. Three runs, because a checker that can only refuse looks like a
+working control and is not one: the real snapshot refuses (exit 2); a copy with the timestamp
+altered renders the full table and correctly scores 1 of 3, since the numbers behind it are still
+the old ones (exit 1); and a copy with one Spearman moved by 0.01 reports that cell as СДВИНУЛСЯ
+(exit 1), which is the only run that proves the sharp rule can fail at all.
+
+**And a measurement error of mine inside that verification, worth recording because it is the
+session's recurring one in miniature.** I first read the rank-broken run's exit status through a
+`| sed` filter, so `$?` carried sed's status and reported 0 where the script exits 1 --- a status
+that could not have been anything else, read as evidence about the script. Re-measured without the
+pipe, all three codes are correct, and the harness was checked against a deliberate `sys.exit(7)`
+to show it can see a different number at all.
+
+**The checker also needed a guard against destroying the thing it measures against, and finding
+that out took three defects of mine in a row.** `--pull` writes the snapshot it scores, and the
+snapshot it scores AGAINST is `results/leaderboard_2026-09-15.json`, the committed anchor for every
+number in this item. Written naively, a pull on 15 September lands on exactly that filename. The
+three, in the order they were caught:
+
+    дефект                                       чем поймано
+    pulled_utc заводился как None и не заполнялся никогда   чтением собственного кода
+    путь по умолчанию не под .gitignore          git check-ignore с контролем
+    датированное имя затирало бы якорь           рассуждением до запуска, не после
+    и, при починке, snap остался неопределённым  статической проверкой
+
+The last one is the instructive one: restructuring the order removed `snap = pull()` and left the
+two lines below it referring to a name that no longer existed. `--pull` would have crashed at
+precisely the moment it was needed --- after the upload --- and the only reason it did not ship is
+that a static check saw it. Nothing was run between those edits.
+
+**The guard is proven OFFLINE, in three halves, because a guard whose test costs a network round
+trip is a guard nobody exercises twice.** The CLI was moved behind a `main()` that returns its exit
+code, so a harness can stub `pull` and observe whether it is reached: an existing target refuses
+BEFORE the pull; a free name passes the guard and reaches it; and `--force` on the anchor also
+reaches it. Without the third half a guard that refuses ALWAYS would look identical to one that
+works. Zero network requests, and the anchor verifies unchanged at sha256 `99cf308e8766...`
+afterwards. The destination is now resolved and guarded before the network call rather than after,
+for the same reason.
+
+**And then a fifth defect, found by asking what happens NEXT rather than what had just been
+checked.** The submission window opens at 22:01 UTC on 15 September --- still the 15th in UTC ---
+so a date-only default name resolves to `leaderboard_2026-09-15.json`, the anchor, and the guard
+would have refused at precisely the moment someone was trying to score the upload. Correct
+behaviour, landing as an obstacle. The default now carries date AND time
+(`leaderboard_2026-09-15T2205Z.json`), so an ordinary run cannot collide, and the guard is left for
+what it is actually for: an explicit `--out` naming a file that already exists. **A guard that fires
+on the normal path does not protect the artefact, it trains people to pass `--force`.**
+
+**309. The TDI decision threshold does NOT move. Our over-call on CYP2D6 is far WORSE than item 299
+estimated --- the test prevalence there is 0.069 against the 0.389 we call positive, a fivefold
+over-call, not the twofold the macro figure suggested --- and the threshold still does not move,
+because what a threshold change would buy is not determined by anything the board publishes.** The
+question was reopened because the classification track is a third of the leaderboard and our CYP2D6
+cell reads 0.1255 against CYP3A4's 0.4416. It is closed on five independent grounds, four of them
+pre-existing.
+
+**First, the correction, because this item's own supporting script refuses the number item 299 and
+my earlier draft both quoted.** Item 299 inverted the board's MACRO accuracy, precision and recall
+to a test prevalence of 0.1622. `verify/k102_tdiconf.py` inverts them PER ENZYME instead and gets
+**0.0693 on CYP2D6 and 0.2880 on CYP3A4** --- a 4.2-fold spread, which is exactly the condition
+under which a macro-average of ratios cannot invert to a single prevalence. The defect on our own
+row is 0.0071. Item 299's own prose calls its figure "an estimate, since those are macro-averaged
+rounded ratios"; the per-enzyme reading shows how much that costs, and it costs the whole shape of
+the CYP2D6 story.
+
+Two things that reading rests on, both established by checks that can fail rather than by
+assumption. **The scored set is the live HALF, 375 rows, and n=750 is refused by our own call
+counts:** at n=750 the inversion implies 293.17 predicted positives on CYP2D6 where the file
+contains exactly 285, and 379.04 against 360 --- impossible, since the scored rows are a subset of
+what we submitted. At n=375 both land inside their bounds, and at n=750 candidate tables pass the
+metric screen but fail that count screen outright --- the one constraint in the inversion capable of
+failing is the one that refuses 750. **The second determination is independent of the first, and
+prettier.** Per bootstrap resample F1 IS the harmonic mean of precision and recall identically, so
+the published F1 minus H(published precision, recall) is a pure Jensen curvature term and must scale
+as 1/n. It does: `gap*n` holds at **-0.3319** and **-0.2957** with 4 and 3 per cent spread across a
+fivefold range of n. Inverting it gives **n = 383 and 372**, and [310, 501] and [302, 482] once
+four-decimal rounding and two standard deviations of a SINGLE published figure are allowed. The live
+half is inside both; the full test set is outside both. Neither the search window nor the prefilter
+bound the answer anywhere --- the reported fractions stay well below one --- so "no other table is
+consistent" is not an artefact of where the search looked. **And which tab is which enzyme is
+settled four ways that do not depend on each other:** L1 distance to our own out-of-fold MCC (0.0865
+against 0.5457 for the swap), the field itself (median MCC 0.1833 against 0.3833, with `partial_15`
+the lower of the two for 84 of 90 entrants), the organisers' config order, and our own implied
+positive rate (L1 0.0363 against 0.2145). The script refuses to invert at all unless all four agree.
+
+**The point-estimate reading of the board is refused outright, and the refusal needs no assumption
+about n.** For any single 2x2 table F1 is identically the harmonic mean of precision and recall. The
+board's is not: the gap is -0.000868 on CYP2D6 and -0.000796 on CYP3A4, seven and eight times the
+four-decimal rounding box. The reason is that the board publishes BOOTSTRAP MEANS ---
+`config.BOOTSTRAP_SAMPLES = 1000`, aggregated by `average_bootstrap_results_by_endpoint` with
+`.agg(["mean", "std"])` into the `_mean` columns a leaderboard row is built from --- and a mean of
+ratios is not the ratio of means. `k94_leaderboard.py`'s `implied_prevalence`, which every prevalence
+figure in this file descends from, models the board as point metrics. **So it was never testing the
+table; it was testing an aggregation the organisers do not use.** The machinery making that claim is
+validated against the organisers' own `bootstrap_metrics` on the same seed-0 resample indices, agreeing
+to 5.55e-17 over 1000 resamples times five metrics, and a synthetic table shows the same checks
+passing on point metrics and failing on bootstrap means in the board's direction and magnitude.
+
+**And the fifth ground, which is new and is what actually closes it.** With the table recovered, what
+a threshold move buys can be bounded exactly, because a threshold on one score makes the positive
+sets nested and MCC linear and increasing in TP at fixed call count. Removing one compound from our
+CYP2D6 calls moves MCC by at most 0.0199 against item 235's floor of 0.0419; the smallest tightening
+whose DETERMINED band can even reach that floor is three compounds, and over every table consistent
+with the board that band is **[-0.0780, 0.1458]** --- it contains zero and it contains negative
+values. Where inside it the truth falls needs the ORDER of our test scores within the moved slice,
+and the board carries five aggregates per enzyme and no probabilities. **The prize is not small; it
+is undetermined.** That is a stronger reason to leave the threshold alone than item 299's, and it
+survives the correction that demolished item 299's number.
+
+  1. **Item 299 already measured it.** Sweeping the positive rate on the shipped bundle's
+     out-of-fold probabilities: prevalence-matching makes macro MCC **worse**, 0.2405 against the
+     shipped 0.2430. Re-run here in 4.0 seconds (`verify/k94_leaderboard.py`) and it reproduces item
+     299's table digit for digit.
+  2. **The in-sample optimum is +0.0190 macro and is refused twice over.** It is selected on the
+     very points it is scored on, and it sits inside item 293's organisers' CI half-width of 0.0298.
+  3. **Per enzyme neither move clears its own floor** (item 235): the optimum gains +0.0061 on
+     CYP3A4 against a floor of 0.0281 and +0.0318 on CYP2D6 against 0.0419.
+  4. **Item 238 is the measured counter-example.** Re-centring the gate's cut on CYP2D6 improved the
+     GATE from 0.078 to 0.182 and made the LABEL worse, 0.0015 to **-0.0330**, because in a
+     conjunction the gate can only subtract.
+  5. **A fitted threshold was already tried and failed its pre-registration**: 4 of 8 with a mean of
+     -0.0009, its per-fold optima ranging 0.05 to 0.70 on CYP2D6 because at AUC 0.588 the MCC
+     surface is flat and its argmax is noise.
+
+And the frame that bounds all of it: item 293's reveal band is **2.8 to 5.0 times every gain ever
+measured on this track**, so no single reveal can rank threshold arms. On 15 September macro MCC came
+in at 0.2836 against item 294's band of [0.2048, 0.2803] --- outside by +0.0033 **in the better
+direction**. The only external measurement this track has ever had beat its own prediction.
+
+**Two corrections to the claim that closed it, because the claim was stated wider than its
+evidence.** `k94_leaderboard.py`'s docstring says "matching prevalence LOWERS macro MCC, and the
+MCC-optimal rate is itself near 0.47". Both legs are true and both are narrower than written:
+
+    фермент   prev   подача @ доля   оптимум @ доля   под prevalence @ доля
+    CYP3A4   0.327   0.3578 @ 0.473  0.3639 @ 0.470   0.3443 @ 0.327
+    CYP2D6   0.217   0.1282 @ 0.356  0.1600 @ 0.502   0.1367 @ 0.217
+    макро            0.2430          0.2620          0.2405
+
+The 0.470 optimum is **CYP3A4 only** --- CYP2D6's sits at 0.502, classifying half the set positive
+against a prevalence of 0.217. And prevalence-matching is **not uniformly harmful**: it costs
+CYP3A4 -0.0135 and it HELPS CYP2D6 +0.0085. The macro verdict of -0.0025 is carried entirely by
+CYP3A4. Item 299's own prose scopes the first of these correctly; the docstring drops the scope.
+**So the honest reading is "no measurable difference", not "the shipped rule is optimal".** A third
+gap, worth naming because it means the suspicion was never actually tested on its own terms: k94's
+prevalence-matched arm is matched to the TRAINING prevalence (0.327 / 0.217), not to any figure
+recovered from the board. **This paragraph said "nothing has measured a rule matched to 0.16", which
+was the wrong complaint:** 0.16 is the macro artefact, and the targets a prevalence-matched rule
+would actually aim at are 0.069 and 0.288 per enzyme. So the untested arm is not the one the
+sentence named, and it is a different arm on each enzyme --- which is also why matching helped one
+and hurt the other in item 299's sweep.
+
+**It is also mechanically blocked, and the block was re-established independently.**
+`results/preds/tdi_probs.json` holds 2346 and 1495 values --- exactly the training rows carrying a
+TDI label after realignment, nowhere near 750 --- and it stores `y`, ground truth that does not
+exist for the blind test. It is additionally the **retired** direct-classifier arm, not the shipped
+bundle. A scan of 699 files under `results/` (with controls that fire on a known match) found the
+shipped TEST probabilities saved nowhere, and `tdi_submission.csv` keeps only booleans. So there is
+no ordering left to re-threshold: the minimal change is one line at `plugin_threshold`, and it
+cannot take effect without a full `src/submit.py` rerun at 161 to 230 minutes. That rerun would also
+rewrite `activity_submission.csv`, which is the input item 308's recalibration was applied to, so it
+would have to be pointed at `--outdir` --- and `--outdir` is **concatenated, not joined**, so it
+silently needs a trailing slash.
+
+**And a defect found along the way that has nothing to do with the threshold and matters more than
+it: `results/submission/submission.meta.json` has no writer anywhere in this repository.** Its own
+first line says it is "собирается программно, а не переписывается руками" --- assembled
+programmatically rather than retyped by hand. Measured: of its characteristic fields,
+`гейт_валидатора` and `архив_предыдущего` occur in no `.py` file at all, `собрано_utc` occurs only
+in `src/recalib.py`, which writes a DIFFERENT file (`recal.meta.json`), and the only mention of
+`submission.meta` in any Python source is a docstring line in that same script. The control passed:
+the identical search finds `recal.meta.json`'s own fields in six files. **So the provenance record
+for the most expensive artefact in the project cannot be regenerated by any code here, and the
+sentence inside it claiming otherwise is false.** A rerun under `--outdir` would produce no meta at
+all. This is exactly the gap the meta was created to close --- "нельзя было установить, каким кодом
+и каким составом собран лежащий на диске сабмит" --- reappearing one level up: the answer exists,
+and nothing can produce it again. Not fixed here; it needs its own change, and `src/recalib.py`'s
+`git_state()` and `sha256()` are the shape a writer would take.
+
+**And the stronger form, because "has no writer" reads as "not any more".** The citation-fix session
+proposed the test and both of us ran it independently: `git log --all -S` for those field names over
+every `.py` on every ref returns **zero commits**, so a writer never existed rather than having been
+deleted. Controls, because a search that finds nothing proves nothing: the same form returns 6
+commits for `plugin_threshold` and 4 for `fit_shrinkage`. The only mention of `submission.meta` in
+any Python source in this repository's entire history is the docstring line in `src/recalib.py`
+added on 15 September --- mine, and not a writer. The meta itself arrived in `2ea8735`, a commit
+about items 296 and 297: the same pattern as item 307's `caltwo` outputs riding in on a commit about
+Free-Wilson. **An artefact that enters on an unrelated commit is an artefact nobody is looking at.**
+
+**A lesson from the commit gate of this very change, handed back by the citation-fix session because
+its guard cannot express it.** That guard only ever asks "does this line hold this symbol"; it never
+asks whether a string is ABSENT. My gate did ask that --- it asserted `METHOD.md`'s stale "no
+sampling band at all" was gone --- and it correctly stopped the commit, because the replacement
+QUOTES the old sentence in order to record what it used to say. The right invariant is "appears
+once, inside quotes", not "appears zero times". **In a file that records its own corrections, "the
+bad string is gone" is never the right thing to check.** Third time in one day: the item counter
+that also matched bolded decimals, the pull-request body whose heading lost its count while the
+prose kept it, and this.
+
+**What this cost, and what it bought, because the instrument failed and that belongs in the
+record.** Eight agents, three completed, five failed --- two on network errors and three on output
+validation --- for 1.4 million subagent tokens, 248 tool calls and 68 minutes. The synthesis never
+ran, so this item is written from three readers' structured output and from the journal, not from a
+synthesised verdict. The validation failures were **my** defect, not the agents': the schema carried
+a free-text field for numbers, which invited multi-line content that then failed to parse as JSON.
+And the decisive evidence was item 299's, already on disk. **A sixty-eight-minute run whose answer
+was already written down is not a triumph** --- what it actually bought was verification and four
+defects found in this file, which is a smaller and more honest claim.
