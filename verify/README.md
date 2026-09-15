@@ -66,6 +66,14 @@ n=750 --- [0.6114, 0.6997], half-width **0.0442**; the live leaderboard at n=375
 half-width 0.0660. This is a sampling band on the absolute score, not the thing our gain is measured
 against.
 
+**The n=375 band has now been SCORED against the live board, and it FAILED: 0.8149 against an upper
+bound of 0.7265, outside by +0.0884 (item 308).** Of item 293's four pre-registered predictions one
+held --- the per-enzyme rank ORDER, the one item 293 itself called the sharpest --- and of the three
+misses two were in the BETTER direction (macro Spearman 0.6935 against a ceiling of 0.6590, macro MCC
+0.2836 against 0.2803). Only the scale-sensitive metric missed, and it missed by twenty times the
+macro floor. That pattern is the diagnosis: the ordering is better than we predicted and the scale is
+far worse, which is what the rest of item 308 measures and corrects.
+
 Until 13 September this carried item 256's numbers --- [0.6263, 0.7090] and [0.6126, 0.7322] ---
 correct for the composition that shipped THEN. A shift of 0.013 macro, the size of the composition
 change itself: that was a band for a different arm, not a rounding. The table inside item 256 is
@@ -10351,7 +10359,7 @@ against the journal; I reproduced every claim it rests on.
 750x16, computed 30 August), sixteen ETKDG-conformer descriptors including `bN_arom_ang_min/mean` --
 the basic nitrogen's angle to the aromatic system, i.e. the Glu216 salt-bridge geometry in three
 dimensions. `src/shape3d.py` and `src/ablshape.py` build and score it; `src/submit.py` references it
-**zero times**, so it is not shipped. Measured four seeds (item 165, line 4753):
+**zero times**, so it is not shipped. Measured four seeds (item 165's per-enzyme floor table):
 
     блок формы, Δранг     1A2       2C9       2D6       3A4
                        +0.0060   -0.0003   +0.0087   -0.0008
@@ -12140,7 +12148,7 @@ slope swing is a CYP3A4 phenomenon. A leaf built into the per-enzyme member and 
 way would read exactly 0.000000 on the one enzyme it was designed to fix -- the same
 by-construction zero as item 298's condition 4, and for the same reason.
 
-**Four: item 169 contains no rank number at all.** Lines 4898-4961 hold zero occurrences of "rank"
+**Four: item 169 contains no rank number at all.** Its text holds zero occurrences of "rank"
 against four of "residual" (control run). Every quantity in it -- +1.365 transport, 2.100 against
 0.736, 0.612 residual sd -- is a standard deviation in screening-readout units. Under this file's
 own rule that only rank survives, item 169 raises a prior and supplies no evidence of the kind that
@@ -12242,3 +12250,204 @@ SHA-256'd before launch and verify unchanged afterwards. And the cost was estima
 hours" and measured at **74 seconds per cell, ten minutes for all eight** -- an order of magnitude
 wrong, because the estimate came from the shape of the last long run rather than from anything
 measured.
+
+**308. The board says our ORDER is mid-field and our SCALE is bottom-field, and the gap between
+those two facts is the whole of our deficit. The fix is an affine map fixed BEFORE the result was
+seen, and taking it deliberately CANCELS item 300's commitment not to use probed constants before
+the reveal. That decision is the team's, not this file's, and what it costs is stated below.**
+`verify/k100_recal.py` reproduces every number here from `results/leaderboard_2026-09-15.json`, a
+dated snapshot of all nine board tabs pulled through the Space's own Gradio endpoints. The snapshot
+is committed rather than quoted as a constant because the boards move: our own position slid from
+102/163 to 103/164 inside one afternoon while not one number of ours changed.
+
+**Where we actually are.** 103rd of 164 on the regression board at macro ST-RAE 0.8149, against a
+board median of 0.7423, with macro MAE 0.9752, macro $R^2$ 0.0985 and macro Spearman 0.6935.
+
+**Item 293's pre-registration, scored.** Lower is better for ST-RAE, higher for the rest:
+
+    предсказание              полоса              факт    вердикт
+    макро ST-RAE (n=375)      [0.5945, 0.7265]  0.8149    ВНЕ +0.0884, хуже
+    макро Spearman            [0.6276, 0.6590]  0.6935    ВНЕ +0.0345, ЛУЧШЕ
+    макро MCC                 [0.2048, 0.2803]  0.2836    ВНЕ +0.0033, ЛУЧШЕ
+    порядок ранга             3A4>2C9>1A2>2D6   совпал    ВЫПОЛНИЛОСЬ
+
+One of four held, and it is the one item 293 called "the sharpest of the three -- the four bands do
+not overlap, so a reordering falsifies something real". Two of the three misses are in the better
+direction. **The only metric that punishes scale is the only one that failed.**
+
+**The diagnosis needs no inference at all --- it is the board's own numbers, sorted.** Take
+$k = \mathrm{sd}(p)/\mathrm{sd}(y)$, our spread as a fraction of the test spread, and sort our four
+cells by it:
+
+    фермент        k    ST-RAE        R2        ро
+    CYP2D6    0.2009    1.4043   -0.8702    0.4375
+    CYP1A2    0.3705    0.8853   +0.0960    0.7362
+    CYP2C9    0.7029    0.4862   +0.5511    0.7976
+    CYP3A4    0.7040    0.4837   +0.6173    0.8026
+
+**ST-RAE falls monotonically and $R^2$ rises monotonically with $k$, with no exception in either.**
+Two monotone orderings over four cells, and the ranks do not follow them: CYP1A2 holds a Spearman of
+0.7362 --- respectable --- while scoring 0.8853, and CYP2D6's 0.4375 is genuinely weak but its
+$-0.8702$ is not a modelling failure of that size. A negative $R^2$ means the mean would have been a
+better prediction; no model this file has ever measured is that bad by rank.
+
+**The second, independent reading of the same thing.** Among the 48 entrants whose macro Spearman
+lies within 0.03 of ours --- the same ordering by the board's own measure --- macro ST-RAE spans
+0.4777 to 0.8658 with a median of 0.6279, and **46 of the 48 score better than we do**. Ordering
+therefore does not determine the score, and our particular loss is not in the ordering. That is the
+whole case, and it stands without any use of probed constants.
+
+**Why the affine pair could not have caught this.** `fit_shrinkage` (`src/submit.py:808-856`) fits
+its shift and lambda against the credible bands of OUR labels. It calibrates to the TRAINING
+distribution and has no access to the test one; it is not a defect in that function. Item 277 already
+raised its `GRID` ceiling to 2.0 for a related reason, and two of the four multipliers needed here
+(2.12 and 2.26) sit ABOVE that ceiling, so the shipped machinery could not express this correction
+even in principle.
+
+**The moments, and the one external check on them.** With MAE $= f\cdot$RMSE and
+RMSE $= \mathrm{sd}(y)\sqrt{1-R^2}$, the board's published pair fixes the test spread; the mean then
+falls out of team briford's identity $R^2 = 2rk - k^2 - b^2$ (item 300) with the board's Spearman
+substituted for $r$ and the negative root taken:
+
+    фермент   Лаплас     норм   равном   briford sd   ср. выв.   briford ср
+    CYP1A2    1.6412   1.4545   1.3400       1.5530     4.3145       4.4120
+    CYP2C9    1.0932   0.9688   0.8926       1.1010     4.8013       4.8300
+    CYP2D6    1.7756   1.5736   1.4498       1.5990     3.0745       3.1070
+    CYP3A4    1.2857   1.1394   1.0497       1.2720     4.8147       4.8800
+
+**The MEANS corroborate briford's probe on all four within 0.10** (0.097, 0.029, 0.033, 0.065) from
+a source that never touched a leaderboard probe. **The SDs do not: two of the four miss by more than
+that** (0.132 on CYP2C9 and 0.133 on CYP3A4). Item 300 fixed the asymmetry of this verdict in
+advance --- agreement corroborates, disagreement is ambiguous and may not be reported as refuting
+briford --- and that asymmetry is honoured here.
+
+**And the assumption underneath is strictly violated, on the two cells that carry the prize.** Under
+this normalisation RAE is identically $\sqrt{1-R^2}$, so the board's ST-RAE implies a "forgiveness
+coefficient" ST-RAE/RAE directly --- and that coefficient CANNOT exceed one, because an error
+measured to the band bound is never larger than the error measured to the point:
+
+    фермент   при 0.707   при 0.798   при 0.866
+    CYP1A2       1.0507      0.9311      0.8579   <-- невозможно при 0.707
+    CYP2C9       0.8188      0.7257      0.6686
+    CYP2D6       1.1587      1.0269      0.9461   <-- невозможно при 0.707 и 0.798
+
+The violation sits on CYP2D6 under the normal factor and on CYP1A2 under the Laplace one --- exactly
+the two cells with the largest multipliers. **So the honest reading is: the DIRECTION and the ORDER
+of the prize are robust, and the per-cell numbers on 1A2 and 2D6 rest on an assumption that does not
+strictly hold.** An earlier summary of mine said the estimate was "robust across all assumption
+ranges", which sanitised a defect I had already found; that wording is withdrawn here.
+
+**THE OVERRIDE, and whose decision it is.** Item 300 committed, in its own words:
+
+  > "Whatever it returns, nothing from the probed constants enters the submission before the 25
+  > September reveal: the reveal is one full-test figure and the only honest test of a placement
+  > bet."
+
+That commitment is cancelled deliberately, on the team's instruction, with the board result in hand.
+**What is permanently lost: the 25 September reveal stops being a clean test of a placement bet.** It
+will measure a submission whose scale was fitted to board feedback, so it can no longer tell us what
+our modelling alone was worth against the field. Nothing recovers that; the figure is released once.
+What is bought is the interim standing itself, and the fact that the correction is measurable twelve
+hours from now rather than in ten days.
+
+**The rule, fixed before the result was seen.** Per enzyme
+$q = \mu(y) + b\,(p - \overline{p})$:
+
+    фермент      b   рекон.       k'   ро борд   перестрел   mu(y)   сдвиг медианы
+    CYP1A2    2.12  1.83-2.24   0.7854   0.7362       1.067   4.315           0.80
+    CYP2C9    1.24  1.05-1.29   0.8716   0.7976       1.093   4.801           0.26
+    CYP2D6    2.26  2.01-2.46   0.4541   0.4375       1.038   3.075           1.68
+    CYP3A4    1.24  1.05-1.29   0.8730   0.8026       1.088   4.815           0.16
+
+$b > 0$, so **the ordering cannot move**: Spearman between the old and new vectors is 1.000000000000
+on all four and the argsort is equal element for element, checked in `src/recalib.py` per run rather
+than trusted to the algebra. The move is not small --- CYP2D6's whole cell slides down 1.58 and its
+median compound moves 1.68 of pIC50.
+
+**A defect in the traceability of those four multipliers, which is why `k100` exists.** They were
+fixed as a MEDIAN over an assumption family, and the family's exact composition was never written
+down. The reconstruction above BRACKETS every applied value but reproduces none of them exactly
+(2C9 reconstructs to 1.28 against the applied 1.24). They are therefore carried as pre-registered
+constants, not as a formula's output. The related wording error: the quantity $k' = b\,\mathrm{sd}(p)/\mathrm{sd}(y)$
+is NOT an "inferred Pearson correlation", as I once called it --- it is a median divided by one
+particular spread, and $k' > \rho$ on all four means the rule deliberately OVERSHOOTS the
+least-squares-optimal slope by about 7 per cent.
+
+**PREDICTION, and it is testable at the next submission rather than at the reveal.** With the centre
+matched, $R^2 = 2r k' - k'^2$ in closed form, so:
+
+    фермент   R2 сейчас   R2 предсказ   MAE предсказ
+    CYP1A2       0.0960        0.5396         0.7875
+    CYP2C9       0.5511        0.6307         0.4698
+    CYP2D6      -0.8702        0.1911         1.1292
+    CYP3A4       0.6173        0.6392         0.5461
+    макро        0.0985        0.5001         0.7331
+
+**Macro $R^2$ must move from 0.0985 to about 0.50, and macro Spearman must stay at 0.6935 EXACTLY.**
+The second half is the sharper test: any movement in rank means the transform was not the only thing
+that changed. Recomputed on briford's probed spreads instead of the inferred ones the prediction is
+0.5031, so it does not turn on which set is used. If the inferred moments are wrong, $R^2$ will not
+land there.
+
+**The gate, and a control that found a real hole in how we had been running it.** Both submission
+files pass the organisers' validators. But `validate_activity_submission` takes an optional
+`expected_ids`, and **every run of that gate in this project --- including the one recorded as
+"принято" in `submission.meta.json` --- had left it unset**, which per lines 74-77 of
+`validation/activity_validation.py` falls back to checking only the ROW COUNT. Re-run with
+`expected_ids` from `data/cyp-challenge-TEST-BLINDED.csv` all three files still pass, and now the
+controls can fail and do: a substituted `Molecule_Name` is caught ("Missing 1 expected molecule,
+found 1 unexpected"), a deleted row is caught, and the same substituted file passes when
+`expected_ids` is omitted. **I had previously concluded from that omitted-argument call that "the
+gate does not check molecule identity" --- a query that could not have failed, read as a fact about
+the world.** That is the fourth error of this class this week and the reason it is written into
+`CLAUDE.md`.
+
+**What was NOT touched.** `results/submission/activity_submission.csv` is unchanged and verifies at
+sha256 `e29f170560f3a96449d9f7f4f4747a2dc4b42862c00cbb59e27ee52d9d34a754`, the hash its own meta
+records; the recalibrated vector is a new file beside it with its own provenance record. The
+classification file is unchanged: its own defect is real --- the board's implied test prevalence
+against our 38 per cent positive calls on CYP2D6 --- but `tdi_probs.json` holds TRAINING vectors, so
+the threshold cannot be moved without a `src/submit.py` rerun measured at 161 to 230 minutes, and no
+rule for it is pre-registered yet. Note also that a hash cannot verify a no-op here: pandas
+re-serialises the floats, so even an identity run at $b=1$ changes the sha256 while every number is
+bit-identical (verified: max difference $0.000\mathrm{e}{+}00$). Compare numerically.
+
+**And writing this item broke the two citations item 307 warned about, in the paragraph that warned
+about them.** Item 307 rewrote its references to cite ITEMS rather than lines, "on purpose: an
+absolute line number inside this same file is broken by the next insertion above it" --- and left two
+absolute ones standing. The masthead paragraph added above shifted everything below it by ten lines,
+so "Lines 4898-4961" for item 169 and "item 165, line 4753" both became wrong the moment this item
+was written. Both are now rewritten to cite items. **The general rule, since this is the second time:
+no item may cite an absolute line number in `verify/README.md` itself.**
+
+**And the sentence that stood here --- "line citations into other files are fine, they move only when
+that file is edited, which shows up in the same diff" --- was falsified within the hour by auditing
+it.** Every external line citation in this file was resolved against the file it names, by checking
+that the cited line still holds the symbol the sentence attributes to it:
+
+    ссылка                                   символ          держится
+    src/trunk.py 148 и 392                   g_of_pi         да
+    src/abldzens.py 147                      np.mean         да
+    validation/activity_validation.py 74-77  откат по числу  да
+    src/submit.py 395 и 593                  _desc_scaled    НЕТ --- реально 760, 777, 1050
+    src/submit.py 375 и 598                  _trunk_clip     НЕТ --- реально 700, 757, 1061
+    src/submit.py 230 (пункты 180 и 183)     np.mean         НЕТ --- реально 656 и 1062
+
+**Six stale references into `src/submit.py`, not one of them noticed, because the diff that moved
+them was a diff to `submit.py` and the file that started lying was this one.** `src/submit.py` is now
+1183 lines and the citations date from when it was about a third of that. One case is worse than an
+offset: the transductive standardisation of item 202's defect 2 survives at line 1050 only as a
+COMMENT, because `be25415` closed that defect --- so a reader following the citation finds neither
+the line nor the code. **The honest rule is therefore: cite a SYMBOL, not a line, in either
+direction.** A symbol either exists or the grep for it fails loudly.
+
+**Two corrections to my own audit, both found by checking rather than by reading.** Item 253's
+`src/submit.py:_oof_one`, line 542 is SOUND: `_oof_one` spans 512-594 so 542 is inside it, and the
+item's claim is that `sample_weight` is ABSENT, which the file confirms at zero occurrences --- my
+first pass counted it as rot because the needle I searched for was the very string whose absence is
+the claim. That same pass also MISSED `submit.py:230`, which is cited twice. The six stale references
+are left for a separate change: they are pre-existing, mechanical, and do not belong in a commit
+about the board.
+
+**Cost: one afternoon, no compute.** The board pull is seconds and the transform is one pass over
+750 rows.
