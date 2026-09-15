@@ -12173,10 +12173,12 @@ the purpose: `caltwo3a4` makes the link two-site **on CYP3A4 specifically**, and
 **+0.0000 at 1/4 signs**. Meanwhile the pair metric is destroyed -- macro 1.0212 against calshift's
 0.7796 -- which is item 189's "пара 0.89 против 0.78" reproduced and worse.
 
-**These runs also lack the control that would have made a positive result admissible.** `calshift`
-carries λ = 0; `caltwo` and `caltwo3a4` carry only 0.3 and 3.0. Items 174 and 175 both rest on the
-identity control at λ = 0 showing that the change does nothing without a screening term. So even
-had the numbers been positive, they could not have been adopted as written.
+**As committed, these runs also lacked the control that would have made a positive result
+admissible.** `calshift` carries λ = 0; `trunk_caltwo.json` and `trunk_caltwo3a4.json` carry only
+0.3 and 3.0. Items 174 and 175 both rest on the identity control at λ = 0 showing that the change
+does nothing without a screening term. So even had the numbers been positive, they could not have
+been adopted as written. **That gap was closed on 15 September and the missing arm is reported at
+the end of this item** -- the two files above are untouched; the new arm lives beside them.
 
 **A defect in the record, which is why this item exists at all.** Item 189's table files
 "двухсайтовая форма в стволе --- пара 0.89 против 0.78" and attributes it to item 178; item 211's
@@ -12207,3 +12209,36 @@ on the submission path.
 needed -- a screening likelihood ported into a tree learner, per-fold leaf-local fits on roughly 40
 to 58 paired rows per leaf against the ~900 per half that item 169 used, plus 4.5 hours per
 measured arm -- is recorded here so the next proposal has to beat it rather than restate it.
+
+**AMENDMENT, 15 September: the missing λ = 0 arm was run, and it passes exactly.** The gap above
+was worth closing because a record that cannot admit a positive result is not a record. Both modes,
+four seeds, `--lams 0 --seeds 0,1,2,3 --device mps`, into `results/preds/trunk_caltwo_lam0.json`
+and `trunk_caltwo3a4_lam0.json`. `verify/k99_lam0.py` scores it against a rule fixed before the
+run and committed while it was still running. The times, because a precedence claim is worth only
+what its timestamps support: `65bdec8` authored the checker at 09:43:24, before either output file
+existed (09:45:19 and 09:50:16), and the squash onto main (`e405556`) landed at 09:46:54 --
+between them. After the squash the branch commit is local-only, so a fresh clone can resolve the
+merge but not the authoring; this sentence originally cited `e405556` alone, which does not in fact
+predate the first arm. Every prediction must equal `calshift` at λ = 0
+**identically**, not closely.
+
+    арм          сид   ячеек   макс |разность|   маски совпали
+    caltwo       0-3    6525        0.000e+00           да
+    caltwo3a4    0-3    6525        0.000e+00           да
+
+Eight cells, 6525 observed predictions each, max |difference| exactly zero and the NaN masks
+identical, on the same device (mps) and the same torch (2.13.0) as the reference -- so the
+comparison tests the mode flag and not the hardware. `trunk.py:572-573` predicted precisely this:
+"lambda = 0 does not touch g_of_pi at all, so that arm is unaffected by construction and serves as
+the leak check." It now is one. The mode flag acts only through the screening channel, which means
+the mode comparisons in items 174-176 and in this item rest on a controlled instrument rather than
+on an assumption.
+
+**Two notes on the doing of it, both corrections.** The run had to be written to NEW files: with
+`--out` unset the path is `results/preds/trunk_<mode>.json` and `trunk.py:686` opens it with `"w"`,
+building its table only from the lambdas of the current run -- so the obvious invocation would have
+destroyed the eight committed cells this item rests on. The three pre-existing files were
+SHA-256'd before launch and verify unchanged afterwards. And the cost was estimated at "about two
+hours" and measured at **74 seconds per cell, ten minutes for all eight** -- an order of magnitude
+wrong, because the estimate came from the shape of the last long run rather than from anything
+measured.
