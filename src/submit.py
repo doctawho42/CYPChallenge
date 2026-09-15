@@ -130,6 +130,7 @@ TUT = tutorial()
 
 import argparse
 import json
+import time
 
 import numpy as np
 import pandas as pd
@@ -857,7 +858,7 @@ def fit_shrinkage(P, y, mask, delta=(0.0, 0.0, 0.0, 0.0)):
     return out
 
 
-def _provenance(a, argv, lams, fold, clusters, cls, verdicts, paths):
+def _provenance(a, argv, lams, fold, clusters, cls, verdicts, paths, elapsed_s):
     """What submeta.build needs, taken from what main() holds once the gate has passed.
 
     Kept out of main() so tests/test_submission_meta.py can exercise it in milliseconds: it
@@ -869,11 +870,12 @@ def _provenance(a, argv, lams, fold, clusters, cls, verdicts, paths):
                 positives={c: int(cls[f"{c}_is_TDI"].sum()) for c in TDI_CYPS},
                 total_rows=int(len(cls)), digest=fold_digest(fold), clusters=int(clusters),
                 golden=TRUNK_FOLD_DIGEST, gate=dict(verdicts), git=submeta.git_state(),
-                versions=submeta.versions())
+                versions=submeta.versions(), elapsed_s=elapsed_s)
 
 
 def main():
     global LO, HI
+    t0 = time.monotonic()      # the provenance record's runtime is measured from here
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-shrink", dest="shrink", action="store_false",
                     help="не применять усадку (поведение до пункта 252). Флаг ВКЛЮЧЁН по "
@@ -1201,7 +1203,7 @@ def main():
         fold, clusters = butina_folds(list(rows.SMILES))
     mp_ = a.outdir + "submission.meta.json"
     submeta.write(mp_, **_provenance(a, _sys.argv[1:], lams, fold, clusters, cls, verdicts,
-                                     [ap_, tp_]))
+                                     [ap_, tp_], elapsed_s=time.monotonic() - t0))
     print(f"\nготово:\n  {ap_}\n  {tp_}\n  {mp_}")
 
 

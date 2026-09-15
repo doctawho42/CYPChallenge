@@ -65,6 +65,7 @@ def context(tmp_path):
         gate={"регрессия": True, "классификация": True},
         git={"commit": "0" * 40, "branch": "main", "грязное_дерево": []},
         versions={"sklearn": "1.3.2", "numpy": "1.26.4", "torch": "2.13.0", "python": "3.12.5"},
+        elapsed_s=9725.4,
     )
 
 
@@ -99,6 +100,14 @@ def test_the_affine_pair_is_recorded_per_enzyme_without_the_fitting_centre(conte
                                            "CYP2D6": 0.01, "CYP3A4": 0.24}
     assert "4.21" not in json.dumps(moved, ensure_ascii=False)
     assert moved["GRID"] == "0.2..2.0"
+
+
+def test_the_record_carries_how_long_the_run_took(context):
+    """A documented runtime is what tells the next reader whether they dare rerun something,
+    and src/submit.py takes 161 to 230 minutes. 9725.4 seconds is 162.09 minutes."""
+    took = submeta.build(**{**context, "elapsed_s": 9725.4})["время_прогона"]
+    assert took["секунд"] == 9725
+    assert took["минут"] == 162.1
 
 
 def test_an_enzyme_outside_solo_is_named_rather_than_left_out(context):
@@ -251,8 +260,10 @@ def test_submit_hands_the_writer_what_the_run_actually_did(context):
     cls = pd.DataFrame({"CYP3A4_is_TDI": [True, False, True],
                         "CYP2D6_is_TDI": [False, False, True]})
     ctx = S._provenance(args, [], context["lams"], np.array([0, 1, 2, 0, 1]), 3, cls,
-                        {"регрессия": True, "классификация": True}, context["paths"])
+                        {"регрессия": True, "классификация": True}, context["paths"],
+                        elapsed_s=5400.0)
     meta = submeta.build(**ctx)
+    assert meta["время_прогона"]["минут"] == 90.0
     assert meta["классификация"]["положительных"] == {"CYP3A4": 2, "CYP2D6": 1, "из": 3}
     assert meta["преобразование"]["GRID"] == "0.2..2.0"
     assert set(meta["состав"]["SOLO"]) == set(S.SOLO)

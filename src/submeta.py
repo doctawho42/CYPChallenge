@@ -116,11 +116,14 @@ def _classification(bundle, positives, total_rows):
 
 
 def build(*, paths, argv, mode, solo, cyps, deadzone, bundle, delta, lams, grid, positives,
-          total_rows, digest, clusters, golden, gate, git, versions):
+          total_rows, digest, clusters, golden, gate, git, versions, elapsed_s):
     return {
         "что": WHAT,
         "собрано_utc": (datetime.datetime.now(datetime.timezone.utc)
                         .replace(microsecond=0).isoformat()),
+        # A documented runtime is what tells the next reader whether a rerun is affordable.
+        "время_прогона": {"секунд": int(round(elapsed_s)), "минут": round(elapsed_s / 60, 1),
+                          "от": "старта main() до записи этого файла"},
         "команда": "uv run python src/submit.py" + (" " + " ".join(argv) if argv
                                                     else "   (все флаги по умолчанию)"),
         "git": dict(git),
