@@ -12953,9 +12953,18 @@ returned exactly 1, on all five tabs.
     3 величина                    внутри [0.40,0.60] 0.5483          ВЫПОЛНИЛОСЬ
 
 Rule 1 held at exactly zero on all four enzymes and on the macro, which is what a monotone map
-requires and is also the sharpest available evidence that the two board rows score ONE prediction
-vector: an affine map with $b>0$ cannot reorder, so a moved Spearman would have falsified the
+requires: an affine map with $b>0$ cannot reorder, so a moved Spearman would have falsified the
 submission itself and not merely the arithmetic.
+
+**That the two board rows score ONE prediction vector is MEASURED, not inferred from those four
+Spearman values.** This paragraph first called the matching $\rho$ "the sharpest available evidence",
+which was wrong --- both CSVs are on disk, so the premise can be checked directly instead of argued
+from a board summary. Against $\mu + b\,(p - \bar p)$ with item 308's own constants, the largest
+deviation over all 750 rows and all four enzymes is $8.9\times10^{-16}$, the identifiers are
+identical and in the same order, and each enzyme's sd ratio equals its $b$ to twelve places. The
+control that makes this a test rather than a restatement: repeating it for CYP2D6 with $b=2.27$
+instead of $2.26$ gives $1.3\times10^{-2}$, four orders of magnitude out, so the check could have
+failed and did not.
 
 **Where the gain went is the diagnosis confirming itself.** Item 308 rescaled by $b$ per enzyme,
 large where $k=\mathrm{sd}(p)/\mathrm{sd}(y)$ was smallest. Percentile on the per-enzyme boards,
