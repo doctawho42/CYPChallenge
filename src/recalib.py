@@ -90,6 +90,16 @@ def main():
     ap.add_argument("--b", required=True, help="четыре множителя через запятую")
     ap.add_argument("--mu-y", default="",
                     help="четыре целевых средних; иначе центр не двигается")
+    # The item and the basis are arguments because they were hard-wired to item 308, and a
+    # file built under a LATER pre-registration would then carry a provenance record naming
+    # the wrong item and the wrong derivation. Defaults reproduce the 308 record byte for
+    # byte, so an unflagged run is unchanged.
+    ap.add_argument("--item", default="308 (предрегистрация правила и осознанная отмена "
+                                      "обязательства пункта 300)",
+                    help="пункт журнала, под которым собран этот файл")
+    ap.add_argument("--basis", default="масштаб и центр взяты из моментов, выведенных с доски "
+                                       "(пункт 308)",
+                    help="откуда взяты константы -- идёт в поле 'что'")
     a = ap.parse_args()
 
     bs = [float(x) for x in a.b.split(",")]
@@ -133,8 +143,8 @@ def main():
 
     meta = {
         "что": ("Провенанс ПЕРЕКАЛИБРОВАННОЙ регрессионной подачи. Аффинное преобразование "
-                "поверх файла, собранного src/submit.py: масштаб и центр взяты из моментов, "
-                "выведенных с доски (пункт 308). Ранг не меняется по построению."),
+                f"поверх файла, собранного src/submit.py: {a.basis}. "
+                "Ранг не меняется по построению."),
         "собрано_utc": datetime.datetime.now(datetime.timezone.utc)
                                .strftime("%Y-%m-%dT%H:%M:%SZ"),
         "команда": f"uv run python src/recalib.py --b {a.b} --mu-y {a.mu_y}",
@@ -142,7 +152,7 @@ def main():
             "Преобразование читает только --inp и четыре константы из командной строки, "
             "поэтому состояние дерева на воспроизводимость не влияет: тот же вход и те же "
             "константы дают тот же выход из любого коммита.")),
-        "пункт": "308 (предрегистрация правила и осознанная отмена обязательства пункта 300)",
+        "пункт": a.item,
         "вход": {"файл": rel(a.inp), "sha256": sha256(a.inp), "строк": int(len(df))},
         "выход": {"файл": rel(a.out), "sha256": sha256(a.out), "строк": int(len(out))},
         "преобразование": rec,

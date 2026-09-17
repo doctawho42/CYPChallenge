@@ -13306,3 +13306,34 @@ the probed constants on all four. By the same route its implied old-row $R^2$ mi
 $-0.218$ on CYP1A2 and $-0.162$ on CYP2D6 --- item 312's inconsistency, re-derived without using
 $R^2$ at all, on the same two cells. **No single $(M,S,r)$ in this family explains all five published
 metrics on those two enzymes**, which is now the fifth independent symptom pointing there.
+
+**The candidate is built and checked, and is NOT on the board.** `src/recalib.py` grew two
+arguments for this, `--item` and `--basis`, because both were hard-wired to item 308: a file built
+under a later pre-registration would otherwise carry a record naming the wrong item and the wrong
+derivation. The defaults reproduce the committed 308 record field for field, output sha256 included.
+
+    файл       results/submission/activity_submission_recal313.csv
+    sha256     07bedf06d26db002d239bf7e49721d63e22890660ee6b1241b5e010a51e117d2
+    вход       activity_submission.csv, sha256 e29f1705... --- ИСХОДНЫЙ файл, не тот, что на доске
+    sd         1.0022 / 0.8036 / 0.7145 / 0.9225      ср  4.390 / 4.851 / 3.075 / 4.815
+
+Spearman against the original file and against the file currently on the board is
+$1.000000000000$ on all four enzymes, so rule 1 of item 308 is preserved by construction and by
+measurement. **CYP2D6 is bit-identical to the board file, max difference exactly $0$**, which is the
+intended no-op --- and the control that makes that zero mean something is the other three, which
+moved by 0.507, 0.158 and 0.240.
+
+**The organisers' validator passes it, with `expected_ids` SET.** That qualifier is the whole point:
+`validate_activity_submission` takes `expected_ids=None` by default and then never checks molecule
+identity at all, and every validator run recorded in this project before 15 September had left it
+unset. Passing the 750 names from `data/cyp-challenge-TEST-BLINDED.csv`, the candidate, the board
+file and the original all pass, while four controls are each rejected with a DIFFERENT message ---
+a substituted name and a deleted row both by identity, a NaN by column type, a dropped column by
+schema --- so the validator is discriminating and not simply refusing.
+
+**A defect of mine on the way there, recorded because it is this file's recurring one.** The first
+validator run passed DataFrames where the signature wants a path, so all six calls raised
+`TypeError` --- and all four controls duly "failed", which is what they were supposed to do. Reading
+the control panel alone would have confirmed the run. Only the three real files failing too gave it
+away. **A control that fails for the wrong reason is indistinguishable from a control that works,
+unless something that must PASS is in the same run.**
