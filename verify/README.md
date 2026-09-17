@@ -66,13 +66,35 @@ n=750 --- [0.6114, 0.6997], half-width **0.0442**; the live leaderboard at n=375
 half-width 0.0660. This is a sampling band on the absolute score, not the thing our gain is measured
 against.
 
-**The n=375 band has now been SCORED against the live board, and it FAILED: 0.8149 against an upper
-bound of 0.7265, outside by +0.0884 (item 308).** Of item 294's four pre-registered predictions one
-held --- the per-enzyme rank ORDER, the one item 294 itself called the sharpest --- and of the three
-misses two were in the BETTER direction (macro Spearman 0.6935 against a ceiling of 0.6590, macro MCC
-0.2836 against 0.2803). Only the scale-sensitive metric missed, and it missed by twenty times the
-macro floor. That pattern is the diagnosis: the ordering is better than we predicted and the scale is
-far worse, which is what the rest of item 308 measures and corrects.
+**The n=375 band was SCORED against the live board on the submission that shipped until 16
+September, and it FAILED: 0.8149 against an upper bound of 0.7265, outside by +0.0884 (item 308).**
+Of item 294's four pre-registered predictions one held --- the per-enzyme rank ORDER, the one item
+294 itself called the sharpest --- and of the three misses two were in the BETTER direction (macro
+Spearman 0.6935 against a ceiling of 0.6590, macro MCC 0.2836 against 0.2803). Only the
+scale-sensitive metric missed, and it missed by twenty times the macro floor. That pattern is the
+diagnosis: the ordering is better than we predicted and the scale is far worse, which is what the
+rest of item 308 measures and corrects.
+
+**That correction has since been scored, and the band no longer describes what is on the board
+(item 311).** The submission was replaced on 16 September by an affine transform of itself --- a
+different configuration, so the band above is out of scope for it rather than re-refuted. Item 308's
+three pre-registered rules all held: rank unmoved on every enzyme, macro $R^2$ from 0.0985 to
+0.5483, macro ST-RAE from 0.8149 to 0.5830. **We stand 73rd of 187, 39.0 per cent of the field,
+against 103rd of 164 and 62.8 per cent before.** The gain landed on CYP1A2 and CYP2D6, the two
+enzymes whose scale was wrong, and CYP2C9 and CYP3A4 moved by -1.0 and +0.4 percentage points ---
+which is the control that claim needed.
+
+**Two things are open, and they are the live questions (items 312, 313).** The closed form that CHOSE
+those constants missed CYP2D6's $R^2$ by +0.1948, and after six agents the cause is down to one
+uncounted integer: the board drops NaN ground truth before resampling, so the per-enzyme scored $n$
+is smaller than the live half's 375 and nobody has measured it. At 375 the bootstrap
+mean-of-ratios gap is 13 times too small to explain CYP2D6 and nothing else explains it either; at the
+density-implied $n\approx114$ the gap alone suffices. CYP1A2 is settled separately --- ordinary
+live-half representativeness covers it. Second, and decision-relevant before 24 September: **ST-RAE
+and $R^2$ do not want the same scale.** The shipped constants maximise $R^2$, the board scores
+ST-RAE, and the ST-RAE-optimal spread is 0.69--0.88 of the $R^2$-optimal one on every enzyme and
+every feature set. Item 313 pre-registers a half-step correction and its revert rule; uploading it is
+the team's decision.
 
 Until 13 September this carried item 256's numbers --- [0.6263, 0.7090] and [0.6126, 0.7322] ---
 correct for the composition that shipped THEN. A shift of 0.013 macro, the size of the composition
@@ -12267,6 +12289,10 @@ is committed rather than quoted as a constant because the boards move: our own p
 
 **Where we actually are.** 103rd of 164 on the regression board at macro ST-RAE 0.8149, against a
 board median of 0.7423, with macro MAE 0.9752, macro $R^2$ 0.0985 and macro Spearman 0.6935.
+(True on 15 September and left as the record this item's whole diagnosis is measured against. The
+correction below shipped on 16 September and has been scored: item 311. Nothing in this item is
+withdrawn by it --- all three of its pre-registered rules held --- but the position is no longer
+ours, and the closed form that chose the constants missed CYP2D6 by +0.1948.)
 
 **Item 294's pre-registration, scored.** Lower is better for ST-RAE, higher for the rest.
 (Cited as item 293 until the TDI readers checked it: 293 is the rebuild and the MCC band, 294 is the
@@ -12914,3 +12940,400 @@ lacks the space every later entry carries --- which is also the best evidence th
 identical afterwards (`0e1740c4...` unchanged), so only the provenance moved. It now records the
 branch it was built on rather than `main`, which is honest and also means it wants regenerating once
 this lands --- written down here so that does not become a quiet inaccuracy.
+
+**311. All three of item 308's pre-registered rules held, and the gain landed on exactly the two
+enzymes the diagnosis aimed at while the other two did not move. The closed form that CHOSE the
+constants, however, is a separate claim, and it missed CYP2D6 by +0.1948 --- which is not yet
+explained and is treated below as an open question rather than a rounding.** Scored by
+`verify/k101_prereg308.py --pull`, whose rules were fixed in that file before the result existed and
+have not been touched since; the snapshot it pulled is committed as
+`results/leaderboard_2026-09-17T1053Z.json`.
+
+**The control is real, which is the only reason anything below counts.** `k101`'s `control` refuses
+to render a verdict while the board's `Submitted` still equals `PRE_SUBMITTED`, because on the old
+submission every number would "confirm" the state before the change. It moved:
+`2026-09-15 10:01 UTC` to `2026-09-16 13:15 UTC`. The verdict was then re-derived here WITHOUT
+`k101`'s own reader --- the snapshot JSON parsed directly, our row found by name --- and every number
+agreed. Controls on that re-read: a team name that is certainly absent returned 0 rows, ours
+returned exactly 1, on all five tabs.
+
+    правило                       порог              факт            вердикт
+    1 ранг (резкое)               |Δро| <= 0.0005    +0.0000 x4      ВЫПОЛНИЛОСЬ
+    2 направление                 рост >= +0.30      +0.4498         ВЫПОЛНИЛОСЬ
+    3 величина                    внутри [0.40,0.60] 0.5483          ВЫПОЛНИЛОСЬ
+
+Rule 1 held at exactly zero on all four enzymes and on the macro, which is what a monotone map
+requires: an affine map with $b>0$ cannot reorder, so a moved Spearman would have falsified the
+submission itself and not merely the arithmetic.
+
+**That the two board rows score ONE prediction vector is MEASURED, not inferred from those four
+Spearman values.** This paragraph first called the matching $\rho$ "the sharpest available evidence",
+which was wrong --- both CSVs are on disk, so the premise can be checked directly instead of argued
+from a board summary. Against $\mu + b\,(p - \bar p)$ with item 308's own constants, the largest
+deviation over all 750 rows and all four enzymes is $8.9\times10^{-16}$, the identifiers are
+identical and in the same order, and each enzyme's sd ratio equals its $b$ to twelve places. The
+control that makes this a test rather than a restatement: repeating it for CYP2D6 with $b=2.27$
+instead of $2.26$ gives $1.3\times10^{-2}$, four orders of magnitude out, so the check could have
+failed and did not.
+
+**And even that is not the check the premise needs, which item 312's audit found and ran.** Two
+files being affinely related says nothing about whether the BOARD re-scored them against the same
+ground truth on the same live half --- and the snapshots are two days apart. The test is that every
+row present in both snapshots whose `Submitted` is unchanged must carry byte-identical metrics: 833
+such rows across all eight tabs, **zero** with any changed metric, while 223 rows do have changed
+timestamps and most of those moved, so the comparison is live rather than comparing a board with
+itself. Perturbing one metric of one unchanged row in its last published digit is detected. Two
+corroborations nobody had asked for: our own TDI rows still carry `2026-09-15 10:01 UTC` with
+identical metrics in both snapshots, so only the activity file was replaced; and the macro row is the
+exact arithmetic mean of the four per-enzyme rows in both snapshots, on all five metrics.
+
+**Where the gain went is the diagnosis confirming itself.** Item 308 rescaled by $b$ per enzyme,
+large where $k=\mathrm{sd}(p)/\mathrm{sd}(y)$ was smallest. Percentile on the per-enzyme boards,
+before and after:
+
+    фермент       b    было            стало          сдвиг
+    CYP1A2     2.12    141/164 86.0%   74/187 39.6%   -46.4 п.п.
+    CYP2D6     2.26    106/164 64.6%   85/187 45.5%   -19.1 п.п.
+    CYP2C9     1.24     63/164 38.4%   70/187 37.4%    -1.0 п.п.
+    CYP3A4     1.24     45/164 27.4%   52/187 27.8%    +0.4 п.п.
+
+**The two enzymes that were already near their scale did not move, and the two that were not moved
+enormously.** CYP3A4's +0.4 and CYP2C9's -1.0 percentage points are the control this prediction
+needed and did not have to be arranged: had the correction been a general-purpose improvement --- or
+a board artefact --- all four would have shifted together. Macro: 103rd of 164 at ST-RAE 0.8149
+against a board median of 0.7423, to 73rd of 187 at 0.5830 against a median of 0.7196. The field
+grew by 23 entrants over the same two days, so the raw ranks are not comparable and the percentiles
+are: 62.8 per cent to 39.0 per cent.
+
+**The closed form is a SEPARATE claim from the three rules, and it fared worse.** Rules 2 and 3 were
+deliberately loose --- a direction and a wide band --- precisely because item 308 recorded that the
+per-cell numbers rested on an assumption it had already shown to be violated. Scored per enzyme:
+
+    фермент    R2 предск    R2 факт     промах
+    CYP1A2        0.5396    +0.5099    -0.0297
+    CYP2C9        0.6307    +0.6297    -0.0010
+    CYP2D6        0.1911    +0.3859    +0.1948
+    CYP3A4        0.6392    +0.6678    +0.0286
+    макро         0.5001    +0.5483    +0.0482
+
+CYP2C9 to a thousandth and CYP3A4 to three hundredths; CYP2D6 wrong by an amount six times the
+whole macro miss, and in the favourable direction.
+
+**A forward test that is much sharper than the inverse, and that localises the defect.** Two scored
+submissions of one prediction vector, related by a known affine map, share one Pearson $r$ --- $r$ is
+invariant under a positive affine map. With $S=\mathrm{sd}(y)$ and $M=\mathrm{mean}(y)$ on the scored
+half, $\mathrm{MSE}=s^2+S^2-2rsS+(m-M)^2$ and $R^2=1-\mathrm{MSE}/S^2$ give
+$2rsS=s^2+(m-M)^2+S^2R^2$, once per submission. So the blind moments other teams published by
+leaderboard probing can be tested directly: substitute them and the two submissions must imply the
+SAME $r$.
+
+    фермент    r из старой   r из новой   расхождение   вердикт
+    CYP2C9          0.7927       0.7944       +0.0017    согласуется
+    CYP3A4          0.8082       0.8197       +0.0115    согласуется
+    CYP1A2          0.6175       0.7170       +0.0996    НЕ согласуется
+    CYP2D6          0.2607       0.6557       +0.3950    НЕ согласуется
+
+**The two that fail are CYP1A2 and CYP2D6 --- the same two, reached by a different route, that item
+308 had already flagged for a strictly violated MAE-to-RMSE assumption.** Two independent symptoms
+picking out one pair of enzymes is not a coincidence.
+
+**Two corrections to this table, both from the audit in item 312, both against what this item first
+said.** First, it claimed the disagreement "ranks exactly with how negative the old $R^2$ was". It
+does not: by that ordering CYP2C9 ($+0.5511$) should disagree more than CYP3A4 ($+0.6173$) and it
+disagrees less, and the 0.0098 that separates them is inside the propagated uncertainty of both, so
+the bottom pair is not ordered by anything. The recalibration multiplier $b$ --- 2.26, 2.12, 1.24,
+1.24 --- orders the top two the same way, ties the bottom two, and is the mechanically plausible
+driver, since $b$ enters the gap twice, through $s_1=b\,s_0$ and through $m_1=\mu$. Second,
+"согласуется" for CYP2C9 and CYP3A4 does not mean their recovered moments are sound. Those are
+exactly the two enzymes where $D=b R^2_{\text{old}}-R^2_{\text{new}}$ is near zero (0.0537 and
+0.0977 against $-2.3526$ for CYP2D6), so a 0.01 error in either board $R^2$ moves $S^2$ by 18.6 and
+10.2 per cent there against 0.4 per cent on CYP2D6. **The forward test's verdict is anti-correlated
+with the inverse problem's conditioning**: it calls consistent the two cells whose moments are least
+determined, and broken the one cell whose moments are best determined.
+
+**The leading hypothesis, named here as a hypothesis and not as a result.** The board does not
+publish a point $R^2$. `evaluation/config.py` registers `("R2", r2_score)`, `utils.bootstrap_sampling`
+draws `default_rng(seed=0).choice(n, size=(1000, n), replace=True)`, `bootstrap_metrics` calls
+`metric_func(y_true[idx], y_pred[idx])` per resample, and
+`average_bootstrap_results_by_endpoint` aggregates with `.agg(["mean","std"])`. **The published
+number is therefore a mean over 1000 resamples of `r2_score` computed on each resample, each with
+that resample's own SST in its denominator --- a mean of ratios.** The closed form above assumes a
+single-pass $R^2$; so does the probing that produced the published constants, which means both are
+biased the same way and our disagreement with those constants is not evidence against either. A
+mean-of-ratios gap grows as $R^2$ falls, and that is roughly the observed ordering. Whether it
+accounts for +0.0996 and +0.3950 in FULL, in part, or not at all is measurable --- the resampler and
+the metric are both fixed and known, so the published quantity can be reproduced exactly rather than
+approximated.
+
+**Measured in item 312, where this paragraph's other guess turned out wrong too.** The gap does not
+"blow up with the curvature": it is exactly $-(1-R^2)(1+\kappa)/n$ with
+$\kappa=\mathrm{Var}((y-\bar y)^2)/S^4$, linear in $1-R^2$ and exactly $1/n$, with no divergence
+anywhere in $[-1.5,+0.9]$. Its size therefore turns entirely on $n$ --- and the $n$ this item
+assumed is not the $n$ the board scores at.
+
+**One thing the band does NOT say.** The scoreboard's n=375 sampling band, $[0.5945, 0.7265]$,
+described the SHIPPED composition; the recalibrated file is an affine transform of it and therefore a
+different configuration, so 0.5830 does not re-refute that band and is not a second scored
+prediction. What it does support, weakly but in the right direction, is that the band's failure was
+a scale artefact and nothing else: once the scale is corrected, the live score lands just past the
+optimistic end of what our own cross-validation predicted for the live half, rather than anywhere
+near the +0.0884 by which the uncorrected submission missed.
+
+**312. Item 311's hypothesis was refuted by measurement, and then the refutation was itself refuted:
+the bootstrap gap is 13 to 24 times too small at $n=375$, but 375 is the LIVE HALF, not the
+per-enzyme scored $n$ --- NaN ground truth is dropped before `bootstrap_sampling`, and at the
+density-implied $n\approx114$ the gap is sufficient for CYP2D6. Nobody measured $n$, and $n$ is the
+whole question.** Six agents; four of the eight defects below were found by the audit agent against
+the other five, and three of them are mine.
+
+**The gap is real and its law is exact.** Reproducing the board's own quantity --- importing
+`evaluation.utils.bootstrap_sampling` and taking `r2_score` out of `evaluation.config`, rather than
+re-implementing either --- and sweeping point $R^2$ over $[-1.5,+0.9]$ against Gaussian labels and
+against each enzyme's empirical training labels, 540 cells:
+
+$$\text{bootstrap mean }R^2 - \text{point }R^2 \;=\; -\,\frac{(1-R^2)(1+\kappa)}{n},
+\qquad \kappa=\frac{\mathrm{Var}\big((y-\bar y)^2\big)}{S^4}$$
+
+Predicted against measured $n\times$slope: 2.975/3.000 Gaussian, 4.137/4.131 CYP1A2, 3.803/3.896
+CYP2C9, 5.138/5.174 CYP2D6, 2.318/2.342 CYP3A4. The $1/n$ law holds to 4.015 against an exact 4.00
+over 180 cells. **The gap is linear in $1-R^2$ and has no divergence anywhere**, which is the first
+thing item 311 got wrong: it guessed the curvature "blows up as $R^2$ goes negative". It does not.
+
+**Controls, because this whole item is a claim about someone else's arithmetic.** The vectorised
+bootstrap equals the organisers' per-resample loop BIT FOR BIT, max $|{\rm diff}|=0$ over 36
+configurations --- and the paired negative control, the same code using the full-sample SST instead
+of each resample's own, differs by $8.3\times10^{-3}$, so the equality test exercises the very clause
+the item is about. `bootstrap_sampling(375)` is bit-identical to
+`default_rng(seed=0).choice(375,(1000,375),replace=True)`. The solved $(M,S,r)$ reproduce the board
+numbers through the organisers' loop to $3\times10^{-8}$, while the same check fed $r$ from the
+uncorrected closed form misses by $-0.0148$.
+
+**At $n=375$ the hypothesis dies, and it looked unreachable rather than merely unlikely.** Required
+to close CYP2D6: a gap of $-0.1561$. Measured at the real configuration: $-0.0131$. Maximising the
+label distribution's fourth moment by linear program, subject to the probed mean and sd and the
+observed pIC50 support $[1.906, 7.949]$, caps it at $-0.0479$ --- still 3.3 times short, and 7.4
+times short on CYP1A2. The arms concluded the gap explains 3 and 7.5 per cent, and stopped.
+
+**The defect, and it is the project's signature one.** `bootstrap_metrics` receives the labelled rows
+only; NaN ground truth is dropped before the resampler ever runs. So the scored $n$ is the live half
+INTERSECT the rows labelled FOR THAT ENZYME, which is strictly smaller than 375 and differs by
+enzyme. The algebra arm wrote that sentence down, in those words, and then assumed 375 anyway.
+Counting the direct-inhibition labels we can see:
+
+    фермент   меток из 4905   плотность   n при живой половине 375
+    CYP1A2             1412       0.288                        108
+    CYP2C9             1285       0.262                         98
+    CYP2D6             1493       0.304                        114
+    CYP3A4             2335       0.476                        179
+
+Re-measured at those $n$, with the same LP ceiling: CYP2D6's gap reaches $-0.1264$ at $n=114$ and
+$-0.1576$ under the algebra arm's own ceiling, against the $-0.1561$ required. **Sufficient.** The
+refutation was a measurement taken at an $n$ the board does not use --- a query that could not have
+succeeded, read as a negative answer, in the item that quotes that rule.
+
+**This does not rescue the hypothesis; it reopens it, on one enzyme only.** What survives every $n$
+from 98 to 750: the conic and the closed form (algebra exact, $n$-free, verified by independent
+symbolic elimination in all four coefficients, with a planted one-symbol typo as the control); the
+sign of the gap, negative in every cell measured; **and CYP1A2's refutation** --- required $-0.0689$,
+available $-0.0150$ even at $n=114$, still 4.6 times short. What flips is CYP2D6 alone.
+
+**Three cells, three different explanations, and item 311 was wrong to group them.**
+
+    фермент   расхождение   что его объясняет
+    CYP1A2         0.0996   представительность живой половины; НЕ бутстрэп ни при каком n
+    CYP2D6         0.3950   бутстрэп при n~114; представительность исключена
+    CYP2C9         0.0017   ниже пола; и хуже всего обусловлено
+    CYP3A4         0.0115   ниже пола; и хуже всего обусловлено
+
+CYP1A2's 0.0996 sits INSIDE what a series-structured live half produces on its own: simulating whole
+chemical series into 375-compound halves, the propagated 90 per cent half-width is 0.057 at the
+repository's own Butina 0.35 and 0.129 at the 75-series granularity the organisers describe, and up
+to 12 per cent of halves close the gap outright. CYP2D6's 0.3950 survives all 72 000 simulated
+halves, at every structure, and **no sd ratio between 0.02 and 8.0 closes it at any magnitude**. The
+controls there are the reason to believe it: a degenerate all-singleton structure run through the
+identical sampler reproduces the random-375 control to 0.99--1.01$\times$, so the sampler can detect
+the ABSENCE of series structure, and a greedy-fill inclusion bias was caught and fixed (largest
+cluster enters with probability 0.494--0.509 after symmetrisation, against a design 0.5).
+
+**"Two equations cannot pin three unknowns" was false, and the missing equations were in the
+committed anchor all along.** `results/leaderboard_2026-09-15.json` publishes ST-RAE, MAE, $R^2$,
+$\rho$ and $\tau$ for the OLD row too. Item 311 quoted only the new MAE; no arm used the old MAE or
+either ST-RAE. The board supplies three prediction-scale metrics on two rows --- six constraints per
+enzyme, not two --- and the copula closure was never needed. The sharpest of them is three lines of
+arithmetic on board numbers, with no probed constant and no distributional assumption at all: $S$ is
+the same quantity on both rows, so
+
+$$\frac{S_{\text{old}}}{S_{\text{new}}}=\frac{\mathrm{MAE_{old}}}{\mathrm{MAE_{new}}}
+\sqrt{\frac{1-R^2_{\text{new}}}{1-R^2_{\text{old}}}} \quad\text{must equal } 1 .$$
+
+It gives 1.0245, 1.0034, 1.0669, 0.9857 --- **flagging CYP1A2 at 2.5 per cent and CYP2D6 at 6.7 per
+cent, a fourth independent symptom on the same two cells.** Two further bounds need nothing but the
+board: $|m-M|\le\mathrm{MAE}$ gives $M$ windows, and $\mathrm{MAE}\le\mathrm{RMSE}$ gives $S$ floors,
+the latter valid in this direction precisely because the bootstrap gap is negative everywhere. Every
+one of the four probed means lands inside its window and every probed sd above its floor: **the
+published constants are not refutable from the leaderboard.**
+
+**The Gaussian-copula closure fails, and is not a route.** On our own out-of-fold data at $n=375$,
+$\sin(\pi\tau/2)$ overestimates Pearson $r$ by $+0.031/+0.013/+0.014/+0.012$, while closing the
+system needs $r$ to within $0.0008$--$0.0065$ because $|dS/dr|$ runs from 7.7 to 65. The Spearman
+route, $2\sin(\pi\rho/6)$, is better by 0.001--0.004 and therefore is not a rescue either. A
+true-Gaussian control recovers $r$ to $\le0.0013$, so the failure belongs to the copula and not to
+the code; and the arm replaced its own first alignment control after finding it could not have failed
+(`rows.csv` is the raw file's order with nothing dropped, so realignment is a no-op on this data),
+substituting one that reproduces this file's committed rank column and collapses when labels are
+shifted by one row.
+
+**CLAUDE.md's search rule was not followed, and following it would have shrunk the question.** Item
+308 had ALREADY inverted MAE to moments: its normal-factor sds 1.4545/0.9688/1.5736/1.1394 are
+reproduced to four decimals by $\mathrm{MAE_{old}}/(0.798\sqrt{1-R^2_{\text{old}}})$. Its own
+mean error then accounts for 89.3 per cent of CYP1A2's gap and 76.9 per cent of CYP3A4's --- and only
+25.4 per cent of CYP2D6's. Related, and nobody noticed: item 308's shipped constants were derived
+from the OLD row, and the NEW row now gives a second, disagreeing determination, moving CYP2D6's sd
+by 6.3 per cent.
+
+**A caveat that reaches every item using the per-enzyme tabs, including 308 and 311: nothing on disk
+determines the tab map.** Neither snapshot labels the enzyme. Searching all 24 orderings against the
+assumption-free MAE constraints leaves 2 admissible (3 with slack); `partial_12` is CYP2D6 in all of
+them, `partial_10` is CYP1A2 in 2 of 3, and **the CYP2C9/CYP3A4 assignment between `partial_11` and
+`partial_13` is not determined by anything available here.** The negative control works --- moving
+the probed CYP2D6 mean to 6.5 leaves 0 admissible orderings --- so the test can fail. Macro
+conclusions are untouched; the two cells at issue are the two that are below the floor anyway.
+
+**Five controls in this session could not have failed, were caught, and were replaced.** A "needed
+$n$" sweep returned the IDENTICAL value at $n=12$ and $n=375$ --- a Python default-argument binding
+bug, not a null result. An admissible-curve solve returned all-NaN because the bracket wandered
+outside $|r|\le1$ and `NaN*NaN>0` is False. A board extractor silently matched three usernames
+containing `izard` and kept the last. An end-to-end check came back at 100 per cent oracle capture
+with zero losses, its truth worlds drawn so widely that the current point was grossly wrong in nearly
+every draw. And item 311's own same-vector evidence: four Spearman values holding to four decimals,
+against two files whose strictly increasing affine relation makes $\rho$ and $\tau$ identical to
+machine precision for ANY ground truth on ANY subset --- twelve digits weaker than what the files
+already guarantee, and corrected in item 311.
+
+**What would settle CYP2D6.** The per-enzyme scored $n$. It is bounded above by 375 and the density
+above is an inference from TRAINING label density onto a test set whose labels we cannot see. At 375
+the bootstrap gap is dead and nothing explains CYP2D6; at $n\approx114$ it is sufficient and
+representativeness is still excluded. The two hypotheses are separable by one integer that nobody
+has counted, and this file should stop asserting either until it is.
+
+**313. ST-RAE and $R^2$ do not want the same scale. Item 308 chose its constants to maximise $R^2$,
+so the file now on the board is over-dispersed for the metric that actually scores us --- and in
+doing so it overwrote a centre `src/submit.py` had already fitted out of fold for ST-RAE itself. A
+half-step correction is pre-registered here, with its revert rule, BEFORE any upload. Whether to
+upload it is the team's decision and not this file's.**
+
+**The direct measurement, on our own labels with their real credible bands.** Sweeping a scale over
+the centred out-of-fold predictions and minimising ST-RAE, against the same sweep maximising $R^2$:
+
+    фермент   ро* (ST-RAE)   r (R2)   отношение   центр над средним
+    CYP1A2           0.353    0.481       0.734              +0.132
+    CYP2C9           0.533    0.607       0.878              +0.101
+    CYP2D6           0.283    0.407       0.695              +0.016
+    CYP3A4           0.632    0.769       0.822              +0.173
+
+**The ratio is below one on every enzyme and on all six feature sets** (0.71--0.77, 0.77--0.89,
+0.63--0.73, 0.82--0.83), so this is a property of the metric, not of one model. Scoring at the
+$R^2$-optimal scale instead costs 0.027 macro ST-RAE --- about four times the noise floor.
+
+**Why the two disagree, mechanically.** ST-RAE's numerator is a hinge, zero inside $[\rm lo, hi]$,
+and its denominator is that same hinge on a constant predictor at $\mathrm{mean}(y)$ --- so the
+denominator does not contain $y_{\rm pred}$ at all (verified: identical to $1.1\times10^{-13}$ from
+two different prediction vectors, while a wrong variant that centres the baseline at
+$\mathrm{mean}(\rm pred)$ differs by 0.59--1.07). The threshold forgives 35--47 per cent of the naive
+L1 error, and it does not forgive evenly: band width is strongly ANTI-correlated with the label,
+$-0.87/-0.85/-0.73/-0.89$. CYP3A4's mean band width by activity quartile runs 2.369, 0.702, 0.272,
+0.170. Wide bands sit on the weak compounds, so stretching predictions toward the extremes buys $R^2$
+but spends ST-RAE at the potent end where there is no tolerance left. That also explains the last
+column: the ST-RAE-optimal centre sits ABOVE $\mathrm{mean}(y)$, and at $+0.132/+0.101/+0.016/+0.173$
+it independently reproduces item 25's $+0.136/+0.102/+0.024/+0.173$.
+
+**The defect in item 308, found only by searching the log first.** `fit_shrinkage` in `src/submit.py`
+already fits an ST-RAE-optimal affine pair out of fold, and `submission.meta.json` records what it
+found: lambda 1.08/1.22/1.10/1.04 with shifts $+0.13/+0.17/+0.01/+0.24$ --- the same shifts, measured
+independently, as the table above. **`src/recalib.py` then overwrote that centre with
+$\mu=\mathrm{mean}(y)$.** Item 308 was right that the spread had to grow and right that its rank
+could not move; it was wrong to discard a centre this project had already measured, in favour of one
+that is optimal only for a metric nobody scores us on.
+
+**ST-RAE is convex piecewise-linear in (shift, scale)** --- it is a sum of hinges of an affine
+function, and the denominator is a constant --- checked numerically at 0 violations in 1999 second
+differences per enzyme, and the board's bootstrap mean preserves it because the denominator does not
+depend on the prediction. **Two scored points therefore prove only that the minimum lies past
+$t=0$; three bracket it.** That, and not the modelled gain, is the argument for a third point.
+
+**Pre-registered, before any upload.**
+
+    предлагается   b 1.86, 1.18, 2.26, 1.15    mu 4.390, 4.851, 3.075, 4.815
+    применяется к  results/submission/activity_submission.csv (ИСХОДНОМУ файлу 15 сентября)
+    даёт sd(q)     1.0022 / 0.8036 / 0.7145 / 0.9225   против 1.1423 / 0.8444 / 0.7145 / 0.9947
+    предсказание   макро ST-RAE 0.5830 -> 0.5696, полоса [0.5614, 0.5769]
+    правило        ОТКАТ, если на следующем снимке макро ST-RAE не ниже 0.5769
+
+Every $b>0$, so Spearman and Kendall cannot move and rule 1 of item 308 applies unchanged. Modelled
+macro gain $-0.0134$, 5--95 per cent $[-0.0216,-0.0061]$, $P(\text{loss})=0.0000$ over 140 admissible
+worlds including a live-half perturbation of $\pm0.12$ in mean and $\pm10$ per cent in sd; MAE and
+$R^2$ move by at most 0.003. **The property that decides it is not the size of the gain but its
+robustness to the one thing we cannot measure**: the test set's band widths. Across a sweep from
+$0.4\times$ to $2.2\times$ our own widths the half step never loses, worst case $+0.0002$ at the
+extreme narrow end, while the FULL step the model asks for changes sign at about $0.7\times$.
+
+**CYP2D6 is deliberately left untouched at $b=2.26$, $\mu=3.075$, and that exclusion costs most of
+the modelled gain** --- its own prescription was worth $-0.124$ alone, macro $-0.031$, so taking it
+would roughly triple the expectation. It is refused because CYP2D6 is the one enzyme whose six
+published numbers no world built from the other three label shapes can reproduce, whose zero-band
+control fits BETTER without bands (the opposite of the other three), and whose inconsistency item 312
+leaves unexplained at $n=375$. Tripling an expectation on the cell we understand least is the bet
+this item declines.
+
+**Controls, including one that could not have failed and was replaced.** Raw macro ST-RAE on
+FP+DESC+MECH reproduces this file's committed 0.7673 exactly, and rolling the labels by one row gives
+1.3458; the out-of-fold affine pair gives 0.7147 against the committed 0.7150; a planted optimum
+$p=y$ gives ST-RAE 0.0000 and is invariant to halving or doubling $p$. The forward model that fits
+the published ST-RAE and MAE on both rows passes an exact self-recovery test (max residual 0.00000)
+and FAILS its paired zero-band control on three of four enzymes, as it must if band width carries
+real information. A leave-one-shape-out hold-out --- the truth's label and band geometry withheld,
+the truth pinned to the real board numbers --- gained in 18 of 18 draws and captured 90 per cent of
+the oracle, and failed informatively on CYP2D6, where no world outside its own shape fits.
+**The first end-to-end control returned 100 per cent oracle capture with zero losses, which could not
+have failed** --- its truth worlds were drawn so widely that the current point was grossly wrong in
+nearly every draw and the prescription sat on the grid edge in 40 of 56. It is kept on disk as the
+failure and replaced by the hold-out version, which can bite.
+
+**Independent corroboration nobody asked for.** The forward model inverts ST-RAE and MAE only and
+never touches $R^2$, yet it lands on $M=4.17$--$4.43$ / $4.82$--$4.88$ / $3.12$--$3.14$ /
+$4.69$--$4.91$ and $S=1.29$--$1.62$ / $0.92$--$1.16$ / $1.29$--$1.58$ / $1.05$--$1.38$, overlapping
+the probed constants on all four. By the same route its implied old-row $R^2$ misses the board by
+$-0.218$ on CYP1A2 and $-0.162$ on CYP2D6 --- item 312's inconsistency, re-derived without using
+$R^2$ at all, on the same two cells. **No single $(M,S,r)$ in this family explains all five published
+metrics on those two enzymes**, which is now the fifth independent symptom pointing there.
+
+**The candidate is built and checked, and is NOT on the board.** `src/recalib.py` grew two
+arguments for this, `--item` and `--basis`, because both were hard-wired to item 308: a file built
+under a later pre-registration would otherwise carry a record naming the wrong item and the wrong
+derivation. The defaults reproduce the committed 308 record field for field, output sha256 included.
+
+    файл       results/submission/activity_submission_recal313.csv
+    sha256     07bedf06d26db002d239bf7e49721d63e22890660ee6b1241b5e010a51e117d2
+    вход       activity_submission.csv, sha256 e29f1705... --- ИСХОДНЫЙ файл, не тот, что на доске
+    sd         1.0022 / 0.8036 / 0.7145 / 0.9225      ср  4.390 / 4.851 / 3.075 / 4.815
+
+Spearman against the original file and against the file currently on the board is
+$1.000000000000$ on all four enzymes, so rule 1 of item 308 is preserved by construction and by
+measurement. **CYP2D6 is bit-identical to the board file, max difference exactly $0$**, which is the
+intended no-op --- and the control that makes that zero mean something is the other three, which
+moved by 0.507, 0.158 and 0.240.
+
+**The organisers' validator passes it, with `expected_ids` SET.** That qualifier is the whole point:
+`validate_activity_submission` takes `expected_ids=None` by default and then never checks molecule
+identity at all, and every validator run recorded in this project before 15 September had left it
+unset. Passing the 750 names from `data/cyp-challenge-TEST-BLINDED.csv`, the candidate, the board
+file and the original all pass, while four controls are each rejected with a DIFFERENT message ---
+a substituted name and a deleted row both by identity, a NaN by column type, a dropped column by
+schema --- so the validator is discriminating and not simply refusing.
+
+**A defect of mine on the way there, recorded because it is this file's recurring one.** The first
+validator run passed DataFrames where the signature wants a path, so all six calls raised
+`TypeError` --- and all four controls duly "failed", which is what they were supposed to do. Reading
+the control panel alone would have confirmed the run. Only the three real files failing too gave it
+away. **A control that fails for the wrong reason is indistinguishable from a control that works,
+unless something that must PASS is in the same run.**
