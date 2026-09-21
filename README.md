@@ -17,10 +17,14 @@ released data, the apparatus that tells an effect from a noise floor, a catalogu
 and closed, and a falsifiable prediction for the interim reveal. Roughly twenty minutes.
 
 **[`docs/method_report.md`](docs/method_report.md)** is the short version written for the
-organisers and linked from the leaderboard: what ships, the closed form we derived for the
-challenge's own metric, the uncertainty apparatus, what we refused and why, and the limitations
-stated plainly. Roughly ten minutes, and the place to start if you are judging rather than
-reproducing.
+organisers: what ships, the closed form we derived for the challenge's own metric, the uncertainty
+apparatus, what we refused and why, and the limitations stated plainly. Roughly ten minutes, and
+**the place to start if you are judging rather than reproducing.**
+
+(This file said "and linked from the leaderboard" until 21 September. It was not: the board's Model
+Report field has pointed at `METHOD.md` in every committed snapshot, so a judge following our row
+has been handed the twenty-minute reproduction document instead of the ten-minute one written for
+them. The field is set per submission and is corrected on the next upload.)
 
 ## Getting started
 
