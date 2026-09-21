@@ -79,8 +79,11 @@ rest of item 308 measures and corrects.
 (item 311).** The submission was replaced on 16 September by an affine transform of itself --- a
 different configuration, so the band above is out of scope for it rather than re-refuted. Item 308's
 three pre-registered rules all held: rank unmoved on every enzyme, macro $R^2$ from 0.0985 to
-0.5483, macro ST-RAE from 0.8149 to 0.5830. **We stand 73rd of 187, 39.0 per cent of the field,
-against 103rd of 164 and 62.8 per cent before.** The gain landed on CYP1A2 and CYP2D6, the two
+0.5483, macro ST-RAE from 0.8149 to 0.5830. A further half-step shipped on 19 September under item
+313 and held its own pre-registered rule, taking macro ST-RAE to 0.5760. **We stand 77th of 219, 35.2
+per cent of the field, against 103rd of 164 and 62.8 per cent before the correction --- but item 314
+measures that almost all of the movement since 17 September is the FIELD, not us: CYP2D6's file did
+not change by one digit and its percentile improved 4.4 points anyway.** The gain landed on CYP1A2 and CYP2D6, the two
 enzymes whose scale was wrong, and CYP2C9 and CYP3A4 moved by -1.0 and +0.4 percentage points ---
 which is the control that claim needed.
 
@@ -93,8 +96,17 @@ density-implied $n\approx114$ the gap alone suffices. CYP1A2 is settled separate
 live-half representativeness covers it. Second, and decision-relevant before 24 September: **ST-RAE
 and $R^2$ do not want the same scale.** The shipped constants maximise $R^2$, the board scores
 ST-RAE, and the ST-RAE-optimal spread is 0.69--0.88 of the $R^2$-optimal one on every enzyme and
-every feature set. Item 313 pre-registers a half-step correction and its revert rule; uploading it is
-the team's decision.
+every feature set. Item 313 pre-registered a half-step correction and its revert rule, **and item 314
+scores it: shipped 19 September, the rule held by 0.0009, and macro ST-RAE fell a deterministic
+0.0070 --- about half the modelled gain, with CYP3A4 flat and 0.0083 of $R^2$ worse.** So the ST-RAE
+direction is confirmed and the step size is not settled; ST-RAE is convex in (shift, scale) and there
+are now three scored points on it, which bracket the optimum rather than merely bounding it.
+
+**A third thing is open and is the only one with a deadline.** The board stores a username as it was
+at submission time (item 314, measured), and our two tracks now display different names: the
+regression tabs carry the name used on 19 September, the TDI tabs the one used on 15 September.
+Re-uploading the UNCHANGED `tdi_submission.csv` would put both under one name at no risk to the TDI
+score. That is a decision for the team, and the interim closes 24 September 23:59 UTC.
 
 Until 13 September this carried item 256's numbers --- [0.6263, 0.7090] and [0.6126, 0.7322] ---
 correct for the composition that shipped THEN. A shift of 0.013 macro, the size of the composition
@@ -13337,3 +13349,88 @@ validator run passed DataFrames where the signature wants a path, so all six cal
 the control panel alone would have confirmed the run. Only the three real files failing too gave it
 away. **A control that fails for the wrong reason is indistinguishable from a control that works,
 unless something that must PASS is in the same run.**
+
+**314. Item 313's half-step shipped on 19 September and its pre-registered rule held --- by 0.0009.
+The score improved by a deterministic 0.0070, but once CYP2D6 is used as a drift meter, essentially
+ALL of the apparent gain in standing is the field diluting, not us; and the board's median got WORSE
+while the field grew, which is how a percentile improves on its own.** Also here: the board stores a
+team's username as it was AT SUBMISSION TIME, which broke `k101_prereg308.py` in a way that read like
+a disqualification.
+
+**The upload is identified by fingerprint, not by being told about it.** The 21 September pull shows
+a regression row submitted `2026-09-19 18:53 UTC`. Item 313 predicted a signature no other change
+produces: CYP2D6 untouched, every rank held, the other three moved. All five of CYP2D6's published
+metrics are IDENTICAL across the two snapshots, and all four Spearman values hold exactly.
+
+    фермент    ST-RAE 17.09   ST-RAE 21.09      сдвиг   R2 21.09
+    CYP1A2           0.6025         0.5889    -0.0136    +0.5093
+    CYP2C9           0.4772         0.4624    -0.0148    +0.6274
+    CYP3A4           0.4816         0.4822    +0.0006    +0.6595
+    CYP2D6           0.7707         0.7707     0.0000    +0.3859   (намеренно не тронут)
+    макро            0.5830         0.5760    -0.0070    +0.5455
+
+**Rule: revert if macro ST-RAE is not below 0.5769. Actual 0.5760 --- it holds, with 0.0009 to
+spare**, against a predicted 0.5696 in a band of [0.5614, 0.5769]. The step delivered about half
+the modelled gain and landed at the pessimistic end of its own band. Two of the three enzymes it
+touched gained; CYP3A4 was flat on ST-RAE and lost 0.0083 of $R^2$, which is the direction item 313's
+thesis predicts when the two metrics are traded against each other, just larger than wanted.
+
+**The noise floor does NOT gate this number, and reaching for it would have been wrong.** The floor
+of 0.007 macro is a statement about the SPLIT SEED in our own cross-validation. Both submissions were
+scored on the same live half, against the same labels, with `BOOTSTRAP_SEED = 0` --- therefore on
+literally identical resamples --- and the transform between them is deterministic. **The $-0.0070$
+has no sampling error in it at all.** What is open is not whether it is real but whether it transfers
+to the other 375 at the reveal.
+
+**The standing, where the honest reading is much less flattering than the rank.** We are 77th of 219
+against 73rd of 187: the rank number rose while the percentile improved, 39.0 to 35.2. But CYP2D6's
+file did not change by one digit, so **its percentile movement is a pure measurement of how the field
+drifted** over the same four days --- and it improved by 4.4 points on its own. Discounting each
+enzyme by that:
+
+    фермент    сдвиг проц.   за вычетом дрейфа
+    CYP1A2            -6.7                -2.3
+    CYP2C9            -2.3                +2.1
+    CYP3A4            +1.4                +5.8
+    макро             -3.9                +0.5
+
+**Corrected for drift the macro gain in standing is +0.5 points --- that is, slightly worse.** The
+board's median ST-RAE moved from 0.7196 to 0.7413 while 32 entrants joined: the new arrivals are
+mostly below us, so a fixed score floats up the table for free. A percentile that improves while the
+median worsens is measuring the field, not the submission.
+
+The discount is indicative and not exact, and this item should not be read as though it were: CYP2D6
+sits at a different place in the score distribution from the other three, and competitor density is
+not uniform, so its 4.4 points do not transfer cell for cell. What survives regardless of the
+arithmetic is the direction --- the ST-RAE gain is real and deterministic, the improvement in
+standing is mostly not ours.
+
+**The board stores the username AS IT WAS AT SUBMISSION TIME.** On 21 September the five regression
+tabs carried `Lizard Wizard Gizzard` --- the same three words, transposed --- submitted 19 September,
+while the three TDI tabs still carried `Wizard Lizard Gizzard` from 15 September. The TDI rows are
+the control, and they could have failed: their metrics and `Submitted` are byte-identical across both
+snapshots, so a live name lookup would have moved them too and did not. The old name is absent from
+every regression tab, where on 17 September it was on all five; a DIFFERENT account uploading would
+have left our 16 September row in place, so this is one account, renamed. **Consequence worth acting
+on before the reveal: the two tracks now display different names, and re-uploading the unchanged
+`tdi_submission.csv` would put both under one.**
+
+**`k101_prereg308.py` matched `r[1] == ME` against a single hard-coded name and died on "нашей
+строки нет в снимке" --- true, useless, and easily read as a disqualification.** Fixed three ways.
+`NAMES` is now an ordered tuple of every name the team has submitted under. The failure branch
+DIAGNOSES: it prints what it looked for, how many rows the tab had, and any board name sharing a word
+with ours, so a rename is visible instead of inferred; both branches are exercised, a probe renaming
+us to `Gizzard Collective` offers it as a near match and one renaming us to `Team Quokka` correctly
+reports none. And the control gained the guard it never had: it checked whether the submission had
+CHANGED but not whether it is still the one these rules were written for. Rules 2 and 3 are about
+item 308's step, so the script now refuses a LATER upload with exit 3 rather than delivering a
+verdict on the wrong object. Exit codes measured against a deliberate `sys.exit(7)`: 2 too early,
+0 on the 17 September anchor where the original 3-of-3 still reproduces unchanged, 3 too late.
+
+**And one of mine, the third instance of this exact shape in the project.** I read the three exit
+codes as `0, 0, 0` and nearly reported that the refusals were not firing. They were: my probe was
+`echo "=== $(basename $snap) -> exit $?"`, and the command substitution runs before `$?` expands, so
+`$?` carried `basename`'s status. The `| sed` case (item 308's session) clobbered it through a pipe;
+this clobbers it through a substitution on the same line. **The rule that catches both: capture `$?`
+into a variable on the line immediately after the command, and prove the harness can see a non-zero
+exit before trusting a zero.**
