@@ -102,11 +102,11 @@ scores it: shipped 19 September, the rule held by 0.0009, and macro ST-RAE fell 
 direction is confirmed and the step size is not settled; ST-RAE is convex in (shift, scale) and there
 are now three scored points on it, which bracket the optimum rather than merely bounding it.
 
-**A third thing is open and is the only one with a deadline.** The board stores a username as it was
-at submission time (item 314, measured), and our two tracks now display different names: the
-regression tabs carry the name used on 19 September, the TDI tabs the one used on 15 September.
-Re-uploading the UNCHANGED `tdi_submission.csv` would put both under one name at no risk to the TDI
-score. That is a decision for the team, and the interim closes 24 September 23:59 UTC.
+**That third thing is now CLOSED (item 315).** The board stores a username as it was at submission
+time (item 314, measured), which had left our two tracks under different names. The unchanged
+`tdi_submission.csv` was re-uploaded on 21 September: all eight tabs now carry one name, exactly one
+entry per track, and the TDI metrics are byte-identical. The one side effect is a declaration, not a
+score — the TDI entry's `Open Code` flag now reads Yes, matching the regression entry.
 
 Until 13 September this carried item 256's numbers --- [0.6263, 0.7090] and [0.6126, 0.7322] ---
 correct for the composition that shipped THEN. A shift of 0.013 macro, the size of the composition
@@ -13445,3 +13445,36 @@ codes as `0, 0, 0` and nearly reported that the refusals were not firing. They w
 this clobbers it through a substitution on the same line. **The rule that catches both: capture `$?`
 into a variable on the line immediately after the command, and prove the harness can see a non-zero
 exit before trusting a zero.**
+
+**315. The two tracks are under one name again, the TDI score did not move, and the only thing that
+changed besides the name is a DECLARATION: `Open Code` on the TDI entry went from No to Yes.** Closes
+the deadline item item 314 opened. Snapshot `results/leaderboard_2026-09-21T1658Z.json`, committed.
+
+`tdi_submission.csv` was re-uploaded unchanged on `2026-09-21 11:03 UTC`. Four checks, in the order
+that matters:
+
+    проверка                                     итог
+    ровно одна запись на каждом из 8 треков      да --- старого имени на доске больше нет
+    все 8 вкладок под одним именем               да --- Lizard Wizard Gizzard
+    метрики TDI не изменились                    да --- MCC 0.2836 / 0.1255 / 0.4416, побайтово
+    регрессия не шевельнулась                    да --- все метрики идентичны, ранги +-1
+
+**The duplicate was the real risk and it did not happen.** Re-uploading under a name the board had
+never seen on that track could have produced a SECOND entry rather than replacing the first, which
+would have split one team into two half-entries — the opposite of the intent. The old name is now
+absent from all eight tabs, so the replacement was by account and not by displayed name.
+
+**The control on the TDI comparison, without which "identical" means nothing.** Comparing CYP2D6's
+MCC with CYP3A4's on the same snapshot returns 0.1255 against 0.4416 — the comparison can see a
+difference, so finding none between the two uploads is a result and not a blind equality.
+
+**One change nobody asked for, and it is worth knowing about.** The TDI entry's `Open Code` flag read
+No before and reads Yes now; the regression entry already read Yes. It is a self-declaration, not a
+score, it is accurate — the repository is public — and it is the flag the Innovation in ML award
+depends on, which is judged independently of leaderboard rank. Both tracks now agree. `Proprietary
+Data` reads No on all eight, unchanged.
+
+**A caution this item cannot resolve.** That the two rows belong to one team is now consistent on the
+board's face, but nothing visible here proves the organisers key their combined standing by the
+displayed name rather than by account. Unifying the name removes an ambiguity that a human reader
+would have had; it is not evidence about their pipeline, and this file should not claim it is.
