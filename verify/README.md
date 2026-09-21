@@ -13558,3 +13558,83 @@ rows of a frozen one does not" --- is the same shape as our items 61/117/154 ver
 166's selection argument, which survives their 24 160-compound version because size was never the
 discriminator), Octant CYP3A4 (201), the TDI threshold (309), per-member affine rescaling before
 averaging (106), out-of-fold isotonic (31), prevalence-matched TDI calling (309).
+
+**317. The lever does not exist, and the reason is not the one anyone was arguing about. The board's
+$R^2$ floor on Pearson $r$ is real and stronger than claimed --- three independent routes put it at
+0.62 to 0.67 where item 308 used 0.4542 --- and $b=2.26$ really is well below the ST-RAE optimum. But
+the prize is ZERO BOARD PLACES: we need $+0.0104$ of macro ST-RAE to gain one place and a loss of
+$0.0008$ costs one, while a PERFECT CYP2D6 placement is worth at most $0.0049$. Two derivations
+priced the move and neither checked what the price buys.** Three agents; the audit found fatal
+defects in both derivations and in the brief I wrote for them.
+
+**My own claim, withdrawn first.** I put this to the team as worth $-0.031$ macro and about seven
+board places, quoting item 313's shelved CYP2D6 prescription. **That figure is wrong by a factor of
+thirty to seventy, and its sign is not even settled.** It came from item 313's FOUR-number fit, whose
+CYP2D6 world sits at $r=0.5642$ --- below the naive floor $\sqrt{0.3859}=0.62121$ that the same brief
+asserted --- and which misses the board's own $R^2$ by $+0.16$ on the raw row. `s5_fit.py` printed
+that mismatch side by side and nobody read it. Scored in the audit's world families, item 313's
+refused prescription is a LOSS of $+0.0039$ CYP2D6, costing two places.
+
+**The floor is real, and that part survives.** Three routes, each stronger than the last:
+
+    маршрут                                                         нижняя граница r
+    наивный, sqrt(R2) на одной строке                                        0.62121
+    совместное решение по ОБЕИМ строкам R2 (одна пара M,S)             0.6386 -- 0.671
+    вовсе без R2: ST-RAE >= sqrt(1-r^2) при ничтожных полосах                 0.6372
+
+The third uses no $R^2$ at all and lands 0.0014 from the second. The bootstrap objection goes the
+CONSERVATIVE way, which had to be checked rather than assumed: the published mean-of-ratios sits
+BELOW the point $R^2$ on both rows at every $n$ and every label shape, so $\sqrt{0.3859}$ understates
+the floor. Item 308's $0.4542$ is excluded by a mile on every route. On the 21 September snapshot
+**88 of 221 entrants** publish an $R^2$ exceeding $(2\sin(\pi\rho/6))^2$; the count drifts with the
+field (63/164, 79/187, 83/216, 87/219, 88/221 across the five committed snapshots) and must be
+quoted with a snapshot name. Arithmetic controls: an $r=1$ floor gives 0 violations, an $r=0$ floor
+gives exactly 96, the number of positive $R^2$ cells.
+
+**And $b=2.26$ is genuinely too small.** The audit built a world family designed to be HOSTILE to
+that conclusion --- a non-elliptical threshold joint on the real 750-vector, honouring the board's
+Spearman and Kendall, the structure that makes $L^1$ optima shallowest --- and still put $b^*$ at
+2.90 (range 2.56--3.38). The normal-joint family gives 3.01. Shipped $k=\mathrm{sd}(q)/S=0.476$
+against an optimal $k=r=0.65$.
+
+**So why refuse.** Because neither derivation computed the board neighbourhood, and it decides
+everything:
+
+    сосед сверху (место 75)   MA-ST-RAE 0.5656     нужно выиграть 0.0104, чтобы обойти
+    мы (место 76)                       0.5760
+    сосед снизу (место 77)              0.5768     достаточно проиграть 0.0008, чтобы уступить
+    весь приз при ИДЕАЛЬНОЙ постановке CYP2D6         <= 0.0049 макро
+
+**The best possible outcome of any CYP2D6 move is zero places; the downside starts at one.** The
+measured out-of-sample error of this class of model on this exact task --- item 314 recorded item
+313's step delivering half its modelled gain, and the hold-out here measures the realisation ratio
+at 0.437 --- is the same size as the entire prize. That asymmetry, not the modelling, is the answer.
+
+**A measurement about the blind set worth keeping, obtained without touching it.** If ST-RAE were
+plain RAE, MAE/ST-RAE would be one constant per enzyme. On CYP2D6 it is 1.2227 / 1.1966 / 1.1966
+across the three scored placements --- a spread of **2.2 per cent**. The control that the test can
+see bands at all: CYP1A2 7.4, CYP2C9 8.1, CYP3A4 5.2 per cent. **So the blind CYP2D6 bands are
+negligible and its ST-RAE is essentially plain RAE**, which also kills item 313's 0.695 shrink ratio
+there: that ratio is a BAND effect by item 313's own stated mechanism, so on a set with no bands it
+does not exist.
+
+**Three defects of mine in the brief, each of which steered an agent wrong.** It asserted
+$-0.031$ macro without checking its provenance. It asserted "THREE distinct scored placements of one
+prediction vector" and offered a fit-two-predict-the-third hold-out as the sharpest control ---
+**for CYP2D6 there are only TWO**, because item 313 left that enzyme alone, so the sharpest control
+could not be run on the enzyme in question. And it offered briford's probed $(3.107, 1.599)$ as a
+comparison target without noting those moments are inconsistent with our own two published rows:
+the closed-form identity returns $r=0.664$ from one row and $r=0.358$ from the other.
+
+**Both derivations were also wrong, in opposite directions, which is why three agents were used.**
+The first concluded the floor was a no-op and $b=2.26$ already optimal --- it reached that by
+multiplying the $R^2$-optimal scale by item 313's 0.695 band ratio on a set whose bands are
+negligible. The second concluded the board's own $R^2$ and Spearman for CYP2D6 cannot describe one
+dataset, claiming no construction reaches $r\ge0.618$ at $\rho=0.4375$; the audit refuted it by
+construction, using our own prediction vector's skew $+1.21$ and excess kurtosis $+1.37$ --- a
+threshold dependence gives $\rho=0.4346$, $\tau=0.3050$ and Pearson $0.6595$ together. **The board's
+numbers are consistent; it is the Gaussian-copula conversion that is not.**
+
+**The standing rule this leaves.** Price every future placement move in BOARD PLACES, not in ST-RAE,
+and compute the neighbourhood first. An improvement smaller than the gap to the entry above is worth
+nothing, and the gap below is usually far smaller than the gap above.
