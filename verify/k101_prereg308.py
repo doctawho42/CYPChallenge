@@ -54,12 +54,24 @@ import json
 import urllib.request
 
 CYPS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
-ME = "Wizard Lizard Gizzard"
+
+# Every name this team has submitted under, newest first. Not a convenience: the board stores
+# the username AS IT WAS AT SUBMISSION TIME, so one team can appear under two names at once and
+# a single hard-coded name silently stops matching. Measured on 21 September (item 314) --- the
+# regression tabs carried "Lizard Wizard Gizzard" from the 19 September upload while the TDI
+# tabs, untouched since 15 September, still carried "Wizard Lizard Gizzard", with byte-identical
+# metrics. A live name lookup would have moved both.
+NAMES = ("Lizard Wizard Gizzard", "Wizard Lizard Gizzard")
 BASE = "https://openadmet-cyp-challenge.hf.space/gradio_api/call"
 TABS = dict(zip(CYPS, ["partial_10", "partial_11", "partial_12", "partial_13"]))
 
 # The board as it stood on the submission item 308 replaces. Anchors every comparison below.
 PRE_SUBMITTED = "2026-09-15 10:01 UTC"
+# The submission these three rules were written to score, and the ONLY one they score. Item 313
+# later shipped a further affine step (2026-09-19 18:53 UTC); rules 2 and 3 are about item 308's
+# R2 correction and do not transfer to it. Scoring a later upload against them would be a verdict
+# on the wrong object, which is the failure this file exists to prevent, not commit.
+SCORED_SUBMITTED = "2026-09-16 13:15 UTC"
 PRE = {
     "CYP1A2": {"ST-RAE": 0.8853, "MAE": 1.1034, "R2": 0.0960, "rho": 0.7362},
     "CYP2C9": {"ST-RAE": 0.4862, "MAE": 0.5179, "R2": 0.5511, "rho": 0.7976},
@@ -112,27 +124,66 @@ def pull(stamp):
 
 
 def our_row(snap, ep):
+    """Our row on one tab, under any name this team has submitted under.
+
+    The failure branch DIAGNOSES instead of just refusing. The 21 September pull died on
+    "нашей строки нет в снимке", which is true and useless: the row was there under a
+    transposed name, and the message sent the reader looking for a disqualification. A
+    refusal that does not say what it looked for costs more than it saves.
+    """
     b = snap["boards"][ep]
-    for r in b["data"]:
-        if r[1] == ME:
-            return dict(zip(b["headers"], r))
-    raise SystemExit(f"{ep}: нашей строки нет в снимке -- сверять нечего")
+    rows = [r for r in b["data"] if len(r) > 1]
+    for name in NAMES:
+        for r in rows:
+            if r[1] == name:
+                return dict(zip(b["headers"], r))
+    # Nothing matched: show what was tried, and anything that looks close enough to be a rename.
+    near = sorted({r[1] for r in rows
+                   if isinstance(r[1], str)
+                   and set(r[1].lower().split()) & {w for n in NAMES for w in n.lower().split()}})
+    msg = [f"{ep}: ни одно из известных имён не найдено -- сверять нечего.",
+           f"    искали: {', '.join(NAMES)}",
+           f"    строк на вкладке: {len(rows)}"]
+    msg.append(f"    похожие имена на доске: {', '.join(near)}" if near else
+               "    похожих имён на доске нет")
+    msg.append("    Если команда переименована, добавьте новое имя ПЕРВЫМ в NAMES.")
+    raise SystemExit("\n".join(msg))
 
 
 def control(snap):
-    """The one check that makes the rest meaningful: has the submission actually changed?"""
-    r = our_row(snap, "partial_9")
-    now = r["Submitted"]
-    print("КОНТРОЛЬ: сменилась ли поданная версия\n")
-    print(f"    отметка до перекалибровки  {PRE_SUBMITTED}")
-    print(f"    отметка на доске сейчас    {now}")
+    """Is the board showing the submission these rules were written for?
+
+    Two ways to get a meaningless verdict, and the original version guarded only the first.
+    TOO EARLY: the recalibrated file is not up yet, so every number below would confirm the
+    state BEFORE the change. TOO LATE: a further submission has replaced it, so the numbers
+    describe an object these rules were never about -- item 313's step moved the same
+    predictions again, and scoring it against item 308's R2 band would be a verdict on the
+    wrong file. Returns a code rather than a bool so the caller can tell them apart.
+    """
+    now = our_row(snap, "partial_9")["Submitted"]
+    print("КОНТРОЛЬ: та ли это подача, для которой писались правила\n")
+    print(f"    до перекалибровки (пункт 308)   {PRE_SUBMITTED}")
+    print(f"    оцениваемая этими правилами     {SCORED_SUBMITTED}")
+    print(f"    на доске сейчас                 {now}")
     if now == PRE_SUBMITTED:
         print("\n    ОТКАЗ: на доске всё ещё ТА ЖЕ подача. Ниже стояли бы числа состояния ДО")
         print("    изменения, и любое 'подтверждение' было бы подтверждением того, что ничего")
         print("    не менялось. Это не вердикт. Загрузите файл и прогоните снова.")
-        return False
-    print("    -> подача сменилась, сверка осмысленна\n")
-    return True
+        return "рано"
+    if now != SCORED_SUBMITTED:
+        print("\n    ОТКАЗ: на доске БОЛЕЕ ПОЗДНЯЯ подача. Правила 2 и 3 относятся к шагу")
+        print("    пункта 308, а не к тому, что лежит на доске сейчас, и применять их к другому")
+        print("    файлу -- это вердикт не о том объекте. Правило 1 (ранг) справедливо для")
+        print("    любого монотонного преобразования и проверяемо отдельно.")
+        print(f"    Чтобы воспроизвести исходный вердикт: --snap {rel_anchor()}")
+        return "поздно"
+    print("    -> это она; сверка осмысленна\n")
+    return "ок"
+
+
+def rel_anchor():
+    """The committed snapshot on which item 308's verdict was actually rendered."""
+    return "results/leaderboard_2026-09-17T1053Z.json"
 
 
 def verdict(snap):
@@ -235,8 +286,11 @@ def main(argv=None):
     else:
         snap = json.load(open(a.snap))
         print(f"снимок: {a.snap}, тянут {snap.get('pulled_utc')}\n")
-    if not control(snap):
+    c = control(snap)
+    if c == "рано":
         return 2
+    if c == "поздно":
+        return 3
     return 0 if verdict(snap) else 1
 
 
