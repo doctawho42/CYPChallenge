@@ -13478,3 +13478,83 @@ Data` reads No on all eight, unchanged.
 board's face, but nothing visible here proves the organisers key their combined standing by the
 displayed name rather than by account. Unifying the name removes an ambiguity that a human reader
 would have had; it is not evidence about their pipeline, and this file should not claim it is.
+**316. Ten of 221 entrants publish their code, three of them outrank us, and all three do the same
+two things we do not: one output head per data source with the label scales NEVER merged, and
+left-censored bounds for inactives. The cheap fix they all imply --- a selector instead of our
+unweighted mean --- is measured DEAD on our library in seventeen seconds. And the premise of the
+whole survey inverted: our board rank is 0.0518 BETTER than our own cross-validation, so nothing is
+lost in transfer.** Six agents over the open-code field and our own position.
+
+**The field.** Open Code = Yes on 10 of 221. Above us: briford/SuperCowPowers (rank 11, $\rho$
+0.7516), alexxi11/datagrok-admetica (46, 0.7109), jeremy/openadmet_scripts (55, 0.7343). All three
+beat us on $\rho$, which is the currency. The other six open entries rank below us and we beat every
+one of them on macro Spearman.
+
+**What the three share, and we do not.** Every source --- ChEMBL, PubChem qHTS/Veith AID 1851, Tox21,
+the challenge's own TDI and single-concentration arms --- gets its OWN output head at its OWN scale,
+and nothing is ever merged into the scored column. briford states the reason outright: on shared
+compounds the assays correlate 0.31--0.66 and ChEMBL reads about 0.5 log more potent, so merging
+"would need a cross-assay affine correction that separate heads make unnecessary". **Our entire
+external-data history is that correction**: items 60--63, 144, 153, 157, and item 166's conclusion
+that the discriminator is protocol, an offset of +0.44 to +0.87. They never incur the tax we spent
+six items failing to pay. Second shared device: inactives enter as LEFT-CENSORED bounds under a
+one-sided loss, so a bound costs the model only when the prediction rises above it --- addressing
+exactly the region where we hold 129 CYP2D6 labels below pIC50 4.0 against their ~20 000 bounds.
+
+**The recommendation three of the four reports converged on, killed by measurement.** Replace the
+unweighted member mean with a fitted or selected combiner. Nested over the Butina folds on the
+cached member predictions, eight seeds:
+
+    комбинатор                                   макро ранг   знак
+    Caruana bagged ensemble selection               -0.0048    0/8
+    пер-ферментный симплекс весов                   +0.0006    5/8
+    шестой член при ЛЮБОМ подобранном весе          +0.0000      --
+
+Against a macro floor of 0.0036. The control that makes the third row mean something: the weight
+grid reaches $a>0$ and the chooser does pick $a>0$ on six of the eight (candidate, enzyme) cells ---
+it is not declining to search. **So "the vehicle was too weak" is not available as a rescue for
+items 290 or 292**, and the most popular idea in the open field would have cost days for nothing.
+The limit of the claim, stated because it is the interesting part: this is about OUR library --- five
+learners over one feature matrix --- not about a library of architecturally distinct models, which
+is what jeremy's selector actually ranges over.
+
+**The premise inverted.** Shipped composition over `members_seed{0..7}.json`, CV macro Spearman
+0.6417 (sd 0.0015) against the board's 0.6935: **the board is 0.0518 better than our own
+cross-validation**, per enzyme +0.1642 / +0.1016 / −0.0424 / −0.0164, the first two at 6.9 and 5.4
+sd. Butina at 0.35 is a harder ordering problem than the blind half's analog-expansion structure, so
+a CV rank gain transfers at face value or better. **There is no transfer repair to make.** The
+per-enzyme order transfers exactly, 3A4 > 2C9 > 1A2 > 2D6 in both, which is item 294's one held
+prediction.
+
+**Where the deficit actually is, against the assumption this survey started from.** By field
+position our worst cell is CYP1A2 at 116/221 = 52.5 per cent, not CYP2D6 at 88/221 = 39.8 --- and
+CYP2D6's field MAXIMUM is 0.5616, so it is hard for everyone. The rank deficit is broad and shallow.
+The METRIC deficit is the opposite shape and is concentrated: among the 46 teams whose ordering is
+within 0.02 of ours, we are 19th, ahead of the median by 0.0422, but 0.0721 behind the best, **of
+which CYP2D6 alone is 0.0449 --- sixty-two per cent**.
+
+**And the placement FAMILY is already at its optimum, so that headroom is in the constants.** Solving
+the exact ST-RAE floor at fixed rank by generalised PAVA under the interval hinge, the monotone
+optimum beats the best affine by 0.0223 macro IN SAMPLE --- and fitted OUT OF FOLD a monotone
+piecewise-linear placement is 0.0011 to 0.0014 WORSE than the affine pair at every bin count from 8
+to 128, sign 1/4. The 0.0223 is pure selection contamination, and the direction reproduces item 31's
+closure of out-of-fold isotonic. The affine pair stays.
+
+**One technique we can take, verified on our own data rather than believed.** briford report that the
+TDI pre-incubation arm ranks the scored labels below pIC50 4.0 at Spearman 0.679 where the
+single-concentration screen manages 0.037. Both numbers reproduce exactly on our own
+`data/cyp-challenge-TRAIN_TDI.csv` (CYP2D6, n=129: 0.679 against 0.037). That is the region where our
+rank dies and where our screen channel --- worth +0.0350 of rank elsewhere --- is blind. Also nearly
+free: the luciferase counter-screen flag is ALREADY a column in `data/ncgc/panel.csv` from
+`src/fetch1851.py`, and dropping luciferase inhibitors is one extra arm in `src/ablncgc.py`.
+
+**Independently corroborated closures, worth one line each because someone else paid for them.**
+adlvdl's own nulls reproduce three of ours: emax as a two-stage feature (our items 105, 114, 203,
+216), 3D pharmacophore shape, and docking with ProLIF (our item 306). A team that never read our
+journal shut the same three doors. Their stated rule --- "sharing a learned encoder helps; pooling
+rows of a frozen one does not" --- is the same shape as our items 61/117/154 versus 290.
+
+**Already closed here and not to be reopened from competitor code**: ChEMBL as a source (item 77 and
+166's selection argument, which survives their 24 160-compound version because size was never the
+discriminator), Octant CYP3A4 (201), the TDI threshold (309), per-member affine rescaling before
+averaging (106), out-of-fold isotonic (31), prevalence-matched TDI calling (309).
