@@ -1,11 +1,56 @@
 # Method report — OpenADMET CYP Inhibition Blind Challenge
 
-*Outward-facing document, linked from the leaderboard's Model Report field. English by intent: the
-rest of `docs/` is the team's internal Russian-language artefact, this one is written for the
-organisers and for anyone who wants to reuse the negative results.*
+*Outward-facing document, written for the organisers and for anyone who wants to reuse the negative
+results. English by intent; the rest of `docs/` is the team's internal Russian-language artefact.*
+
+*This header claimed to be "linked from the leaderboard's Model Report field" until 21 September. It
+was not — the board has pointed at `METHOD.md` in every committed snapshot. The field is set per
+submission and is corrected at the next upload.*
 
 Code: this repository, public. Proprietary training data: none. External data: the organisers' own
 files only — the four dose-response tables and the single-concentration screen.
+
+---
+
+## 0. Against the Innovation in ML criteria, in your words
+
+The award names *architectural novelty, creative use of available data, novel training or
+uncertainty quantification strategies, and simple yet effective ideas*. Answered in that order, one
+measured number each, and the first answer is a concession.
+
+**Architectural novelty — no.** A gradient-boosting ensemble and a small two-head neural trunk. We
+do not compete on this axis and will not dress it up. What follows is where we think the entry
+earns its place.
+
+**Creative use of available data — the credible band is a training target, not only a scoring
+device.** ST-RAE's per-compound loss is `L(p) = |p − clip(p, lo, hi)|`; absolute error against
+`clip(p, lo, hi)` majorises it and is tight at the optimum, so the organisers' published bands can
+be optimised against directly rather than merely scored against. That is the "dead zone", and it is
+worth **+0.0197 of rank, sign 16/16 per-enzyme cells** (items 164, 204, 205, 213). Separately, the
+TDI pre-incubation arm carries its own bands and so is usable as a second regression target
+(item 243).
+
+**Novel uncertainty quantification — in the units the metric pays in.** Not an interval around the
+prediction, which ST-RAE does not charge for, but the per-compound probability of scoring exactly
+zero, `P(hit_i) = P(lo_i ≤ ŷ_i ≤ hi_i)`. Section 4 gives it in full, including the part most entries
+would omit: it beats a base-rate constant on **one enzyme of four** (CYP3A4, AUC 0.750), and the
+mechanism says which enzyme before the model is fitted.
+
+**Simple yet effective — a closed form for the scoring function itself.** The credible band is a
+deterministic function of the label: isotonic regression from the label alone onto band width
+recovers it at **R² 0.928–0.970** on all four enzymes (§9). The rank-11 open-code entrant names this
+exact gap in their own public write-up, listing the ST-RAE optimum as *"known by sampling placements
+against the board, not derived"* and noting that a credible-interval width model would give it
+directly (SuperCowPowers, Workbench CYP challenge blog).
+Two further results about the competition's own measurement, not about molecules: ST-RAE and R²
+do not want the same prediction spread (the ST-RAE-optimal is 0.69–0.88 of the R²-optimal, on every
+enzyme and every feature set, item 313), and the leaderboard's published bootstrap means carry an
+exact bias `−(1−R²)(1+κ)/n` with `κ = Var((y−ȳ)²)/S⁴`, validated bit-for-bit against
+`evaluation.utils.bootstrap_sampling` (item 312).
+
+**Exploration over exploitation** is the award's stated purpose, so the catalogue of what we closed
+is offered as part of the entry rather than hidden: §6, and 294 numbered items in
+[`verify/README.md`](../verify/README.md), each with the measurement that shut it.
 
 ---
 
@@ -121,10 +166,41 @@ The practical consequence for the leaderboard's secondary metrics: the organiser
 ρ and Kendall τ with bootstrap intervals, and those are the columns an affine transform cannot
 touch. We optimised them on purpose.
 
-## 4. Uncertainty, over conclusions rather than over predictions
+## 4. Uncertainty, in the units the metric pays in — and over our own conclusions
 
-We do not ship predictive intervals, and we say so rather than dress up what we have. What we do
-have is a quantified answer to "is this number real", used as a gate on every claim.
+Two objects, and the first is derived from the competition's metric rather than imported.
+
+**Per-compound, we predict the probability of not paying at all.** Conventional UQ puts an interval
+around the prediction. Under ST-RAE that is the wrong object: a prediction anywhere inside the
+compound's published credible band scores exactly zero, so distance *within* the band is not paid
+for, and an interval straddling the band edge says nothing about what it will cost. The quantity the
+metric cares about is
+
+    P(hit_i) = P( lo_i <= ŷ_i <= hi_i )
+
+the natural partner to the dead zone — one trains predictions *into* the band, the other says
+whether they landed. Out of fold, 31.3 % of our predictions already score exactly zero, and the rate
+is strongly structured by a quantity the model itself emits: band width is a decreasing function of
+the label, so on CYP3A4 the hit rate runs 0.788 in the lowest potency quintile against 0.161 in the
+highest — a five-fold spread visible entirely from the model's own output.
+
+    фермент    база     AUC    Brier    Brier константы на базе
+    CYP1A2    0.247   0.534   0.1928                    0.1861
+    CYP2C9    0.439   0.597   0.2490                    0.2463
+    CYP2D6    0.198   0.486   0.1635                    0.1585
+    CYP3A4    0.369   0.750   0.1814                    0.2328
+
+**On three enzymes of four the Brier score is worse than quoting the base rate, and we report it as
+such.** It is real on CYP3A4 only: AUC 0.750, Brier beating the constant by 0.051. The part we would
+defend is that the mechanism says WHICH enzyme it will work on before the model is fitted — CYP3A4's
+bands span a nineteen-fold range between the tenth and ninetieth percentiles against five to eight
+for the others, and where the band barely varies there is nothing for a hit probability to
+discriminate. The better estimator is a single constructed feature, the signal-to-noise ratio
+`z = ŵ(ŷ) / (2·σ̂)` calibrated by isotonic regression, not a learned classifier. Full derivation and
+tables in `METHOD.md`.
+
+**Over our own conclusions**, separately, we have a quantified answer to "is this number real", used
+as a gate on every claim.
 
     noise floor (four seeds)                          value
     macro, by rank                                   0.0036
@@ -268,8 +344,12 @@ single-concentration screen degrading accuracy monotonically with pseudo-weight.
 
 - **The architecture is conventional.** If the award weighs architectural novelty, this entry does not
   compete on that axis and we are not going to pretend otherwise.
-- **No predictive uncertainty.** Our uncertainty work is about our own conclusions, not about
-  individual predictions. We consider that an honest reframing, not a substitute.
+- **The per-compound hit probability works on one enzyme of four.** Section 4 reports it in full: on
+  CYP1A2, CYP2C9 and CYP2D6 its Brier score is worse than quoting the base rate, and we say so rather
+  than quoting the CYP3A4 number alone. This sentence previously read "No predictive uncertainty",
+  which was simply wrong about our own work — the object exists, it is derived from the metric, and
+  its failure on three enzymes is a measured property of those assays' band widths rather than a
+  reason to disclaim it.
 - **One enzyme carries the rank.** CYP3A4 reaches Spearman 0.822 out of fold while CYP2D6 reaches
   0.480. Part of that gap is metric structure rather than model quality — CYP2D6 has the narrowest
   credible intervals of the four, so the soft threshold forgives least there, and CYP3A4 has two
