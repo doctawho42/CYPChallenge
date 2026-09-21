@@ -13415,6 +13415,17 @@ have left our 16 September row in place, so this is one account, renamed. **Cons
 on before the reveal: the two tracks now display different names, and re-uploading the unchanged
 `tdi_submission.csv` would put both under one.**
 
+**A third snapshot, `results/leaderboard_2026-09-20T1445Z.json`, was already on disk and is
+committed with this item.** It is worth having for one control: our macro row is IDENTICAL on 20 and
+21 September on all five metrics and the `Submitted` stamp, so **the board does not re-score a
+standing submission** --- the numbers move only when a file is replaced, and every difference between
+17 and 21 September is therefore the upload and not board churn. It also dates the rename: the
+regression tabs already carried the new name on 20 September at 14:45 UTC, consistent with the
+19 September 18:53 stamp. And it splits the drift: our macro percentile went 39.0 (17.09) to 34.7
+(20.09) to 35.2 (21.09), while the CYP2D6 control went 45.5 to 40.7 to 41.1 --- so the field moved
+FOR us over 17--20 and slightly AGAINST us over 20--21, with the two tracking each other closely,
+which is what a drift meter should do.
+
 **`k101_prereg308.py` matched `r[1] == ME` against a single hard-coded name and died on "нашей
 строки нет в снимке" --- true, useless, and easily read as a disqualification.** Fixed three ways.
 `NAMES` is now an ordered tuple of every name the team has submitted under. The failure branch
