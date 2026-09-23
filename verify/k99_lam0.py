@@ -9,7 +9,7 @@ lambda 0.3 and 3.0 only. Items 174 and 175 both rest on the lambda = 0 arm showi
 flag does nothing without a screening term, so as committed those runs could not have been adopted
 even had they been positive. This supplies the missing arm.
 
-WHAT THE CONTROL ASSERTS, and why it is exact rather than statistical. `src/trunk.py:572-573` says
+WHAT THE CONTROL ASSERTS, and why it is exact rather than statistical. a comment in `src/trunk.py`'s `main` says
 it outright: "lambda = 0 does not touch g_of_pi at all, so that arm is unaffected by construction
 and serves as the leak check." At lambda = 0 the loss has no screening term, `g_of_pi` is never
 reached, and the instrument constants cannot enter. So a two-site mode at lambda = 0 must produce

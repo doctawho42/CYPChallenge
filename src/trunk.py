@@ -1,4 +1,4 @@
-"""Shared trunk, two heads, and lambda_scr as the switch.
+"""Shared trunk, three heads, and lambda_scr / lambda_ext as the switches.
 
 The question this answers: does bringing the primary screen in as a second likelihood
 term - not as an input feature - help the pIC50 head?
@@ -21,6 +21,14 @@ so the parameter count is identical; with lambda_scr = 0 the screening head simp
 receives no gradient and cannot influence the trunk. Weight initialisation is seeded on
 (split seed, fold) and not on lambda, so the two arms start from identical weights and the
 loss term is the only difference between them.
+
+The third head, `head_ext`, is for a source measured on another instrument entirely: the
+external CYP pIC50 labels that src/trunkext.py put in the SCREENING head, displacing the
+channel this file was built around. It is a free head, like head_scr in twohead mode, it
+takes its own lambda, and with lam_ext = 0 and no external block it is INERT -- run_fold
+returns predictions bit for bit identical to those of the two-head file, which is the
+condition under which the numbers already published stay published. Inertness is not free;
+Net.__init__ says why the head is built last and its generator draws handed back.
 
 Nothing here touches cypsplit.py, results/preds/oof.json or the golden digest.
 """
@@ -125,7 +133,7 @@ def load(blocks="FP+DESC+MECH"):
 
 
 class Net(nn.Module):
-    """Shared trunk, one head per target block. Both heads always exist."""
+    """Shared trunk, one head per target block. All three heads always exist."""
 
     def __init__(self, d_in, hidden=None, depth=None, dropout=None, n_out=4):
         hidden = HIDDEN if hidden is None else hidden
@@ -139,10 +147,22 @@ class Net(nn.Module):
         self.trunk = nn.Sequential(*layers)
         self.head_pic = nn.Linear(d, n_out)
         self.head_scr = nn.Linear(d, n_out)
+        # head_ext is built LAST and the generator wound back to where it stood before it,
+        # so the trunk and the two older heads keep the exact weights they had when this
+        # file's numbers were published. Winding back is the half that is easy to miss.
+        # nn.Linear draws from the CPU generator, and with device="cpu" so does every
+        # dropout mask in the training loop below: a head that merely came last would leave
+        # the weights alone and still move every prediction, through the masks. Seeding
+        # head_ext off its own generator would fix the weights and not the masks. Restoring
+        # the state fixes both, and head_ext stays deterministic in (seed, fold) anyway,
+        # because it draws from the state it finds here.
+        g = torch.get_rng_state()
+        self.head_ext = nn.Linear(d, n_out)
+        torch.set_rng_state(g)
 
     def forward(self, x):
         h = self.trunk(x)
-        return self.head_pic(h), self.head_scr(h)
+        return self.head_pic(h), self.head_scr(h), self.head_ext(h)
 
 
 def g_of_pi(pi, e_, h_, d_=None, b_=None, two_=None):
@@ -232,7 +252,7 @@ def masked_mae(pred, target, mask):
 
 
 def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta=0.0,
-             target=None, l1=False):
+             target=None, l1=False, ext=None, lam_ext=0.0):
     """Train one fold and return held-out pIC50 predictions in original units.
 
     `target` and `l1` are the dead-zone pass (item 164, and item 204 for the other four
@@ -251,12 +271,27 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
     standardised units, because standardisation is monotone for ys > 0:
     clip((p-ym)/ys, (lo-ym)/ys, (hi-ym)/ys) == (clip(p,lo,hi)-ym)/ys. Original units are used
     because the band arrives in them and two fewer matrices need converting.
+
+    `ext` and `lam_ext` are the third head. `ext` is an (n, 4) block of labels from another
+    source, NaN where unobserved, shaped and standardised exactly as `scr` is; `lam_ext`
+    weights its masked loss exactly as `lam` weights the screening head's -- the same
+    `masked_mse`, normalised by observed cells, so the two lambdas are the same kind of
+    number. `ext=None` means the block does not exist, and every line below then reduces to
+    the two-block arithmetic bit for bit. Rows that carry ONLY external labels are the
+    caller's business, not this function's: appended with fold index -1 they are never held
+    out, and their NaN pIC50 gives the primary head no gradient, which is how
+    src/trunkext.py already builds them.
     """
     te = fold == f
     trn = ~te
 
     my = ~np.isnan(y)
     ms = ~np.isnan(scr)
+    # A third target block, or none at all. lam_ext without one would be a SILENT zero --
+    # masked_mse over an empty mask returns 0, and the arm would run and mean nothing.
+    if lam_ext > 0 and ext is None:
+        raise SystemExit("lam_ext > 0, а блока ext нет: слагаемое было бы тихим нулём")
+    me = np.zeros_like(my) if ext is None else ~np.isnan(ext)
 
     # Every statistic below is fitted on the training folds only.
     xm = X[trn].mean(0)
@@ -266,6 +301,7 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
 
     ym = np.zeros(4, np.float32); ys = np.ones(4, np.float32)
     sm = np.zeros(4, np.float32); ss = np.ones(4, np.float32)
+    em = np.zeros(4, np.float32); es = np.ones(4, np.float32)
     for e in range(4):
         a = my[:, e] & trn
         if a.sum() > 1:
@@ -273,11 +309,15 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
         b = ms[:, e] & trn
         if b.sum() > 1:
             sm[e], ss[e] = scr[b, e].mean(), max(scr[b, e].std(), 1e-6)
+        c = me[:, e] & trn
+        if ext is not None and c.sum() > 1:
+            em[e], es[e] = ext[c, e].mean(), max(ext[c, e].std(), 1e-6)
     # Мишень обучения: метка либо её проекция на полосу. ym/ys выше подогнаны по МЕТКЕ и
     # только по обучающим фолдам --- это верно и здесь: проекция выражается в единицах
     # метки, а не в своих собственных.
     yn = (np.nan_to_num(y if target is None else target) - ym) / ys
     sn = (np.nan_to_num(scr) - sm) / ss
+    en = np.zeros_like(yn) if ext is None else (np.nan_to_num(ext) - em) / es
 
     # Degrading the screening channel by a known amount. The division by sqrt(1 + eta^2)
     # is the whole point: without it the noise inflates the target's sd and lambda would
@@ -291,6 +331,7 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
     t = lambda a: torch.as_tensor(a, device=device)
     Xt, yt, st = t(Xn), t(yn), t(sn)
     myt, mst = t(my), t(ms)
+    et, met = t(en), t(me)
     ymt, yst = t(ym), t(ys)
     smt, sst = t(sm), t(ss)
     cal_e, cal_h = t(CAL_E), t(CAL_H)
@@ -371,7 +412,7 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
     for _ in range(EPOCHS):
         for b in np.array_split(g.permutation(idx), max(1, len(idx) // BATCH)):
             bt = t(b)
-            p, s = net(Xt[bt])
+            p, s, xe = net(Xt[bt])
             loss = (masked_mae if l1 else masked_mse)(p, yt[bt], myt[bt])
             if lam > 0:
                 if mode == "twohead":
@@ -390,6 +431,14 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
                     b_ = None if cal_b is None else 1.0 + torch.tanh(cal_b)
                     loss = loss + lam * masked_mse(
                         (g_of_pi(pi, e_, h_, d_, b_, two) - smt) / sst, st[bt], mst[bt])
+            if lam_ext > 0:
+                # A free head, deliberately. An external pIC50 is read on another
+                # instrument, so routing it through the Hill curve above -- which describes
+                # THIS screen's readout -- would assert a relation nobody measured;
+                # src/trunkext.py stayed in twohead mode for that reason. (The curve is not
+                # named here on purpose: item 307 counts its call sites.) Same masked_mse as
+                # the screening term, so lam_ext and lam weigh comparable things.
+                loss = loss + lam_ext * masked_mse(xe, et[bt], met[bt])
             opt.zero_grad(); loss.backward(); opt.step()
 
     net.eval()
@@ -414,7 +463,7 @@ def run_fold(X, y, scr, fold, f, lam, seed, device, mode="twohead", zn=None, eta
                                                for c, v, w in zip(CYPS, dd, bb)),
                   flush=True)
     with torch.no_grad():
-        p, _ = net(Xt[t(np.where(te)[0])])
+        p, _, _ = net(Xt[t(np.where(te)[0])])
     return p.cpu().numpy() * ys + ym
 
 

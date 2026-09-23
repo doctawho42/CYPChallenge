@@ -12170,9 +12170,9 @@ a defect now measured", and after item 306 it was the last open lever in the mec
 order. Four things close it, three of them already in this file, and the fourth was on disk.
 
 **One: the target is not on the submission path.** `src/submit.py` pins `TRUNK_MODE = "twohead"`,
-and `main` passes it to `TR.fit_predict_test` on the test path. `g_of_pi` is defined at
-`src/trunk.py:148` and called at exactly one site, line 392, which sits inside the `else` of
-`if mode == "twohead"` at 377-379. So `CAL_E` and `CAL_H` are never executed for a shipped
+and `main` passes it to `TR.fit_predict_test` on the test path. `g_of_pi` is defined in
+`src/trunk.py` and called at exactly one site, inside the `else` of the `if mode == "twohead"`
+branch of `run_fold`. So `CAL_E` and `CAL_H` are never executed for a shipped
 prediction. A better calibration improves a branch the submission does not run.
 
 **Two: the whole channel has already been measured over the ensemble, and it is nothing.** Item 174
@@ -12275,7 +12275,8 @@ predate the first arm. Every prediction must equal `calshift` at λ = 0
 
 Eight cells, 6525 observed predictions each, max |difference| exactly zero and the NaN masks
 identical, on the same device (mps) and the same torch (2.13.0) as the reference -- so the
-comparison tests the mode flag and not the hardware. `trunk.py:572-573` predicted precisely this:
+comparison tests the mode flag and not the hardware. a comment in `trunk.py`'s `main`, in the
+instrument-swap block, predicted precisely this:
 "lambda = 0 does not touch g_of_pi at all, so that arm is unaffected by construction and serves as
 the leak check." It now is one. The mode flag acts only through the screening channel, which means
 the mode comparisons in items 174-176 and in this item rest on a controlled instrument rather than
@@ -13638,3 +13639,224 @@ numbers are consistent; it is the Gaussian-copula conversion that is not.**
 **The standing rule this leaves.** Price every future placement move in BOARD PLACES, not in ST-RAE,
 and compute the neighbourhood first. An improvement smaller than the gap to the entry above is worth
 nothing, and the gap below is usually far smaller than the gap above.
+
+**318. The three-head trunk is built and PROVEN inert --- exactly bit-for-bit, on the device that can
+actually detect a failure --- but the arm was not run: the external label file is absent from this
+machine and nothing in the repository records where it came from. The pricing gate was fixed before
+any of it, and it is the reusable part: +0.0085 of macro rank, which is what item 290 measured, buys
+ZERO board places.** Two agents; the measurement phase never started, by design.
+
+**The gate, pre-registered before anything was computed.** The board ranks by MA-ST-RAE, so a RANK
+gain has to be converted before it can be priced. The cross-sectional slope of ST-RAE against
+Spearman across the 221 entrants is $-2.674$ at the frontier --- and it **must not be used**: teams
+with higher $\rho$ are better at everything, so it credits rank with other people's placement. The
+causal slope, from $\mathrm{ST\text{-}RAE}\approx F\sqrt{1-r^2}$ at the optimal affine placement with
+$F$ calibrated on our own four board cells, is $-0.990$: **one unit of rank buys about one unit of
+ST-RAE.** ($F$ came out 0.79--0.98, and the control is that it must lie in $(0,1]$ --- bands can only
+forgive.)
+
+    прирост макро ро   ST-RAE   место   что это за число
+              0.0085   0.5676      76   пункт 290, измерено над ансамблем -- НОЛЬ МЕСТ
+              0.0105   0.5656      75   порог одного места
+              0.0141   0.5620      74   как пулирование контрастом (пункт 132)
+              0.0198   0.5564      71
+              0.0408   0.5356      65   разрыв до jeremy
+              0.0581   0.5185      55   разрыв до briford
+
+**So the gate: the arm ships only at $\ge +0.0105$ macro Spearman over the ensemble, nested, sign
+$\ge 3/4$.** Deliberately ABOVE item 290's own +0.0085, because the hypothesis under test is that the
+shipped vehicle beats the weak one, not that the channel exists. A control on the slope: predicting
+briford's ST-RAE from their $\rho$ overshoots by $+0.0807$, far more than the whole gain at issue,
+which says the relation is convex and steepens with $\rho$ --- so $-0.990$ is conservative.
+
+**What was built.** `Net` grew `head_ext` beside `head_pic` and `head_scr`, and `run_fold` grew
+`ext` and `lam_ext`, weighting its masked loss through the same `masked_mse` so the two lambdas are
+the same kind of number. This is the cell item 290 never tested: `src/trunkext.py` puts external
+labels in the screening head **instead of** the screen, which is why its trunk scores 0.5270 against
+the shipped 0.5966 and why INSERT pays $-0.0189$ before the channel returns anything. Three heads
+replace that trunk in place, so there is no sixth member --- item 316 measured a sixth member at any
+fitted weight as $+0.0000$.
+
+**The invariant, and the hazard that makes it worth a test.** With `ext=None` and `lam_ext=0` the new
+file reproduces the two-head file's predictions at **exactly 0.0**, verified here independently of
+the agent that wrote it, across both lambdas, with a non-vacuity assertion that the two modules
+genuinely differ. **Building the head last is NOT sufficient, and that is the part that would have
+failed silently.** `nn.Linear` draws from the CPU generator, and on `device="cpu"` so does every
+dropout mask in the training loop: a head that merely came last leaves the trunk and the two older
+heads bit-identical and still moves every prediction, through the masks. `Net.__init__` now hands the
+generator back around the new head. Removing that wind-back moves predictions by **0.92 pIC50** ---
+measured by planting the defect and watching the guard fire. **And `mps` would have passed either
+way**, because its masks come from a different generator; cpu is the discriminating device and is
+the one the test uses. `tests/test_trunk_head_ext_inert.py` guards it, and the planted-defect run is
+the proof that it can fail rather than pass vacuously. A second guard: `lam_ext > 0` with no block
+raises, because `masked_mse` over an empty mask returns 0 and the arm would have run, cost nothing
+and meant nothing.
+
+**Why the arm did not run, stated as what it is rather than as a result.** The external CSVs that
+`src/trunkext.py` takes via `--ext-x/--ext-y` are not on this machine, and **no URL, fetch script or
+checksum for them exists anywhere in the repository** --- `data/fetch.sh` covers the challenge files
+only. `src/ablext.py` records what the set IS (the organisers' CheMeleon baseline training set, 8068
+compounds curated from ChEMBL, Apache-2.0, overlap with the blinded test zero of 750, overlap with
+our training set 64 of 4905 which are dropped) but not where to get it. **A dataset carrying items
+60--65, 77, 144 and 290 cannot be re-obtained from anything in the tree.** That is a provenance
+defect of the same family as item 309's missing writer, and it is recorded here rather than fixed,
+because fixing it means acquiring data and that is the team's call.
+
+**A compliance gap found while verifying the constraint, and it is live.** `trunkext.py`'s
+overlap guard matches on whole-record canonical SMILES. The 750 blind test compounds give 750
+distinct canonical SMILES but only **748 distinct InChIKey connectivity blocks** --- two enantiomer
+pairs, OCNT-2535296/OCNT-2535550 and OCNT-2535565/OCNT-2535566. **So an enantiomer or a salt form of
+a test compound sitting in an external file would pass that guard undetected.** The matcher built to
+find this was itself validated before use, and its first version was wrong in the instructive
+direction: matching on the raw whole-record InChIKey scored 0/5 on a deliberate salt probe, because
+the first block covers every component; the layer is only salt-insensitive after largest-fragment
+stripping. Controls that had to succeed and did: test against itself 750/750 by both methods; the
+salt probe 5/5 by connectivity and 0/5 by canonical SMILES; a stereo-flattened probe the same.
+
+**One defect of mine in the orchestration.** The workflow's halt condition collapsed "not safe to
+proceed" into a fixed message reading "external set overlaps the blind test --- arm not run". The
+external set does no such thing as far as anyone here has measured; the truth is that the overlap is
+**not measurable on this machine**. The agent said so in those words and my scaffolding overwrote it
+with a stronger and false claim. An automated summary that can only say one thing will say it
+whether or not it is true.
+
+**A second defect of mine, in the repair rather than in the break, and it is the more instructive
+one.** Adding 55 lines to `src/trunk.py` shifted item 307's line citations into that file, and the
+citation guard failed --- correctly, and for exactly the reason item 308 exists: the diff was to
+`trunk.py` and the file that started lying was the journal. So far so good. **My fix then replaced a
+correct-but-shifted citation with a claim that was simply false**: I wrote that `trunk.py`'s own
+DOCSTRING predicted the lambda = 0 identity, when the sentence lives in a comment inside `main`, in
+the instrument-swap block. The guard passed it --- because the repair had removed the checkable
+symbol, which is precisely what the guard cannot see. **Making a guard green by deleting the claim it
+checks is worse than the failure it was reporting.**
+
+Worse, I had "verified" the false version. The grep that told me the phrase was absent from
+`trunk.py` normalised whitespace and then searched for `g_of_pi at all`; the comment is hard-wrapped,
+so after normalisation it reads `g_of_pi at # all` --- **the continuation marker sits inside the
+phrase**. The same hard-wrap trap that has cost this file three separate false negatives, wearing a
+`#`. The control that finally worked was searching git history for the string, which found it had
+been in `trunk.py` since `260ad0a` and never left.
+
+Both citations are now by symbol. The second one matters beyond this item: `verify/k99_lam0.py`
+carried the identical "src/trunk.py:572-573" citation, and **the guard does not scan `.py` files** ---
+it reads only `verify/README.md`. So that copy was stale and silent, and would have stayed so. The
+gap is the one the session reviewing the citation work reported on 21 September and is still open.
+
+**A third, and it disarmed the guard this item exists to install.** The first version of
+`tests/test_trunk_head_ext_inert.py` recovered its baseline with `git show HEAD:src/trunk.py`. That
+works exactly once. The moment the third head was committed, HEAD carried it too, the comparison
+became the file against ITSELF, and the test passed --- vacuously --- while the non-vacuity check
+next to it SKIPPED with a message I had written myself saying the baseline was gone. **A skip is how
+a control dies quietly**: the suite still reads as green, and the line that would have objected is
+the line that stepped aside. Fixed two ways: the baseline is now pinned by CONTENT, the git blob
+`d18023d4`, which cannot drift with a branch; and the non-vacuity condition now FAILS instead of
+skipping. Re-verified by planting the wind-back defect again --- it still fires --- and the suite is
+green with three passes and no skips.
+
+That is three defects of mine in one item, all the same shape: the halt message that could only say
+one thing, the repair that deleted the claim the guard checks, and a control that stepped aside
+rather than failing. **None of the three was caught by a test failing; all three were caught by
+asking what a green result would have looked like if it were wrong.**
+
+**The data is now here, and the provenance gap is closed rather than noted.** The set is the
+training set of the organisers' own CheMeleon baseline, `openadmet/cyp1a2-cyp2d6-cyp3a4-cyp3c9-
+chemeleon-baseline` on Hugging Face, Apache-2.0, 8068 compounds. There is a second repository,
+`...-cyp2c9-chemeleon-v1`; **the file bodies are byte-identical** and only the header case differs,
+and `src/trunkext.py` and `src/ablext.py` read `OPENADMET_LOGAC50_{lower}`, so the baseline
+repository is the one. `data/fetch.sh` now fetches both files, and **verifies their sha256 on every
+run rather than only after downloading** --- provenance is a claim about what is on disk now, not
+about what was once downloaded. The gate was tested by appending one byte: it refuses, exit 1.
+
+**The constraint was re-verified on arrival, by both methods, with controls that fire.**
+
+    проверка                                          итог
+    пересечение со слепым тестом, канонические SMILES     0
+    пересечение по connectivity-блоку InChIKey            0   <- метод, которого нет в trunkext.py
+    A  тест сам с собой, канонические                750/750
+    B  тест сам с собой, connectivity                748/748
+    C  солевой зонд, connectivity                        5/5   <- обязан найтись
+    D  солевой зонд, канонические                        0/5   <- обязан НЕ найтись
+    E  внешний набор против нашего обучающего              64   <- пункт 290 записал 64
+
+Control E is the one that identifies the dataset rather than merely passing: 64 shared compounds is
+the number item 290 recorded, so this is the same set those items were measured on, recovered from
+its source rather than assumed. Controls C and D together prove the two matchers are genuinely
+different tests and not one test run twice.
+
+**319. The three-head arm does not ship: C − A = −0.0005 of macro rank, sign 1/4, against a gate of
++0.0105. The hypothesis was HALF right and that half did not matter --- the in-place vehicle really
+is much cheaper than item 290's insert (−0.0048 against −0.0189) but the channel halved at the same
+time (+0.0043 against +0.0085), and the two cancel almost exactly. The closing argument is not about
+the vehicle: even at ZERO insertion cost the channel gives +0.0043, still below the gate, so no
+better vehicle rescues this line.** Four seeds, both arms, nothing partial.
+
+    сид        A ро      B ро      C ро       C-A       C-B       B-A
+     0       0.6434    0.6402    0.6437   +0.0004   +0.0035   -0.0032
+     1       0.6399    0.6355    0.6394   -0.0005   +0.0038   -0.0043
+     2       0.6414    0.6356    0.6411   -0.0003   +0.0055   -0.0057
+     3       0.6437    0.6377   0.6422    -0.0016   +0.0045   -0.0060
+    среднее                               -0.0005   +0.0043   -0.0048
+    знак                                      1/4       4/4       0/4
+
+C − A misses the gate by 0.0110 and sits 4.5 times BELOW the 0.0036 macro-rank floor, so the honest
+word is "zero", not "a small negative". **The gate was not near-missed; it was not approached.**
+
+**The channel is real and it is half of what item 290 measured.** C − B = +0.0043 with the sign
+holding 4/4 and the post-pair ST-RAE improving 4/4 --- in this vehicle too the external labels carry
+something. But item 290 got +0.0085 over the ensemble from the same labels in a worse vehicle.
+**The channel did not survive the vehicle improving**, which is itself the interesting result: a
+weak trunk has more room to be helped, so part of item 290's +0.0085 was the weakness it was
+repairing rather than the information it was adding.
+
+**And the replacement is still weaker than what it replaces.** Solo, averaged over four seeds: the
+shipped screen trunk 0.5966, the three-head trunk with the channel OFF 0.5741, with it ON 0.5837.
+**−0.0129 below the member it displaces even with the channel on.** Appending 8004 rows costs more
+in the member than the third head returns.
+
+**Two material defects, both found by the audit and neither fatal to the verdict.**
+
+**One: the deciding number carries an undisclosed THIRD difference.** Stacking the external rows
+pushes RDKit's `Ipc` descriptor to $1.5\times10^{36}$; squaring that in float32 inside the
+standardiser overflows to `inf`, and `src/trunk.py`'s guard `xs[xs < 1e-6] = 1.0` **cannot catch
+inf** --- the column is divided by infinity and becomes identically zero. So arms B and C silently
+lose a feature column that arm A keeps, and B − A is "normalisation moved AND one feature deleted",
+not normalisation alone. This is item 64's overflow, live and reproduced to two figures
+($5.1\times10^{14}$ ours, $1.5\times10^{36}$ with external rows). It does not touch C − B, since B
+and C lose the same column, so the channel measurement stands --- and the closing argument runs
+through C − B, not through B − A.
+
+**Two: the board price depends on which currency you read, by a factor of 8.6, and the friendlier
+one was quoted.** The gate is pre-registered in RANK, and the rank route gives $0.5760 \to 0.5765$:
+still 76th, with 0.0003 to spare. But this run ALSO measured post-pair macro ST-RAE directly, which
+is the currency the board actually ranks on, and it gives C − A = **+0.0043 worse, 0 of 4 seeds
+improving** $\to 0.5803$, past 77th's 0.5768 --- **at least one place LOST**. Same arm, same run, two
+board answers. Both sit below their own floors (0.0036 for rank, 0.007 for ST-RAE), so neither is a
+result; the defensible statement is **zero places on the best available reading and one place lost
+on the board's own currency**, and reporting only the first would be choosing.
+
+**What the lambda was, and what that costs.** `lam_ext = 3.0`, CARRIED IN, with no grid run --- so
+there is no selection contamination, because a grid could only have been scored on the channel-on
+arm, which is item 245's defect by construction. Three independent reasons it is the right
+carried-in value: `lam_ext` goes through the same `masked_mse` normalised by observed cells so the
+two lambdas are the same kind of number and the shipped screen head runs at 3.0; `src/trunkext.py`'s
+default is `--lams 0,3.0`; and items 66 and 290 measured this very channel at 3.0 in the other
+vehicle. The cost, stated rather than hidden: **this measures $\lambda=3.0$, not the best
+$\lambda$.**
+
+**A control of the agent's that could not have failed.** `verify/k103_extfeats.py` guarded the blind
+overlap with `sum(1 for k in te_keys if k in te_keys)` --- how many members of a set are in that same
+set, which is always the size of the set and can only fail when it is empty. It also exercised a
+Python set loop while the ANSWER comes from a pandas `.isin`. The answer was nonetheless correct: the
+audit re-verified it with a control that does fire, spiking five genuine test keys into the external
+frame and watching `.isin` catch 5 of 5.
+
+**What the audit attacked and could not break**, listed because it is what licenses the verdict: the
+reference arm (two cached members recomputed with TODAY's code came back bit-identical at
+$0.0\mathrm{e}{+}00$, with a non-vacuity check proving the comparator can report a difference); the
+split (fold digest checked at every seed, seed 0 on the golden `2d93c19815e14261`); and the
+inertness guard (`git diff HEAD` empty, so `src/trunk.py` is byte-for-byte the committed file the
+guard was written against, and its three assertions all pass).
+
+**Line closed.** The third head stays in `src/trunk.py` --- it is proven inert, it is tested, and it
+costs nothing to keep --- but the external-label channel is done. Item 290 closed it on the vehicle;
+this closes it on the channel, which is the closure that does not invite a rematch.

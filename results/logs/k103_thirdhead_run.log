@@ -1,0 +1,108 @@
+строк: наших 4905, внешних 8004, всего 12909
+внешних меток: CYP1A2 1343, CYP2C9 2506, CYP2D6 2540, CYP3A4 4773
+  сид                        арм     ранг     пара     Δранг     Δпара
+/Users/nikitapolomosnov/PycharmProjects/CYPChallenge/.venv/lib/python3.12/site-packages/numpy/core/_methods.py:176: RuntimeWarning: overflow encountered in multiply
+  x = um.multiply(x, x, out=x)
+      фолд 0: 110 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+/Users/nikitapolomosnov/PycharmProjects/CYPChallenge/.venv/lib/python3.12/site-packages/numpy/core/_methods.py:176: RuntimeWarning: overflow encountered in multiply
+  x = um.multiply(x, x, out=x)
+      фолд 1: 111 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 2: 115 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 3: 115 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 4: 114 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 0: 142 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 1: 140 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 2: 137 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 3: 133 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 4: 135 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+    обучение сида 0: 1253 c
+    контроль: |B - двухголовый| max 364.732 (>0 ожидается), |C - B| max 4.139 (>0 ожидается)
+      члены из кэша /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/members_seed0.json (контроль: ствол совпал побитово, 0.0e+00)
+      члены: 0 c
+    0                          A   0.6434   0.6375   +0.0000   +0.0000
+    0                          B   0.6402   0.6431   -0.0032   +0.0055
+    0                          C   0.6437   0.6410   +0.0004   +0.0035
+    0                 solo_ствол   0.5945   0.6911                    
+    0                     solo_B   0.5767   0.7075                    
+    0                     solo_C   0.5843   0.7042                    
+    записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/logs/k103_thirdhead.json
+      фолд 0: 114 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 1: 106 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 2: 104 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 3: 108 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 4: 110 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 0: 133 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 1: 132 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 2: 131 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 3: 134 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 4: 132 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+    обучение сида 1: 1204 c
+    контроль: |B - двухголовый| max 3.226 (>0 ожидается), |C - B| max 2.351 (>0 ожидается)
+      члены из кэша /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/members_seed1.json (контроль: ствол совпал побитово, 0.0e+00)
+      члены: 0 c
+    1                          A   0.6399   0.6412   +0.0000   +0.0000
+    1                          B   0.6355   0.6476   -0.0043   +0.0064
+    1                          C   0.6394   0.6466   -0.0005   +0.0054
+    1                 solo_ствол   0.5983   0.6900                    
+    1                     solo_B   0.5742   0.7085                    
+    1                     solo_C   0.5803   0.7071                    
+    записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/logs/k103_thirdhead.json
+      фолд 0: 107 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 1: 104 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 2: 102 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 3: 104 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 4: 92 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 0: 108 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 1: 109 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 2: 108 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 3: 109 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 4: 109 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+    обучение сида 2: 1054 c
+    контроль: |B - двухголовый| max 26.587 (>0 ожидается), |C - B| max 1.643 (>0 ожидается)
+      члены из кэша /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/members_seed2.json (контроль: ствол совпал побитово, 0.0e+00)
+      члены: 0 c
+    2                          A   0.6414   0.6381   +0.0000   +0.0000
+    2                          B   0.6356   0.6443   -0.0057   +0.0062
+    2                          C   0.6411   0.6404   -0.0003   +0.0022
+    2                 solo_ствол   0.5968   0.6854                    
+    2                     solo_B   0.5708   0.7094                    
+    2                     solo_C   0.5876   0.6957                    
+    записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/logs/k103_thirdhead.json
+      фолд 0: 86 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 1: 86 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 2: 86 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 3: 86 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 4: 86 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 0: 109 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 1: 109 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 2: 109 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 3: 110 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+      фолд 4: 100 c, записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/trunk_thirdhead.json
+    обучение сида 3: 965 c
+    контроль: |B - двухголовый| max 2.456 (>0 ожидается), |C - B| max 2.327 (>0 ожидается)
+      члены из кэша /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/preds/members_seed3.json (контроль: ствол совпал побитово, 0.0e+00)
+      члены: 0 c
+    3                          A   0.6437   0.6360   +0.0000   +0.0000
+    3                          B   0.6377   0.6448   -0.0060   +0.0088
+    3                          C   0.6422   0.6423   -0.0016   +0.0062
+    3                 solo_ствол   0.5970   0.6880                    
+    3                     solo_B   0.5748   0.7117                    
+    3                     solo_C   0.5828   0.7059                    
+    записано в /Users/nikitapolomosnov/PycharmProjects/CYPChallenge/results/logs/k103_thirdhead.json
+
+  сидов: 4 (0, 1, 2, 3)
+
+                                 арм  ранг ср.  ST-RAE ср.
+        A эталон (двухголовый ствол)    0.6421      0.6382
+             B три головы, lam_ext=0    0.6373      0.6450
+           C три головы, lam_ext=3.0    0.6416      0.6426
+
+                            разность  Δранг ср.       sd   знак>0  Δпара ср.   ворота 0.0105
+                   C - A  (РЕШАЮЩЕЕ)    -0.0005   0.0008     1/4     +0.0043   не проходит
+                      C - B  (канал)    +0.0043   0.0009     4/4     -0.0024   
+    B - A  (стоимость вставки строк)    -0.0048   0.0013     0/4     +0.0067   
+
+             соло (член сам по себе)  ранг ср.
+        ствол двухголовый (подаётся)    0.5966
+                три головы lam_ext=0    0.5741
+              три головы lam_ext=3.0    0.5837
