@@ -13782,3 +13782,81 @@ Control E is the one that identifies the dataset rather than merely passing: 64 
 the number item 290 recorded, so this is the same set those items were measured on, recovered from
 its source rather than assumed. Controls C and D together prove the two matchers are genuinely
 different tests and not one test run twice.
+
+**319. The three-head arm does not ship: C − A = −0.0005 of macro rank, sign 1/4, against a gate of
++0.0105. The hypothesis was HALF right and that half did not matter --- the in-place vehicle really
+is much cheaper than item 290's insert (−0.0048 against −0.0189) but the channel halved at the same
+time (+0.0043 against +0.0085), and the two cancel almost exactly. The closing argument is not about
+the vehicle: even at ZERO insertion cost the channel gives +0.0043, still below the gate, so no
+better vehicle rescues this line.** Four seeds, both arms, nothing partial.
+
+    сид        A ро      B ро      C ро       C-A       C-B       B-A
+     0       0.6434    0.6402    0.6437   +0.0004   +0.0035   -0.0032
+     1       0.6399    0.6355    0.6394   -0.0005   +0.0038   -0.0043
+     2       0.6414    0.6356    0.6411   -0.0003   +0.0055   -0.0057
+     3       0.6437    0.6377   0.6422    -0.0016   +0.0045   -0.0060
+    среднее                               -0.0005   +0.0043   -0.0048
+    знак                                      1/4       4/4       0/4
+
+C − A misses the gate by 0.0110 and sits 4.5 times BELOW the 0.0036 macro-rank floor, so the honest
+word is "zero", not "a small negative". **The gate was not near-missed; it was not approached.**
+
+**The channel is real and it is half of what item 290 measured.** C − B = +0.0043 with the sign
+holding 4/4 and the post-pair ST-RAE improving 4/4 --- in this vehicle too the external labels carry
+something. But item 290 got +0.0085 over the ensemble from the same labels in a worse vehicle.
+**The channel did not survive the vehicle improving**, which is itself the interesting result: a
+weak trunk has more room to be helped, so part of item 290's +0.0085 was the weakness it was
+repairing rather than the information it was adding.
+
+**And the replacement is still weaker than what it replaces.** Solo, averaged over four seeds: the
+shipped screen trunk 0.5966, the three-head trunk with the channel OFF 0.5741, with it ON 0.5837.
+**−0.0129 below the member it displaces even with the channel on.** Appending 8004 rows costs more
+in the member than the third head returns.
+
+**Two material defects, both found by the audit and neither fatal to the verdict.**
+
+**One: the deciding number carries an undisclosed THIRD difference.** Stacking the external rows
+pushes RDKit's `Ipc` descriptor to $1.5\times10^{36}$; squaring that in float32 inside the
+standardiser overflows to `inf`, and `src/trunk.py`'s guard `xs[xs < 1e-6] = 1.0` **cannot catch
+inf** --- the column is divided by infinity and becomes identically zero. So arms B and C silently
+lose a feature column that arm A keeps, and B − A is "normalisation moved AND one feature deleted",
+not normalisation alone. This is item 64's overflow, live and reproduced to two figures
+($5.1\times10^{14}$ ours, $1.5\times10^{36}$ with external rows). It does not touch C − B, since B
+and C lose the same column, so the channel measurement stands --- and the closing argument runs
+through C − B, not through B − A.
+
+**Two: the board price depends on which currency you read, by a factor of 8.6, and the friendlier
+one was quoted.** The gate is pre-registered in RANK, and the rank route gives $0.5760 \to 0.5765$:
+still 76th, with 0.0003 to spare. But this run ALSO measured post-pair macro ST-RAE directly, which
+is the currency the board actually ranks on, and it gives C − A = **+0.0043 worse, 0 of 4 seeds
+improving** $\to 0.5803$, past 77th's 0.5768 --- **at least one place LOST**. Same arm, same run, two
+board answers. Both sit below their own floors (0.0036 for rank, 0.007 for ST-RAE), so neither is a
+result; the defensible statement is **zero places on the best available reading and one place lost
+on the board's own currency**, and reporting only the first would be choosing.
+
+**What the lambda was, and what that costs.** `lam_ext = 3.0`, CARRIED IN, with no grid run --- so
+there is no selection contamination, because a grid could only have been scored on the channel-on
+arm, which is item 245's defect by construction. Three independent reasons it is the right
+carried-in value: `lam_ext` goes through the same `masked_mse` normalised by observed cells so the
+two lambdas are the same kind of number and the shipped screen head runs at 3.0; `src/trunkext.py`'s
+default is `--lams 0,3.0`; and items 66 and 290 measured this very channel at 3.0 in the other
+vehicle. The cost, stated rather than hidden: **this measures $\lambda=3.0$, not the best
+$\lambda$.**
+
+**A control of the agent's that could not have failed.** `verify/k103_extfeats.py` guarded the blind
+overlap with `sum(1 for k in te_keys if k in te_keys)` --- how many members of a set are in that same
+set, which is always the size of the set and can only fail when it is empty. It also exercised a
+Python set loop while the ANSWER comes from a pandas `.isin`. The answer was nonetheless correct: the
+audit re-verified it with a control that does fire, spiking five genuine test keys into the external
+frame and watching `.isin` catch 5 of 5.
+
+**What the audit attacked and could not break**, listed because it is what licenses the verdict: the
+reference arm (two cached members recomputed with TODAY's code came back bit-identical at
+$0.0\mathrm{e}{+}00$, with a non-vacuity check proving the comparator can report a difference); the
+split (fold digest checked at every seed, seed 0 on the golden `2d93c19815e14261`); and the
+inertness guard (`git diff HEAD` empty, so `src/trunk.py` is byte-for-byte the committed file the
+guard was written against, and its three assertions all pass).
+
+**Line closed.** The third head stays in `src/trunk.py` --- it is proven inert, it is tested, and it
+costs nothing to keep --- but the external-label channel is done. Item 290 closed it on the vehicle;
+this closes it on the channel, which is the closure that does not invite a rematch.
