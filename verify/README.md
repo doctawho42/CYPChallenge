@@ -13738,6 +13738,6 @@ phrase**. The same hard-wrap trap that has cost this file three separate false n
 been in `trunk.py` since `260ad0a` and never left.
 
 Both citations are now by symbol. The second one matters beyond this item: `verify/k99_lam0.py`
-carried the identical `src/trunk.py:572-573` citation, and **the guard does not scan `.py` files** ---
+carried the identical "src/trunk.py:572-573" citation, and **the guard does not scan `.py` files** ---
 it reads only `verify/README.md`. So that copy was stale and silent, and would have stayed so. The
 gap is the one the session reviewing the citation work reported on 21 September and is still open.
