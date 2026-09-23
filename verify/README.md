@@ -13757,3 +13757,28 @@ That is three defects of mine in one item, all the same shape: the halt message 
 one thing, the repair that deleted the claim the guard checks, and a control that stepped aside
 rather than failing. **None of the three was caught by a test failing; all three were caught by
 asking what a green result would have looked like if it were wrong.**
+
+**The data is now here, and the provenance gap is closed rather than noted.** The set is the
+training set of the organisers' own CheMeleon baseline, `openadmet/cyp1a2-cyp2d6-cyp3a4-cyp3c9-
+chemeleon-baseline` on Hugging Face, Apache-2.0, 8068 compounds. There is a second repository,
+`...-cyp2c9-chemeleon-v1`; **the file bodies are byte-identical** and only the header case differs,
+and `src/trunkext.py` and `src/ablext.py` read `OPENADMET_LOGAC50_{lower}`, so the baseline
+repository is the one. `data/fetch.sh` now fetches both files, and **verifies their sha256 on every
+run rather than only after downloading** --- provenance is a claim about what is on disk now, not
+about what was once downloaded. The gate was tested by appending one byte: it refuses, exit 1.
+
+**The constraint was re-verified on arrival, by both methods, with controls that fire.**
+
+    проверка                                          итог
+    пересечение со слепым тестом, канонические SMILES     0
+    пересечение по connectivity-блоку InChIKey            0   <- метод, которого нет в trunkext.py
+    A  тест сам с собой, канонические                750/750
+    B  тест сам с собой, connectivity                748/748
+    C  солевой зонд, connectivity                        5/5   <- обязан найтись
+    D  солевой зонд, канонические                        0/5   <- обязан НЕ найтись
+    E  внешний набор против нашего обучающего              64   <- пункт 290 записал 64
+
+Control E is the one that identifies the dataset rather than merely passing: 64 shared compounds is
+the number item 290 recorded, so this is the same set those items were measured on, recovered from
+its source rather than assumed. Controls C and D together prove the two matchers are genuinely
+different tests and not one test run twice.
