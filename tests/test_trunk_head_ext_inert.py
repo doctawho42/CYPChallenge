@@ -38,6 +38,15 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 EPOCHS_FAST = 5
 FOLD = 1
 
+# The two-head file, pinned BY CONTENT rather than by a branch position. The first version of
+# this test read `git show HEAD:src/trunk.py`, which worked exactly once: the moment the third
+# head was committed, HEAD carried it too and the comparison became the file against itself —
+# it passed, vacuously, while the non-vacuity check skipped. A blob hash is content-addressed
+# and cannot drift. If the two-head architecture is ever intentionally retired, delete this
+# test with a journal item rather than repointing the hash at something that already has the
+# head; a baseline you can choose is not a baseline.
+PRISTINE_TWOHEAD_BLOB = "d18023d416de046d81f27eaba74f6da2c097ef1e"
+
 
 def _load(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -51,10 +60,10 @@ def _load(name, path):
 def modules(tmp_path_factory):
     """The current trunk beside the two-head one, recovered from git."""
     pytest.importorskip("torch")
-    r = subprocess.run(["git", "show", "HEAD:src/trunk.py"],
+    r = subprocess.run(["git", "cat-file", "-p", PRISTINE_TWOHEAD_BLOB],
                        capture_output=True, text=True, cwd=ROOT)
     if r.returncode != 0:
-        pytest.skip(f"cannot recover the committed trunk: {r.stderr.strip()[:80]}")
+        pytest.skip(f"pinned two-head blob unreachable: {r.stderr.strip()[:80]}")
     old_path = tmp_path_factory.mktemp("trunk") / "pristine_trunk.py"
     old_path.write_text(r.stdout)
     new = _load("trunk_head_ext_new", ROOT / "src" / "trunk.py")
@@ -65,12 +74,15 @@ def modules(tmp_path_factory):
 def test_modules_actually_differ(modules):
     """Non-vacuity: 'identical' must not be able to mean 'the same file twice'.
 
-    If HEAD already carries head_ext the comparison below is meaningless, so say so loudly.
+    This FAILS rather than skips. A skip here is what silently disarmed the first version of
+    this test, so the condition that would once have skipped is now the failure.
     """
     new, old = modules
     assert hasattr(new.Net(8), "head_ext"), "src/trunk.py has no head_ext to test"
-    if hasattr(old.Net(8), "head_ext"):
-        pytest.skip("HEAD already has head_ext; the pristine two-head baseline is gone")
+    assert not hasattr(old.Net(8), "head_ext"), (
+        "the pinned baseline already carries head_ext, so the comparison below would be the "
+        "file against itself. Re-pin PRISTINE_TWOHEAD_BLOB to a genuine two-head trunk."
+    )
 
 
 def test_head_ext_is_bit_identical_when_inert(modules):

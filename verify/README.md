@@ -13741,3 +13741,19 @@ Both citations are now by symbol. The second one matters beyond this item: `veri
 carried the identical "src/trunk.py:572-573" citation, and **the guard does not scan `.py` files** ---
 it reads only `verify/README.md`. So that copy was stale and silent, and would have stayed so. The
 gap is the one the session reviewing the citation work reported on 21 September and is still open.
+
+**A third, and it disarmed the guard this item exists to install.** The first version of
+`tests/test_trunk_head_ext_inert.py` recovered its baseline with `git show HEAD:src/trunk.py`. That
+works exactly once. The moment the third head was committed, HEAD carried it too, the comparison
+became the file against ITSELF, and the test passed --- vacuously --- while the non-vacuity check
+next to it SKIPPED with a message I had written myself saying the baseline was gone. **A skip is how
+a control dies quietly**: the suite still reads as green, and the line that would have objected is
+the line that stepped aside. Fixed two ways: the baseline is now pinned by CONTENT, the git blob
+`d18023d4`, which cannot drift with a branch; and the non-vacuity condition now FAILS instead of
+skipping. Re-verified by planting the wind-back defect again --- it still fires --- and the suite is
+green with three passes and no skips.
+
+That is three defects of mine in one item, all the same shape: the halt message that could only say
+one thing, the repair that deleted the claim the guard checks, and a control that stepped aside
+rather than failing. **None of the three was caught by a test failing; all three were caught by
+asking what a green result would have looked like if it were wrong.**
