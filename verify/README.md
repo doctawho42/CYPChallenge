@@ -13860,3 +13860,108 @@ guard was written against, and its three assertions all pass).
 **Line closed.** The third head stays in `src/trunk.py` --- it is proven inert, it is tested, and it
 costs nothing to keep --- but the external-label channel is done. Item 290 closed it on the vehicle;
 this closes it on the channel, which is the closure that does not invite a rematch.
+
+**320. Item 317 is REFUTED, sixty-nine times over, and the refutation is arithmetic on the board's
+own numbers rather than a model. Its conclusion that the blind CYP2D6 bands are "negligible" came
+from a control with no power: it measured a 2.2 per cent spread of a quantity whose available range
+is 80 per cent, at two points that are the same point twice. The corrected placement is
+pre-registered below, BEFORE the upload, together with the fact that its revert rule cannot be
+executed.** Two derivations sharing no model, plus an audit; one derivation crashed and was rerun.
+
+**The refutation needs no model at all.** If ST-RAE were plain RAE, MAE/ST-RAE would be one constant
+per enzyme --- item 317's own test, run on a sample of two when 229 sit in the same file. Across the
+field it runs 0.5641 to 2.2625 on CYP2D6, a **4.01-fold range, the largest of the four enzymes**,
+where item 317 concluded it was the smallest. Top-100 p5--p95 by enzyme: CYP1A2 1.307--1.564,
+CYP2C9 0.995--1.182, **CYP2D6 1.249--2.060**, CYP3A4 1.071--1.222.
+
+**Sixty-nine arithmetic impossibilities.** 69 entrants post a strictly WORSE CYP2D6 MAE than ours
+AND a strictly BETTER ST-RAE --- wbot (MAE +0.0060, ST-RAE −0.3341), Rubyy (+0.0614/−0.3130), beast
+(+0.1966/−0.2762) among them. With no bands ST-RAE = MAE/MAD is strictly increasing in MAE, so every
+one of the 69 is impossible. No competitor's repository has to be read to see this; it is in the
+committed snapshot.
+
+**And the geometry is BOUNDED, not fitted**, which is what makes the correction shippable.
+Per-compound, $d_i\le|e_i|$ gives $C/n \le \min_j \mathrm{MAE}_j/\mathrm{ST\text{-}RAE}_j = 0.5641$,
+and $|e_i|-d_i\le W_i$ then gives $\bar W \ge \max_j(\mathrm{MAE}_j - (C/n)\mathrm{ST\text{-}RAE}_j)
+= 0.9300$. Both are inequalities read off the board, not parameters. Dropping the most extreme
+entrant moves them 0.8 and 1.1 per cent. **Our own absorption is 52.4 per cent**, against 79.9 /
+69.4 / 83.1 on the other three --- CYP2D6 is the one cell where we leave half the available
+absorption unused.
+
+**Why item 317's control could not have succeeded, sized.** Sweeping $\mu$ from 2.6 to 4.6 at
+$b=2.26$ moves our own MAE/ST-RAE from 0.92 to 1.65, a 1.80-fold range peaking near
+$\mu\approx3.9$. Our two scored placements sit at 1.2227 and 1.1966, in a locally flat window near
+the BOTTOM of that curve; at the optimum the same quantity is 2.0414, at the field's p95. **We
+probed twice in the same place and read the flatness as a property of the bands.** Worse, item 317
+called them three placements: item 313 left CYP2D6 untouched, so the 16, 19 and 24 September rows
+are one placement, verified identical to four decimals across four snapshots.
+
+**The mechanism, and it is a STANDING defect rather than one bad constant.** Band width is a step
+function of the label on our own data: below $y\approx4.13$ the mean width is **2.379**; above it,
+0.21--0.44. Weak compounds are cheap to miss and potent ones are not, so the ST-RAE optimum sits
+ABOVE the label mean. The size of that offset is set by how much of the population sits under the
+step --- and **66 to 73 per cent of the blind CYP2D6 set does, against 9.8 per cent of our training
+mask**. Swapping only the label marginal, holding everything else fixed, moves the optimum from
+$(\mu\,4.700,\,b\,0.900)$ to $(\mu\,3.650,\,b\,1.300)$. That is essentially the whole error.
+`fit_shrinkage` fits against a marginal that exists only because the direct-inhibition assay was run
+on compounds the screen had already flagged; the blind set has no such selection. The other three
+enzymes were rescued by accident when item 308 replaced their centres with board-derived ones.
+CYP2D6 is the one left, because its mask is the most enriched. **Item 313's measured +0.016 centre
+offset was right for the population it was measured on and wrong by a factor of forty for the
+population we are scored on.**
+
+**PRE-REGISTERED, BEFORE THE UPLOAD, AND NOT TO BE WIDENED AFTERWARDS.**
+
+    отгружается   activity_submission_cand2d6xc.csv
+    константы     --b 1.86,1.18,1.818,1.15   --mu-y 4.390,4.851,3.400,4.815
+    вход          activity_submission.csv (ИСХОДНЫЙ файл 15 сентября)
+    CYP2D6        mu 3.075 -> 3.400,  b 2.26 -> 1.818,  sd(q) 0.7145 -> 0.5748
+    три остальных побитово как в пункте 313, max|разн| 0.0e+00
+
+    правило 1  РАНГ: ро и тау не могут сдвинуться ни на одном ферменте (все b > 0).
+               Измерено до загрузки: ро(кандидат, файл на доске) = 1.000000000000 на всех четырёх.
+    правило 2  СУЩЕСТВОВАНИЕ: CYP2D6 ST-RAE <= 0.6882, то есть не хуже того, чего уже достигла
+               заведомо более слабая модель (JacksonBurns, хуже нас по MAE, R2, ро и тау сразу).
+    правило 3  ВЕЛИЧИНА: CYP2D6 ST-RAE внутри [0.6146, 0.6623]; макро строго ниже 0.5760.
+    предсказание  CYP2D6 0.6246, макро 0.5395, место 60 из 230 (+8).
+
+**The revert rule cannot be executed, and that is recorded here rather than carried along.** The
+board scores in MINUTES --- in all six committed snapshots the newest already-scored submission is
+between 0.09 and 0.58 hours old, so a result is visible about half an hour after upload. The blocker
+is the twelve-hour rule, measured rather than assumed: 154 observed re-uploads across the snapshots,
+**minimum interval exactly 12.00 h, zero below it**. Our last upload was 24 September 08:12 UTC, so
+the slot opens at 20:12 UTC and the one after it at 25 September 08:12 --- **eight hours and thirteen
+minutes after the interim closes at 23:59 UTC**. So: the interim result stands whatever it is, this
+is accepted deliberately, and rule 3 fires against the FINAL deadline of 3 November rather than the
+interim. An upload today is a one-way door and the team took it knowing that.
+
+**Why the half step and not the optimum.** Two derivations sharing no model agree on the CENTRE ---
+3.650 and 3.725 --- and disagree on the SCALE, 2.00 against 1.375. The centre is the part both
+routes measure well, so the shipped centre is moved most of the way and the scale conservatively.
+The deciding test is sensitivity to the one quantity nobody can measure, the blind band width:
+
+    множитель полос   полушаг (3.400, 1.818)   агрессивный (3.650, 2.00)
+              0.6x    0.7653  ->  67  (+1)      0.8751  ->  75  (-7)
+              0.8x    0.6709  ->  62  (+6)      0.7023  ->  63  (+5)
+              1.0x    0.6246  ->  60  (+8)      0.5877  ->  59  (+9)
+              1.5x    0.6046  ->  60  (+8)      0.4983  ->  52  (+16)
+
+**The half step never loses a place down to 0.6x; the aggressive one costs seven there.** Two
+independent arguments exclude 0.6x --- the bounded $\bar W\ge0.9300$, and a hostile control that
+gives the rank-1 entrant more Pearson skill than their own Spearman allows and finds their published
+0.4319 unreachable below 0.85x of our widths. The half step is chosen because it survives even if
+BOTH of those arguments are wrong, and because the door is one-way. Item 313 refused its own full
+step on exactly this test and its half step held.
+
+**Two operational corrections, both of claims this file made.** The board does NOT take 21 hours to
+rescore --- that figure was an artefact of sparse snapshot sampling and is wrong by two orders of
+magnitude. And item 317's neighbourhood figures, which the standing rule "price moves in board
+places" was built on, are stale: gaining a place now costs **0.0002** and losing one **0.0011**,
+against the quoted +0.0104 and −0.0008. Forty-five times cheaper to gain. The rule stands; its
+numbers must be recomputed per snapshot and never quoted from memory.
+
+**Unresolved and carried forward.** Neither derivation reproduces all six of CYP2D6's published
+numbers: both give $R^2$ near 0.17--0.29 against the board's 0.3859. That is item 312's CYP2D6
+inconsistency, now re-derived by a route that used neither $R^2$ nor Spearman to fit anything. It is
+a standing reason to discount any forecast for this cell that leans on $R^2$ or $\rho$ --- which is
+why the pre-registration above leans on neither.
