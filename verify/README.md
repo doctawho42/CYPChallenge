@@ -14195,3 +14195,97 @@ neighbourhood first, never quote the conversion from memory --- and now: **compa
 within one snapshot, because the field changes size between them.** Item 321 recorded the
 neighbourhood going stale by a factor of 45 in three days; item 322 recorded the conversion wrong
 by 1.64; this one records that the places themselves are not comparable across pulls.
+
+**324. A ridge on 600 frozen dimensions of somebody else's pretrained encoder beats every member we
+have and adds +0.0138 of macro rank to the shipped ensemble, sign 8/8 against a floor of 0.0036.
+Item 316's "a sixth member buys +0.0000 at any fitted weight" does not reproduce --- and item 316's
+own caveat said exactly why it might not.** Three agents, extraction and measurement and audit; the
+audit returned SHIP with seven defects and none fatal.
+
+**The deciding number, and it needs no slope.** Arm A is the shipped per-enzyme composition, arm D
+the same with the probe added as one more equally weighted member, both nested over the Butina folds
+on the cached `members_seed{0..7}.json`, scored after the per-fold affine pair:
+
+    арм                                     макро ранг      sd   знак
+    A  штатная композиция                       0.6417  0.0015      —
+    D  та же плюс проба равным весом            0.6556  0.0012    8/8
+    D - A                                      +0.0138  0.0006    8/8
+    то же в post-pair макро ST-RAE             -0.0197       —    8/8
+
+Per enzyme the gain is CYP2C9 +0.0283, CYP3A4 +0.0158, CYP1A2 +0.0104, CYP2D6 +0.0009 --- CYP2C9
+alone is half of it. **The ST-RAE figure is measured directly in the same runs, so pricing it takes
+no slope at all**, which matters because item 323 has just established that the slope rests on one
+before-and-after on one team. Read straight off the 25 September board, $0.5535 \to 0.5338$ is rank
+58 to 53: **five places**, with SVM and CYPNet among those passed.
+
+**The control that makes it a result about the ENCODER rather than about adding a member.** The same
+`RidgeCV`, the same carried-in alpha grid, fitted on our OWN DESC+MECH block instead of the
+embedding: **$-0.0151$, sign 0/4.** A sixth member of that shape is harmful. The architecture buys
+nothing and the frozen pretrained weights buy all of it.
+
+**Item 316 is refuted where it said it might be.** Its measurement --- a sixth member at ANY fitted
+weight giving exactly $+0.0000$, with a control confirming the grid reached $a>0$ and the chooser
+picked it --- does not hold for this candidate: a fitted weight gives $+0.0141$, sign 8/8, and the
+chooser picks $a>0$ in **158 of 160** (enzyme, fold, seed) cells with a mean chosen weight of 0.333.
+Item 316's own words were "this is about OUR library --- five learners over one feature matrix ---
+not about a library of architecturally distinct models". That caveat was right, and the library was
+the binding constraint rather than the combiner.
+
+**Item 289 is refuted too, and by the widest margin anything has managed on this library.** Its gate
+was a mean error-correlation below 0.93 AND competitive accuracy, and it recorded that no family
+reaches both. The probe's out-of-fold error correlates 0.868 to 0.900 against our five members
+individually and 0.905 against the shipped composition --- while our own members sit at 0.966 to
+0.982 against their own mean. And it is not the weak half of the trade: standalone it scores macro
+Spearman **0.6261**, above every member we have (GP 0.6219, поферментно 0.6057, ствол 0.5966, пул
+0.5928, гребневая 0.5787), and within 0.0156 of our entire five-member ensemble.
+
+**Why items 61, 117 and 154 did not already close this, which is the part worth carrying.** They
+closed frozen embeddings **as columns concatenated into the same learner**; this is a separate ridge
+head whose PREDICTION enters as a member. But the sharper difference is the checkpoint. Item 61
+deliberately chose the organisers' `rdkit2d` encoder **because** it is pretrained on the very
+descriptors our DESC block contains --- the encoder's best case as a SUBSTITUTE for those columns,
+and its worst possible case as a DECORRELATED member. This one is pretrained on CYP and ADME
+activity. The same experiment, run with the checkpoint chosen to maximise overlap with what we
+already had, was guaranteed to find nothing.
+
+**Where it came from, and it is not ours.** JacksonBurns gained rank on 24 September and their
+committed nested ablation isolates 75--80 per cent of it to two such probes. The checkpoints are not
+theirs either: they are committed as plain files in a third open entrant's public repository
+(`jeremycheminf/openadmet_scripts`), `adme_pretrain` D-MPNNs. We extracted from `chemprop_medium.pt`
+only --- 7.7 MB, sha256 `b8137a0d...` --- because the larger checkpoint's residuals correlate 0.91
+with it on two enzymes.
+
+**Extraction controls, because an embedding is the easiest thing in this project to get silently
+wrong.** Identical SMILES twice give identical rows at $0.0$, paired with different molecules giving
+$9.6\times10^{-2}$ --- without that partner an all-zero array would pass the first test perfectly.
+Order was proven rather than assumed: 1024 molecules re-embedded in a random permutation reproduce
+the unpermuted rows permuted, at exactly $0.0$, and `drop_last=False` is passed explicitly because
+the competitor's own notes record chemprop silently dropping a size-1 remainder batch and desyncing
+every index-aligned array. The route also differed from what was expected: their code calls
+`model.fingerprint`, not `agg(message_passing(...))`, and the two coincide only when `bn` is
+Identity --- it is for this checkpoint, verified at $0.0$ on 512 molecules, and must be re-checked
+if the other one is ever used.
+
+**Pins intact, checked with a control that could fail.** sklearn 1.3.2 before and after, split digest
+`2d93c19815e14261` unchanged, 44 tests passing. chemprop 2.3.1 and torch live only in a scratchpad
+environment: `find_spec('chemprop')` returns None in ours, paired with `find_spec('sklearn')`
+returning a spec so that the None is a real negative and not a broken query.
+
+**The open risk, stated as open.** The checkpoint's pretraining corpus is described by a third party
+as public ChEMBL/TDC/Polaris plus "a public Novartis-surrogate CYP panel", and we cannot verify that.
+The rules permit external data and pretrained models explicitly, with disclosure required only for
+proprietary data. The exposure is indirect --- frozen weights, not labels or rows --- and item 319's
+channel is a different one and stays closed. **The check item 61 was able to run, counting overlap
+with the blind test, is not available here**, because running it would require looking the 750 up
+externally, which is the standing ban. This is not resolvable from inside the challenge and is
+recorded rather than argued away.
+
+**Four defects the audit raised that are worth carrying.** The alpha grid was tuned by the
+competitor for 600 standardised embedding columns and reused unchanged on 247 DESC+MECH columns, so
+part of the $-0.0151$ discriminating control could be mis-specified shrinkage rather than redundant
+information. On CYP2D6 the chosen alpha sits on the grid's top edge --- boundary-constrained rather
+than chosen --- and CYP2D6 is precisely the enzyme reporting no ensemble gain. The 750 blind-test
+vectors are stored under the array key `train` in their own file, harmless today and a trap for the
+first consumer that keys by name. And the alignment check compares names against an array that was
+written by copying those same names: it catches a stale file but cannot catch a reordering inside
+the encoder, which is why the permutation control above is the one that carries the claim.
