@@ -13652,7 +13652,10 @@ Spearman across the 221 entrants is $-2.674$ at the frontier --- and it **must n
 with higher $\rho$ are better at everything, so it credits rank with other people's placement. The
 causal slope, from $\mathrm{ST\text{-}RAE}\approx F\sqrt{1-r^2}$ at the optimal affine placement with
 $F$ calibrated on our own four board cells, is $-0.990$: **one unit of rank buys about one unit of
-ST-RAE.** ($F$ came out 0.79--0.98, and the control is that it must lie in $(0,1]$ --- bands can only
+ST-RAE.** (Wrong by a factor of 1.64, corrected in item 322: the true slope is $-1.62$, because this
+derivation holds the PLACEMENT fixed and the placement's optimal spread follows $\rho$. The
+pre-registration below is unaffected --- it was stated in ST-RAE, not in rank --- but every price
+this file quotes in board places per unit of rank was understated.) ($F$ came out 0.79--0.98, and the control is that it must lie in $(0,1]$ --- bands can only
 forgive.)
 
     прирост макро ро   ST-RAE   место   что это за число
@@ -13667,7 +13670,8 @@ forgive.)
 $\ge 3/4$.** Deliberately ABOVE item 290's own +0.0085, because the hypothesis under test is that the
 shipped vehicle beats the weak one, not that the channel exists. A control on the slope: predicting
 briford's ST-RAE from their $\rho$ overshoots by $+0.0807$, far more than the whole gain at issue,
-which says the relation is convex and steepens with $\rho$ --- so $-0.990$ is conservative.
+which says the relation is convex and steepens with $\rho$ --- so $-0.990$ is conservative. It was
+conservative by 1.64x; item 322 measures it.
 
 **What was built.** `Net` grew `head_ext` beside `head_pic` and `head_scr`, and `run_fold` grew
 `ext` and `lam_ext`, weighting its masked loss through the same `masked_mse` so the two lambdas are
@@ -14040,3 +14044,63 @@ had not registered --- having myself established in item 320 that the board scor
 negative answer about a fast-moving system needs a second look before it is a fact. And earlier I
 had treated "uploaded" as meaning "the submission stands", when the thing to confirm is the
 `Submitted` stamp on the board and not the act of pressing the button.
+
+**322. The slope converting rank into ST-RAE was $-0.990$ and is $-1.62$. My derivation held the
+PLACEMENT fixed, and the placement's optimal spread follows $\rho$ --- so a rank gain improves the
+score twice, once directly and once through the placement it licenses. Every price this file has
+quoted in board places per unit of rank was understated by a factor of 1.64.** Two independent
+routes agree, and the occasion for measuring it was a competitor's move.
+
+**The measurement.** JacksonBurns shipped a new submission on 24 September and their move is a
+clean natural experiment, since their placement is affine with a floor and **zero of their
+compounds sit at that floor in either submission**, so the map is strictly monotone and the whole
+shift is ordering:
+
+    маршрут                                          наклон dST-RAE/dро
+    их реализованный ход (-0.0455 ST-RAE / +0.0280 ро)        -1.625
+    поперёк поля, ранги 30-90 (n=61)                          -1.619
+    мой вывод в пункте 320                                    -0.990
+
+The two agree to 0.006 and were computed from different things --- one team's before-and-after
+against sixty-one teams at one instant. **A whole-field fit gives $-652$ and is meaningless**: the
+ST-RAE column has entrants three orders of magnitude out, so the regression is all outlier. The
+local fit is the honest one, and that qualification belongs with the number.
+
+**Why mine was wrong, and it is not an arithmetic slip.** Item 320 derived
+$\mathrm{ST\text{-}RAE}\approx F\sqrt{1-r^2}$ at the OPTIMAL AFFINE PLACEMENT and differentiated it
+holding $F$ and the placement fixed. But the optimal spread is a function of $r$ --- item 313
+measured the ST-RAE-optimal $k$ at 0.69--0.88 of the $R^2$-optimal $r$ --- so improving the ordering
+also widens the spread you are allowed, and the score falls again. I measured the partial derivative
+and used it as the total one. The competitor's own placement constants show the mechanism directly:
+their assumed blind $\rho$ rose from 0.769 to 0.786 and from 0.841 to 0.881 **as a consequence of the
+better ordering**, and their placement widened with it.
+
+**What it repriced.** Their $+0.0280$ of macro rank bought **15 board places**, not the five or six
+my slope predicted. For us, at rank 58 of 219 with one place costing 0.0050 of macro ST-RAE:
+
+    прирост макро ро   при -0.990   при -1.62
+              0.0105     -2 места     -5 мест
+              0.0210     -6 мест      -9 мест
+              0.0280     -7 мест     -12 мест
+
+**And it reprices a gate this file already used.** Item 319 set its gate at $+0.0105$ of macro rank,
+derived from the wrong slope; at $-1.62$ one board place costs about $+0.0031$ of rank, so the gate
+was three times too strict. **Item 319's conclusion nonetheless survives**, and it is worth being
+explicit about why rather than leaving it to be rechecked: its deciding number was $C-A=-0.0005$,
+negative, and no slope makes a negative gain positive. What changes is that the gate should have
+been $0.0031$, and a future arm near $+0.004$ of rank would clear it where the old gate would have
+refused.
+
+**The standing rule is unchanged and its arithmetic is not.** Price moves in BOARD PLACES, compute
+the neighbourhood first, and never quote either the neighbourhood or the conversion from memory ---
+item 321 already recorded the neighbourhood going stale by a factor of 45 in three days, and this
+item records the conversion itself being wrong by 1.64 for as long as it has been used.
+
+**Also corrected, from the same board reading.** Item 316 recorded that the entrant jeremy had
+"verified withdrawn, not renamed" from the board, on a control that searched for their metrics and
+their submission timestamp under every name and found neither. **That control was sound and the
+conclusion was wrong.** On 25 September the row is back --- rank 48, ST-RAE 0.5185, and the SAME
+submission stamp `2026-09-08 08:01 UTC` it always carried --- after being absent from two
+consecutive snapshots. So the board transiently drops rows, and **absence from a snapshot is not
+evidence of withdrawal**. A snapshot is a sample of a system that can lose rows, and the only thing
+a missing row licenses is another look.
