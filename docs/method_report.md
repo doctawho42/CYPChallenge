@@ -49,8 +49,18 @@ exact bias `−(1−R²)(1+κ)/n` with `κ = Var((y−ȳ)²)/S⁴`, validated bi
 `evaluation.utils.bootstrap_sampling` (item 312).
 
 **Exploration over exploitation** is the award's stated purpose, so the catalogue of what we closed
-is offered as part of the entry rather than hidden: §6, and 294 numbered items in
+is offered as part of the entry rather than hidden: §6, and 301 numbered items in
 [`verify/README.md`](../verify/README.md), each with the measurement that shut it.
+
+**And one practice we would most want borrowed, in §5: a failed prediction built in advance to work
+as a measuring instrument.** Where a decision turns on a quantity you cannot measure without
+spending something irreversible — for us, the width of the blind credible bands, readable only by
+using up one of a rate-limited sequence of submissions — commit the prediction's SENSITIVITY MAP to
+that quantity alongside the prediction. Then the outcome identifies the quantity whether the
+prediction holds or not. Ours did not hold: the committed band was [0.6146, 0.6623], the board
+returned 0.6805, and the same map read the unmeasurable multiplier back as ≈0.78×. The map also
+chose the placement, on worst case across it rather than on expectation, and the realised value
+landed inside exactly the margin that choice bought.
 
 ---
 
@@ -285,6 +295,59 @@ Item numbers in this report are checkable: the affine-pair collapse is 77 and it
 is 117; pooling's mechanism is 131, 132 and 264; the shape block is 281; the estimator-family screen
 is 289; transfer and multi-task are 290 and 292; the structural proxy is 296; and the pre-registered
 reveal bands are 294.
+
+### A failed prediction as a measuring instrument
+
+This is the practice we would most want borrowed, and it is one step past pre-registration.
+
+Some decisions turn on a quantity you cannot measure without spending something irreversible. Ours
+was the width of the credible bands on the blind half. The metric is a hinge that charges nothing
+inside a compound's band, so where to place a prediction depends on how wide those bands are — and
+the bands are not published. The only instrument that could read them was a submission, and
+submissions are rate-limited to one per twelve hours with the latest one counting.
+
+The usual move is to pick the most likely value, predict an outcome, and find out afterwards that a
+missed prediction taught you nothing about which assumption failed. Instead:
+
+> **Before acting, map the prediction's sensitivity to the unmeasurable quantity, and commit the map
+> with the prediction. Then the outcome identifies that quantity whether or not the prediction
+> holds.**
+
+Committed before the upload, alongside a predicted cell of 0.6246 and an acceptance band:
+
+    множитель ширины полос   0.4x     0.6x     0.8x     1.0x     1.5x
+    предсказанная CYP2D6   0.8701   0.7653   0.6709   0.6246   0.6046
+
+The board returned **0.6805**. The prediction failed — 0.6805 sits outside the committed
+[0.6146, 0.6623] — and in the same stroke the map reads the multiplier back as **≈0.78×** of our own
+training band widths. A quantity that had been unmeasurable for the whole competition became a
+number, and it became one *because* the prediction was wrong in a direction the map could resolve.
+Had we committed only the prediction, the same result would have been a puzzle.
+
+**The reading checks out to four decimals, which is the control that makes it a measurement rather
+than a story.** Interpolating the committed map at the recovered 0.78× returns **0.6803** against the
+board's observed **0.6805** — a miss of 0.0002. The map was not adjusted afterwards; it is the one
+in the commit that precedes the upload. So the model was never wrong about the mechanism. It was
+wrong about one number, and that number is now known to within the width of the check.
+
+The map does a second job, and this is what makes the practice pay rather than merely console. The
+placement was chosen on **worst case across the map, not on expectation**. Two candidates were in
+hand: a half step and a fuller one. The fuller step was better at 1.0× and turned negative between
+0.8× and 0.6×; the half step never lost a place down to 0.6×. We shipped the half step, and the
+realised 0.78× landed inside exactly that margin — at the true multiplier the fuller candidate would
+have scored about three board places *worse*. The map priced the decision before the fact and read
+the parameter after it.
+
+Two honest limits. The parameter must be identifiable from the observable — the map has to be
+monotone in it and the observable has to move enough, which is a property to check rather than
+assume. And the reading inherits whatever the map was built on: ours rests on a world model that
+still cannot reproduce all six of that cell's published numbers, an inconsistency we record and have
+not resolved (journal item 312). So the 0.78× is a measurement with a stated model attached, not a
+constant of nature.
+
+Full derivation, the pre-registration as committed, and the scored verdict: journal items 320, 321,
+and the checker `verify/k104_prereg320.py`, whose rules and sensitivity map are in the commit that
+precedes the upload.
 
 ## 6. What we refused, and what that closed
 
