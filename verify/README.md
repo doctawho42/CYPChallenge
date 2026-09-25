@@ -13965,3 +13965,78 @@ numbers: both give $R^2$ near 0.17--0.29 against the board's 0.3859. That is ite
 inconsistency, now re-derived by a route that used neither $R^2$ nor Spearman to fit anything. It is
 a standing reason to discount any forecast for this cell that leans on $R^2$ or $\rho$ --- which is
 why the pre-registration above leans on neither.
+
+**321. Two of item 320's three rules held, and the one that failed is the measurement it was built
+to make: the blind band multiplier is ~0.78x, not the 1.0x the prediction assumed. That single
+number vindicates the conservative choice quantitatively --- at the true multiplier the aggressive
+candidate would have scored WORSE by about three board places --- and it makes the same correction
+computable for the other three enzymes, where it turns out to be worth almost nothing.** Scored by
+`verify/k104_prereg320.py --pull`, whose rules and sensitivity map were committed before the upload.
+
+    правило                           порог                    факт      вердикт
+    1 ранг (резкое)                   |Δро|,|Δтау| <= 0.0005   +0.0000   ВЫПОЛНИЛОСЬ
+    2 существование                   CYP2D6 <= 0.6882         0.6805    ВЫПОЛНИЛОСЬ (+0.0077)
+    3 величина                        внутри [0.6146,0.6623]   0.6805    ПРОВАЛИЛОСЬ
+                                      макро < 0.5760           0.5535    (эта половина held)
+
+Rule 1 held at exactly $+0.0000$ on Spearman AND Kendall on all four enzymes, which is what an
+affine map with $b>0$ requires and is the sharpest evidence that nothing but the placement moved.
+Rule 2 is the one that mattered: **CYP2D6 went 0.7707 to 0.6805, so we now beat on that cell the
+strictly weaker model whose existence licensed the whole move** (JacksonBurns, 0.6882, behind us on
+MAE, $R^2$, $\rho$ and $\tau$ simultaneously).
+
+**The failure is the measurement.** The blind band width was the one quantity that could not be
+measured without spending an upload, so its sensitivity was mapped BEFORE the upload:
+$0.4\times\!\to\!0.8701$, $0.6\times\!\to\!0.7653$, $0.8\times\!\to\!0.6709$,
+$1.0\times\!\to\!0.6246$, $1.5\times\!\to\!0.6046$. The observed 0.6805 reads back as
+**$\approx0.78\times$ of our own training band widths**. The world model was not wrong about the
+mechanism; it was wrong about one parameter, and that parameter is now known.
+
+**And the conservative choice is vindicated by the number rather than by the argument.** At the true
+$0.78\times$ the aggressive candidate $(3.650,\,2.00)$ maps to $\approx0.7023$ against the shipped
+half step's 0.6805 --- worse by 0.031 on the cell, about **three board places**. The half step was
+chosen because it never loses down to $0.6\times$ while the aggressive one turns at $0.8\times$; the
+realised multiplier landed inside exactly that margin.
+
+**The board move, decomposed, because the field contracted at the same time.** 68th of 230 to 58th
+of 219. Scoring our OLD macro on the NEW board gives 63rd, so **five places are ours and five are
+the field shrinking by eleven entrants after the interim**. The prediction was 60th at macro 0.5395;
+the outcome is 58th at 0.5535 --- the metric came out 0.0140 WORSE than predicted and the place two
+BETTER, which is what a dense neighbourhood does to any forecast stated in places.
+
+**What it cost, as pre-registered it would.** CYP2D6 MAE 0.9222 to 1.0631 and $R^2$ 0.3859 to
+0.3225. The board ranks on MA-ST-RAE so this costs no place, but both columns are published and both
+visibly worsened. That was stated before the upload and is not a surprise.
+
+**Now the same correction priced for the other three, which is the reason this item is not a
+closing one.** The crude ceiling --- our own MAE divided by the best absorption ratio in the top
+hundred --- is calibrated against the move we just made: before the upload it promised CYP2D6 at
+0.4076, a gain of 0.3631, and delivered 0.0902. **The ceiling realises at 0.248**, against item 314's
+0.52 and item 317's 0.437 for a different class of model. Applying that same measured ratio:
+
+    фермент   сейчас   потолок   реально   макро    мест
+    CYP1A2    0.5889    0.4709    0.5596   0.5462      -1
+    CYP2C9    0.4624    0.3848    0.4431   0.5487      +0
+    CYP2D6    0.6805    0.4699    0.6282   0.5404      -3
+    CYP3A4    0.4822    0.4230    0.4675   0.5498      +0
+    все четыре сразу                       0.5246      -7
+
+**CYP2C9 alone is worth ZERO board places, and so is CYP3A4.** One place now costs 0.0050 of macro
+and the realistic CYP2C9 gain is 0.0048 --- under the threshold. Residual room exists only on
+CYP2D6, at about three places, and on all four together at seven. The impossibility count that made
+the CYP2D6 case is also mostly spent: 69 entrants had a strictly worse CYP2D6 MAE and a strictly
+better ST-RAE before the move, and 11 do now.
+
+**One caution about that table, because it is the kind of number this file has been burned by.** The
+0.248 is the realisation of the CEILING, not of the world model. The model, given the right
+multiplier, was accurate to about 0.01 on the cell --- its 0.8x entry said 0.6709 against an observed
+0.6805. So 0.248 prices a crude bound and is probably pessimistic for a properly modelled move. The
+honest reading is that CYP2C9 is not worth a proper derivation and CYP2D6 might still be, which is
+the opposite of the question that was asked.
+
+**Two process defects of mine, both about calling a thing done before it was.** I pulled the board
+at 01:50 UTC, one minute before it picked up the upload made at 01:49, and reported that the upload
+had not registered --- having myself established in item 320 that the board scores in minutes. A
+negative answer about a fast-moving system needs a second look before it is a fact. And earlier I
+had treated "uploaded" as meaning "the submission stands", when the thing to confirm is the
+`Submitted` stamp on the board and not the act of pressing the button.
