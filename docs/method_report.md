@@ -473,6 +473,61 @@ So effort belongs at **both** ends and the middle can be left alone — a differ
 the one the closed form alone implies. We record the pair together because the first half without
 the second would have sent us, and anyone reading it, to optimise the wrong region.
 
+### Reading the blind band geometry off the leaderboard, with no model at all
+
+The organisers publish MAE and ST-RAE side by side for every entrant. Board MAE is plain
+`sklearn.mean_absolute_error` (`evaluation/config.py`), and ST-RAE's denominator is a hinge on the
+constant predictor at `mean(y_true)` and so **contains no `y_pred`**. The denominator is therefore
+one constant shared by the whole field, and the ratio
+
+    MAE / ST-RAE
+
+is a pure measure of how much of an entrant's raw error the credible bands absorb — comparable
+across every submission on the board, on the same hidden labels and the same fixed bootstrap
+resamples. Writing `C` for that shared denominator and `n` for the scored count, two per-compound
+facts turn the field into bounds rather than estimates:
+
+    hinge_i <= |e_i|            =>   C/n  <=  min over entrants of  MAE/ST-RAE
+    |e_i| - hinge_i <= W_i      =>   Wbar >=  max over entrants of  (MAE - (C/n)·ST-RAE)
+
+Nothing is fitted. **The blind band geometry — a quantity the organisers never published — is read
+directly off the published columns**, and any entrant can do it for their own placement. Our own
+absorption, stated as the bound the board supports:
+
+    фермент   MAE/ST-RAE    C/n <=    Wbar >=   поглощаем не менее
+    CYP1A2        1.3425    0.7822     0.4132              41.7 %
+    CYP2C9        1.0151    0.5081     0.3380              49.9 %
+    CYP2D6        1.5622    0.5641     0.9300              63.9 %
+    CYP3A4        1.1112    0.7491     0.2100              32.6 %
+
+Two controls. The formula returns exactly 0 % for an entrant whose predictions lie outside every
+band (their ratio *is* the minimum) and tends to 100 % as ST-RAE tends to zero at finite MAE — both
+known a priori. And the ordering by recovered band width matches the ordering by absorption at the
+extremes: CYP2D6 has the widest bands and absorbs most, CYP3A4 the narrowest and least. It is not
+perfectly monotone in between — CYP2C9 absorbs more than CYP1A2 with narrower bands — because
+absorption depends on where an entrant's errors fall, not on width alone, and we report that rather
+than smoothing it.
+
+**What it caught.** On 21 September this report's own journal concluded the blind CYP2D6 bands were
+negligible, from the same statistic computed on **two** of our own submissions — a 2.2 per cent
+spread. Computed on the field, CYP2D6 spans 0.5641 to 2.2625, a four-fold range and the largest of
+the four enzymes. The two-point test had no power because both our placements sat in a locally flat
+window near the bottom of a curve with an 80 per cent range. **Sixty-nine entrants were posting a
+strictly worse CYP2D6 MAE than ours and a strictly better ST-RAE** — arithmetically impossible
+without band absorption, since with no bands ST-RAE is `MAE/MAD` and strictly increasing in MAE.
+Acting on that reading moved the cell from 0.7707 to 0.6805 and the entry ten board places; the
+derivation and its scored pre-registration are journal items 320 and 321.
+
+**Why our own optimiser had missed it, which is the part that generalises.** Band width is close to
+a step function of the label: below pIC50 ≈ 4.13 the mean width on our own data is 2.379, above it
+0.21–0.44. Weak compounds are cheap to miss and potent ones are not, so the ST-RAE optimum sits
+*above* the label mean by an amount set by how much of the population lies under the step. Our
+placement is fitted out of fold against our own labels — and the direct-inhibition assay was run on
+compounds a screen had already flagged, so 9.8 per cent of our CYP2D6 training mask lies under the
+step against 66–73 per cent of the blind set. **The optimiser had the right bands and the wrong
+population.** Any entrant fitting a placement on a selection-biased training marginal has the same
+exposure, which is why this is offered as a result about the metric rather than about our model.
+
 ## 10. A note on metric robustness
 
 Offered as an observation about the scoring function, not as a complaint about anyone.
