@@ -14062,7 +14062,11 @@ shift is ordering:
     мой вывод в пункте 320                                    -0.990
 
 The two agree to 0.006 and were computed from different things --- one team's before-and-after
-against sixty-one teams at one instant. **A whole-field fit gives $-652$ and is meaningless**: the
+against sixty-one teams at one instant. **The second of those is NOT corroboration and this
+paragraph was wrong to call it that: item 323 slides the same width-61 window along the board and
+gets anything from -0.08 to -1.76, and the window quoted here is the one where the two routes
+meet.** The causal route reproduces and still refutes -0.990; it is one before-and-after on one
+team with no error bar, and that is the whole of the evidence. **A whole-field fit gives $-652$ and is meaningless**: the
 ST-RAE column has entrants three orders of magnitude out, so the regression is all outlier. The
 local fit is the honest one, and that qualification belongs with the number.
 
@@ -14076,12 +14080,21 @@ their assumed blind $\rho$ rose from 0.769 to 0.786 and from 0.841 to 0.881 **as
 better ordering**, and their placement widened with it.
 
 **What it repriced.** Their $+0.0280$ of macro rank bought **15 board places**, not the five or six
-my slope predicted. For us, at rank 58 of 219 with one place costing 0.0050 of macro ST-RAE:
+my slope predicted. (**Nine, not fifteen** --- item 323 caught this and it is the defect this very
+item records two paragraphs below: I compared positions in two fields of different sizes. Scoring
+BOTH their scores against the same 25 September field of 219 gives 64th to 55th. A rank difference
+is readable only against a fixed field, and I wrote the lesson and broke it in the same item.) For us, at rank 58 of 219 with one place costing 0.0050 of macro ST-RAE:
 
     прирост макро ро   при -0.990   при -1.62
               0.0105     -2 места     -5 мест
               0.0210     -6 мест      -9 мест
               0.0280     -7 мест     -12 мест
+
+(Both columns are extrapolations through a slope. Item 323 measures that the windows nearest our own
+rank are the SHALLOWEST on the board --- ranks 48-68 fit at $-0.58$, 43-73 at $-0.97$ --- and those
+are the entrants a move of ours actually has to pass. So the right-hand column is optimistic near us,
+and $+0.0031$ per place is a LOWER BOUND on the price rather than the price. Where a delta in ST-RAE
+is measured directly, prefer it and use no slope at all.)
 
 **And it reprices a gate this file already used.** Item 319 set its gate at $+0.0105$ of macro rank,
 derived from the wrong slope; at $-1.62$ one board place costs about $+0.0031$ of rank, so the gate
@@ -14104,3 +14117,81 @@ submission stamp `2026-09-08 08:01 UTC` it always carried --- after being absent
 consecutive snapshots. So the board transiently drops rows, and **absence from a snapshot is not
 evidence of withdrawal**. A snapshot is a sample of a system that can lose rows, and the only thing
 a missing row licenses is another look.
+
+**323. The slope $-1.62$ is right and its corroboration is not. Item 322's causal route
+reproduces exactly from our own committed snapshots; its second route agrees to 0.006 by
+coincidence of window choice, and the headline "15 board places" is 8 once the field churn item
+322 itself documents is taken out.** `verify/k105_slope.py`, from the committed boards only ---
+no fit, no model, nothing external.
+
+**What reproduces.** Both of item 322's numbers recompute from the files in `results/`:
+
+    маршрут                                              наклон   пункт 322   сходится
+    их ход, 09-24T1219Z -> 09-25T0644Z                   -1.6250      -1.625   да
+      (ST-RAE 0.5870 -> 0.5415, ро 0.6799 -> 0.7079)
+    поперёк поля, ранги 30-90 (n=61)                     -1.6189      -1.619   да
+    всё поле (n=219)                                   -652.33        -652     да
+
+So the arithmetic is sound and the correction to $-0.990$ stands. What does not stand is the
+claim that these are **two independent routes that agree**.
+
+**The cross-field route is a window choice, not a measurement.** Taken at face value it is
+reasonably tight and it does exclude the old value: OLS $-1.619$ with se $0.294$, 95 per cent
+$[-2.196, -1.042]$, which clears $-0.990$ by $0.05$; Theil--Sen $-1.794$; bootstrap over entrants
+$[-2.15, -1.12]$. (An earlier draft of this item said the interval CONTAINS $-0.990$. It does not
+--- `k105_slope.py` prints the containment test rather than leaving it to be eyeballed, which is
+how the error was caught.) The objection is not the width of the interval. It is that the estimate
+moves with the window far more than the interval admits --- the same width-61 window slid up the
+board:
+
+    окно    10-70  20-80  30-90  40-100  50-110  60-120  70-130  80-140  90-150  100-160
+    наклон  -1.68  -1.76  -1.62   -1.22   -0.73   -0.08   -0.39   -0.66   -0.77    -0.99
+
+The window item 322 chose is the one where the two routes meet. Shift it thirty places and the
+fit is flat ($-0.08$); shift it seventy and it lands on $-0.99$, which is the value item 322
+was refuting. **A second measurement that agrees only at one setting of a free parameter is not
+corroboration, it is a coincidence that has been selected for** --- and the board offers a
+window supporting essentially any slope between $0$ and $-1.8$. The causal route is therefore
+the whole of the evidence, and it is one before-and-after on one team with no error bar at all.
+
+**And the 15 places are 8.** Their rank went 70 of 230 to 55 of 219 --- but the field lost 11
+entrants in between, and rank is a position in a field, not a score. Scoring BOTH their scores
+against the SAME (25 September, n=219) field:
+
+    их счёт ST-RAE    место на поле 09-25   что это
+            0.5870                     63   до хода
+            0.5415                     55   после хода
+                                     ---8   приписывается ходу
+
+Eight places, not fifteen. The other seven are churn: between the 01:50Z and 05:58Z snapshots
+their score did not move by a digit --- ST-RAE 0.5415, ро 0.7079, submission stamp
+`2026-09-24 14:17 UTC` in both --- while the board shed twenty rows and their rank rose from 63
+to 55. **This is the defect item 322 closes in its own last paragraph, committed in its own
+headline number.** It caught the transient row-dropping for `jeremy` and then priced a competitor's
+move in raw ranks across two snapshots of different sizes. A rank difference is only readable
+against a fixed field.
+
+**What it does to the gate, which is the part that is load-bearing.** Read one place directly off
+the current board rather than through any slope: we sit at 0.5535 and the entry above is at 0.5485,
+so one place costs $+0.0050$ of macro ST-RAE. That much is measured. Converting it to rank is where
+the slope enters, and the answer is not robust:
+
+    наклон                                 одно место в макро ро   против пола 0.0036
+    -1.62 (причинный маршрут)                           +0.0031    НИЖЕ пола
+    -0.97 (локальная подгонка, ранги 43-73)             +0.0052    выше пола
+    -0.990 (старое значение)                            +0.0051    выше пола
+
+The windows nearest our own rank are the shallowest on the board --- ranks 48-68 fit at $-0.58$,
+43-73 at $-0.97$ --- and those are the entrants a move of ours would actually have to pass.
+**So $+0.0031$ is a lower bound on the price of a place, not the price.** A gate set there is
+correct in the sense that nothing cheaper can buy a place, and it is below the 0.0036 macro floor,
+so the band $[0.0031, 0.0036]$ remains un-shippable by the floor alone and the band
+$[0.0036, 0.0052]$ is one place only if the causal slope is the right one to use locally. Nothing
+here licenses widening a pre-registered gate; it licenses not treating $+0.0031$ as a measured
+threshold when it is an extrapolation from one team's single move.
+
+**The standing rule survives intact and gains a clause.** Price in board places, compute the
+neighbourhood first, never quote the conversion from memory --- and now: **compare ranks only
+within one snapshot, because the field changes size between them.** Item 321 recorded the
+neighbourhood going stale by a factor of 45 in three days; item 322 recorded the conversion wrong
+by 1.64; this one records that the places themselves are not comparable across pulls.
