@@ -14289,3 +14289,62 @@ vectors are stored under the array key `train` in their own file, harmless today
 first consumer that keys by name. And the alignment check compares names against an array that was
 written by copying those same names: it catches a stale file but cannot catch a reordering inside
 the encoder, which is why the permutation control above is the one that carries the claim.
+
+**325. Pre-registered before the upload. The probe candidate ships, and for the first time the rule
+is not "rank must not move" but "rank must move, by roughly the amount measured out of fold".**
+Every candidate this project has placed on the board since item 308 was a monotone re-placement of
+one prediction vector, so Spearman was pinned by construction and rule 1 could only ever confirm
+that nothing had gone wrong. This one changes the vector, and the measured Spearman against the file
+on the board is 0.9851--0.9947 rather than 1.0.
+
+    отгружается   results/submission/activity_submission_cand324probe.csv
+    sha256        d9b111caae61446748cee7da55ec08cf89c71d3534881a206cb1b9596b90ee19
+    состав        штатная пятичленная композиция ПЛЮС ридж-проба шестым членом, равный вес
+    постановка    mu 4.390 / 4.851 / 3.400 / 4.815 (как в пункте 320, без изменений)
+                  b   1.786418 / 1.201880 / 1.938055 / 1.152345  --- ПЕРЕВЫВЕДЕН
+
+**The b values are re-derived, and that is not bookkeeping.** `mu` is an absolute target mean and
+transfers between vectors; `b` multiplies the spread of whatever vector it is given. The sixth member
+narrowed the raw vector on three enzymes and widened it on CYP1A2, so `b` had to move in both
+directions --- $\times0.960$ on CYP1A2 to $\times1.066$ on CYP2D6. **Reusing item 320's constants
+would have placed CYP2D6 six per cent too narrow and CYP1A2 four per cent too wide.** Verified: the
+achieved sd matches the board file's to $2\times10^{-7}$ on every enzyme and the achieved means are
+exact.
+
+    правило 1  РАНГ ДОЛЖЕН ВЫРАСТИ. Макро Spearman строго выше 0.6935.
+               Это впервые не тавтология: прежде b > 0 делало ро неподвижной по построению.
+    правило 2  ВЕЛИЧИНА РАНГА. Макро Spearman внутри [0.6995, 0.7150] --- то есть измеренные
+               вневыборочно +0.0138 с полосой от половины до полутора.
+    правило 3  МЕТРИКА. Макро MA-ST-RAE строго ниже 0.5535.
+    предсказание  макро ро 0.7073, макро ST-RAE 0.5370, место 53 из 219 (+5).
+
+**What the prediction rests on, measured rather than modelled.** Arm D minus arm A over eight seeds,
+nested, after the per-fold affine pair: $+0.0138$ of macro rank at sd 0.0006, sign 8/8, and
+$-0.0197$ of post-pair macro ST-RAE in the same runs. Under the pair that actually SHIPS
+(`fit_shrinkage`, one pair per enzyme rather than per fold) the ST-RAE delta re-measures at
+$-0.0200$ over four seeds, sign 4/4, and in the fixed-placement configuration this candidate
+actually ships in it is $-0.0165$. **All three land on rank 53.** No slope is used anywhere in this
+pre-registration --- item 323 established that the slope rests on a single before-and-after --- so
+the price is read by counting entries off the committed board.
+
+**The revert rule, and this time it is executable.** Revert to
+`activity_submission_cand2d6xc.csv` if the next snapshot's macro MA-ST-RAE is not strictly below
+0.5535, or if macro Spearman fails to rise. The final deadline is 3 November and the twelve-hour
+window has been open since 13:49 UTC, so unlike item 320 there is room to act on a bad result. The
+board scores in minutes (item 320), so the verdict is available about half an hour after upload.
+
+**The sharpest thing that could go wrong, stated now rather than after.** The out-of-fold gain was
+measured on Butina-clustered folds over our own 4905 compounds; the submission refits on all rows
+and predicts an analog-expanded blind half. Item 316 measured our board rank running 0.0518 ABOVE
+our cross-validation, so rank gains have transferred at face value or better --- but that was for
+compositions, not for a member carrying a foreign encoder's prior. **If the probe's advantage is
+partly memorised CYP activity rather than transferable representation, the blind half is exactly
+where it would fail**, and rule 2's lower bound is what catches it.
+
+**And the risk that cannot be retired from inside the challenge.** The encoder's pretraining corpus
+is described by a third party as public ChEMBL/TDC/Polaris plus a "public Novartis-surrogate CYP
+panel", which we cannot verify. The rules permit external data and pretrained models explicitly,
+with disclosure required only for proprietary data. The exposure is indirect --- frozen weights, not
+labels or rows. **The overlap check item 61 was able to run is unavailable here**, because running
+it would require looking the 750 blind compounds up externally, which is the standing ban. This is
+recorded as an open risk on a file we are choosing to ship, not argued away.

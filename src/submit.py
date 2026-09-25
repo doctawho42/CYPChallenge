@@ -641,7 +641,39 @@ def dz_pass(parts, X, mask, fold, bands):
     return out
 
 
-def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None):
+def oof_parts(X, y, mask, fold, mode, scr=None, bands=None):
+    """The member-level out-of-fold predictions that oof_predictions averages.
+
+    Split out of oof_predictions rather than duplicated into the caller: --probe needs the
+    members themselves (it has to form the mean twice, with and without the sixth member,
+    from ONE pass) and a second copy of these two lines is exactly the drift CLAUDE.md
+    warns about -- the dead-zone pass would have two definitions the day one of them moves.
+    """
+    parts = oof_members(X, y, mask, fold, mode, scr, dead=bands is not None)
+    if bands is not None:
+        parts = dz_pass(parts, X, mask, fold, bands)
+    return parts
+
+
+def _combine(parts, e, extra=None):
+    """The shipped unweighted mean over the members `_keep` admits for this enzyme.
+
+    `extra` is appended AFTER the _keep filter, so it enters every enzyme. That is not an
+    oversight: SOLO names which of OUR OWN FIVE members each enzyme keeps (items 282-285)
+    and says nothing about a sixth, so filtering a new member through it would silently drop
+    it on three enzymes of four. verify/k106_probe.py:combine_add does the same, and the
+    +0.0138 was measured on that.
+
+    With extra=None the expression is the one oof_predictions carried before --probe existed,
+    down to the order of the list, so the default path is arithmetically untouched.
+    """
+    ms = [P[e] for k, P in parts if _keep(e, k)]
+    if extra is not None:
+        ms = ms + [extra[e]]
+    return np.mean(ms, axis=0)
+
+
+def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None, extra=None):
     """Предсказания вне фолда в одном из трёх режимов.
 
     Ансамбль --- среднее двух базовых. Он выигрывает больше каждой из них: -0.0234 макро
@@ -650,13 +682,17 @@ def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None):
     таблицы и ошибаются по-разному, так что усреднение снимает часть дисперсии ДО того, как
     за неё возьмётся усадка. По критерию пункта 80 это относится к тем вмешательствам,
     которые постобработка не поглощает, --- и проверено, что не поглощает.
+
+    `extra` is the sixth member's out-of-fold predictions per enzyme, or None. With None this
+    returns exactly what it returned before --probe existed; tests/test_probe_member_inert.py
+    pins that against the pre-probe file recovered from git rather than against itself.
     """
     if mode in ("ансамбль", "ансамбль-без-GP", "ансамбль5"):
-        parts = oof_members(X, y, mask, fold, mode, scr, dead=bands is not None)
-        if bands is not None:
-            parts = dz_pass(parts, X, mask, fold, bands)
-        return [np.mean([P[e] for k, P in parts if _keep(e, k)], axis=0)
-                for e in range(len(CYPS))]
+        # Bound OUTSIDE the comprehension. Inside it, oof_parts ran once per enzyme --- four
+        # full out-of-fold passes instead of one, four times the runtime, and the trunk member
+        # read four times over. tests/test_trunk_member.py caught it by counting the calls.
+        parts = oof_parts(X, y, mask, fold, mode, scr, bands)
+        return [_combine(parts, e, extra) for e in range(len(CYPS))]
 
 
 TRUNK_LAM = "3.0"      # значение, на котором пункт 79 мерил канал
@@ -807,6 +843,135 @@ def _oof_gp(X, y, mask, fold):
     return P
 
 
+# ------------------------------------------------------------------------------------------
+# SIXTH MEMBER: a RidgeCV head on a FROZEN, externally pretrained chemprop encoder (item 324).
+#
+# OFF by default. --probe switches it on, and src/trunk.py's third head is the precedent for
+# that shape: a part that is inert until asked for, with a test that says so. Nothing below
+# this line runs unless the flag is given, and `_combine(parts, e)` with extra=None is the
+# expression oof_predictions carried before it existed.
+#
+# WHAT WAS MEASURED, and it is the reason this is here rather than in the journal's negative
+# half. verify/k106_probe.py, eight seeds, scored over the ENSEMBLE after the per-fold affine
+# pair against the shipped per-enzyme composition: +0.0138 of macro Spearman, sd 0.0006, sign
+# 8/8, against a pre-registered gate of +0.0031 and the 0.0036 macro floor -- 3.8x the floor.
+# Post-pair macro ST-RAE moves -0.0197 in the same runs, measured rather than converted
+# through a slope. Per enzyme +0.0104 / +0.0283 / +0.0009 / +0.0158.
+#
+# THE DISCRIMINATING CONTROL is verify/k106b_controls.py, arm L: the same head, the same alpha
+# grid, the same standardisation, on OUR OWN DESC+MECH block gives -0.0151 at sign 0/4. The
+# architecture buys nothing; the frozen encoder buys all of it. Arm S shuffles the embedding's
+# rows and the gain dies with it, so it is not "a sixth vector helps whatever the vector is".
+#
+# The embeddings are computed FROM the SMILES by src/embed_medium.py, out of process. No
+# database was queried for the 750 blind compounds and none may be.
+PROBE_EMB = D + "emb_chemprop_medium.npz"
+PROBE_EMB_TEST = D + "emb_chemprop_medium_test.npz"
+# Carried in, never searched. Small alphas overfit this embedding badly, and sklearn's default
+# 0.1/1/10 is NOT used. RidgeCV's own generalised cross-validation picks within this grid on
+# TRAINING rows only, so the choice is nested and no alpha is chosen against the outcome.
+# Widening it is a DIFFERENT experiment and must be labelled one.
+PROBE_ALPHAS = np.array([100.0, 1000.0, 10000.0])
+PROBE_KIND = "зонд"
+
+
+def _probe_load(rows, te):
+    """Both embeddings, realigned against the tables rather than trusted.
+
+    Two traps, both silent. The TEST file stores its array under the key `train` as well, so
+    the array is taken by key and then checked by SHAPE against the table it must match -- a
+    name that lies cannot be caught by reading the name. And the order check is shown to be
+    CAPABLE of failing by running it again on the same names rolled by one position: a
+    comparison that cannot fail is not a control (CLAUDE.md).
+    """
+    out = []
+    for path, names, what in ((PROBE_EMB, rows.Molecule_Name, "обучение"),
+                              (PROBE_EMB_TEST, te.Molecule_Name, "тест")):
+        z = np.load(path, allow_pickle=True)
+        E = z["train"].astype(np.float64)
+        nm = np.asarray(z["molecule_name"], object)
+        r = names.to_numpy(object)
+        if E.shape[0] != len(r):
+            raise SystemExit(f"{path}: {E.shape[0]} строк вложения против {len(r)} в таблице")
+        ok = bool((nm == r).all())
+        rolled = bool((np.roll(nm, 1) == r).all())
+        if not ok or rolled:
+            raise SystemExit(f"{path}: порядок не совпал (совпал={ok}, сдвинутый={rolled})")
+        if not np.isfinite(E).all():
+            raise SystemExit(f"{path}: во вложении есть не-конечные значения")
+        print(f"    зонд: {what} {E.shape}, порядок совпал: {ok}; "
+              f"сдвинутый контроль (ожидается False): {rolled}", flush=True)
+        out.append(E)
+    if out[0].shape[1] != out[1].shape[1]:
+        raise SystemExit("ширина вложения обучения и теста не совпала")
+    return out[0], out[1]
+
+
+def _probe_design(Etr, Ete):
+    """Standardise on the TRAINING rows and drop the dead columns, never on the union.
+
+    The ~61 columns with sd < 1e-6 are constant on the training rows: feeding them in raw
+    divides by their zero spread. They are dropped rather than nudged, and the count is
+    reported, because a silently varying column set would make two runs incomparable.
+    Union standardisation is item 202's defect 2 and is not repeated here.
+    """
+    mu, sd = Etr.mean(0), Etr.std(0)
+    keep = sd > 1e-6
+    f = lambda B: (B[:, keep] - mu[keep]) / sd[keep]
+    return f(Etr), f(Ete), int(keep.sum())
+
+
+def _oof_probe(E, y, mask, fold):
+    """Out-of-fold probe predictions per enzyme. Mirrors verify/k106_probe.py:probe_oof."""
+    P, chosen, ncols = [], [], []
+    for e in range(len(CYPS)):
+        m = mask[:, e]
+        Em, ym, fm = E[m], y[m, e], fold[m]
+        p = np.full(int(m.sum()), np.nan)
+        al, nc = [], []
+        for f in range(5):
+            trn, te = fm != f, fm == f
+            if te.sum() == 0:
+                continue
+            Ztr, Zte, nk = _probe_design(Em[trn], Em[te])
+            r = RidgeCV(alphas=PROBE_ALPHAS).fit(Ztr, ym[trn])
+            p[te] = r.predict(Zte)
+            al.append(float(r.alpha_))
+            nc.append(nk)
+        if not np.isfinite(p).all():
+            raise SystemExit(f"{CYPS[e]}: зонд оставил незаполненные строки вне фолда")
+        P.append(p)
+        chosen.append(al)
+        ncols.append(nc)
+    return P, chosen, ncols
+
+
+def _probe_test_pred(E, Ete, y, mask):
+    """The probe fitted on ALL training rows of each enzyme and predicted onto the 750.
+
+    Each enzyme uses its own notna mask, exactly as every other member's test path does.
+    Returns (n_test, 4), the chosen alpha per enzyme and the live-column count per enzyme.
+    """
+    out, chosen, ncols = [], [], []
+    for e in range(len(CYPS)):
+        m = mask[:, e]
+        Ztr, Zte, nk = _probe_design(E[m], Ete)
+        r = RidgeCV(alphas=PROBE_ALPHAS).fit(Ztr, y[m, e])
+        out.append(r.predict(Zte))
+        chosen.append(float(r.alpha_))
+        ncols.append(nk)
+    return np.stack(out, 1), chosen, ncols
+
+
+def _probe_edge(chosen):
+    """Which enzymes sat on an EDGE of the carried-in grid. A fitted parameter standing on the
+    boundary of its grid is not a fitted parameter, and the flatness next to it is imaginary
+    (the same argument OFFGRID and SHIFTGRID carry). Reported, never silently widened."""
+    lo, hi = float(PROBE_ALPHAS.min()), float(PROBE_ALPHAS.max())
+    return {CYPS[e]: ("низ" if a == lo else "верх" if a == hi else "внутри")
+            for e, a in enumerate(chosen)}
+
+
 def fit_shrinkage(P, y, mask, delta=(0.0, 0.0, 0.0, 0.0)):
     """Offset and lambda per enzyme, both chosen out-of-fold on the training data.
 
@@ -943,6 +1108,17 @@ def main():
                          "+0.029 остаётся в силе, и потому что вариант ЗДЕСЬ иной: скрининг "
                          "вставлен ВНУТРЬ поферментного члена, а не добавлен шестым. Механизм "
                          "предсказывает тот же ноль, измерено это не было.")
+    ap.add_argument("--probe", action="store_true",
+                    help="добавить ШЕСТЫМ членом гребневую голову на замороженном чужом "
+                         "кодировщике chemprop (пункт 324). ВЫКЛЮЧЕНО по умолчанию. "
+                         "verify/k106_probe.py: +0.0138 макро-ранга, sd 0.0006, знак 8/8 на "
+                         "восьми сидах, при воротах +0.0031 и поле 0.0036; пара после сдвига "
+                         "-0.0197. Различающий контроль k106b: та же голова с той же сеткой "
+                         "alpha на НАШЕМ блоке DESC+MECH даёт -0.0151 при знаке 0/4. "
+                         "Требует data/emb_chemprop_medium*.npz (src/embed_medium.py). "
+                         "Прогон дополнительно пишет activity_submission_noprobe.csv --- тот "
+                         "же прогон, состав БЕЗ зонда: контроль, который обязан воспроизвести "
+                         "подаваемый файл, иначе путь по умолчанию сдвинут.")
     a = ap.parse_args()
 
     _pl.Path(a.outdir).mkdir(parents=True, exist_ok=True)
@@ -980,7 +1156,25 @@ def main():
         raise SystemExit(f"ширина не совпала: обучение {X.shape[1]}, тест {Xte.shape[1]}")
     print(f"  тест {Xte.shape}, обучение {X.shape}", flush=True)
 
-    lams = None
+    probe_te = probe_meta = None
+    if a.probe:
+        print("шестой член: гребневая на замороженном кодировщике chemprop (пункт 324)",
+              flush=True)
+        Eprobe, Eprobe_te = _probe_load(rows, te)
+        probe_te, pa, pn = _probe_test_pred(Eprobe, Eprobe_te, y, mask)
+        edge = _probe_edge(pa)
+        probe_meta = {"alphas_тест": pa, "живых_колонок_тест": pn, "край_сетки": edge,
+                      "сетка": [float(x) for x in PROBE_ALPHAS]}
+        print(f"    alpha на полной выборке: "
+              + ", ".join(f"{CYPS[e]} {int(pa[e])} ({edge[CYPS[e]]})"
+                          for e in range(len(CYPS))), flush=True)
+        print(f"    живых колонок: {pn} из {Eprobe.shape[1]}", flush=True)
+        for e, c in enumerate(CYPS):
+            v = probe_te[:, e]
+            print(f"    {c}: зонд на тесте среднее {v.mean():.3f}, sd {v.std(ddof=1):.3f}, "
+                  f"диапазон {v.min():.2f}..{v.max():.2f}", flush=True)
+
+    lams = lams_base = None
     fold = clusters = None
     if a.shrink:
         print("подбираю усадку вне выборки на обучающих данных", flush=True)
@@ -992,9 +1186,28 @@ def main():
             raise SystemExit(f"--delta: нужно одно число или четыре через запятую, дано {len(d)}")
         print(f"предполагаемый сдвиг по ферментам: "
               + ", ".join(f"{c} {v:+.2f}" for c, v in zip(CYPS, d)), flush=True)
-        P = oof_predictions(X, y, mask, fold, a.mode, scr,
-                            (LO, HI) if a.deadzone else None)
-        lams = fit_shrinkage(P, y, mask, d)
+        if a.probe:
+            # One pass over the members, two means. The affine pair is fitted against the
+            # vector it will be applied to, so the candidate and its probe-free twin each
+            # need their own -- and refitting from the SAME `parts` is what makes the twin a
+            # control rather than a second, differently-seeded run.
+            parts_oof = oof_parts(X, y, mask, fold, a.mode, scr,
+                                  (LO, HI) if a.deadzone else None)
+            probe_oof, oa, on = _oof_probe(Eprobe, y, mask, fold)
+            probe_meta["alphas_вне_фолда"] = oa
+            probe_meta["живых_колонок_вне_фолда"] = on
+            print(f"    alpha по фолдам: " + "; ".join(
+                f"{CYPS[e]} {[int(x) for x in oa[e]]}" for e in range(len(CYPS))), flush=True)
+            P_base = [_combine(parts_oof, e) for e in range(len(CYPS))]
+            P = [_combine(parts_oof, e, probe_oof) for e in range(len(CYPS))]
+            print("  аффинная пара БЕЗ зонда (контроль-близнец):", flush=True)
+            lams_base = fit_shrinkage(P_base, y, mask, d)
+            print("  аффинная пара С зондом (кандидат):", flush=True)
+            lams = fit_shrinkage(P, y, mask, d)
+        else:
+            P = oof_predictions(X, y, mask, fold, a.mode, scr,
+                                (LO, HI) if a.deadzone else None)
+            lams = fit_shrinkage(P, y, mask, d)
 
     dz_targets = None
     if a.deadzone:
@@ -1015,6 +1228,8 @@ def main():
 
     print(f"обучаю на всей выборке (режим: {a.mode}) и предсказываю тест", flush=True)
     act = pd.DataFrame({"SMILES": te.SMILES, "Molecule_Name": te.Molecule_Name})
+    twin = act.copy() if a.probe else None
+    dump = {} if a.probe else None
     shared = None
     trunk_te = None
     if a.mode == "ансамбль5":
@@ -1082,11 +1297,44 @@ def main():
         if CYPS[e] in SOLO:
             print(f"    {c}: поферментный состав {'+'.join(SOLO[CYPS[e]])} "
                   f"({len(parts)} член(ов) из пяти), пункты 282-285", flush=True)
+        if a.probe:
+            # The twin first, from `p` BEFORE the probe is folded in: the probe-free vector
+            # with its own affine pair. It must reproduce the shipped file, and a run in
+            # which it does not has moved the default path, whatever else it found.
+            base = p
+            if lams_base is not None:
+                Lb, mub, shb = lams_base[e]
+                base = Lb * base + (1.0 - Lb) * mub + shb
+            twin[f"{c}_pIC50_direct_inhibition"] = base
+            # The names of the members in `parts`, in order, so the dump can be read. An
+            # assertion rather than a comment: a mislabelled member would make the
+            # decorrelation control below answer about the wrong vector.
+            kinds = ([k for k, _T in dz_targets if _keep(e, k)]
+                     if dz_targets is not None else [])
+            if a.mode == "ансамбль5" and _keep(e, "ствол"):
+                kinds = kinds + ["ствол"]
+            if len(kinds) != len(parts):
+                raise SystemExit(f"{c}: имён членов {len(kinds)}, а членов {len(parts)}")
+            dump[c] = {"члены": {k: [float(v) for v in q] for k, q in zip(kinds, parts)},
+                       PROBE_KIND: [float(v) for v in probe_te[:, e]]}
+            p = np.mean(parts + [probe_te[:, e]], axis=0)
+            print(f"    {c}: зонд шестым членом ({len(parts)} наших + 1), "
+                  f"среднее до пары {p.mean():.3f}", flush=True)
         if lams is not None:
             L, mu_tr, sh = lams[e]
             p = L * p + (1.0 - L) * mu_tr + sh
         act[f"{c}_pIC50_direct_inhibition"] = p
         print(f"    {c}: n_обуч {m.sum()}, среднее предсказание {p.mean():.3f}", flush=True)
+
+    if a.probe:
+        tw_ = a.outdir + "activity_submission_noprobe.csv"
+        pd_ = a.outdir + "probe_parts.json"
+        twin.to_csv(tw_, index=False)
+        json.dump({"члены_по_ферментам": dump, "зонд": probe_meta,
+                   "молекулы": list(te.Molecule_Name)},
+                  open(pd_, "w"), ensure_ascii=False)
+        print(f"  контроль-близнец (состав БЕЗ зонда): {tw_}", flush=True)
+        print(f"  предсказания членов на тесте: {pd_}", flush=True)
 
     tdi = pd.read_csv(D + "cyp-challenge-TRAIN_TDI.csv").set_index("Molecule_Name")
     keep = rows.Molecule_Name.isin(tdi.index).to_numpy()
