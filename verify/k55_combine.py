@@ -1,6 +1,6 @@
 """The ensemble is averaged, and the metric is not minimised by an average.
 
-The observation. `src/submit.py` line 230 and `src/abldzens.py` line 147 both combine members by
+The observation. `src/submit.py`'s `_combine` and `src/abldzens.py`'s `arms` selectors (averaged in its `main`) both combine members by
 `np.mean`, and in 182 items nothing else has been tried. But the loss is
 
     d(p) = max(0, lo - p, p - hi) = расстояние от точки до отрезка,

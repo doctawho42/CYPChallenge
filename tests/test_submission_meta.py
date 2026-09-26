@@ -104,7 +104,7 @@ def test_the_affine_pair_is_recorded_per_enzyme_without_the_fitting_centre(conte
 
 def test_the_record_carries_how_long_the_run_took(context):
     """A documented runtime is what tells the next reader whether they dare rerun something,
-    and src/submit.py takes 161 to 230 minutes. 9725.4 seconds is 162.09 minutes."""
+    and src/submit.py takes a few hours. 9725.4 seconds is 162.09 minutes."""
     took = submeta.build(**{**context, "elapsed_s": 9725.4})["время_прогона"]
     assert took["секунд"] == 9725
     assert took["минут"] == 162.1
@@ -248,7 +248,7 @@ def _import_submit():
 
 
 def test_submit_hands_the_writer_what_the_run_actually_did(context):
-    """The call sits at the end of a 161-to-230-minute run, after both files are written and
+    """The call sits at the end of a run measured in hours, after both files are written and
     accepted, so a slip in it would surface three hours in. This exercises it in milliseconds."""
     import argparse
 
