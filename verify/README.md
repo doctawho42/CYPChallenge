@@ -41,9 +41,47 @@ Sign 4/4 in both arms and in all sixteen per-enzyme cells; rank and metric rise 
 re-projected trunk's contribution is +0.0045 at sign 4/4 against a macro floor of 0.0036 ---
 marginal, and it cannot be quoted without the floor.
 
+**A SIXTH member ships as of 26 September, and it is deliberately NOT a row in either table above.**
+Items 324, 325 and 327: a ridge head on a frozen third-party chemprop encoder, added at equal weight.
+It was measured on the cached `members_seed{0..7}.json` nested over the Butina folds --- a different
+base from `verify/k58_dzsubmit.py`, and the gap is visible rather than theoretical, since the SAME
+five-member composition scores rank 0.6417 there against 0.6342 in the table just above. Putting it
+in that table would be the comparability error this section already warns about twice.
+
+    арм (verify/k106_probe.py)                  макро ранг      sd   знак   пункт
+    A  штатная пятичленная композиция               0.6417  0.0015      —     324
+    D  та же плюс проба равным весом                0.6556  0.0012    8/8     324
+    D - A                                          +0.0138  0.0006    8/8     324
+    то же в post-pair макро ST-RAE                 -0.0197       —    8/8     324
+
+CYP2C9 alone is half the gain (+0.0283); CYP2D6 contributes +0.0009, which is a quarter of the floor.
+**The discriminating control is what makes this a result about the encoder rather than about adding a
+sixth member**: the same ridge head with the same alpha grid, fitted on OUR OWN DESC+MECH block,
+gives $-0.0151$ at sign 0/4. Related and already shut by item 316, which tried the competitors' own
+combiners on our members: a per-enzyme weight simplex buys $+0.0006$ at sign 5/8 and Caruana bagged
+selection $-0.0048$ at sign 0/8. Both are under the 0.0036 floor, the second on the wrong side of
+zero, so the EQUAL weight is not a parameter to return to --- what the probe adds is a member, not a
+better mixing of the ones we had.
+
+**The board has now CONFIRMED it without ESTABLISHING it, and the distinction is the point (item
+327).** Macro Spearman on the blind half moved $0.6935 \to 0.7062$, a realisation of **0.92** against
+the $+0.0138$ measured out of fold --- and the placement cannot have contributed any of it, because
+`b` is affine with $b > 0$ and preserves Spearman identically (item 320's rule 1 measured exactly
+that at $+0.0000$ on all four enzymes). But item 294's macro rank band on the live half has
+half-width **0.0270 at $n = 375$**, and the move is less than half of it. One reading of the board
+cannot carry this claim; what carries it is that the interval was registered before the upload and
+that the out-of-fold measurement is sign 8/8 at sd 0.0006. **The paired band --- the right one to
+quote here, since both submissions were scored on the same 375 compounds, and narrower --- has not
+been measured.**
+
 **Trajectory in total: +0.0579 of rank and -0.0583 of pair from the base model** (0.5651 -> 0.6230
 and 0.7150 -> 0.6567). This said "-0.050 of pair" before --- an error of 0.0083, larger than the
-macro floor on the pair; corrected on 6 September.
+macro floor on the pair; corrected on 6 September. **It is the FIVE-member trajectory and stops
+there.** The sixth member's $+0.0138$ sits on a THIRD base: `k106_probe.py`'s arm A puts the shipped
+five at rank 0.6417, against 0.6342 in the `k58_dzsubmit.py` table and 0.6230 here --- and this row
+is not even the same configuration, being the pass in four members and labelled a lower bound. So
+none of the three adds to any other and no total spanning the sixth member has been computed. Item
+274 is why that is stated rather than assumed.
 
 **The arithmetic added up until it was checked by knockout, and ITEM 274 CANCELLED IT.** The sum of
 the named contributions --- dead zone +0.0197, mechanistic block +0.0163, pooling +0.0141, trunk as
