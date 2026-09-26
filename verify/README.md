@@ -70,9 +70,10 @@ the $+0.0138$ measured out of fold --- and the placement cannot have contributed
 that at $+0.0000$ on all four enzymes). But item 294's macro rank band on the live half has
 half-width **0.0270 at $n = 375$**, and the move is less than half of it. One reading of the board
 cannot carry this claim; what carries it is that the interval was registered before the upload and
-that the out-of-fold measurement is sign 8/8 at sd 0.0006. **The paired band --- the right one to
-quote here, since both submissions were scored on the same 375 compounds, and narrower --- has not
-been measured.**
+that the out-of-fold measurement is sign 8/8 at sd 0.0006. **The paired band is now measured (item
+328): 0.0063 at $n = 375$, 4.3 times narrower, and positive on all 16000 draws** --- so the board's
+$+0.0127$ sits inside it and the reveal-sampling objection is answered. The distribution-shift one is
+not, and cannot be from inside the challenge.
 
 **Trajectory in total: +0.0579 of rank and -0.0583 of pair from the base model** (0.5651 -> 0.6230
 and 0.7150 -> 0.6567). This said "-0.050 of pair" before --- an error of 0.0083, larger than the
@@ -14569,3 +14570,82 @@ no longer valid. A scorer aimed at a superseded submission prints numbers that l
 measure nothing. (2) `n_scored` in that file counted board ROWS and returned 227, which reads as a
 compound count in a file where $n = 375$ is compounds; renamed `n_entrants`, and `k108` imports it
 rather than counting the field a second time.
+
+**328. The paired reveal band is 0.0063 at $n = 375$ --- 4.3 times narrower than the absolute band
+item 294 measured --- and the probe's gain is positive on all 16000 draws. So item 327 hedged the
+board result against the wrong instrument. `verify/k92_rankband.py` had said which one was right, in
+its own closing note, before any of this was written.** `verify/k109_pairband.py` (new),
+`results/logs/k109_pairband.json`.
+
+Item 294 measured the reveal band on the ABSOLUTE macro rank: half-width 0.0270 at the live board's
+$n = 375$. Item 327 read the probe's board move of $+0.0127$ against that number and concluded the
+board confirms the gain without establishing it. But the board scores every submission on the SAME
+molecules, so per-compound noise cancels in a DIFFERENCE --- and k92's closing paragraph says exactly
+that, in terms: «лидерборд считает все подачи на ОДНИХ И ТЕХ ЖЕ молекулах, поэтому поштучный шум в
+разности сокращается, и сравнивать наши приросты надо с парным полом, а не с этой полосой».
+
+**The control, and this file is decoration without it.** The procedure has to be item 294's rather
+than a lookalike, so the run first reproduces k92's own logged macro band on `oof_submitted.json`,
+using the same rng seeding, and refuses to print anything else if it misses. It reproduces to the
+fourth decimal: $[+0.6155, +0.6696]$, sd 0.0142, half-width 0.0270, identical. What differs is one
+thing only --- the subsample indices are drawn ONCE per enzyme per resample and applied to BOTH arms.
+Drawing them separately would compute the unpaired band twice and call the difference paired.
+
+    n      непарная (арм A)   парная (D - A)   раз уже   доля розыгрышей D > A
+    750              0.0157           0.0035       4.5                   1.000
+    375              0.0270           0.0063       4.3                   1.000
+
+    восемь сидов: парная полуширина 0.0062..0.0065 при n=375, 0.0034..0.0037 при n=750
+    среднее D - A по сидам  +0.0138  (диапазон +0.0131..+0.0148)
+
+**What this does to item 327's reading.** The observed board move $+0.0127$ lies INSIDE the paired
+band around the out-of-fold $+0.0138$, and the band excludes zero on every one of 16000 draws --- 8
+seeds $\times$ 2 sizes $\times$ 1000. Item 327's sentence that one reading of the board cannot carry
+the claim is true only against the ABSOLUTE band; against the right instrument the reading is
+consistent with the measurement and the reveal-sampling objection is answered. The other half of
+item 327 stands untouched: what makes this a test rather than a post-hoc reading is that the interval
+was registered before the upload.
+
+**Two things worth having beyond the verdict.** The across-seed mean of $D - A$ comes to $+0.0138$,
+reproducing item 324's figure exactly on a different instrument --- that number was a nested
+cross-validation difference, this one a reveal-subsample difference, and they agree to the fourth
+decimal.
+
+And the second is a clarification the project needs about its own floor. The macro floor of 0.0036 is
+a SINGLE ARM's spread across seeds (item 259). Pairing collapses it: the standard deviation of the
+eight per-seed $D - A$ means measured here is **0.0006** --- a factor of six, and the same 0.0006
+item 324 reported without naming it as a paired quantity. So a paired rank difference faces two floors
+of very different size, and neither is 0.0036:
+
+    источник шума на ПАРНОЙ разности            величина
+    сид (sd восьми средних D - A)                 0.0006
+    раскрытие, n=750                              0.0035
+    раскрытие, n=375 --- размер живой доски       0.0063
+
+The reveal band dominates the paired seed floor by a factor of ten, so for anything judged on the
+live board 0.0063 is the number to beat and 0.0036 was never the right one --- it guards a different
+question, how much a single arm's absolute score moves when the split moves.
+
+**My defect, and it is the one this file's own rules name first.** Item 327 and the scoreboard block
+both said the paired band «has not been measured» and offered computing it as the obvious next step.
+It had been NAMED, with its mechanism, in the closing note of the file I had opened to get the 0.0270
+from. I read the table and not the paragraph under it. "Search `verify/README.md` for the idea before
+evaluating it" has a sharper form: **finding a number in a file is not reading the file.**
+
+**A second defect, smaller, and measured rather than assumed.** k92's macro comment says the four
+enzymes are resampled by independent streams. They are not --- the generator is constructed with the
+same seed for each, so the four draws are deterministic functions of one random stream. Measured
+consequence of separating them: the macro half-width moves $+0.0001$ at $n = 750$ and $+0.0008$ at
+$n = 375$. Negligible, so item 294's number stands and k109 reproduces the coupling deliberately in
+order to compare like with like; recorded because the comment asserts something the code does not do.
+**My first control for this was blind** --- comparing index sets gives 0 of 10 matches whether the
+streams are coupled or not, because `rng.choice` over different population sizes diverges at once.
+The band comparison is what carries it.
+
+**What this does NOT establish, stated because the opposite reading is available.** The band is
+subsampled from OUR out-of-fold predictions, so it is a band on our distribution. The test lies where
+the cross-validation has almost no mass --- item 123's ESS ceiling of 26.1 per cent, item 129's
+nearest-neighbour median of 0.587 against $\le 0.450$ on any re-split of training. **And a paired band
+on the BOARD's own difference is not computable at all**: it would need the identity of the revealed
+375 compounds AND their labels, and the labels are the blind half. So this closes the
+reveal-sampling objection and leaves the distribution-shift objection exactly where item 294 left it.
