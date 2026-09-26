@@ -13652,7 +13652,10 @@ Spearman across the 221 entrants is $-2.674$ at the frontier --- and it **must n
 with higher $\rho$ are better at everything, so it credits rank with other people's placement. The
 causal slope, from $\mathrm{ST\text{-}RAE}\approx F\sqrt{1-r^2}$ at the optimal affine placement with
 $F$ calibrated on our own four board cells, is $-0.990$: **one unit of rank buys about one unit of
-ST-RAE.** ($F$ came out 0.79--0.98, and the control is that it must lie in $(0,1]$ --- bands can only
+ST-RAE.** (Wrong by a factor of 1.64, corrected in item 322: the true slope is $-1.62$, because this
+derivation holds the PLACEMENT fixed and the placement's optimal spread follows $\rho$. The
+pre-registration below is unaffected --- it was stated in ST-RAE, not in rank --- but every price
+this file quotes in board places per unit of rank was understated.) ($F$ came out 0.79--0.98, and the control is that it must lie in $(0,1]$ --- bands can only
 forgive.)
 
     прирост макро ро   ST-RAE   место   что это за число
@@ -13667,7 +13670,8 @@ forgive.)
 $\ge 3/4$.** Deliberately ABOVE item 290's own +0.0085, because the hypothesis under test is that the
 shipped vehicle beats the weak one, not that the channel exists. A control on the slope: predicting
 briford's ST-RAE from their $\rho$ overshoots by $+0.0807$, far more than the whole gain at issue,
-which says the relation is convex and steepens with $\rho$ --- so $-0.990$ is conservative.
+which says the relation is convex and steepens with $\rho$ --- so $-0.990$ is conservative. It was
+conservative by 1.64x; item 322 measures it.
 
 **What was built.** `Net` grew `head_ext` beside `head_pic` and `head_scr`, and `run_fold` grew
 `ext` and `lam_ext`, weighting its masked loss through the same `masked_mse` so the two lambdas are
@@ -13965,3 +13969,496 @@ numbers: both give $R^2$ near 0.17--0.29 against the board's 0.3859. That is ite
 inconsistency, now re-derived by a route that used neither $R^2$ nor Spearman to fit anything. It is
 a standing reason to discount any forecast for this cell that leans on $R^2$ or $\rho$ --- which is
 why the pre-registration above leans on neither.
+
+**321. Two of item 320's three rules held, and the one that failed is the measurement it was built
+to make: the blind band multiplier is ~0.78x, not the 1.0x the prediction assumed. That single
+number vindicates the conservative choice quantitatively --- at the true multiplier the aggressive
+candidate would have scored WORSE by about three board places --- and it makes the same correction
+computable for the other three enzymes, where it turns out to be worth almost nothing.** Scored by
+`verify/k104_prereg320.py --pull`, whose rules and sensitivity map were committed before the upload.
+
+    правило                           порог                    факт      вердикт
+    1 ранг (резкое)                   |Δро|,|Δтау| <= 0.0005   +0.0000   ВЫПОЛНИЛОСЬ
+    2 существование                   CYP2D6 <= 0.6882         0.6805    ВЫПОЛНИЛОСЬ (+0.0077)
+    3 величина                        внутри [0.6146,0.6623]   0.6805    ПРОВАЛИЛОСЬ
+                                      макро < 0.5760           0.5535    (эта половина held)
+
+Rule 1 held at exactly $+0.0000$ on Spearman AND Kendall on all four enzymes, which is what an
+affine map with $b>0$ requires and is the sharpest evidence that nothing but the placement moved.
+Rule 2 is the one that mattered: **CYP2D6 went 0.7707 to 0.6805, so we now beat on that cell the
+strictly weaker model whose existence licensed the whole move** (JacksonBurns, 0.6882, behind us on
+MAE, $R^2$, $\rho$ and $\tau$ simultaneously).
+
+**The failure is the measurement.** The blind band width was the one quantity that could not be
+measured without spending an upload, so its sensitivity was mapped BEFORE the upload:
+$0.4\times\!\to\!0.8701$, $0.6\times\!\to\!0.7653$, $0.8\times\!\to\!0.6709$,
+$1.0\times\!\to\!0.6246$, $1.5\times\!\to\!0.6046$. The observed 0.6805 reads back as
+**$\approx0.78\times$ of our own training band widths**. The world model was not wrong about the
+mechanism; it was wrong about one parameter, and that parameter is now known.
+
+**And the conservative choice is vindicated by the number rather than by the argument.** At the true
+$0.78\times$ the aggressive candidate $(3.650,\,2.00)$ maps to $\approx0.7023$ against the shipped
+half step's 0.6805 --- worse by 0.031 on the cell, about **three board places**. The half step was
+chosen because it never loses down to $0.6\times$ while the aggressive one turns at $0.8\times$; the
+realised multiplier landed inside exactly that margin.
+
+**The board move, decomposed, because the field contracted at the same time.** 68th of 230 to 58th
+of 219. Scoring our OLD macro on the NEW board gives 63rd, so **five places are ours and five are
+the field shrinking by eleven entrants after the interim**. The prediction was 60th at macro 0.5395;
+the outcome is 58th at 0.5535 --- the metric came out 0.0140 WORSE than predicted and the place two
+BETTER, which is what a dense neighbourhood does to any forecast stated in places.
+
+**What it cost, as pre-registered it would.** CYP2D6 MAE 0.9222 to 1.0631 and $R^2$ 0.3859 to
+0.3225. The board ranks on MA-ST-RAE so this costs no place, but both columns are published and both
+visibly worsened. That was stated before the upload and is not a surprise.
+
+**Now the same correction priced for the other three, which is the reason this item is not a
+closing one.** The crude ceiling --- our own MAE divided by the best absorption ratio in the top
+hundred --- is calibrated against the move we just made: before the upload it promised CYP2D6 at
+0.4076, a gain of 0.3631, and delivered 0.0902. **The ceiling realises at 0.248**, against item 314's
+0.52 and item 317's 0.437 for a different class of model. Applying that same measured ratio:
+
+    фермент   сейчас   потолок   реально   макро    мест
+    CYP1A2    0.5889    0.4709    0.5596   0.5462      -1
+    CYP2C9    0.4624    0.3848    0.4431   0.5487      +0
+    CYP2D6    0.6805    0.4699    0.6282   0.5404      -3
+    CYP3A4    0.4822    0.4230    0.4675   0.5498      +0
+    все четыре сразу                       0.5246      -7
+
+**CYP2C9 alone is worth ZERO board places, and so is CYP3A4.** One place now costs 0.0050 of macro
+and the realistic CYP2C9 gain is 0.0048 --- under the threshold. Residual room exists only on
+CYP2D6, at about three places, and on all four together at seven. The impossibility count that made
+the CYP2D6 case is also mostly spent: 69 entrants had a strictly worse CYP2D6 MAE and a strictly
+better ST-RAE before the move, and 11 do now.
+
+**One caution about that table, because it is the kind of number this file has been burned by.** The
+0.248 is the realisation of the CEILING, not of the world model. The model, given the right
+multiplier, was accurate to about 0.01 on the cell --- its 0.8x entry said 0.6709 against an observed
+0.6805. So 0.248 prices a crude bound and is probably pessimistic for a properly modelled move. The
+honest reading is that CYP2C9 is not worth a proper derivation and CYP2D6 might still be, which is
+the opposite of the question that was asked.
+
+**Two process defects of mine, both about calling a thing done before it was.** I pulled the board
+at 01:50 UTC, one minute before it picked up the upload made at 01:49, and reported that the upload
+had not registered --- having myself established in item 320 that the board scores in minutes. A
+negative answer about a fast-moving system needs a second look before it is a fact. And earlier I
+had treated "uploaded" as meaning "the submission stands", when the thing to confirm is the
+`Submitted` stamp on the board and not the act of pressing the button.
+
+**322. The slope converting rank into ST-RAE was $-0.990$ and is $-1.62$. My derivation held the
+PLACEMENT fixed, and the placement's optimal spread follows $\rho$ --- so a rank gain improves the
+score twice, once directly and once through the placement it licenses. Every price this file has
+quoted in board places per unit of rank was understated by a factor of 1.64.** Two independent
+routes agree, and the occasion for measuring it was a competitor's move.
+
+**The measurement.** JacksonBurns shipped a new submission on 24 September and their move is a
+clean natural experiment, since their placement is affine with a floor and **zero of their
+compounds sit at that floor in either submission**, so the map is strictly monotone and the whole
+shift is ordering:
+
+    маршрут                                          наклон dST-RAE/dро
+    их реализованный ход (-0.0455 ST-RAE / +0.0280 ро)        -1.625
+    поперёк поля, ранги 30-90 (n=61)                          -1.619
+    мой вывод в пункте 320                                    -0.990
+
+The two agree to 0.006 and were computed from different things --- one team's before-and-after
+against sixty-one teams at one instant. **The second of those is NOT corroboration and this
+paragraph was wrong to call it that: item 323 slides the same width-61 window along the board and
+gets anything from -0.08 to -1.76, and the window quoted here is the one where the two routes
+meet.** The causal route reproduces and still refutes -0.990; it is one before-and-after on one
+team with no error bar, and that is the whole of the evidence. **A whole-field fit gives $-652$ and is meaningless**: the
+ST-RAE column has entrants three orders of magnitude out, so the regression is all outlier. The
+local fit is the honest one, and that qualification belongs with the number.
+
+**Why mine was wrong, and it is not an arithmetic slip.** Item 320 derived
+$\mathrm{ST\text{-}RAE}\approx F\sqrt{1-r^2}$ at the OPTIMAL AFFINE PLACEMENT and differentiated it
+holding $F$ and the placement fixed. But the optimal spread is a function of $r$ --- item 313
+measured the ST-RAE-optimal $k$ at 0.69--0.88 of the $R^2$-optimal $r$ --- so improving the ordering
+also widens the spread you are allowed, and the score falls again. I measured the partial derivative
+and used it as the total one. The competitor's own placement constants show the mechanism directly:
+their assumed blind $\rho$ rose from 0.769 to 0.786 and from 0.841 to 0.881 **as a consequence of the
+better ordering**, and their placement widened with it.
+
+**What it repriced.** Their $+0.0280$ of macro rank bought **15 board places**, not the five or six
+my slope predicted. (**Nine, not fifteen** --- item 323 caught this and it is the defect this very
+item records two paragraphs below: I compared positions in two fields of different sizes. Scoring
+BOTH their scores against the same 25 September field of 219 gives 64th to 55th. A rank difference
+is readable only against a fixed field, and I wrote the lesson and broke it in the same item.) For us, at rank 58 of 219 with one place costing 0.0050 of macro ST-RAE:
+
+    прирост макро ро   при -0.990   при -1.62
+              0.0105     -2 места     -5 мест
+              0.0210     -6 мест      -9 мест
+              0.0280     -7 мест     -12 мест
+
+(Both columns are extrapolations through a slope. Item 323 measures that the windows nearest our own
+rank are the SHALLOWEST on the board --- ranks 48-68 fit at $-0.58$, 43-73 at $-0.97$ --- and those
+are the entrants a move of ours actually has to pass. So the right-hand column is optimistic near us,
+and $+0.0031$ per place is a LOWER BOUND on the price rather than the price. Where a delta in ST-RAE
+is measured directly, prefer it and use no slope at all.)
+
+**And it reprices a gate this file already used.** Item 319 set its gate at $+0.0105$ of macro rank,
+derived from the wrong slope; at $-1.62$ one board place costs about $+0.0031$ of rank, so the gate
+was three times too strict. **Item 319's conclusion nonetheless survives**, and it is worth being
+explicit about why rather than leaving it to be rechecked: its deciding number was $C-A=-0.0005$,
+negative, and no slope makes a negative gain positive. What changes is that the gate should have
+been $0.0031$, and a future arm near $+0.004$ of rank would clear it where the old gate would have
+refused.
+
+**The standing rule is unchanged and its arithmetic is not.** Price moves in BOARD PLACES, compute
+the neighbourhood first, and never quote either the neighbourhood or the conversion from memory ---
+item 321 already recorded the neighbourhood going stale by a factor of 45 in three days, and this
+item records the conversion itself being wrong by 1.64 for as long as it has been used.
+
+**Also corrected, from the same board reading.** Item 316 recorded that the entrant jeremy had
+"verified withdrawn, not renamed" from the board, on a control that searched for their metrics and
+their submission timestamp under every name and found neither. **That control was sound and the
+conclusion was wrong.** On 25 September the row is back --- rank 48, ST-RAE 0.5185, and the SAME
+submission stamp `2026-09-08 08:01 UTC` it always carried --- after being absent from two
+consecutive snapshots. So the board transiently drops rows, and **absence from a snapshot is not
+evidence of withdrawal**. A snapshot is a sample of a system that can lose rows, and the only thing
+a missing row licenses is another look.
+
+**323. The slope $-1.62$ is right and its corroboration is not. Item 322's causal route
+reproduces exactly from our own committed snapshots; its second route agrees to 0.006 by
+coincidence of window choice, and the headline "15 board places" is 8 once the field churn item
+322 itself documents is taken out.** `verify/k105_slope.py`, from the committed boards only ---
+no fit, no model, nothing external.
+
+**What reproduces.** Both of item 322's numbers recompute from the files in `results/`:
+
+    маршрут                                              наклон   пункт 322   сходится
+    их ход, 09-24T1219Z -> 09-25T0644Z                   -1.6250      -1.625   да
+      (ST-RAE 0.5870 -> 0.5415, ро 0.6799 -> 0.7079)
+    поперёк поля, ранги 30-90 (n=61)                     -1.6189      -1.619   да
+    всё поле (n=219)                                   -652.33        -652     да
+
+So the arithmetic is sound and the correction to $-0.990$ stands. What does not stand is the
+claim that these are **two independent routes that agree**.
+
+**The cross-field route is a window choice, not a measurement.** Taken at face value it is
+reasonably tight and it does exclude the old value: OLS $-1.619$ with se $0.294$, 95 per cent
+$[-2.196, -1.042]$, which clears $-0.990$ by $0.05$; Theil--Sen $-1.794$; bootstrap over entrants
+$[-2.15, -1.12]$. (An earlier draft of this item said the interval CONTAINS $-0.990$. It does not
+--- `k105_slope.py` prints the containment test rather than leaving it to be eyeballed, which is
+how the error was caught.) The objection is not the width of the interval. It is that the estimate
+moves with the window far more than the interval admits --- the same width-61 window slid up the
+board:
+
+    окно    10-70  20-80  30-90  40-100  50-110  60-120  70-130  80-140  90-150  100-160
+    наклон  -1.68  -1.76  -1.62   -1.22   -0.73   -0.08   -0.39   -0.66   -0.77    -0.99
+
+The window item 322 chose is the one where the two routes meet. Shift it thirty places and the
+fit is flat ($-0.08$); shift it seventy and it lands on $-0.99$, which is the value item 322
+was refuting. **A second measurement that agrees only at one setting of a free parameter is not
+corroboration, it is a coincidence that has been selected for** --- and the board offers a
+window supporting essentially any slope between $0$ and $-1.8$. The causal route is therefore
+the whole of the evidence, and it is one before-and-after on one team with no error bar at all.
+
+**And the 15 places are 8.** Their rank went 70 of 230 to 55 of 219 --- but the field lost 11
+entrants in between, and rank is a position in a field, not a score. Scoring BOTH their scores
+against the SAME (25 September, n=219) field:
+
+    их счёт ST-RAE    место на поле 09-25   что это
+            0.5870                     63   до хода
+            0.5415                     55   после хода
+                                     ---8   приписывается ходу
+
+Eight places, not fifteen. The other seven are churn: between the 01:50Z and 05:58Z snapshots
+their score did not move by a digit --- ST-RAE 0.5415, ро 0.7079, submission stamp
+`2026-09-24 14:17 UTC` in both --- while the board shed twenty rows and their rank rose from 63
+to 55. **This is the defect item 322 closes in its own last paragraph, committed in its own
+headline number.** It caught the transient row-dropping for `jeremy` and then priced a competitor's
+move in raw ranks across two snapshots of different sizes. A rank difference is only readable
+against a fixed field.
+
+**What it does to the gate, which is the part that is load-bearing.** Read one place directly off
+the current board rather than through any slope: we sit at 0.5535 and the entry above is at 0.5485,
+so one place costs $+0.0050$ of macro ST-RAE. That much is measured. Converting it to rank is where
+the slope enters, and the answer is not robust:
+
+    наклон                                 одно место в макро ро   против пола 0.0036
+    -1.62 (причинный маршрут)                           +0.0031    НИЖЕ пола
+    -0.97 (локальная подгонка, ранги 43-73)             +0.0052    выше пола
+    -0.990 (старое значение)                            +0.0051    выше пола
+
+The windows nearest our own rank are the shallowest on the board --- ranks 48-68 fit at $-0.58$,
+43-73 at $-0.97$ --- and those are the entrants a move of ours would actually have to pass.
+**So $+0.0031$ is a lower bound on the price of a place, not the price.** A gate set there is
+correct in the sense that nothing cheaper can buy a place, and it is below the 0.0036 macro floor,
+so the band $[0.0031, 0.0036]$ remains un-shippable by the floor alone and the band
+$[0.0036, 0.0052]$ is one place only if the causal slope is the right one to use locally. Nothing
+here licenses widening a pre-registered gate; it licenses not treating $+0.0031$ as a measured
+threshold when it is an extrapolation from one team's single move.
+
+**The standing rule survives intact and gains a clause.** Price in board places, compute the
+neighbourhood first, never quote the conversion from memory --- and now: **compare ranks only
+within one snapshot, because the field changes size between them.** Item 321 recorded the
+neighbourhood going stale by a factor of 45 in three days; item 322 recorded the conversion wrong
+by 1.64; this one records that the places themselves are not comparable across pulls.
+
+**324. A ridge on 600 frozen dimensions of somebody else's pretrained encoder beats every member we
+have and adds +0.0138 of macro rank to the shipped ensemble, sign 8/8 against a floor of 0.0036.
+Item 316's "a sixth member buys +0.0000 at any fitted weight" does not reproduce --- and item 316's
+own caveat said exactly why it might not.** Three agents, extraction and measurement and audit; the
+audit returned SHIP with seven defects and none fatal.
+
+**The deciding number, and it needs no slope.** Arm A is the shipped per-enzyme composition, arm D
+the same with the probe added as one more equally weighted member, both nested over the Butina folds
+on the cached `members_seed{0..7}.json`, scored after the per-fold affine pair:
+
+    арм                                     макро ранг      sd   знак
+    A  штатная композиция                       0.6417  0.0015      —
+    D  та же плюс проба равным весом            0.6556  0.0012    8/8
+    D - A                                      +0.0138  0.0006    8/8
+    то же в post-pair макро ST-RAE             -0.0197       —    8/8
+
+Per enzyme the gain is CYP2C9 +0.0283, CYP3A4 +0.0158, CYP1A2 +0.0104, CYP2D6 +0.0009 --- CYP2C9
+alone is half of it. **The ST-RAE figure is measured directly in the same runs, so pricing it takes
+no slope at all**, which matters because item 323 has just established that the slope rests on one
+before-and-after on one team. Read straight off the 25 September board, $0.5535 \to 0.5338$ is rank
+58 to 53: **five places**, with SVM and CYPNet among those passed.
+
+**The control that makes it a result about the ENCODER rather than about adding a member.** The same
+`RidgeCV`, the same carried-in alpha grid, fitted on our OWN DESC+MECH block instead of the
+embedding: **$-0.0151$, sign 0/4.** A sixth member of that shape is harmful. The architecture buys
+nothing and the frozen pretrained weights buy all of it.
+
+**Item 316 is refuted where it said it might be.** Its measurement --- a sixth member at ANY fitted
+weight giving exactly $+0.0000$, with a control confirming the grid reached $a>0$ and the chooser
+picked it --- does not hold for this candidate: a fitted weight gives $+0.0141$, sign 8/8, and the
+chooser picks $a>0$ in **158 of 160** (enzyme, fold, seed) cells with a mean chosen weight of 0.333.
+Item 316's own words were "this is about OUR library --- five learners over one feature matrix ---
+not about a library of architecturally distinct models". That caveat was right, and the library was
+the binding constraint rather than the combiner.
+
+**Item 289 is refuted too, and by the widest margin anything has managed on this library.** Its gate
+was a mean error-correlation below 0.93 AND competitive accuracy, and it recorded that no family
+reaches both. The probe's out-of-fold error correlates 0.868 to 0.900 against our five members
+individually and 0.905 against the shipped composition --- while our own members sit at 0.966 to
+0.982 against their own mean. And it is not the weak half of the trade: standalone it scores macro
+Spearman **0.6261**, above every member we have (GP 0.6219, поферментно 0.6057, ствол 0.5966, пул
+0.5928, гребневая 0.5787), and within 0.0156 of our entire five-member ensemble.
+
+**Why items 61, 117 and 154 did not already close this, which is the part worth carrying.** They
+closed frozen embeddings **as columns concatenated into the same learner**; this is a separate ridge
+head whose PREDICTION enters as a member. But the sharper difference is the checkpoint. Item 61
+deliberately chose the organisers' `rdkit2d` encoder **because** it is pretrained on the very
+descriptors our DESC block contains --- the encoder's best case as a SUBSTITUTE for those columns,
+and its worst possible case as a DECORRELATED member. This one is pretrained on CYP and ADME
+activity. The same experiment, run with the checkpoint chosen to maximise overlap with what we
+already had, was guaranteed to find nothing.
+
+**Where it came from, and it is not ours.** JacksonBurns gained rank on 24 September and their
+committed nested ablation isolates 75--80 per cent of it to two such probes. The checkpoints are not
+theirs either: they are committed as plain files in a third open entrant's public repository
+(`jeremycheminf/openadmet_scripts`), `adme_pretrain` D-MPNNs. We extracted from `chemprop_medium.pt`
+only --- 7.7 MB, sha256 `b8137a0d...` --- because the larger checkpoint's residuals correlate 0.91
+with it on two enzymes.
+
+**Extraction controls, because an embedding is the easiest thing in this project to get silently
+wrong.** Identical SMILES twice give identical rows at $0.0$, paired with different molecules giving
+$9.6\times10^{-2}$ --- without that partner an all-zero array would pass the first test perfectly.
+Order was proven rather than assumed: 1024 molecules re-embedded in a random permutation reproduce
+the unpermuted rows permuted, at exactly $0.0$, and `drop_last=False` is passed explicitly because
+the competitor's own notes record chemprop silently dropping a size-1 remainder batch and desyncing
+every index-aligned array. The route also differed from what was expected: their code calls
+`model.fingerprint`, not `agg(message_passing(...))`, and the two coincide only when `bn` is
+Identity --- it is for this checkpoint, verified at $0.0$ on 512 molecules, and must be re-checked
+if the other one is ever used.
+
+**Pins intact, checked with a control that could fail.** sklearn 1.3.2 before and after, split digest
+`2d93c19815e14261` unchanged, 44 tests passing. chemprop 2.3.1 and torch live only in a scratchpad
+environment: `find_spec('chemprop')` returns None in ours, paired with `find_spec('sklearn')`
+returning a spec so that the None is a real negative and not a broken query.
+
+**The open risk, stated as open.** The checkpoint's pretraining corpus is described by a third party
+as public ChEMBL/TDC/Polaris plus "a public Novartis-surrogate CYP panel", and we cannot verify that.
+The rules permit external data and pretrained models explicitly, with disclosure required only for
+proprietary data. The exposure is indirect --- frozen weights, not labels or rows --- and item 319's
+channel is a different one and stays closed. **The check item 61 was able to run, counting overlap
+with the blind test, is not available here**, because running it would require looking the 750 up
+externally, which is the standing ban. This is not resolvable from inside the challenge and is
+recorded rather than argued away.
+
+**Four defects the audit raised that are worth carrying.** The alpha grid was tuned by the
+competitor for 600 standardised embedding columns and reused unchanged on 247 DESC+MECH columns, so
+part of the $-0.0151$ discriminating control could be mis-specified shrinkage rather than redundant
+information. On CYP2D6 the chosen alpha sits on the grid's top edge --- boundary-constrained rather
+than chosen --- and CYP2D6 is precisely the enzyme reporting no ensemble gain. The 750 blind-test
+vectors are stored under the array key `train` in their own file, harmless today and a trap for the
+first consumer that keys by name. And the alignment check compares names against an array that was
+written by copying those same names: it catches a stale file but cannot catch a reordering inside
+the encoder, which is why the permutation control above is the one that carries the claim.
+
+**325. Pre-registered before the upload. The probe candidate ships, and for the first time the rule
+is not "rank must not move" but "rank must move, by roughly the amount measured out of fold".**
+Every candidate this project has placed on the board since item 308 was a monotone re-placement of
+one prediction vector, so Spearman was pinned by construction and rule 1 could only ever confirm
+that nothing had gone wrong. This one changes the vector, and the measured Spearman against the file
+on the board is 0.9851--0.9947 rather than 1.0.
+
+    отгружается   results/submission/activity_submission_cand324probe.csv
+    sha256        d9b111caae61446748cee7da55ec08cf89c71d3534881a206cb1b9596b90ee19
+    состав        штатная пятичленная композиция ПЛЮС ридж-проба шестым членом, равный вес
+    постановка    mu 4.390 / 4.851 / 3.400 / 4.815 (как в пункте 320, без изменений)
+                  b   1.786418 / 1.201880 / 1.938055 / 1.152345  --- ПЕРЕВЫВЕДЕН
+
+**The b values are re-derived, and that is not bookkeeping.** `mu` is an absolute target mean and
+transfers between vectors; `b` multiplies the spread of whatever vector it is given. The sixth member
+narrowed the raw vector on three enzymes and widened it on CYP1A2, so `b` had to move in both
+directions --- $\times0.960$ on CYP1A2 to $\times1.066$ on CYP2D6. **Reusing item 320's constants
+would have placed CYP2D6 six per cent too narrow and CYP1A2 four per cent too wide.** Verified: the
+achieved sd matches the board file's to $2\times10^{-7}$ on every enzyme and the achieved means are
+exact.
+
+    правило 1  РАНГ ДОЛЖЕН ВЫРАСТИ. Макро Spearman строго выше 0.6935.
+               Это впервые не тавтология: прежде b > 0 делало ро неподвижной по построению.
+    правило 2  ВЕЛИЧИНА РАНГА. Макро Spearman внутри [0.6995, 0.7150] --- то есть измеренные
+               вневыборочно +0.0138 с полосой от половины до полутора.
+    правило 3  МЕТРИКА. Макро MA-ST-RAE строго ниже 0.5535.
+    предсказание  макро ро 0.7073, макро ST-RAE 0.5370, место 53 из 219 (+5).
+
+**What the prediction rests on, measured rather than modelled.** Arm D minus arm A over eight seeds,
+nested, after the per-fold affine pair: $+0.0138$ of macro rank at sd 0.0006, sign 8/8, and
+$-0.0197$ of post-pair macro ST-RAE in the same runs. Under the pair that actually SHIPS
+(`fit_shrinkage`, one pair per enzyme rather than per fold) the ST-RAE delta re-measures at
+$-0.0200$ over four seeds, sign 4/4, and in the fixed-placement configuration this candidate
+actually ships in it is $-0.0165$. **All three land on rank 53.** No slope is used anywhere in this
+pre-registration --- item 323 established that the slope rests on a single before-and-after --- so
+the price is read by counting entries off the committed board.
+
+**The revert rule, and this time it is executable.** Revert to
+`activity_submission_cand2d6xc.csv` if the next snapshot's macro MA-ST-RAE is not strictly below
+0.5535, or if macro Spearman fails to rise. The final deadline is 3 November and the twelve-hour
+window has been open since 13:49 UTC, so unlike item 320 there is room to act on a bad result. The
+board scores in minutes (item 320), so the verdict is available about half an hour after upload.
+
+**The sharpest thing that could go wrong, stated now rather than after.** The out-of-fold gain was
+measured on Butina-clustered folds over our own 4905 compounds; the submission refits on all rows
+and predicts an analog-expanded blind half. Item 316 measured our board rank running 0.0518 ABOVE
+our cross-validation, so rank gains have transferred at face value or better --- but that was for
+compositions, not for a member carrying a foreign encoder's prior. **If the probe's advantage is
+partly memorised CYP activity rather than transferable representation, the blind half is exactly
+where it would fail**, and rule 2's lower bound is what catches it.
+
+**And the risk that cannot be retired from inside the challenge.** The encoder's pretraining corpus
+is described by a third party as public ChEMBL/TDC/Polaris plus a "public Novartis-surrogate CYP
+panel", which we cannot verify. The rules permit external data and pretrained models explicitly,
+with disclosure required only for proprietary data. The exposure is indirect --- frozen weights, not
+labels or rows. **The overlap check item 61 was able to run is unavailable here**, because running
+it would require looking the 750 blind compounds up externally, which is the standing ban. This is
+recorded as an open risk on a file we are choosing to ship, not argued away.
+
+**326. Under default flags `src/submit.py` computed the out-of-fold member table TWICE, and the
+second pass reproduced the first bit for bit. Deleting it leaves all 3000 submitted predictions
+byte-identical and saves 943 s --- about a ninth of the run, and roughly a third of what the
+proposal assumed. The claim that this pass was unavoidable was in the document, in `METHOD.md` and
+in item 204, and all three are corrected here.**
+`main()` built the members once inside `if a.shrink:`, through `oof_parts` (which is `oof_members`
+and then `dz_pass`), and once more inside `if a.deadzone:`, where it drew a SECOND `butina_folds`
+and called `oof_members` again to clip the dead-zone targets out of it. The duplication is younger
+than either flag: it began on 6 September, when item 252 made `--shrink` the default. Before that
+the shrinkage pass did not run and the dead-zone pass was the only one --- so the second call was
+not a duplicate but the whole computation, which is why nobody put it there by mistake and why it
+survived three weeks of runs.
+
+**Why the second pass could not have differed, established before anything was built.** Both draws
+were `butina_folds` over the same `rows.SMILES`, and `cluster_ids` is a pure function of the SMILES
+while `butina_folds` builds a fresh generator per call, so they cannot disagree by construction
+rather than by luck. Every member below them is deterministic: the boosted members carry
+`random_state=0` in their kwargs (`DZ_KW`, and the `PLAIN` dict the pooled member builds), the GP
+and `RidgeCV` are closed-form, and `_oof_trunk` reads `results/preds/trunk_twohead.json` off disk
+rather than training. No fitted member caches anything.
+
+    что                                    значение
+    fold и dzfold                          совпали поэлементно
+    дайджест                               2d93c19815e14261, 4703 кластера
+    КОНТРОЛЬ seed=1                        расходится в 3957 строках из 4905
+
+The control is the half that matters: a comparison of two fold vectors that cannot come out
+"different" is not evidence that they are the same.
+
+**The change.** `oof_parts` gained an optional `raw_out` list, which receives the members as they
+stood BEFORE `dz_pass`; `oof_predictions` forwards it; `main()` clips those. The old pass survives
+as the `--no-shrink` fallback, which is not hypothetical --- `results/submission/
+prev_2026-09-06-noshrink` was built with that flag. The `ствол` member is still skipped when targets
+are built, which the run's own log reports as four targets from five members.
+
+**Bit-identity, verified on the shipped configuration.** One full `src/submit.py --probe
+--no-bundle` against the run of item 325, same flags, scratch outdir. The agreement is BYTE-level,
+not merely numeric: `md5` of the no-probe twin from both runs and of the shipped
+`results/submission/activity_submission.csv` is `e02f27e91d86aae5e05f87f545185523`. (The hash is
+admissible here, unlike in item 320's provenance note, because both files are written by the same
+code path rather than compared across a pandas re-serialisation.)
+
+    сверка                                      требование     факт
+    рука с зондом: после == до                  побитово       md5 9910653c..., 750/750 ×4
+    близнец без зонда == поданный файл          побитово       md5 e02f27e9..., 750/750 ×4
+    КОНТРОЛЬ: зонд != близнец внутри прогона    различаться    0/750 совпадений ×4
+
+Without the third row the first two are not conclusive: a change that collapsed both arms onto one
+vector would also reproduce a file.
+
+**The cost, and the error I made stating it --- which is item 322's defect in a new costume.** The
+two run totals are 16529 s before and 7292 s after, and I reported that difference as a 55.9 per
+cent saving before measuring anything. Then I timed the deleted call alone: **943 s**, about a ninth
+of the run it sat in. The difference of totals is 9.8 times the removed work and is not a
+measurement of this change at all --- the runs were nine hours apart under uncontrolled load, and
+the earlier one was made from a working tree with its own uncommitted `src/submit.py` and different
+untracked files, so it is not a runtime control in any case. There I took a partial derivative for
+a total one; here I took a difference of totals for the value of a part. **A saving is measurable
+only by timing the thing removed.**
+
+    величина                                        значение
+    убранный вызов, замерен отдельно                943 с (15.7 мин)
+    доля прогона после правки (7292 с)              ≈12.9%
+    разность тоталов до/после                       9237 с --- 9.8× убранного, не принадлежит правке
+
+The premise this started from --- that the duplication cost about a third of the run --- was wrong
+by about that same factor of three, and «удваивает» could never have been right structurally: the
+same run also does the other `oof_members`, a `dz_pass` refit across four members, the probe ridge,
+and the full-sample fit plus test prediction.
+
+**Three claims outside the code said the pass was unavoidable, and the strongest was in the
+product.** `docs/tex/s08.tex`, `\subsection{Чего это стоит}`, read «она удваивает стоимость сборки
+подачи, потому что мишень требует полного прохода вне фолда поверх обычного счёта, и обойти это
+нельзя», and the committed PDF carried it verbatim. Of its three assertions exactly one survives:
+the target must still come from out-of-fold predictions, for the reason the preceding subsection
+gives. «Поверх обычного счёта» and «обойти это нельзя» are now false. The source is corrected, the
+PDF rebuilt, `METHOD.md`'s matching sentence rewritten, and **item 204's bullet "The test path needs
+its own full out-of-fold pass, and there is no way around it" is WITHDRAWN** --- kept in place as
+the record, like item 68, but it no longer describes the code. The `--no-deadzone` help string and
+four runtime figures quoting a 161-to-230-minute run are corrected in the same commit.
+
+**What the change buys that is not minutes, and is probably worth more.** It removes a second
+independent `butina_folds` draw whose agreement with the first was load-bearing and unchecked.
+Nothing passes a seed to either call today; on the day something does, the dead-zone targets would
+be built from a different split, every number would move, and the run would finish cleanly. That is
+the silent-failure shape this file exists to catch, and it is now unreachable because there is only
+one draw.
+
+**Three defects in my own change, found by the review rather than by me, and one of them in the
+guard against the others.** (1) `oof_parts`' new docstring promised that `raw_out` is not aliased by
+the return value. False for `ствол`: `dz_pass` appends that member by reference. It is harmless only
+because the target loop skips it --- not because nothing writes to it --- and the docstring now says
+so. (2) The test asserting non-aliasing could not fail, because its `dz_pass` stub allocated for
+every member including the trunk, giving the code a property the real function lacks; the stub now
+mirrors `dz_pass` exactly, and the sharing of `ствол` is asserted rather than hidden. (3) **The
+payload was pinned by nothing: reverting the whole change passed all 53 tests.** The first attempt
+to fix that was itself blind --- it asserted that `main()` calls `oof_members` once, which was
+already true before the change, since the first pass went through `oof_parts`. What discriminates is
+WHERE the surviving call sits, and `tests/test_dz_targets_reuse.py` now reads the AST of
+`src/submit.py` and requires every direct call to be reachable only when `raw_members` is empty.
+Verified the way this file requires: the assertion FAILS on `git show HEAD:src/submit.py` and passes
+on the current one. Suite 49 -> 56.
+
+**One process note worth more than the item.** The "before" runtime was not measured by re-running
+anything. `submeta` writes `время_прогона` into the provenance of every build, and item 325's run
+had left it in a scratch directory --- 16529 s, recovered in one command instead of a 4.6-hour
+rerun. Then it turned out to be the wrong number to use. Both halves are the same lesson: the log
+answers faster than the machine, and an answer that arrives fast still has to be the answer to the
+question asked.
+
+**What this item does NOT claim.** No metric moved, so no noise floor applies and nothing enters the
+scoreboard. The entire result is that 3000 predictions are unchanged to the byte and a submission
+build is 943 s shorter.

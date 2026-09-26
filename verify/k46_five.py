@@ -16,7 +16,8 @@ running.
 
 Refitting the trunk against the reprojected band would mean re-running `src/trunk.py` on torch,
 which is an hour and a different environment. It is not needed to answer the question asked. Both
-`src/submit.py` (line 230) and `src/abldzens.py` combine members by an **unweighted mean**, so
+`src/submit.py` (`_combine`) and `src/abldzens.py` (the `arms` selectors, averaged in `main`)
+combine members by an **unweighted mean**, so
 
     пять = (4 * четыре + ствол) / 5
 
@@ -113,7 +114,7 @@ def main():
                     if len(a4) != int(m.sum()):
                         ok = False
                         break
-                    # Ансамбль --- невзвешенное среднее членов (submit.py:230),
+                    # Ансамбль --- невзвешенное среднее членов (submit.py, _combine),
                     # поэтому пятичленный собирается из четырёхчленного точно.
                     #
                     # Обрезка ствола диапазоном меток фермента плюс-минус две единицы ---

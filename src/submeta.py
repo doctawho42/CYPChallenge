@@ -5,7 +5,7 @@ repository: it says of itself that it is assembled programmatically, and nothing
 assemble it. A rerun therefore produced the expensive artefact and no account of it.
 
 `build` is a pure function of what the run knows, so the record can be tested without a
-161-to-230-minute rerun; `write` is the thin wrapper src/submit.py calls once the
+long rerun (161 to 230 minutes before item 326 removed 943 s of it, unmeasured since); `write` is the thin wrapper src/submit.py calls once the
 organisers' validators have accepted both files.
 
 Three keys of the hand-written record are not reproduced, because no run can know them: the
