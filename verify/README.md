@@ -14462,3 +14462,72 @@ question asked.
 **What this item does NOT claim.** No metric moved, so no noise floor applies and nothing enters the
 scoreboard. The entire result is that 3000 predictions are unchanged to the byte and a submission
 build is 943 s shorter.
+
+**327. All three of item 325's pre-registered rules held. The first time this project required rank
+to MOVE, it moved --- and the out-of-fold gain transferred at 0.92, far above the 0.52 and 0.437 of
+items 314 and 317. But the move is smaller than half the board's own resample band, so the reading
+is evidence only because it was written down first.** `verify/k108_prereg325.py` (new), snapshot
+`results/leaderboard_2026-09-26T0727Z.json`. The upload landed 2026-09-25 17:33 UTC, which is the
+stamp the rules were written for; the scorer refuses a pre-upload board and warns on a later one.
+
+    правило                         порог                      факт            
+    1 РАНГ ДОЛЖЕН ВЫРАСТИ           макро ро > 0.6935           0.7062   выполнилось
+    2 ВЕЛИЧИНА РАНГА                внутри [0.6995, 0.7150]     0.7062   выполнилось
+    3 МЕТРИКА                       макро MA-ST-RAE < 0.5535    0.5381   выполнилось
+
+    величина            предсказано      факт     промах
+    макро ро                 0.7073    0.7062    -0.0011
+    макро ST-RAE             0.5370    0.5381    +0.0011
+
+**The whole rank move belongs to the sixth member, by construction rather than by attribution.**
+`b` was re-derived for the new vector (item 325), and an affine map with $b > 0$ preserves Spearman
+*identically* --- item 320's rule 1 measured exactly that at $+0.0000$ on all four enzymes. So the
+placement cannot have contributed any of the $+0.0127$; the ridge head on the frozen encoder
+contributed all of it. Against the out-of-fold $+0.0138$ that is a realisation of **0.92**, where
+item 314 got 0.52 and item 317's class of change 0.437.
+
+**The caveat that outweighs the verdict, and it is arithmetic rather than modesty.** Item 294
+measured the macro rank band on the live half: half-width **0.0270 at $n = 375$**. The observed move
+is $+0.0127$ --- less than half of it. **One board reading cannot establish this gain.** Two things
+make it evidence anyway, and neither is the reading: the prediction was registered before the
+upload, directionally AND with a two-sided interval that a null result would have missed on the low
+side; and the out-of-fold measurement behind it is sign 8/8 over eight seeds at sd 0.0006, which is
+a different kind of statement from one draw.
+
+**One honest qualification of that caveat, in our favour, which cannot be cashed.** Item 294's band
+is for an *absolute* score at $n = 375$. Our comparison is *paired* --- the same 375 compounds under
+two submissions --- and a paired band is narrower, possibly much narrower. But **no paired band has
+been measured**, so the unpaired one is the only number available and it must be quoted as is.
+Computing the paired band is the obvious next apparatus item, and it is cheap: the two prediction
+vectors are both on disk.
+
+**The place, decomposed inside one snapshot, because the field grew.** 58 of 219 before, 53 of 227
+now. The difference of those two numbers is not a measurement --- item 323's defect exactly --- so
+our previous macro of 0.5535 was re-ranked inside the CURRENT field:
+
+    было                             58 из 219   (макро 0.5535)
+    стало                            53 из 227   (макро 0.5381)
+    наш прежний макро в ЭТОМ поле    57 из 227
+    -> наших мест +4, дрейф поля +1              (предсказано 53 из 219)
+
+The predicted place, 53rd, came out exactly right. That is partly luck: the prediction was made
+against a 219-entry field and scored against a 227-entry one, and the two errors happened to cancel.
+
+**The sharpest risk item 325 stated did not materialise as a failure.** It said that if the probe's
+advantage were partly memorised CYP activity rather than transferable representation, the blind half
+is exactly where it would fail, and rule 2's lower bound is what catches it. Rule 2 held with the
+observation near the middle of its interval. That is evidence against the memorisation worry, not
+proof of its absence: the encoder's pretraining corpus is still described only by a third party and
+the overlap check of item 61 remains unrunnable, because running it would mean looking the 750 blind
+compounds up externally. **The revert rule does not fire** --- rank rose and the metric is strictly
+below 0.5535 --- so the probe candidate stands as the shipped regression entry.
+
+**Two defects found in the scoring, both of the same family: an instrument that keeps printing after
+its question has changed.** (1) Running `verify/k104_prereg320.py` against this file reports "rule 1
+FAILED" and an implied band multiplier of $0.78\times$. The first is by design, since item 320
+required an unmoved rank and item 325 requires the opposite; the second is now **contaminated** ---
+CYP2D6's cell carries the placement AND the probe, so attributing its value to band width alone is
+no longer valid. A scorer aimed at a superseded submission prints numbers that look right and
+measure nothing. (2) `n_scored` in that file counted board ROWS and returned 227, which reads as a
+compound count in a file where $n = 375$ is compounds; renamed `n_entrants`, and `k108` imports it
+rather than counting the field a second time.
