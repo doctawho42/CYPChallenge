@@ -641,15 +641,30 @@ def dz_pass(parts, X, mask, fold, bands):
     return out
 
 
-def oof_parts(X, y, mask, fold, mode, scr=None, bands=None):
+def oof_parts(X, y, mask, fold, mode, scr=None, bands=None, raw_out=None):
     """The member-level out-of-fold predictions that oof_predictions averages.
 
     Split out of oof_predictions rather than duplicated into the caller: --probe needs the
     members themselves (it has to form the mean twice, with and without the sixth member,
     from ONE pass) and a second copy of these two lines is exactly the drift CLAUDE.md
     warns about -- the dead-zone pass would have two definitions the day one of them moves.
+
+    `raw_out`, when a list is passed, receives the members as they stood BEFORE dz_pass.
+    main() builds the dead-zone targets by clipping exactly those, and used to recompute
+    them with a second full out-of-fold pass over folds equal element for element to
+    these -- item 326.
+
+    On aliasing, stated exactly rather than reassuringly: for every member dz_pass passes
+    through it (`t = np.clip(...)`, then `_dz_oof`), what lands in `raw_out` is a separate
+    array from what is returned. For "ствол" it is NOT -- dz_pass appends that member by
+    reference, so the two share it. That is harmless here for one reason only, and the
+    reason is not that nothing writes to it: main()'s target loop SKIPS "ствол", so the
+    shared array is never clipped, and nothing else mutates members in place. A future
+    caller that wants the trunk out of `raw_out` must copy it.
     """
     parts = oof_members(X, y, mask, fold, mode, scr, dead=bands is not None)
+    if raw_out is not None:
+        raw_out.append(parts)
     if bands is not None:
         parts = dz_pass(parts, X, mask, fold, bands)
     return parts
@@ -673,7 +688,8 @@ def _combine(parts, e, extra=None):
     return np.mean(ms, axis=0)
 
 
-def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None, extra=None):
+def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None, extra=None,
+                    raw_out=None):
     """Предсказания вне фолда в одном из трёх режимов.
 
     Ансамбль --- среднее двух базовых. Он выигрывает больше каждой из них: -0.0234 макро
@@ -691,7 +707,7 @@ def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None, extra=None):
         # Bound OUTSIDE the comprehension. Inside it, oof_parts ran once per enzyme --- four
         # full out-of-fold passes instead of one, four times the runtime, and the trunk member
         # read four times over. tests/test_trunk_member.py caught it by counting the calls.
-        parts = oof_parts(X, y, mask, fold, mode, scr, bands)
+        parts = oof_parts(X, y, mask, fold, mode, scr, bands, raw_out)
         return [_combine(parts, e, extra) for e in range(len(CYPS))]
 
 
@@ -1027,7 +1043,8 @@ def _provenance(a, argv, lams, fold, clusters, cls, verdicts, paths, elapsed_s):
     """What submeta.build needs, taken from what main() holds once the gate has passed.
 
     Kept out of main() so tests/test_submission_meta.py can exercise it in milliseconds: it
-    runs at the end of a 161-to-230-minute run, where a slip would cost that run's record.
+    runs at the end of a long run --- 161 to 230 minutes before item 326 removed 943 s of it,
+    and unmeasured since --- where a slip would cost that run's record.
     """
     return dict(paths=paths, argv=list(argv), mode=a.mode, solo=SOLO, cyps=CYPS,
                 deadzone=a.deadzone, bundle=a.bundle, delta=a.delta, lams=lams,
@@ -1083,9 +1100,11 @@ def main():
                     help="ОТКЛЮЧИТЬ проход мёртвой зоны. По умолчанию он ВКЛЮЧЁН. Пункт 164: "
                          "+0.0167 ранга на подаваемой пятичленной конфигурации, четыре сида. "
                          "Мишень --- clip(предсказание ВНЕ ФОЛДА, lo, hi), модель та же, у "
-                         "бустингов под absolute_error. Стоит одного полного прохода вне фолда "
-                         "поверх обычного счёта, потому что мишень нельзя строить из "
-                         "предсказаний на собственных обучающих строках. Умолчание "
+                         "бустингов под absolute_error. Мишень строится ВНЕ ФОЛДА, потому что "
+                         "её нельзя строить из предсказаний на собственных обучающих строках; "
+                         "но отдельного прохода это больше не стоит --- с пункта 326 берутся "
+                         "члены, уже посчитанные при подборе усадки, а запасной проход остаётся "
+                         "только для --no-shrink. Умолчание "
                          "переключено на основании пункта 204: verify/k58_dzsubmit.py "
                          "воспроизвёл пункт 164 кодом самой подачи --- +0.0136 ранга и "
                          "-0.0158 пары на сиде 0, все четыре фермента вверх.")
@@ -1176,6 +1195,14 @@ def main():
 
     lams = lams_base = None
     fold = clusters = None
+    # The members as they stood BEFORE the dead-zone pass, if the shrinkage pass ran and
+    # so computed them. The dead-zone block below clips these instead of recomputing them
+    # (item 326), and falls back to its own pass when this stays empty. Two things leave it
+    # empty: --no-shrink, which has shipped a submission (results/submission/
+    # prev_2026-09-06-noshrink), and a --mode for which oof_predictions has no branch and
+    # returns None -- those modes already die in fit_shrinkage a line later, so the fallback
+    # is unreachable for them, but it is correct rather than accidental.
+    raw_members = []
     if a.shrink:
         print("подбираю усадку вне выборки на обучающих данных", flush=True)
         fold, clusters = butina_folds(list(rows.SMILES))
@@ -1192,7 +1219,7 @@ def main():
             # need their own -- and refitting from the SAME `parts` is what makes the twin a
             # control rather than a second, differently-seeded run.
             parts_oof = oof_parts(X, y, mask, fold, a.mode, scr,
-                                  (LO, HI) if a.deadzone else None)
+                                  (LO, HI) if a.deadzone else None, raw_members)
             probe_oof, oa, on = _oof_probe(Eprobe, y, mask, fold)
             probe_meta["alphas_вне_фолда"] = oa
             probe_meta["живых_колонок_вне_фолда"] = on
@@ -1206,7 +1233,7 @@ def main():
             lams = fit_shrinkage(P, y, mask, d)
         else:
             P = oof_predictions(X, y, mask, fold, a.mode, scr,
-                                (LO, HI) if a.deadzone else None)
+                                (LO, HI) if a.deadzone else None, raw_out=raw_members)
             lams = fit_shrinkage(P, y, mask, d)
 
     dz_targets = None
@@ -1214,12 +1241,39 @@ def main():
         # Мишень тестового пути строится из предсказаний ВНЕ ФОЛДА на обучающих строках.
         # Иначе схема вырождается: модель, спрошенная про свои же обучающие строки, кладёт
         # их внутрь полос, мишень совпадает с предсказанием, переподгонка ничего не меняет,
-        # и прогон отрабатывает чисто (докстринг src/abldead.py). Это отдельный полный
-        # проход вне фолда, и он стоит примерно столько же, сколько всё остальное вместе.
-        print("проход вне фолда для мишеней мёртвой зоны", flush=True)
-        dzfold, _ = butina_folds(list(rows.SMILES))
+        # и прогон отрабатывает чисто (докстринг src/abldead.py).
+        #
+        # It used to be a SECOND full out-of-fold pass. It no longer is: the folds it drew
+        # were `butina_folds` on the same SMILES the shrinkage pass had already used, equal
+        # element for element (digest 2d93c19815e14261, 4703 clusters, against a seed=1
+        # control that differs in 3957 of 4905 rows), and every member below it is
+        # deterministic -- so its output was, bit for bit, the members the shrinkage pass
+        # had already computed before dz_pass. Item 326. What is clipped here is therefore
+        # the same array, not an equal one.
+        #
+        # What it cost, measured by timing the deleted call rather than by differencing two
+        # run totals: 943 s, about a ninth of the run it sat in. It was NOT "as much as
+        # everything else" -- the same run also does the other oof_members, a dz_pass refit
+        # across four members, and the full-sample fit plus test prediction. The two
+        # --probe --no-bundle totals (16529 s before, 7292 s after) differ by 9237 s, 9.8
+        # times the removed work; that difference is not a measurement of this change, the
+        # runs being nine hours apart under uncontrolled load and from working trees that
+        # differed in their untracked files.
+        if raw_members:
+            # SystemExit, not assert: every other invariant in this file raises, and
+            # python -O would strip an assert out of the one place that proves the
+            # shrinkage pass ran exactly once.
+            if len(raw_members) != 1:
+                raise SystemExit(f"проходов вне фолда должно быть ровно один, "
+                                 f"их {len(raw_members)}")
+            base_members = raw_members[0]
+            print("мишени мёртвой зоны: беру уже посчитанный проход вне фолда", flush=True)
+        else:
+            print("проход вне фолда для мишеней мёртвой зоны", flush=True)
+            dzfold, _ = butina_folds(list(rows.SMILES))
+            base_members = oof_members(X, y, mask, dzfold, a.mode, scr, dead=True)
         dz_targets = []
-        for kind, P in oof_members(X, y, mask, dzfold, a.mode, scr, dead=True):
+        for kind, P in base_members:
             if kind == "ствол":
                 continue
             dz_targets.append((kind, [np.clip(P[e], LO[mask[:, e], e], HI[mask[:, e], e])

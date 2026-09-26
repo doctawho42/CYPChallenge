@@ -14348,3 +14348,117 @@ with disclosure required only for proprietary data. The exposure is indirect ---
 labels or rows. **The overlap check item 61 was able to run is unavailable here**, because running
 it would require looking the 750 blind compounds up externally, which is the standing ban. This is
 recorded as an open risk on a file we are choosing to ship, not argued away.
+
+**326. Under default flags `src/submit.py` computed the out-of-fold member table TWICE, and the
+second pass reproduced the first bit for bit. Deleting it leaves all 3000 submitted predictions
+byte-identical and saves 943 s --- about a ninth of the run, and roughly a third of what the
+proposal assumed. The claim that this pass was unavoidable was in the document, in `METHOD.md` and
+in item 204, and all three are corrected here.**
+`main()` built the members once inside `if a.shrink:`, through `oof_parts` (which is `oof_members`
+and then `dz_pass`), and once more inside `if a.deadzone:`, where it drew a SECOND `butina_folds`
+and called `oof_members` again to clip the dead-zone targets out of it. The duplication is younger
+than either flag: it began on 6 September, when item 252 made `--shrink` the default. Before that
+the shrinkage pass did not run and the dead-zone pass was the only one --- so the second call was
+not a duplicate but the whole computation, which is why nobody put it there by mistake and why it
+survived three weeks of runs.
+
+**Why the second pass could not have differed, established before anything was built.** Both draws
+were `butina_folds` over the same `rows.SMILES`, and `cluster_ids` is a pure function of the SMILES
+while `butina_folds` builds a fresh generator per call, so they cannot disagree by construction
+rather than by luck. Every member below them is deterministic: the boosted members carry
+`random_state=0` in their kwargs (`DZ_KW`, and the `PLAIN` dict the pooled member builds), the GP
+and `RidgeCV` are closed-form, and `_oof_trunk` reads `results/preds/trunk_twohead.json` off disk
+rather than training. No fitted member caches anything.
+
+    что                                    значение
+    fold и dzfold                          совпали поэлементно
+    дайджест                               2d93c19815e14261, 4703 кластера
+    КОНТРОЛЬ seed=1                        расходится в 3957 строках из 4905
+
+The control is the half that matters: a comparison of two fold vectors that cannot come out
+"different" is not evidence that they are the same.
+
+**The change.** `oof_parts` gained an optional `raw_out` list, which receives the members as they
+stood BEFORE `dz_pass`; `oof_predictions` forwards it; `main()` clips those. The old pass survives
+as the `--no-shrink` fallback, which is not hypothetical --- `results/submission/
+prev_2026-09-06-noshrink` was built with that flag. The `ствол` member is still skipped when targets
+are built, which the run's own log reports as four targets from five members.
+
+**Bit-identity, verified on the shipped configuration.** One full `src/submit.py --probe
+--no-bundle` against the run of item 325, same flags, scratch outdir. The agreement is BYTE-level,
+not merely numeric: `md5` of the no-probe twin from both runs and of the shipped
+`results/submission/activity_submission.csv` is `e02f27e91d86aae5e05f87f545185523`. (The hash is
+admissible here, unlike in item 320's provenance note, because both files are written by the same
+code path rather than compared across a pandas re-serialisation.)
+
+    сверка                                      требование     факт
+    рука с зондом: после == до                  побитово       md5 9910653c..., 750/750 ×4
+    близнец без зонда == поданный файл          побитово       md5 e02f27e9..., 750/750 ×4
+    КОНТРОЛЬ: зонд != близнец внутри прогона    различаться    0/750 совпадений ×4
+
+Without the third row the first two are not conclusive: a change that collapsed both arms onto one
+vector would also reproduce a file.
+
+**The cost, and the error I made stating it --- which is item 322's defect in a new costume.** The
+two run totals are 16529 s before and 7292 s after, and I reported that difference as a 55.9 per
+cent saving before measuring anything. Then I timed the deleted call alone: **943 s**, about a ninth
+of the run it sat in. The difference of totals is 9.8 times the removed work and is not a
+measurement of this change at all --- the runs were nine hours apart under uncontrolled load, and
+the earlier one was made from a working tree with its own uncommitted `src/submit.py` and different
+untracked files, so it is not a runtime control in any case. There I took a partial derivative for
+a total one; here I took a difference of totals for the value of a part. **A saving is measurable
+only by timing the thing removed.**
+
+    величина                                        значение
+    убранный вызов, замерен отдельно                943 с (15.7 мин)
+    доля прогона после правки (7292 с)              ≈12.9%
+    разность тоталов до/после                       9237 с --- 9.8× убранного, не принадлежит правке
+
+The premise this started from --- that the duplication cost about a third of the run --- was wrong
+by about that same factor of three, and «удваивает» could never have been right structurally: the
+same run also does the other `oof_members`, a `dz_pass` refit across four members, the probe ridge,
+and the full-sample fit plus test prediction.
+
+**Three claims outside the code said the pass was unavoidable, and the strongest was in the
+product.** `docs/tex/s08.tex`, `\subsection{Чего это стоит}`, read «она удваивает стоимость сборки
+подачи, потому что мишень требует полного прохода вне фолда поверх обычного счёта, и обойти это
+нельзя», and the committed PDF carried it verbatim. Of its three assertions exactly one survives:
+the target must still come from out-of-fold predictions, for the reason the preceding subsection
+gives. «Поверх обычного счёта» and «обойти это нельзя» are now false. The source is corrected, the
+PDF rebuilt, `METHOD.md`'s matching sentence rewritten, and **item 204's bullet "The test path needs
+its own full out-of-fold pass, and there is no way around it" is WITHDRAWN** --- kept in place as
+the record, like item 68, but it no longer describes the code. The `--no-deadzone` help string and
+four runtime figures quoting a 161-to-230-minute run are corrected in the same commit.
+
+**What the change buys that is not minutes, and is probably worth more.** It removes a second
+independent `butina_folds` draw whose agreement with the first was load-bearing and unchecked.
+Nothing passes a seed to either call today; on the day something does, the dead-zone targets would
+be built from a different split, every number would move, and the run would finish cleanly. That is
+the silent-failure shape this file exists to catch, and it is now unreachable because there is only
+one draw.
+
+**Three defects in my own change, found by the review rather than by me, and one of them in the
+guard against the others.** (1) `oof_parts`' new docstring promised that `raw_out` is not aliased by
+the return value. False for `ствол`: `dz_pass` appends that member by reference. It is harmless only
+because the target loop skips it --- not because nothing writes to it --- and the docstring now says
+so. (2) The test asserting non-aliasing could not fail, because its `dz_pass` stub allocated for
+every member including the trunk, giving the code a property the real function lacks; the stub now
+mirrors `dz_pass` exactly, and the sharing of `ствол` is asserted rather than hidden. (3) **The
+payload was pinned by nothing: reverting the whole change passed all 53 tests.** The first attempt
+to fix that was itself blind --- it asserted that `main()` calls `oof_members` once, which was
+already true before the change, since the first pass went through `oof_parts`. What discriminates is
+WHERE the surviving call sits, and `tests/test_dz_targets_reuse.py` now reads the AST of
+`src/submit.py` and requires every direct call to be reachable only when `raw_members` is empty.
+Verified the way this file requires: the assertion FAILS on `git show HEAD:src/submit.py` and passes
+on the current one. Suite 49 -> 56.
+
+**One process note worth more than the item.** The "before" runtime was not measured by re-running
+anything. `submeta` writes `время_прогона` into the provenance of every build, and item 325's run
+had left it in a scratch directory --- 16529 s, recovered in one command instead of a 4.6-hour
+rerun. Then it turned out to be the wrong number to use. Both halves are the same lesson: the log
+answers faster than the machine, and an answer that arrives fast still has to be the answer to the
+question asked.
+
+**What this item does NOT claim.** No metric moved, so no noise floor applies and nothing enters the
+scoreboard. The entire result is that 3000 predictions are unchanged to the byte and a submission
+build is 943 s shorter.

@@ -10,7 +10,7 @@ alone and contributed nothing to the five-member ensemble, because it improved b
 the other members already fit. An ensemble pays for disagreement. So the question here is not how
 good the arm is but how *different* it is.
 
-Composition only, from saved predictions, in minutes: both `src/submit.py` (line 230) and
+Composition only, from saved predictions, in minutes: both `src/submit.py` (`_combine`) and
 `src/abldzens.py` combine members by an unweighted mean, so adding a member is exact arithmetic on
 what is already on disk.
 
