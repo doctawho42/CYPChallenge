@@ -142,7 +142,13 @@ def our_row(snap, ep):
     _sys.exit(4)
 
 
-def n_scored(snap, ep="partial_9"):
+def n_entrants(snap, ep="partial_9"):
+    """How many ENTRANTS the board lists, which is the field size a place is out of.
+
+    Named n_scored until item 327, where it returned 227 and was read as a compound count --
+    the live reveal scores 375 compounds (item 294 computes the rank band at that n), so a
+    function called n_scored returning the number of rows is a trap in this file's own units.
+    """
     return len([x for x in snap["boards"][ep]["data"] if len(x) > 1])
 
 
@@ -233,7 +239,7 @@ def verdict(snap):
         note = "  <- менялся" if c == "CYP2D6" else ""
         print("    %-8s %10.4f %11.4f %+11.4f%s" % (c, PRE[c]["ST-RAE"], rows[c]["ST-RAE"], d, note))
 
-    n = n_scored(snap)
+    n = n_entrants(snap)
     print(f"\n    место: было {PRE_MACRO['rank']} из {PRE_MACRO['of']}, "
           f"стало {m9['Rank']} из {n}  ({m9['Rank'] - PRE_MACRO['rank']:+d}, "
           f"предсказано {PRED_RANK})")
