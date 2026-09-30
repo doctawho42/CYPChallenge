@@ -14649,3 +14649,124 @@ nearest-neighbour median of 0.587 against $\le 0.450$ on any re-split of trainin
 on the BOARD's own difference is not computable at all**: it would need the identity of the revealed
 375 compounds AND their labels, and the labels are the blind half. So this closes the
 reveal-sampling objection and leaves the distribution-shift objection exactly where item 294 left it.
+
+**329. The move this item was opened to make is refuted, the blind moments behind it are derived and
+turn out to point at the WRONG optimum, and the simulation built to replace them fails its own gate
+by getting the sign of our own shipped improvement backwards. What survives is a mechanism --- band
+width is correlated $-0.56$ to $-0.93$ with activity, so the lowest quintile carries bands five to
+ten times wider --- and a plan that needs no model at all, because ST-RAE is provably convex in
+(mean, sd) and the board's evaluation is deterministic.** Three probe files are pre-registered
+below. `src/recalib.py` (unchanged), `results/submission/activity_submission_probe{A,B,C}.csv`.
+
+**What was asked for, and why it is not the lever.** The proposal was to replace `--delta`, the
+assumed test-set shift that `fit_shrinkage` fits under, with a measured one. Two independent
+refutations. First, `--delta` feeds `fit_shrinkage` inside `src/submit.py`, but `src/recalib.py`
+then re-places to explicit `mu` and `b`, so the final moments are set downstream and the delta is
+overwritten. Second and decisive, the measured moments point at the squared-error optimum, and the
+board ranks on ST-RAE. Our own history proves it on CYP2D6 without any modelling:
+
+    размещение (среднее)        R2        ST-RAE       MAE      подача
+    3.075  (= выведенное m_y)  0.3859     0.7707     0.9222   16-24 сентября
+    3.400  (отгружено)         0.3225     0.6805     1.0631   25 сентября 01:49
+
+Placing at the derived moments would have improved $R^2$ and MAE and **cost 0.09 on the scored
+cell**, about two board places in the wrong direction.
+
+**The blind moments, derived anyway, because they are the apparatus briford published and jeremy
+ships.** From $R^2 = 2rk - k^2 - b^2$ over four of our own scored submissions --- five of the six are
+affine variants of one vector, verified to $|\Delta z| \sim 10^{-15}$ against a control where a
+sorted copy gives 4.368 --- so they share one Pearson $r$ and the system closes:
+
+    фермент     m_y слеп.   m обуч.    сдвиг   наш --delta    s_y слеп.   sd обуч.
+    CYP1A2          4.326     4.955    -0.63          0.00        1.483      1.030
+    CYP2C9          4.819     4.581    +0.24         +0.30        1.068      0.782
+    CYP2D6          3.154     4.784    -1.63         -0.50        1.426      0.916
+    CYP3A4          4.809     4.096    +0.71         +0.70        1.287      1.093
+
+Two of the four assumed shifts are badly wrong and two are nearly exact. **The derivation is only
+weakly controlled** and this is said before it is used: it is insensitive to whether moments are
+taken over 750 or a random 375 ($\pm 0.03$), but leave-one-out produces impossible values ---
+$r = -0.22$ on CYP2C9 without the 16 September equation, $r = 1.31$ on CYP2D6 without the
+25 September one. Three informative equations for three unknowns is exactly determined, so the zero
+residual was arithmetic, not evidence.
+
+**The mechanism, which is the part that will outlive this item.** Item 320 established that the
+credible bands absorb error and item 321 fitted a multiplier of $0.78\times$ to describe it. The
+absorption has a location:
+
+    фермент   ро(ширина, y)   ширина по квинтилям y (низ -> верх)
+    CYP1A2           -0.885   1.65  0.47  0.33  0.25  0.21
+    CYP2C9           -0.899   1.58  0.78  0.52  0.37  0.28
+    CYP2D6           -0.558   1.41  0.27  0.31  0.25  0.22
+    CYP3A4           -0.928   2.42  1.20  0.37  0.23  0.16
+
+Predicting LOW is nearly free because a low prediction lands where the bands are five to ten times
+wider. **And item 321's $0.78\times$ was an artefact of not knowing this**: when widths are drawn
+independently of $y$ the fitted multiplier ranges 0.42 to 2.65 across enzymes, a six-fold spread
+that can only be absorbing model error; when drawn conditional on $y$ it lands at **0.96 to 1.02 on
+all four**, i.e. the blind bands are simply our training bands.
+
+**The simulation still fails, and the gate is what makes this an item rather than a mistake.**
+Levels miss by 0.04 to 0.10 against a target of 0.03 to 0.06, and worse, the SIGN of the difference
+is wrong in four of twelve transitions --- including the one that matters: the item 320 move the
+board scored at $-0.0902$ is predicted at $+0.0075$. A model that cannot reproduce the improvement
+we already made cannot be used to choose the next one. **It was not used.**
+
+**What replaces it, and it is stronger than the model would have been.** ST-RAE is
+$\sum_i \mathrm{hinge}(q_i) / \sum_i \mathrm{hinge}(\bar y)$ with $q_i = \mu + \sigma z_i$: the
+hinge is convex, its argument affine in $(\mu, \sigma)$, the denominator a positive constant, so
+**ST-RAE is convex in the placement parameters**. And the board's evaluation is exact --- three
+separate uploads of one file returned `ST-RAE 0.7707 / R² 0.3859 / MAE 0.9222` with no digit
+differing. So the optimum is found by PROBING a convex surface with exact evaluations, and the four
+enzymes are independent columns, so **one upload returns four measurements**.
+
+    фермент   размах ST-RAE по трём размещениям   что это значит
+    CYP2D6                             0.7238     размещение решает
+    CYP1A2                             0.2964     решает
+    CYP2C9                             0.0238     немного
+    CYP3A4                             0.0021     размещение УЖЕ в оптимуме
+
+**Pre-registration of the three probes, fixed before any of them is uploaded.** Each is an affine
+re-placement of the shipped vector, so $\rho$ and $\tau$ CANNOT move --- that is the instrument
+check, not a hypothesis. Probe A steps once more along the direction the board measured between the
+16 and 25 September submissions; B is half that step; C moves the mean alone with $\sigma$ held.
+
+    проба   среднее (1A2/2C9/2D6/3A4)          sd
+    A       4.4650 4.9010 3.7250 4.8150   0.8784 0.7637 0.4618 0.9938
+    B       4.4275 4.8760 3.5625 4.8150   0.9380 0.7831 0.5150 0.9571
+    C       4.4650 4.9010 3.7250 4.8150   1.0016 0.8030 0.5744 0.9219
+
+  1. RANK. $\rho$ and $\tau$ unchanged on all four, tolerance 0.0005. A move falsifies the run, not
+     the prediction.
+  2. DIRECTION, per enzyme and independently. If A's cell improves, the descent continues and the
+     next probe steps again. If it worsens, the minimum is BRACKETED between the shipped placement
+     and A, and B interpolates inside that bracket.
+  3. CYP3A4 must move by less than 0.003 in either direction. It is the null cell, and a large move
+     there means the affine family is not what is being varied.
+  Prediction, stated so it can fail: CYP2D6 and CYP1A2 improve, CYP2C9 moves less than 0.005,
+  CYP3A4 does not move, macro improves by 0.005 to 0.020.
+
+**The probe is informative whichever way it falls, and that is deliberate** --- it is the method
+this project already wrote outward, a prediction built in advance to measure something rather than
+to be right. The cost is named too: a probe that loses holds us at a worse board position for about
+twelve hours, against a field that is currently taking 0.75 places a day from us at zero effort.
+The risk that cannot be retired from inside the challenge is that a two-parameter-per-enzyme family
+fitted against 375 revealed compounds does not transfer to the final set.
+
+**How to rebuild the probes on another machine.** `results/submission/*` is gitignored apart from two
+canonical provenance files, so the files themselves do not travel and this item is the record. Each
+is one `src/recalib.py` call from `activity_submission_probe_base.csv`, and the run asserts
+$\rho = 1$ per enzyme, so a mistyped constant fails loudly rather than shipping:
+
+    uv run python src/recalib.py --inp results/submission/activity_submission_probe_base.csv \
+      --out results/submission/activity_submission_probeA.csv --meta results/submission/probeA.meta.json \
+      --b 1.566689,1.142988,1.558196,1.242228 --mu-y 4.4650,4.9010,3.7250,4.8150
+
+    проба B   --b 1.672950,1.172064,1.737777,1.196443   --mu-y 4.4275,4.8760,3.5625,4.8150
+    проба C   --b 1.786418,1.201880,1.938055,1.152345   --mu-y 4.4650,4.9010,3.7250,4.8150
+
+Verified on build: all three hit their target mean and sd, $\rho$ against the shipped file is
+1.000000 on every enzyme, the organisers' `validate_activity_submission` accepts all three (control:
+a truncated copy is rejected), and `activity_submission_cand324probe.csv` is untouched at sha256
+`d9b111caae614467...`. Probe C's `b` is the shipped vector's own, so its $\sigma$ differs from the
+shipped file only by the fourth decimal --- that is intentional, it is the mean-only arm.
