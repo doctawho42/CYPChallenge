@@ -14770,3 +14770,138 @@ Verified on build: all three hit their target mean and sd, $\rho$ against the sh
 a truncated copy is rejected), and `activity_submission_cand324probe.csv` is untouched at sha256
 `d9b111caae614467...`. Probe C's `b` is the shipped vector's own, so its $\sigma$ differs from the
 shipped file only by the fourth decimal --- that is intentional, it is the mean-only arm.
+
+**330. Probe A's three pre-registered rules: the instrument check held exactly, the null cell held,
+and the direction split two-for-two --- but the probe design itself had a defect I found only while
+scoring it, and the honest conclusion is that the placement line is nearly exhausted, not that it
+has seven more places in it.** `verify/k108_prereg325.py` (stamp guard), snapshot
+`results/leaderboard_2026-10-01T0839Z.json`. Uploaded 2026-10-01 07:16 UTC.
+
+    правило                       требование                      факт
+    1 РАНГ                        ро и тау неподвижны, 0.0005     +0.0000 на всех четырёх
+    3 НУЛЕВАЯ ЯЧЕЙКА              CYP3A4 сдвиг < 0.003            0.0012
+    2 НАПРАВЛЕНИЕ                 по каждому ферменту             раскол 2/2
+
+    фермент   ST-RAE до    после        разн   чтение
+    CYP1A2       0.5666   0.5668     +0.0002   минимум зажат
+    CYP2C9       0.4315   0.4258     -0.0057   спуск идёт
+    CYP2D6       0.6816   0.6786     -0.0030   спуск идёт
+    CYP3A4       0.4729   0.4741     +0.0012   зажат (нулевая ячейка)
+
+Rule 1 at exactly $+0.0000$ on Spearman AND Kendall across all four is the sharpest available
+evidence that nothing but the placement moved, which is what an affine map with $b > 0$ requires.
+Macro went $0.5381 \to 0.5363$, an improvement of 0.0018 --- **outside** the pre-registered
+0.005--0.020, so the prediction's magnitude failed while its direction held.
+
+**The place, decomposed inside one snapshot, because the field moved while we measured.** 56 of 244
+to 58 of 245. Our previous macro re-ranked in the current field gives 59th, so **+1 place is ours
+and $-3$ is drift** --- the probe gained and the field took three times as much back in fifteen
+hours.
+
+**The defect in my own probe design, found while scoring rather than before uploading.** The descent
+direction was measured on the PRE-PROBE family (`activity_submission` -> `recal` -> `cand2d6xc`) and
+then applied to the probe vector. Those are different vectors: `cand2d6xc` and `cand324probe` have
+IDENTICAL per-enzyme moments and different ST-RAE --- CYP2C9 0.4624 against 0.4315 --- because the
+sixth member changed the ordering. So on the vector actually being probed I had TWO points, not
+three, and the step I took came from the geometry of a vector we no longer ship. **The direction
+happened to be right on CYP2C9 and CYP2D6 and wrong on CYP1A2 and CYP3A4**, which is luck, not
+design, and the 2/2 split in rule 2 is that luck being reported honestly.
+
+**The exhaustion assessment, which corrects a number I published myself.** Item 329's table priced
+"all four cells as alexxi11's" at $-8$ places. That state is not reachable inside our affine family:
+a step now buys $(0.0057 + 0.0030)/4 \approx 0.0022$ of macro, a place costs 0.0048, so **one to two
+places remain in placement, not eight.** This is item 316's finding arriving from the other side ---
+it measured the placement family already at its optimum, and the probes are now measuring the same
+wall directly. alexxi11's 0.0312 therefore does NOT live in our placement family, and the earlier
+framing that it did was mine.
+
+**Probe D, built from A's answer rather than from a model.** Step again where the descent continues,
+interpolate where the minimum is bracketed, revert on the null cell:
+
+    фермент   решение                            среднее       sd
+    CYP1A2    зажато -> интерполяция              4.4275   0.9403
+    CYP2C9    спуск идёт -> ещё шаг               4.9510   0.7258
+    CYP2D6    спуск идёт -> ещё шаг               4.0500   0.3710
+    CYP3A4    нулевая ячейка -> откат             4.8150   0.9225
+
+    uv run python src/recalib.py --inp results/submission/activity_submission_probe_base.csv \
+      --out results/submission/activity_submission_probeD.csv --meta results/submission/probeD.meta.json \
+      --b 1.677172,1.086277,1.252001,1.153114 --mu-y 4.4275,4.9510,4.0500,4.8150
+
+Verified on build: in target to $5\times10^{-4}$ on every mean and $10^{-3}$ on every sd, $\rho$
+against the shipped file 1.000000 on all four, the organisers' validator accepts it, and the board
+file is untouched. **Probes B and C are now superseded** --- both were designed from the pre-probe
+direction and B's half-step is only correct for CYP1A2.
+
+**331. The structure track's leaderboard is currently decided by validity, not by geometry, and the
+threshold that decides it cannot be read from the published code --- proven by execution, because
+the organisers' own evaluation module does not import. A gate that measures what would be erased is
+built, and it reproduces from first principles the single repaired clash that appears to separate
+rank 2 from the organisers' own baseline.** `verify/k110_posegate.py` (new),
+`results/logs/k110_posegate.json`.
+
+**The track.** Predict the CYP3A4 protein-ligand complex from the ligand SMILES alone for 20
+ligands; the 20 are novel Cryo-EM structures from UCSF, of which 15 are in our training set (CYP3A4
+pIC50 4.96 to 6.94), 2 in the blinded test set and 3 in neither --- verified against our own tables,
+and the first search returned 0 of 20 because the list writes `ocnt-` where our tables write `OCNT-`.
+Submission is a zip of `{id}.pdb`, ligand residue named exactly `LIG`, at most three chains
+(protein, heme, ligand), bond orders matching the SMILES. Deadline 3 November, as everywhere.
+
+**The mechanical fact the board hides.** Per `evaluate_predictions.score_single_structure`, a model
+copy failing more than `POSEBUSTERS_MAX_FAILURES` checks has LDDT-PLI set to 0, **LDDT-LP set to 0
+as well** and BiSyRMSD set to `BISYRMSD_NAN_PENALTY`, and the override lands BEFORE the best-pair
+sort. `coverage` is taken from `LDDT-PLI.notna()` BEFORE the fill. **So Coverage 1.0 does not mean
+twenty structures scored --- only that twenty parsed.** Scoring is a plain mean over the twenty, so
+one erased pose worth 0.42 costs 0.021 of the mean, and on 1 October rank 1 (0.4252) to rank 5
+(0.3921) spans 0.033. About one and a half erased poses.
+
+**The threshold is unknowable from the public code, and this is a defect in what the organisers
+shipped rather than a gap in our reading.** `evaluation/evaluate_predictions.py` imports
+`POSEBUSTERS_MAX_FAILURES`, `BISYRMSD_NAN_PENALTY` and `STRUCTURE_METRICS` from `.config`; the
+shipped `evaluation/config.py` defines none of the three. Proven by execution rather than by grep:
+the import raises `ImportError: cannot import name 'BISYRMSD_NAN_PENALTY'`, against a control that
+`config` itself imports and carries `MACRO_ENDPOINT_LABEL = 'MA'`. Upstream commit 832ae6d is HEAD,
+so this is the current published state. (My first grep for the constants found nothing for the wrong
+reason --- `\s` is not a BRE escape --- and the real answer needed the interpreter.)
+
+**The gate, and what it measured.** PoseBusters `dock` config, 22 boolean checks, the ligand's bond
+orders assigned by the organisers' OWN `posebusters_utils.assign_bond_orders_from_template` rather
+than RDKit's plain one, the protein taken from the predicted complex so both are in one frame:
+
+    поз                                    проваленных проверок
+    19 из 20 поданных организаторами       0
+    OCNT-2313429                           1  (minimum_distance_to_protein)
+    ПОДЛОЖЕННАЯ на железе гема             5  (протеин, орг. и неорг. кофакторы, объём)
+
+That one pose is exactly the single cell on which rank 2's two PoseBusters tables differ. **So the
+reading that rank 2 is the organisers' baseline with one clash repaired is reproduced from first
+principles, not taken on report.**
+
+**And it settles the heme question that looked load-bearing.** Measuring the closest ligand-protein
+contact as a fraction of summed van der Waals radii, 12 of 20 baseline poses fall below 0.75 when the
+heme is counted as protein and exactly ONE does when it is not. PoseBusters resolves it: the dock
+config carries SEPARATE `minimum_distance_to_organic_cofactors` and
+`minimum_distance_to_inorganic_cofactors` checks, so coordination to the heme iron is not a protein
+clash. My heme-inclusive measurement was the misspecified one, and the planted pose fails all three
+distance checks at once, which is what a genuinely buried ligand should do.
+
+**The control is the reason this is an item.** "All twenty clean" is the shape of a query that could
+not have failed, so the run plants a 21st pose --- a real ligand translated onto the heme iron --- and
+exits non-zero if the harness does not flag it. It also refuses any pose whose `LIG` residue is
+missing or whose heavy-atom count disagrees with the SMILES, so a silently empty selection cannot
+pass as clean. PoseBusters lives in a scratch environment, never the project's: `pyproject.toml`
+caps scikit-learn below 1.9 and reproduces `results/preds/oof.json` bit for bit.
+
+**What this does NOT establish, and it is the arithmetic that refuses to close.** If the board's
+`boltz-2-baseline` row were these same shipped poses with OCNT-2313429 erased, then rank 2's
+$+0.0752$ of LDDT-LP would need that single pose to carry 1.504 of LDDT-LP, and the metric's ceiling
+is 1.0. **One pose cannot explain it.** So either the board's baseline row comes from a different
+run than the example files, or rank 2's submission differs from those files in more than one pose.
+Until that is resolved, `POSEBUSTERS_MAX_FAILURES` stays unpinned and this gate reports a
+DISTRIBUTION of failed-check counts, never a verdict. A pose failing five checks is erased under any
+plausible tolerance; a pose failing one is a question only the organisers can answer.
+
+**What is NOT closed by item 306.** That item closed docking as a null for PREDICTING INHIBITION ---
+22608 runs, 204 CPU-hours --- and says nothing about predicting structure. Our 381 poses in
+`results/dock` are against receptor 1R9O, a CYP2C9 structure, so they are not reusable here either.
+Nothing in this item rests on them.

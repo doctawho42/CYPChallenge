@@ -1,0 +1,160 @@
+{
+ "poses": [
+  {
+   "id": "OCNT-2312554",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2312966",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2313038",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2313300",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2313397",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2313429",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 1,
+   "failed": [
+    "minimum_distance_to_protein"
+   ]
+  },
+  {
+   "id": "OCNT-2315379",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395328",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395342",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395415",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395436",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395457",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395460",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395464",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395503",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395645",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395712",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2395789",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2535422",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  },
+  {
+   "id": "OCNT-2535519",
+   "ok": true,
+   "checks": 22,
+   "failed_n": 0,
+   "failed": []
+  }
+ ],
+ "planted": {
+  "id": "OCNT-2312554",
+  "ok": true,
+  "checks": 22,
+  "failed_n": 5,
+  "failed": [
+   "minimum_distance_to_protein",
+   "minimum_distance_to_organic_cofactors",
+   "minimum_distance_to_inorganic_cofactors",
+   "volume_overlap_with_protein",
+   "volume_overlap_with_organic_cofactors"
+  ]
+ },
+ "note": "порог POSEBUSTERS_MAX_FAILURES организаторами не опубликован; здесь распределение, а не вердикт"
+}
