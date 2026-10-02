@@ -84,3 +84,7 @@ data/ncgc/
 
 # Побочный вывод jar-а SMARTCyp в корень: инструментальный мусор, не результат.
 SMARTCyp_Results_*.html
+
+# Кэш загрузок из PDB для verify/k111_structscore.py. Воспроизводим из RCSB одной
+# командой, как data/receptors --- в git ему места нет.
+data/pdb3a4/

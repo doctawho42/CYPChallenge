@@ -14970,3 +14970,78 @@ nothing cites the figure and the item is a day old.
 as non-existent. It exists: `git cat-file -t` returns `commit`, it is an ancestor of `origin/HEAD`,
 and the control on a fabricated SHA fails as it must. Item 331's reading of the structure track
 stands on it.
+
+**333. The structure track's own ceiling is measured, and it refutes the reading I proposed one item
+earlier. The leader sits at LDDT-PLI 0.4252 against an experimental reproducibility of 0.7515 ---
+$+0.3263$ of headroom, eleven times the 0.0302 that separates the leader from the stock Boltz-2
+baseline. Geometry is where the points are, not validity. And the organisers' warning is true in a
+stronger form than they stated: it is not similar ligands that adopt drastically distinct poses in
+CYP3A4, it is the SAME ligand.** `verify/k111_structscore.py` (new),
+`results/logs/k111_structscore.json`.
+
+**What was built, and what it does not claim.** Local implementations of the two scored metrics ---
+BiSyRMSD (superpose on reference CA within 8 A of the reference ligand, then ligand RMSD minimised
+over graph automorphisms) and LDDT-PLI (no superposition; fraction of reference protein-ligand
+contacts inside 6 A whose distance is preserved, averaged over tolerances 0.5/1/2/4 A). OpenStructure
+is not installed here, so **absolute agreement with the organisers' `SCRMSDScorer` and
+`LDDTPLIScorer` is UNVERIFIED and is not asserted anywhere.** The file exists to RANK our own options
+on real complexes, and no board value is predicted from it.
+
+**Controls first, because a scorer that cannot fail at the ends cannot be read in the middle.** A
+structure against itself gives BiSyRMSD $5\times10^{-15}$ and LDDT-PLI exactly 1.000000 on three
+entries. A ligand displaced by a rigid offset degrades monotonically, and LDDT-PLI stays at 1.0000
+through 0.5 A --- which is what the definition demands, since the smallest tolerance IS 0.5 A, and is
+the sharpest evidence the implementation follows the formula rather than resembling it.
+
+**The measurement.** The PDB holds 129 CYP3A4 entries under UniProt P08684, 119 with a drug-like
+ligand. Twelve ligands appear in more than one entry, which asks what the same ligand does to the
+same protein in two independent experiments --- a quantity no method can beat:
+
+    пар в каталитическом сайте                                16   (потеряно 0)
+    BiSyRMSD   медиана 1.454   среднее 2.281   разброс 0.246..6.247
+    LDDT-PLI   медиана 0.7515  среднее 0.7035  разброс 0.1594..0.9707
+
+    лидер доски           LDDT-PLI 0.4252   BiSyRMSD 3.8347
+    запас до медианы      +0.3263 LDDT-PLI = 11 x (лидер - базовая линия)
+
+**So item 331's closing suggestion was wrong, and it was mine.** It argued that the cheapest points
+are in not shipping an invalid pose, on the grounds that the top of the board spans about one erased
+pose. That is still true of the top five places, and it is now clearly the smaller prize: the board
+as a whole is $0.33$ of LDDT-PLI below what experiment reproduces, and nobody is near the wall. The
+validity gate of item 331 remains necessary --- an erased pose still costs 0.021 --- but it is a floor
+under the score, not the way up.
+
+**The ceiling is bimodal, and that is the finding with teeth.**
+
+    группа                          пар   медиана BiSyRMSD
+    определённые (LDDT-PLI >= 0.80)   5               0.629
+    многомодальные (< 0.60)           5               3.712
+
+MYT reproduces at 0.443 A and 0.971, WZN at 0.246 A, 08Y at 0.629 A. Against that, **PK9 differs by
+6.247 A with LDDT-PLI 0.159 between 4D6Z and 4D75** --- the same ligand, the same protein, resolutions
+1.93 and 2.25 A, one copy each, both in the catalytic pocket at 7.3 and 5.9 A from the iron. That is
+an alternative binding mode, not crystallographic error. Ritonavir spans 1.02 to 3.31 A across four
+structures; caffeine 3.712 A between two entries at 2.05 and 2.15 A. **The organisers say similar
+ligands adopt drastically distinct poses; for a third of this sample the same ligand does.** So the
+twenty blinded targets will split into a population where any competent method scores ~0.9 and a
+population where even experiment disagrees with itself, and the attainable mean depends on which
+targets fall where --- which is unknowable before the reveal.
+
+**Cross-method is not the penalty it looked like.** The targets are Cryo-EM and the templates are
+mostly X-ray, so the five cryo-vs-X-ray pairs are the relevant ones: median BiSyRMSD 1.375 A and
+LDDT-PLI 0.7665, against 2.931 A and 0.7116 for same-method pairs. **Better, not worse** --- though the
+comparison is confounded, because the same-method group holds PK9, G0D and the worst ritonavir pairs,
+so this is "the cryo pairs happened to be easy ligands" until it is controlled for.
+
+**Three defects of mine, each caught by a control I had written, and each silent without it.**
+(1) The ligand copy was chosen by residue number rather than by proximity to the heme iron. All three
+steroid entries place STR at ~22 A --- the peripheral surface site, not the catalytic pocket --- and
+their 0.305--0.442 A agreement was inflating the ceiling. With a site filter the catalytic median moved
+1.355 -> 1.454 and LDDT-PLI 0.7700 -> 0.7515. (2) Protein atoms were matched by (chain, residue,
+name), and chain letters are arbitrary between PDB entries: 38FV names its copies A/B/C where 3NXU
+names its A/B, so the intersection emptied, numpy raised two frames down, and a bare `except` swallowed
+**four of nineteen pairs** without a word --- item 304's shape exactly. Matching on (residue, name)
+inside the single chain each side is already restricted to fixes it, and the run now prints a
+completeness count that reads `потеряно 0`. (3) A `--controls`-only run overwrote the log and erased
+the ceiling; the log is now merged rather than replaced. **A dropped pair is not a zero, it is an
+unmeasured one**, and all three of these would have been invisible in a summary statistic.
