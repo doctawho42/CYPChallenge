@@ -15045,3 +15045,64 @@ inside the single chain each side is already restricted to fixes it, and the run
 completeness count that reads `потеряно 0`. (3) A `--controls`-only run overwrote the log and erased
 the ceiling; the log is now merged rather than replaced. **A dropped pair is not a zero, it is an
 unmeasured one**, and all three of these would have been invisible in a summary statistic.
+
+**334. Ensemble docking into experimental CYP3A4 receptors is viable --- the best pose present beats
+the board leader and approaches the measured ceiling --- but the selector I proposed as our
+contribution does not survive its own test, and the apparent win it showed first was a defect of mine
+in the search box. The bottleneck is now named precisely: selection, with a gap of 0.25 LDDT-PLI
+between what the pose set contains and what either rule finds.** `verify/k112_ensdock.py` (new),
+`results/logs/k112_ensdock.json`. One target, which is not a sample.
+
+**The construction, and why it needs no foundation model.** The twenty structure-track targets share
+ONE protein. A co-folding model re-predicts all 503 residues per ligand; the PDB already holds 129
+experimental answers to that half (item 333). So the protein is taken rather than predicted, each
+holo entry contributes a pocket conformation, and the remaining problem is placing a ligand in a
+fixed receptor --- 32 seconds of smina per run, measured by item 306's own campaign. Validation is
+leave-one-out against the target's own crystal, which exists.
+
+**The box mattered more than any selector, and getting it wrong nearly produced a false finding.**
+The first version used `--autobox_ligand` on whatever drug each receptor was deposited with, so the
+search volume depended on the guest: ritonavir's box is $11\times13\times11$ A and caffeine's
+$1.3\times5.7\times5.8$. Metyrapone, 17 heavy atoms, was being searched in a volume cut for 721
+daltons. Replacing it with a box anchored on the HEME --- centre at the iron lifted 5 A along the
+porphyrin normal, away from the proximal cysteine thiolate, 18 A cube, identical for every receptor
+--- changed the picture completely:
+
+    правило отбора        чужой бокс (RMSD/PLI)   бокс по гему (RMSD/PLI)
+    скор smina                  14.168 / 0.0000          4.786 / 0.3142
+    согласие контактов           4.119 / 0.3757          4.732 / 0.3087
+    оракул (лучший RMSD)         3.040 / 0.4162          2.790 / 0.5545
+    оракул (лучший PLI)          3.468 / 0.5656          2.887 / 0.6117
+
+**So the contribution I proposed is measured dead.** The argument was that docking scores rank poses
+badly while the metric counts preserved contacts, so poses should be chosen by contact agreement
+across the ensemble. With the broken box that looked decisive --- 0.3757 against 0.0000. With the box
+fixed the two rules are **indistinguishable**: 4.73 A against 4.79, 0.3087 against 0.3142, a
+difference of 0.005 which is nothing. The score was not bad at ranking; it was being asked to search
+a volume fifteen times too large, and it suffered from that more than the consensus did. **I was one
+step from recording my own box defect as a finding about selection criteria.**
+
+**What survives, and it is the more useful half.** The oracle is 2.790 A and 0.6117, against the
+board leader's 0.4252 and the ceiling's 1.454 / 0.7515 from item 333. **The pose set contains poses
+that would lead that board**, and neither rule finds them: the gap from 0.3142 to 0.6117 is 0.25 of
+LDDT-PLI, eight times the 0.0302 that separates the leader from the stock Boltz-2 baseline. Selection
+is the whole problem, stated as a number rather than a hunch, and the two obvious rules are both
+spent.
+
+**Two correspondence defects, both caught by an assertion rather than shipped.** The first version
+assumed smina preserves the input SDF's heavy-atom order and matched poses to reference positionally.
+It does for metyrapone and not otherwise: smina KEEPS POLAR HYDROGENS and REORDERS, writing 25 atoms
+for a 23-heavy PK9 input and 54 for a 50-heavy ritonavir. The element-sequence check refused all 171
+poses rather than mismatching them --- the refusal was the control working, and it printed
+`НЕ оценено 171`, which is why it was found in minutes. The replacement takes the pose's bond orders
+from the SMILES template, as the organisers' own `posebusters_utils.assign_bond_orders_from_template`
+does and for the same stated reason, and the template's embeddings then ARE the symmetry correction:
+2 for metyrapone, 6 for PK9, 16 for ritonavir. The second defect was mine in the fix itself --- a
+mangled return shape that raised on the first pose --- and is noted only because it was caught by
+running rather than by reading.
+
+**What this does NOT support.** One target. Metyrapone was chosen because item 333 measured it as the
+most reproducible ligand in the PDB set (0.443 A between its own two crystals), so it is the easy
+end, and nothing here says what happens on the multi-modal end. No selector is recommended, no board
+value is predicted, and the next measurement is the same leave-one-out across every drug-like ligand
+in the ensemble, which is what would make any of this a sample.
