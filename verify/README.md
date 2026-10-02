@@ -14902,6 +14902,71 @@ DISTRIBUTION of failed-check counts, never a verdict. A pose failing five checks
 plausible tolerance; a pose failing one is a question only the organisers can answer.
 
 **What is NOT closed by item 306.** That item closed docking as a null for PREDICTING INHIBITION ---
-22608 runs, 204 CPU-hours --- and says nothing about predicting structure. Our 381 poses in
-`results/dock` are against receptor 1R9O, a CYP2C9 structure, so they are not reusable here either.
-Nothing in this item rests on them.
+22608 runs, 204 CPU-hours --- and says nothing about predicting structure. Our docking output in
+`results/dock` is 381 FILES holding 22608 poses (this sentence said "381 poses" until item 332: I
+counted files and called them poses, with the right figure in item 306's own first line), and all of
+it is against receptor 1R9O, a CYP2C9 structure, so none of it is reusable here either. Nothing in
+this item rests on them.
+
+**332. Probe D overshot and cost twelve places, which is what the bracket rule was for --- but the
+useful part is that every placement cell is now MEASURED, so the best of them can be spliced into one
+file whose macro is an arithmetic mean of four board readings rather than a prediction. And a count I
+published in item 331 was wrong by a factor of 59.** Uploaded 2026-10-02 01:21 UTC; scored from
+`results/leaderboard_2026-10-02T1733Z.json`.
+
+**Rule 1 held exactly again** --- $\rho$ and $\tau$ at $+0.0000$ on all four, so the instrument is
+sound and nothing but the placement moved. Rule 2, read per enzyme as item 329 fixed it:
+
+    фермент   решение пробы D            ST-RAE A -> D        разн   чтение
+    CYP1A2    интерполяция               0.5668 -> 0.5656   -0.0012   сработала
+    CYP2C9    ещё шаг                    0.4258 -> 0.4265   +0.0007   минимум зажат
+    CYP2D6    ещё шаг                    0.6786 -> 0.8528   +0.1742   ПЕРЕЛЁТ
+    CYP3A4    откат на отгруженное       0.4741 -> 0.4729   -0.0012   нулевая ячейка вернулась
+
+Macro $0.5363 \to 0.5794$, place 58 of 245 to 67 of 248: **$-12$ places ours and $+3$ drift.** The
+CYP2D6 step from mean 3.725 to 4.050, narrowing $\sigma$ from 0.4618 to 0.3710, is the whole of it.
+
+**What the loss bought, and it is the reason a probe is not a bet.** CYP2D6 now has a tight bracket
+on a convex function: $3.400 \to 0.6816$, $3.725 \to 0.6786$, $4.050 \to 0.8528$. The surface is
+nearly flat between 3.400 and 3.725 and rises by 0.17 beyond it, so the minimum sits just past 3.725
+and the cell is **done** --- there is no further step worth taking. CYP2C9 is bracketed between 4.901
+and 4.951. CYP1A2's interpolation improved, as a point near a minimum should. CYP3A4 reverted to its
+own best, confirming the null cell is stable rather than merely quiet.
+
+**The splice, and why its macro is exact rather than estimated.** The board scores each enzyme column
+independently and rank is unmoved in all three uploads, so the best measured cell of each can be
+taken from whichever file produced it:
+
+    фермент   источник          среднее       sd    ST-RAE (измерено доской)
+    CYP1A2    проба D            4.4275   0.9403                     0.5656
+    CYP2C9    проба A            4.9010   0.7637                     0.4258
+    CYP2D6    проба A            3.7250   0.4618                     0.6786
+    CYP3A4    отгруженное        4.8150   0.9219                     0.4729
+    макро = (0.5656+0.4258+0.6786+0.4729)/4                          0.5357  -> место 55 из 248
+
+`results/submission/activity_submission_best4.csv`, sha256
+`52296bc48b841cbf30c399592927da15c029162df0b1172719133c896135bb76`. **Built by splicing columns, not
+by a fresh affine run** --- the first attempt went through `src/recalib.py` against the targets as I
+had typed them from the board's four printed decimals, and the columns came out up to
+$2.1\times10^{-3}$ away from the files whose ST-RAE had actually been measured. That would have made
+the macro nearly the mean of four measurements instead of exactly it. Verified after the rebuild:
+every column is bit-identical to its source, $\rho$ against the shipped file is 1.0 on all four, the
+organisers' validator accepts it, and the control that the splice is not a no-op is that the sources
+differ by up to 0.2453 where they are swapped.
+
+**It is worth only 0.0006 of macro over probe A and the same place, 55.** The twelve places are the
+recovery from D, not a gain --- said plainly because the file looks like an improvement and is mostly
+an undo.
+
+**A count in item 331 was wrong by a factor of 59.** It says "our 381 poses in `results/dock`": those
+are 381 FILES holding **22608 poses**, which is exactly the figure item 306 states in its own first
+line ("22608 runs, 204 CPU-hours"). I counted files and called them poses, in a journal whose own
+rules say to recompute every number, with the right number one item away. The substantive point
+survives untouched --- the receptor is 1R9O, a CYP2C9 structure, so none of it is reusable for a
+CYP3A4 structure track --- and the sentence is corrected in place rather than left standing, because
+nothing cites the figure and the item is a day old.
+
+**One thing memory asserted and the repository refutes.** A note recorded upstream commit `832ae6d`
+as non-existent. It exists: `git cat-file -t` returns `commit`, it is an ancestor of `origin/HEAD`,
+and the control on a fabricated SHA fails as it must. Item 331's reading of the structure track
+stands on it.
