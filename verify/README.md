@@ -15106,3 +15106,101 @@ most reproducible ligand in the PDB set (0.443 A between its own two crystals), 
 end, and nothing here says what happens on the multi-modal end. No selector is recommended, no board
 value is predicted, and the next measurement is the same leave-one-out across every drug-like ligand
 in the ensemble, which is what would make any of this a sample.
+
+**335. The tabular foundation-model axis is closed by proxy, for about twelve CPU-minutes instead of
+a dependency and a build --- and the error-correlation screen that was supposed to decide it is
+measured NON-PREDICTIVE, with counterexamples now in both directions.** `verify/k114_gate93.py`
+(new), `results/logs/k114_gate93.json`, `results/preds/k114_heads_seed{0..3}.json`. Four seeds, one
+representation, one checkpoint.
+
+**The question, and why it was cheap to ask.** Item 300 named this the one axis the project has never
+touched, and the claim still holds at item 334: `Mitra` and `autogluon` return zero, every `TabPFN`
+and `TabICL` hit resolves inside item 300 itself, and the controls that must hit do
+(`chemprop` 12, `member` 429). In the code every head ever fitted on `data/emb_chemprop_medium.npz`
+is linear --- `k106_probe.probe_oof` and `submit._oof_probe` both hold a `RidgeCV` and nothing else.
+But a foundation head is a dependency, a build and a separate environment, while three non-linear
+heads on the IDENTICAL cached 600 columns are minutes and ask the same question: does non-linearity
+on this representation reach anything the shipped ridge misses?
+
+**The apparatus is item 324's, imported rather than re-implemented.** `k114_gate93.py` takes `score`,
+`errcorr`, `members`, `load_emb`, `probe_oof` and `combine_add` from `k106_probe` and swaps only the
+estimator; re-deriving any of them would make these numbers incomparable to the ones they are for.
+Four controls per seed, each of which must succeed: the probe reproduces the committed
+`k106_probe.json` bit for bit (0.00e+00 on all four seeds), `ствол` comes out of the member cache bit
+for bit, the seed-0 fold digest is the golden `2d93c19815e14261`, and --- new here --- admitting the
+probe to the kept five must reproduce item 324's own gain, because every correlation below is taken
+against that composition:
+
+    сид      пять      шесть    прирост
+    0      0.6434     0.6568    +0.0135
+    1      0.6399     0.6542    +0.0144
+    2      0.6414     0.6549    +0.0136
+    3      0.6437     0.6576    +0.0139
+                        (пункт 324 даёт +0.0138)
+
+**The gate was calibrated off the committed log, not quoted from it.** Correlation of out-of-fold
+error against the five-member mean: the five members themselves sit at 0.966--0.982, redundant by
+construction; the shipped probe sits at 0.901; item 289's threshold is 0.93, between them. A control
+that the instrument separates those two known ends on these same data ran on every seed and returned
+a spread of 0.065--0.067. The reference was then corrected from the five to the SIX the submission
+actually contains --- the probe shipped (items 325, 327), and every column of
+`activity_submission_best4.csv` descends from `activity_submission_probe_base.csv` --- so a new head
+is a seventh member and `combine_add` is what it must differ from.
+
+**The result. The screen let two heads through and neither delivered.**
+
+    голова            ранг     corr   Δранг 7-м   Δпара 7-м    знак   пункт
+    зонд (линейный) 0.6261    0.901     +0.0138     -0.0197     8/8     324
+    nystroem        0.5616    0.895     -0.0002     +0.0247     0/4
+    gbm             0.6125    0.919     +0.0023     -0.0048     4/4
+    mlp             0.4131    0.485     -0.0377     +0.0491     0/1
+                                  (пол: ранг 0.0036, ST-RAE 0.007)
+
+`nystroem` is an RBF feature map carrying the probe's own alpha grid; `gbm` is the project's standard
+`HistGradientBoostingRegressor(max_iter=300, learning_rate=0.06)`; `mlp` is one hidden layer of 256
+with early stopping. All three see the same per-fold standardisation and dead-column filter as the
+probe, fitted on training rows only.
+
+**The screen does not order the gains, and it now fails in both directions.** Item 289's screen was
+refuted once already by item 324, which found a gain where the screen predicted none. This is the
+mirror image. `nystroem` is better decorrelated than the SHIPPED probe --- 0.895 against 0.901 --- and
+returns $-0.0002$ of rank, while `gbm` is worse decorrelated at 0.919 and returns the largest of the
+three. Ordering the four heads by correlation gives `mlp` < `nystroem` < зонд < `gbm`; ordering them
+by gain gives зонд > `gbm` > `nystroem` > `mlp`. Spearman between the two is $-0.8$, which at $n=4$
+decides nothing on its own --- the two concrete counterexamples are the evidence, and the coefficient
+is reported only so nobody reads the sample as supportive. A conjecture about the mechanism, offered
+as one: error correlation is a scalar summary of a vector difference, so it cannot tell a head that
+errs differently WHERE the ensemble is weak from a head that errs differently where the ensemble is
+already right.
+
+**The MLP is kept in the table because it shows what the gate's second condition is for.** It has the
+lowest error correlation of anything measured here, 0.485, less than half the threshold, and the
+worst seventh-member cost at $-0.0377$. Low error correlation is purchasable by being bad: a weak head
+contributes its own noise and decorrelates for free. What refuses it is item 289's other leg, a
+standalone rank within 0.02 of the weakest current member (`гребневая`, 0.5778), and on this evidence
+that leg is the one doing the work.
+
+**The gate's own constants have no error bar, and it showed.** At seed 1 `nystroem` failed the gate on
+RANK by 0.0010 --- 0.5568 against the threshold 0.5578 --- with its correlation unchanged at 0.897.
+The 0.93 and the 0.02 are inherited from item 289; neither that item nor this one gives them an
+uncertainty, so a verdict can turn on the fourth decimal of a quantity whose noise is unmeasured.
+
+**Paid twice, then fixed.** The first run scored the heads against the five-member mean, which is the
+wrong reference now that the probe ships. Correcting the REFERENCE required re-deriving the HEADS, at
+3182 seconds for the boosting arm on a box another project had taken to load 302. `head_cached` now
+writes each head's out-of-fold predictions under the fold digest, so the next change of reference
+costs a second and a digest mismatch recomputes rather than silently returning vectors from another
+split. The seventh-member score itself was then added and run from cache in 24 seconds --- which is
+the point: the screen is an approximation to a measurement that, once the predictions exist, is
+nearly free, so there was never a reason to decide this cell on the screen at all.
+
+**What this does NOT support.** `HistGradientBoosting`, an RBF map and a 256-unit MLP are not TabPFN,
+TabICL or Mitra, and nothing here runs an in-context learner; the axis is not formally closed. What is
+measured is narrower and still worth having: on this representation the usable signal is already
+extracted LINEARLY by the shipped ridge, and three different non-linearities on the identical columns
+add at most a sixth of what that ridge added. A foundation head would now have to find what all three
+miss, which is a weaker position than item 300's "untouched" and was bought for minutes. `gbm`'s
+$+0.0023$ is consistent --- 4/4 on rank and 4/4 on the pair --- but under both floors, so it does not
+ship; the cheap thing that might move it is the dead-zone pass that lifted the probe (item 324's `Dz`
+arm beat its plain add by +0.0045 at seed 0), and that is not measured here. No board value is
+predicted.
