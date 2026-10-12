@@ -15106,3 +15106,96 @@ most reproducible ligand in the PDB set (0.443 A between its own two crystals), 
 end, and nothing here says what happens on the multi-modal end. No selector is recommended, no board
 value is predicted, and the next measurement is the same leave-one-out across every drug-like ligand
 in the ensemble, which is what would make any of this a sample.
+
+**336. The one cell `src/submit.py` called unmeasured is now measured, and the zero it predicted
+arrives by a DIFFERENT mechanism than the one it named: the screen and the dead zone correct the same
+error, the dead zone corrects more of it, and applying both is slightly worse than the dead zone
+alone.** `verify/k115_screenin.py` (new), `results/logs/k115_screenin.json`,
+`results/preds/k115_perenz_seed0.json`, and the `--screen` help in `src/submit.py`, which asserted
+the mechanism and is therefore part of this commit. One seed.
+
+**What the comment said, and why only half of it held.** The help text read: *"вариант ЗДЕСЬ иной:
+скрининг вставлен ВНУТРЬ поферментного члена, а не добавлен шестым. Механизм предсказывает тот же
+ноль, измерено это не было."* The prediction is right and the mechanism is not. Item 182 added the
+screening arm as a SIXTH vector to the mean, so item 177's +0.029 standalone was taxed by dilution:
+a new member has to disagree with the existing average to earn its weight, and at an error
+correlation of 0.935--0.969 it did not. `oof_members` passes `scr` to exactly one member ---
+`_oof_one(X, y, mask, fold, False, scr)` --- and leaves the other four alone, so the composition
+keeps its size, no vector is added, and there is no dilution term to pay at all. What does carry over
+from item 182 is its other claim, that the ensemble is saturated because the existing members already
+fit the target the same way. The two readings disagreed, so the cell was open rather than decided.
+A convenient side effect: only one member of five had to be recomputed.
+
+**Count first (items 109, 105, 114).** Screening readings on compounds that have no curve for that
+enzyme:
+
+    фермент   кривых   скрининга   отношение
+    CYP1A2      1412        2963        2.10
+    CYP2C9      1285        3090        2.40
+    CYP2D6      1493        2882        1.93
+    CYP3A4      2335        2570        1.10
+    итого       6525       11505        1.76
+
+These are items 152 and 177's own figures, and CYP2C9 still holds the largest ratio.
+
+**Two controls, because a null here is ambiguous between "no effect" and "scr is not wired".** First,
+the member recomputed WITHOUT the screen reproduces the committed `members_seed0.json` entry for
+`поферментно` at max|delta| = 0 exactly --- so this is the path that produced the shipped
+composition, not a lookalike. Second, the member WITH the screen lifts the RAW member from 0.5650 to
+**0.5902, +0.0252**, against the +0.0245 item 177 measured on `src/ablaux.py`'s learner: agreement to
+0.0007, which also means item 177 reproduces on `submit.py`'s own learner and not only on the script
+that found it. The file exits 2 and writes nothing if that second control misses the floor.
+
+**The measurement.**
+
+    уровень                   без       со           Δ
+    член СЫРОЙ             0.5650   0.5902     +0.0252
+    член после зоны        0.6049   0.6017     -0.0032
+    состав (шесть)         0.6568   0.6570     +0.0001
+    пара состава           0.6167   0.6162     -0.0005
+                                        (пол 0.0036)
+
+**The cleanest statement is the arithmetic.** The dead zone alone buys 0.5650 -> 0.6049, which is
++0.0399. The screen alone buys +0.0252. Both together give 0.6017 --- **less than the dead zone by
+itself.** They are not additive and they are not independent; they are two corrections aimed at the
+same residual, and the larger one subsumes the smaller.
+
+**The mechanism, measured rather than argued.** `dz_pass` refits each member on
+`clip(p_oof, lo, hi)`, the out-of-fold prediction projected onto the credible band. So whatever the
+screen moved that lands INSIDE the band is erased before the refit sees it:
+
+    фермент   |Δ| сырое   |Δ| после клипа   доля выжившего   стёрто начисто
+    CYP1A2       0.2108            0.0455             22 %           66.6 %
+    CYP2C9       0.2085            0.0869             42 %           44.0 %
+    CYP2D6       0.1300            0.0262             20 %           72.4 %
+    CYP3A4       0.2009            0.0798             40 %           49.9 %
+    среднее      0.1875            0.0596             32 %           58.2 %
+
+The control that the clip is not a no-op: 59.6 to 80.8 per cent of predictions lie outside the band,
+so clipping is active everywhere. And the reason in one line --- the screen's typical move is 0.1875
+of pIC50 while the median band is 0.27 to 0.53 wide, so most of the move falls inside the band and
+disappears. The ordering agrees with item 177: CYP2C9 is erased least (44.0 per cent) and keeps most
+(42 per cent), and it is the enzyme where the screen was worth the most (+0.058).
+
+**The reusable part, which outlasts this negative.** An intervention whose benefit is a prediction
+shift SMALLER than the credible band cannot survive the dead-zone pass. The bands ship with the data,
+one per row, so this is checkable before anything is built: form the intended shift, compare it with
+`HI - LO`. That is a second absorber, distinct from the affine pair of item 77 --- the pair removes
+what a per-fold shrink and shift can reproduce, the dead zone removes what fits inside the band ---
+and the two together are most of why member-level gains in this file so rarely reach the composition.
+
+**Error correlation, for comparison with item 182.** The in-member version's errors against the
+five-member mean come out at 0.987, 0.979, 0.992, 0.965 --- HIGHER than the 0.935--0.969 item 182
+measured for the arm it added. For the band the EXISTING members occupy, read
+`calibration_members_vs_five` in `results/logs/k106_probe.json`: 0.966 to 0.982. This version sits
+inside it, which is what it should do, because it IS the per-enzyme member, slightly changed.
+
+**What this does NOT support.** One seed, and the composition delta is +0.0001 --- a number this
+small needs no seeds to be read as zero, but the -0.0032 at the member level would. The screen
+remains worth +0.029 to a SINGLE model and that number is now confirmed on a second learner, so
+anything shipping a single model should still use it; nothing here says the screening table is
+worthless. Untested: whether the screen survives if that member skips the dead-zone pass, which is
+the only configuration in which the two do not compete --- and it is a worse configuration overall,
+since the dead zone is the larger of the two effects. Runtime is not a cost model: the two members
+took 5456 and 1370 seconds, and the difference is another project's docking campaign on the box, not
+a property of the arms (item 334's lesson).
