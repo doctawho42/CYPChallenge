@@ -15297,3 +15297,125 @@ the only configuration in which the two do not compete --- and it is a worse con
 since the dead zone is the larger of the two effects. Runtime is not a cost model: the two members
 took 5456 and 1370 seconds, and the difference is another project's docking campaign on the box, not
 a property of the arms (item 334's lesson).
+
+**337. A frozen third-party encoder orders TDI better than our own features on BOTH enzymes, four
+seeds, sign 4/4, and the discriminating control fails --- so the pretrained weights buy it and the
+linear head buys nothing. Item 324's finding, reproduced on the classification track.**
+`verify/k113_tdiemb.py` (new), `results/logs/k113_tdiemb.json`,
+`results/preds/k113_probs_seed{0..3}.json`.
+
+**The question, and why it was this one.** On the classification board we sit 86th of 159, and the
+weakness is one cell: CYP2D6 at 113th, 71 per cent of the field. MCC is bounded by ordering, so no
+threshold rescues an AUC of 0.59 --- the shipped classifier's out-of-fold AUC, the number
+`src/submit.py`'s own comment states. The threshold is not the lever, and the first version of this
+investigation thought it was. Item 324 measured a ridge head on the frozen `chemprop_medium`
+embedding adding +0.0138 of macro rank to the REGRESSION ensemble with a discriminating control that
+fails, and those embeddings are already on disk. For TDI the axis was untouched: a grep of this file
+for TDI together with chemprop or embeddings returned nothing against a control that `chemprop` alone
+appears 12 times.
+
+    арм                       CYP3A4 AUC        Δ   знак   CYP2D6 AUC        Δ   знак
+    A наши признаки               0.7444        —      —       0.5905        —      —
+    B замороженный энкодер        0.7767  +0.0323    4/4       0.6308  +0.0403    4/4
+    C среднее A и B               0.7768  +0.0324    4/4       0.6340  +0.0435    4/4
+    D РАЗЛИЧАЮЩИЙ КОНТРОЛЬ        0.7227  -0.0216    0/4       0.5795  -0.0110    1/4
+
+D is the same logistic head with the same C grid on OUR DESC+MECH block. It loses on both enzymes,
+which is what makes a win by B mean something: the frozen pretrained weights are doing the work, not
+the architecture. Item 324 reached the same verdict on regression in those words --- "the
+architecture buys nothing and the frozen pretrained weights buy all of it".
+
+**AUC is the primary quantity here and the MCC in this log is NOT to be used for choosing an arm.**
+`best_mcc` sweeps a threshold grid and takes the maximum against the true labels, which is an oracle.
+It is the right summary for "did the ordering improve" and the wrong one for a submission decision,
+because the board scores MCC at OUR threshold and our threshold comes from the shipped Platt rule.
+Item 338 is that measurement, and it changes the magnitudes.
+
+**Three process defects, recorded because each cost real time.** First, the four-seed sweep was
+killed twice by a background time limit that I had left at its 30-minute default when the tool allows
+two hours --- I was fighting a parameter of my own. Second, I then "cheapened" the logistic head with
+a PCA-100 basis without measuring where the cost was; one timed fold says arm A is 366 s and arms B
+and D are 11 s and 8 s, so the head is 5 per cent of a seed and the PCA bought nothing. It was
+withdrawn, and the comparison of bases is kept because it is informative: the two bases differ by
+0.0010 of AUC, so the choice never mattered. Third, that 366 s is itself not a cost of arm A: the
+same run reports `real` 6m34 against `user` 1m07, and the box was at load average 255 on eight cores
+with 7.3 GB of 8 swapped, from two jobs belonging to other projects. **A timing taken on a loaded box
+measures the box.**
+
+**The log holds probabilities now, not only their summaries.** The first version stored AUC and the
+oracle MCC and nothing else, so item 338's question could not be asked without paying for the whole
+sweep again --- the same bill item 335 paid twice. `_probs_cached` writes each arm's out-of-fold
+vector under the fold digest, and a digest mismatch recomputes rather than returning vectors from
+another split. The re-run that populated it reproduced all 32 logged cells exactly, which is the
+reproduction control for the whole measurement.
+
+**What this does NOT support.** Four seeds, one checkpoint, one head family. Nothing here is a board
+prediction; see item 338 for the shipped-path numbers and the pre-registration.
+
+
+**338. On the shipped path the gain is LARGER than the oracle suggested, and the reason is
+calibration: our own arm predicts a positive rate of 0.077 against a true 0.217, while the frozen
+encoder's arm predicts 0.216 unaided. Both candidate arms clear every floor of item 235; the two are
+indistinguishable from each other, and `C` is pre-registered.** `verify/k116_tdiship.py` (new),
+`results/logs/k116_tdiship.json`.
+
+**What is measured.** Each arm's cached out-of-fold probabilities, pushed through the rule that
+ships: Platt calibration then `plugin_threshold` on the calibrated vector (items 233, 235). One
+deviation, in the conservative direction and stated because it matters --- `submit.tdi_calibrate`
+fits the Platt map on ALL training rows and applies it to the blind set, while `platt_oof` here fits
+it on four folds and applies it to the fifth, because there is no blind set to apply it to and
+fitting on the rows one then scores would flatter every arm. `plugin_threshold` is used unchanged: it
+reads only the probabilities, never the labels, so computing it on all rows is what ships.
+
+    арм                       CYP3A4        Δ   CYP2D6        Δ    макро        Δ   знак
+    A наши признаки           0.3306        —   0.1019        —   0.2162        —      —
+    B замороженный энкодер    0.3903  +0.0597   0.1600  +0.0581   0.2751  +0.0589    4/4
+    C среднее A и B           0.3792  +0.0487   0.1646  +0.0627   0.2719  +0.0557    4/4
+    D РАЗЛИЧАЮЩИЙ КОНТРОЛЬ    0.3175  -0.0131   0.0442  -0.0577   0.1808  -0.0354    1/4
+      пол (пункт 235)                  0.0281           0.0419           0.0076
+
+**The oracle was hiding half the effect.** On CYP2D6 the shipped gain is +0.0581 against an oracle
+gain of +0.0424, and the arithmetic says why: arm A's shipped MCC is 0.1019 against its oracle 0.1417,
+so the threshold rule costs OUR arm 0.0398 and the frozen arm almost nothing. The control explains it
+--- mean predicted positive rate against the true 0.217 on CYP2D6: arm A 0.077, arm B 0.216. Item 235
+exists because of exactly that 0.099-against-0.217 miscalibration, and the frozen encoder's head does
+not have it. **The gain therefore has two components, ordering and calibration, and only the first is
+visible in AUC.**
+
+**The slope control, and where its thin end sits.** 160 Platt slopes, all positive, minimum +0.0094
+against item 235's minimum of +0.084. That one near-zero slope belongs to the DISCRIMINATING CONTROL
+on CYP2D6 --- its probabilities are so uninformative that the logistic nearly flattens them, which is
+one more way the control discriminates. The candidate arms have far thicker margins than item 235's:
+minimum +0.3704 for `B` and +0.4366 for `C`, against +0.1019 for arm A.
+
+**`B` and `C` cannot be separated by these data.** On macro, `B - C` comes out +0.0047, +0.0041,
+-0.0039, +0.0080 --- mean +0.0032 at sign 3/4, below the macro floor of 0.0076. The tie is therefore
+broken on grounds that are not statistical, and they are stated so that a reader can disagree with
+the choice rather than with the evidence: `C` is two to three times more stable per enzyme (sd 0.0036
+and 0.0075 against 0.0117 and 0.0118), `C` gains more on CYP2D6, which is the cell where we are 113th
+of 159 and where a board place is cheapest to buy, and `C` averages with our own arm instead of
+discarding it, which is both the smaller change to the shipped path and the idiom item 324 used when
+it added rather than replaced. `B` is nominally better on macro and on CYP3A4, by amounts under the
+floor.
+
+**Pre-registered before the file is built, in the form items 320 and 325 fixed. Not to be edited
+after the board answers.** The current board reading, one snapshot,
+`results/leaderboard_2026-10-11T1926Z.json`: macro MCC 0.2836 at 86th of 159, CYP2D6 0.1255 at 113th,
+CYP3A4 0.4416 at 34th. No magnitude is predicted, because the arm on the board is not arm A and this
+file has no map from out-of-fold to blind.
+
+  1. **Direction, macro.** The new file's macro MCC must EXCEED 0.2836.
+  2. **Direction, the weak cell.** CYP2D6's MCC must EXCEED 0.1255.
+  3. **Do no harm, the strong cell.** CYP3A4's MCC must not fall below 0.4416 by more than its own
+     floor, 0.0281. We are 34th there, and item 332 is the precedent: a probe that overshot cost
+     twelve places. A change that fixes the weak cell by breaking the strong one is a loss even if
+     rule 1 holds.
+
+Rules 1 and 2 are directional claims about a change measured at sign 4/4 with margins of 7 to 8 times
+the macro floor, so failing either would be a real refutation and not noise. Rule 3 is the one that
+can fail on its own terms, because `C` changes CYP3A4's arm too.
+
+**What this does NOT support.** Four seeds, one checkpoint. The Platt step is nested here and
+un-nested in the submission, so the shipped numbers should be read as a floor on what the shipped path
+does rather than as its value. Nothing here measures the conjunction path of items 244 and 250, which
+is a separate device, and nothing here touches the regression track.
