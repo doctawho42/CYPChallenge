@@ -15640,3 +15640,65 @@ ethanol and checking 12 + 4 directed bonds survive.
 external data, against a competitor who averages four nets over three data sources. The decorrelation
 figure is the durable part; the -0.0048 is a statement about THIS vehicle and not about the axis. No
 board value is predicted.
+
+**342. Two strengthenings, each measured against a control the project already owned, take the graph
+net from clearly harmful to exactly neutral: solo macro rank 0.5778 -> 0.6079 and the seventh-member
+gain -0.0048 -> +0.0006, which is still a sixth of the floor. The third strengthening was killed by
+reading the training curves instead of building it.** `verify/k119_dmpnnaux.py` (new),
+`results/logs/k119_dmpnnaux.json`, `results/preds/k119_aux_seed0_lam*_n*.json`. One seed.
+
+**More epochs was refused before it was built.** Item 341's curves: early stopping fires at 25--30
+epochs of 60 with the training loss at roughly half the validation loss on every fold. The net
+overfits 4905 molecules, so the binding constraint is supervision and not training time. One of the
+three obvious strengthenings closed by a log the previous run had already written.
+
+**The channel, and it is `src/trunk.py`'s.** The single-point screen carries a reading for 2570--3090
+compounds per enzyme whose curve was never run. Counted before anything was trained: 1A2 +2963 to
+1412, 2C9 +3090 to 1285, 2D6 +2882 to 1493, 3A4 +2570 to 2335 --- **x2.76 overall**, which is the
+trunk's own figure to the second digit. The trunk measured this channel real on a dense net over the
+2295 columns; a graph net on 4905 molecules is the kind of model that should want it more.
+
+**The control is the trunk's too, and it beats omitting the head.** `lam = 0` keeps the screening head
+in the network and gives it no gradient, so the parameter count and the initialisation order match
+across arms and the loss term is the only difference. `DMPNNAux` subclasses item 341's `DMPNN` and
+adds its head AFTER `super().__init__()`; verified that under one seed the parent's parameters come
+out bit-identical, so item 341 still reproduces. Early stopping and the reported loss are the MAIN
+task in both arms --- otherwise the arm with the extra term would stop on a different quantity and
+the comparison would be between two stopping rules rather than two models.
+
+    арм                                одиночн.     пара    Δ 7-м    corr
+    пункт 341: без головы, 1 сеть        0.5778   0.7139  -0.0048   0.894
+    lam=0, 1 сеть (КОНТРОЛЬ)             0.5725   0.7165  -0.0048   0.897
+    lam=1, 1 сеть                        0.5892   0.7010  -0.0008   0.873
+    lam=1, 4 сети                        0.6079   0.6800  +0.0006   0.891
+                                                            (пол 0.0036)
+
+**What each piece bought.** The head's mere presence buys nothing: `lam = 0` lands 0.0053 below item
+341, which is the shifted training draw rather than a model change. The screen's gradient buys
+**+0.0168** of solo rank over that control, improves the pair in the same direction (0.7010 against
+0.7165) and pushes the error correlation DOWN to **0.873** --- the most decorrelated member this
+project has produced, below the shipped probe's 0.901. Averaging four initialisations, which is
+`briford`'s axis, buys **+0.0187** more. Together, **+0.0301** over item 341.
+
+**And the member crosses zero without becoming useful.** -0.0048, then -0.0008, then **+0.0006**
+against a floor of 0.0036. Averaging also takes the correlation back up to 0.891, which is the price
+of the variance reduction: a mean of four is more average-like than any one of them.
+
+**No extrapolation is offered, deliberately.** Two points exist --- this net at 0.6079 of solo rank
+returns +0.0006, the probe at 0.6261 returns +0.0138 --- and item 340 records what happens when a
+line is drawn through points like these: a fit with R2 0.188 that claimed first place. The two numbers
+are reported and nothing is interpolated.
+
+**A rounding trap, recorded because the guard caught it in this item's own text.** The first draft
+wrote the screen's gain as 0.0167, the difference of the two ROUNDED solo ranks (0.5892 - 0.5725).
+The difference of the unrounded values is 0.016755, which rounds to **0.0168**. The check that
+compares every figure in an item against the log is what found it; a table of rounded numbers does
+not support arithmetic done on the printed digits.
+
+**What this does and does not settle.** It settles that the axis responds: supervision and ensembling
+each move it in the predicted direction by amounts large against the rank floor, with the
+discriminating control failing as designed. It does not settle that a graph net can reach member
+strength here. The remaining gap to the shipped probe --- a PRETRAINED encoder with a trivial head
+--- is now the measurement that matters: pretraining was worth at least +0.048 against item 341's
+from-scratch net and at least +0.018 against this strengthened one. One seed, 60 epochs, hidden 300,
+no external data. No board value is predicted.
