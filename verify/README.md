@@ -11621,6 +11621,12 @@ this split a score below the band is ambiguous, and item 294 as written would ha
 **300. The leaderboard is mostly not model performance -- the visible numbers are calibration probes
 that reverse-engineer the blind label distribution. Seven competitors read: one is ahead of us, five
 of our own nulls are independently reproduced, and nobody is doing structure.**
+*(The HEADLINE is superseded by item 340: at 273 entrants the board's ST-RAE correlates -0.901 with
+its own Spearman, exactly one of the 63 entrants ahead of us has a worse rho, and none has rho below
+0.3 --- the probe rows described below have been pushed down by a field that filled in with models.
+Kept in place because everything after the headline, the seven competitor readings and the five
+reproduced nulls, still stands, and because item 340 exists only by checking this one rather than
+quoting it.)*
 Sources: the challenge Space's FAQ, `config.py` and `submission.py`; both boards including every
 per-enzyme sub-tab; and seven public participant repositories, four of them read by subagents.
 `verify/k94_leaderboard.py` keeps the dated board snapshot and reproduces our side of every
@@ -15513,3 +15519,124 @@ out-of-fold to blind. `decide` takes its threshold on the training folds, which 
 these numbers are the shipped device and not an oracle; but the submission fits the Platt map on all
 training rows rather than nested, so the built file is not required to land exactly here. Nothing
 here revisits the conjunction's own mechanism, and nothing here touches the regression track.
+
+**340. The board measures ORDERING now, and our post-processing is not robbing us but flattering us:
+sorted by Spearman we are 91st of 273 while the metric puts us 64th. Item 300's headline --- that the
+visible numbers are calibration probes rather than models --- was true at 221 entrants and is false
+at 273.** `results/leaderboard_2026-10-11T1926Z.json`, one snapshot, no new code.
+
+**The field.** Spearman between a row's MA-ST-RAE and its MA-rho is **-0.901** across 273 entrants.
+Of the 63 ahead of us, exactly **one** has a worse rho than ours, **none** has rho below 0.3, and the
+top twenty run rho 0.75--0.79 with R2 0.58--0.66 and `Proprietary Data: No` throughout. The probe
+entries item 300 found --- Spearman near zero beside the lowest ST-RAE on the board --- have been
+pushed down by a field that filled in with models. That item was right for 13 September and is now
+the most dangerous sentence in this file, because it licenses being comfortable at 64th.
+
+    сортировка поля          наше место
+    по MA-ST-RAE                 64/273
+    по MA-R2                     71/273
+    по MA-Spearman               91/273
+
+**Our post-processing is excellent and nearly spent, measured WITHOUT a fit.** Nineteen entrants sit
+within 0.005 of our rho. Their median ST-RAE is 0.6944 against our 0.5357, and the best of them
+(`alexxi11`, 51st) reaches 0.5069. So at our ordering ability we extract more metric than all but
+five of them, and what is left on that axis is 0.029 of ST-RAE --- about nine places. That is the
+placement line, and it explains why counting it exhausted was right.
+
+Near the top the same neighbourhood comparison gives **+-0.02**: ranks 1 to 6 sit between -0.0216
+and +0.0076 of the median ST-RAE at their own rho. **The leaders are not out-processing us. They are
+out-ordering us by 0.07 of rho**, which is twenty times the rank floor.
+
+**A defect I nearly shipped as the finding.** The first version of this read the gap off a linear fit
+of ST-RAE on rho, which gave a slope of -3.35 and the conclusion that reaching rho 0.78 would put us
+first. The fit has **R2 0.188** and residual sd 0.4414, so our -0.1184 residual is 0.3 sd --- noise.
+The nearest-neighbour comparison above needs no model and is what the numbers here come from. Same
+family as the rest of this file: an instrument that cannot fail loudly returns a plausible number.
+
+**It is not one bad enzyme.** Our rho percentile is flat across all four:
+
+    фермент   наше rho   место по rho   лучшее на доске
+    CYP1A2      0.7513        104/273            0.8561
+    CYP2C9      0.8231         83/273            0.8836
+    CYP2D6      0.4359         96/273            0.5745
+    CYP3A4      0.8146         95/273            0.8741
+
+**What this does NOT support.** One snapshot, and the board moves --- that is the whole lesson of
+item 300 going stale, so this item will too. Nothing here says what the leaders do; their code is
+closed and only two of the top forty publish a report. It says what WE should optimise, and the
+answer is rho.
+
+
+**341. A representation learned from the molecular graph is the first thing this project has built
+whose errors fall outside the member band --- and it still costs the ensemble 0.0048, because its
+standalone ordering only reaches the weakest member's. Item 289's gate passed it, which is the FOURTH
+time that gate has failed to predict.** `verify/k118_dmpnn.py` (new), `results/logs/k118_dmpnn.json`,
+`results/preds/k118_dmpnn_seed0_d{0,3}.json`. One seed.
+
+**The axis was untouched, and that is checkable rather than asserted.** A grep of this file for
+`message passing`, `GNN`, `graph neural` and `graph network` returns **zero**, against controls
+`torch` 11, `trunk` 225 and `chemprop` 15. In the code every member sits on ONE representation: the
+five are gradient boosting, pooled boosting, a GP, a ridge and `src/trunk.py` --- and the trunk, for
+all its torch, is a dense net over the SAME 2295 columns. `chemprop` appears only frozen;
+`src/embed.py` runs the organisers' pretrained weights and everything downstream reads an array. Five
+estimator families, one representation, which is why item 280's member error correlation of 0.91-0.99
+was never going to move: item 288's "decorrelation comes from the ESTIMATOR FAMILY, not from
+features" was measured INSIDE those 2295 columns and cannot speak about a different representation.
+
+**Why it is written out by hand.** `chemprop`, `torch_geometric`, `dgl` and `deepchem` are all absent
+here, and `src/embed.py` records the reason --- chemprop pulls forty-one dependencies and the lock
+does not carry it. CLAUDE.md forbids raising the pins as a side effect, torch 2.13.0 and RDKit are
+present, and a directed message-passing network is a hundred lines, so it is written out and the
+whole measurement stays under the existing pins.
+
+    арм                            макро ранг     пара     1A2      2C9      2D6      3A4
+    D-MPNN, глубина 3                  0.5778   0.7139  0.5134   0.6073   0.4365   0.7540
+    РАЗЛИЧАЮЩИЙ КОНТРОЛЬ, глубина 0    0.4767   0.7915  0.4274   0.5358   0.3136   0.6300
+    слабейший член (гребневая)         0.5778        —       —        —        —        —
+    зонд на замороженном энкодере      0.6261        —       —        —        —        —
+    отгруженный состав из шести        0.6568        —       —        —        —        —
+
+**The graph does the work.** Depth 0 is the same network with message passing removed --- atom
+features read, pooled, same head, same parameter path --- and it loses **0.1011 of macro rank**, with
+every one of the four enzymes worse. So this is not a dense net on a new featurisation; the
+propagation is what earns the number. The training control holds in both arms: mean loss 0.9834 ->
+0.6295 at depth 3 and 0.9913 -> 0.7368 at depth 0, and the file exits 2 if the drop is under 5 per
+cent, because comparing an untrained net with a control would be a dead grep.
+
+**The errors ARE decorrelated, for the first time.** Against the five-member mean: 0.926, 0.864,
+0.957, 0.828, mean **0.894**. The band the five occupy among themselves is 0.966--0.982 and the
+shipped probe sits at 0.901, so the graph net is as decorrelated as the probe and better on two
+enzymes. Nothing built on the 2295 columns has ever come out of that band.
+
+**And it does not help: -0.0048 of rank, +0.0046 of pair.** Admitted as a seventh member beside the
+five and the probe, the composition goes 0.6568 -> 0.6520. The reason is in the table: 0.5778 of
+standalone rank is the weakest member's level, and a member that weak cannot lift a 0.6568
+composition however differently it errs.
+
+**Item 289's gate, fourth failure.** The gate asks for error correlation under 0.93 AND a standalone
+rank within 0.02 of the weakest member (0.5778, so a floor of 0.5578). This net passes both --- 0.894
+and 0.5778 --- and returns -0.0048. With item 335's two and item 324's one, the gate has now passed
+four candidates whose outcomes span -0.0048 to +0.0138. **It does not order them and should not be
+used to decide a cell again**; the seventh-member score is nearly free once the predictions are
+cached and it is the only thing that answers the question.
+
+**The diagnosis is the right axis with an insufficient vehicle, and the next step has a number
+attached.** The frozen PRETRAINED encoder with a ridge head reaches 0.6261 of macro rank (item 324)
+while this from-scratch net reaches 0.5778 on the same kind of representation. **So pretraining is
+worth at least +0.048 here**, measured on our own folds, which is the quantified case for FINE-TUNING
+from the pretrained weights rather than training from scratch --- the branch the journal assigned
+"low-prior per items 166/189/269/289" without ever measuring it, and the one `briford` (16th, rho
+0.7516, the best readable entrant) actually uses with four nets averaged and challenge+ChEMBL+qHTS
+behind them. The practical blocker is named so nobody rediscovers it: `chemprop_medium.pt` is NOT on
+disk --- only the extracted `emb_chemprop_medium*.npz` --- so that run needs the checkpoint and
+chemprop in a separate environment, exactly as `src/embed.py` already does for the embeddings.
+
+**A bug caught by its own control.** The batch assembler tested `len(v[0])` to decide whether a batch
+had any bonds, which reads the FIRST molecule only, so a batch whose first molecule has no bonds
+would have silently dropped every other molecule's. Found by batching water ahead of benzene and
+ethanol and checking 12 + 4 directed bonds survive.
+
+**What this does NOT support.** One seed, sixty epochs, hidden width 300, 4905 molecules and no
+external data, against a competitor who averages four nets over three data sources. The decorrelation
+figure is the durable part; the -0.0048 is a statement about THIS vehicle and not about the axis. No
+board value is predicted.
