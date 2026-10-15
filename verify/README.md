@@ -9217,7 +9217,7 @@ folds:
 **A CYP2C9 row is worth 3.03 times a CYP3A4 row in the number we are scored on.** Per-enzyme members
 are indifferent -- each optimises its own fraction and a monotone rescaling of the loss does not move
 the optimum. But the **pooled member** concatenates all four label sets and fits with no
-`sample_weight` (`src/submit.py:_oof_one`, line 542), and the **trunk** shares a representation
+`sample_weight` (`src/submit.py:_oof_one`), and the **trunk** shares a representation
 across enzymes. Two members of five optimise a sum the metric does not pay by.
 
 **Why this is the same move as the dead zone rather than a new trick.** The dead zone derives the
@@ -12572,9 +12572,8 @@ occurrences, so a needle search reports a sound citation as rot) and this item's
 the broken citations as strings.
 
 **Corrections to my own audit, every one found by checking rather than by reading.** Item **257**'s
-`src/submit.py:_oof_one`, line 542 is SOUND: by the AST `_oof_one` spans **512-553**, so 542 is
-inside it, and the item's claim is that `sample_weight` is ABSENT, which the file confirms at zero
-occurrences --- my first pass counted it as rot because the needle I searched for was the very
+citation of `src/submit.py:_oof_one` is SOUND: the item's claim is that `sample_weight` is ABSENT
+from that function, which the file confirms at zero occurrences --- my first pass counted it as rot because the needle I searched for was the very
 string whose absence is the claim. Three numbers in the sentence that stood here were wrong: the
 item was 253, the span ended at 594, and the same pass MISSED `submit.py:230`. The span came from
 taking the next top-level `def` as the end, which is `_keep` at 595, with forty lines of something
@@ -15419,3 +15418,98 @@ can fail on its own terms, because `C` changes CYP3A4's arm too.
 un-nested in the submission, so the shipped numbers should be read as a floor on what the shipped path
 does rather than as its value. Nothing here measures the conjunction path of items 244 and 250, which
 is a separate device, and nothing here touches the regression track.
+
+**339. Items 337 and 338 measured the frozen head against an arm retired on 6 September, so the
+number that matters is not theirs. Against the arm that SHIPS the gain is macro MCC +0.0431 with sd
+0.0028 and sign 4/4 --- a macro claim, like the bundle's own: CYP3A4 clears its floor at twice over,
+CYP2D6 does NOT clear its floor, and a single seed had the two enzymes the other way round.**
+`verify/k117_tdibundle.py` (new), `results/logs/k117_tdibundle.json`,
+`results/preds/k117_bundle_seed{0..3}.json`, plus `src/submit.py`, which gains the head and the
+`--tdiemb` flag and is part of this commit.
+
+**The defect, and it was findable.** Items 337/338 compared the encoder with `oof_gbm` on
+FP+DESC+MECH --- a plain direct classifier on `is_TDI`, which is the `--no-bundle` branch and the
+behaviour from before item 250. What ships is the conjunction: `--no-bundle` is the opt-OUT,
+`results/submission/submission.meta.json` records the shipped arm as
+"связка: ворота(ансамбль+мёртвая зона) * сдвиг", and this file says it in those words --- the
+passage that introduced `results/preds/bundle_oof.json` states that `tdi_probs.json` "is the direct
+classifier retired on 6 September". The word `bundle` appears in this file 33 times and `shipped
+arm` five. **Every control inside items 337/338 held bit for bit and not one could have caught
+this**, because they faithfully compared the candidate with the baseline they had been given. A
+control that the baseline reproduces is worth something only when the baseline is the right one.
+
+CLAUDE.md gains a bullet for it, next to the one it extends: searching the journal for the IDEA
+protects against re-deriving; searching for the BASELINE protects against measuring against
+something that no longer ships. The first search was done here and the second was not.
+
+**The apparatus, and the control the earlier pair lacked.** The conjunction is reproduced by the
+functions item 250 used --- `member_oof` and `dz_refit` from `k75_armens`, `platt_oof`, `oof_clf` and
+`decide` from `k76_bundle`, assembled as `k91_mccband` assembles it --- on the bundle's own row mask,
+which is stricter than `lab.notna()` and is why items 337/338 had 2346 rows where this has 2334.
+Two controls fire before anything is reported: the row counts must equal `bundle_oof.json`'s 2334 and
+1493, and at seed 0 the reproduced bundle must score the committed 0.3578 and 0.1282. Both held, so
+the baseline here is **measured** to be the shipped arm rather than recognised by the look of a
+function.
+
+**Four seeds, against the shipped bundle.**
+
+    арм                        CYP3A4       sd  знак    CYP2D6       sd  знак    макро       sd  знак
+    S+E связка+вложение       +0.0576   0.0192   4/4   +0.0286   0.0200   4/4  +0.0431   0.0028   4/4
+    E вложение одно           +0.0375   0.0167   4/4   +0.0299   0.0103   4/4  +0.0337   0.0085   4/4
+    S+D РАЗЛИЧАЮЩИЙ КОНТРОЛЬ  +0.0101   0.0083   3/4   -0.0276   0.0213   0/4  -0.0087   0.0092   0/4
+    пол (пункт 235)            0.0281                   0.0419                 0.0076
+
+**The macro claim is the solid one and the per-enzyme reading is not.** Macro clears its floor 5.7
+times over at a spread of 0.0028, and the discriminating control fails cleanly at 0/4. CYP3A4 clears
+its own floor twice over. **CYP2D6 does not clear its floor** --- +0.0286 against 0.0419, positive on
+every seed but under the threshold this project uses to call something a result. That is the same
+shape the bundle itself has: item 244's pre-registration passed on macro and recorded that "поферментно
+не проходит НИЧЕГО". The cell we most wanted to fix is the cell the fix does not reach by this
+standard.
+
+**One seed had it backwards, which is the whole argument for running four.** Seed 0 alone gives
+CYP3A4 +0.0300 (thin against its 0.0281 floor) and CYP2D6 +0.0563 (comfortably over its 0.0419). The
+four-seed answer inverts both: CYP3A4 +0.0576, CYP2D6 +0.0286. A submission built on seed 0 would
+have been announced as fixing CYP2D6 and risking CYP3A4, and the truth is the reverse. Note also that
+macro's spread (0.0028) is **seven times tighter** than either enzyme's (0.0192, 0.0200): the two
+enzymes' deviations cancel, which is why the macro claim survives a disagreement that destroys both
+per-enzyme ones.
+
+**Averaging beats replacing, measured rather than argued.** `E` alone reaches +0.0337 of macro against
+`S+E`'s +0.0431, and on CYP3A4 the gap is +0.0375 against +0.0576. The bundle is not redundant with
+the encoder; it is kept and the head enters as a second equally weighted CALIBRATED score. This also
+settles what items 337/338 could not: their `B` versus `C` question was a choice between two
+constructions neither of which contained the shipped arm.
+
+**Where the control is not clean, stated because it qualifies the CYP3A4 number.** `S+D` --- the same
+logistic head on OUR DESC+MECH --- is negative on CYP2D6 (0/4) and negative on macro (0/4), but on
+CYP3A4 it comes out **+0.0101 at sign 3/4**, below that enzyme's floor yet not negative. So on CYP3A4
+some of the +0.0576 is the head rather than the frozen weights, and the encoder-specific part is
+about +0.0475. On macro and on CYP2D6 the attribution is clean.
+
+**The head is now one piece of code.** `tdiemb_oof` and `tdiemb_test` live in `src/submit.py` and
+`verify/k117_tdibundle.py` imports the first from there, so the arm measured and the arm shipped
+cannot drift apart. The re-run after the move reproduced all 64 logged cells exactly.
+
+**Effect on item 338's pre-registration: none, by luck rather than design.** Its three rules were
+written against BOARD readings (macro 0.2836, CYP2D6 0.1255, CYP3A4 0.4416), not against arm A, so
+they survive the baseline error untouched. What changes is the expectation behind rule 2: with the
+CYP2D6 out-of-fold gain under its own floor, rule 2 is the one that can now fail without that being
+a surprise. Rule 3, do no harm to CYP3A4, is the one the corrected measurement makes comfortable ---
+CYP3A4 gains.
+
+**Two line citations rotted in this very commit, and the guard caught them.** Inserting `tdiemb_oof`
+and `tdiemb_test` into `src/submit.py` moved `_oof_one` down, and
+`tests/test_journal_citations.py::test_every_line_citation_in_the_journal_resolves` failed on items
+257 and 308, both of which cited "`src/submit.py:_oof_one`, line 542". The fix is not a new number:
+the line numbers are deleted and the SYMBOL citation kept, which is the rule item 308 itself
+established. Item 308's wording changes with them --- its sentence argued soundness from the AST span
+512-553, and that arithmetic is exactly what an insertion anywhere above invalidates --- so it now
+argues it from `sample_weight` being absent from the function, which is a property of the code and
+not of its layout. The file's remaining line citations resolve, and the suite is 56 passing.
+
+**What this does NOT support.** Four seeds, one checkpoint, one head family, and no map from
+out-of-fold to blind. `decide` takes its threshold on the training folds, which is what ships, so
+these numbers are the shipped device and not an oracle; but the submission fits the Platt map on all
+training rows rather than nested, so the built file is not required to land exactly here. Nothing
+here revisits the conjunction's own mechanism, and nothing here touches the regression track.

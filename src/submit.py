@@ -141,7 +141,8 @@ import feats as F
 from cypsplit import butina_folds, fold_digest
 from gp import prepare as gp_prepare, gp_predict
 from sklearn.isotonic import IsotonicRegression
-from sklearn.linear_model import LogisticRegression, RidgeCV
+from sklearn.linear_model import (LogisticRegression, LogisticRegressionCV,
+                                  RidgeCV)
 from reweight import tilt
 import submeta
 
@@ -338,6 +339,44 @@ def _arm_ensemble(Xs, ys, folds, Xtes, LOs, HIs):
     oof, tst = pass_(tgt, DZ_KW)
     print("      плечо: мёртвая зона готова", flush=True)
     return oof, tst
+
+
+# ------------------------------------------------- голова на замороженном вложении для TDI
+# Пункты 337--339. Определена ЗДЕСЬ, а не в verify/, потому что verify/k117_tdibundle.py её
+# импортирует: измеряемое плечо и отгружаемое обязаны быть одним кодом, а не двумя копиями,
+# которые разойдутся в день, когда одну из них поправят.
+TDIEMB_CS = [0.003, 0.01, 0.03, 0.1, 0.3, 1.0]
+
+
+def tdiemb_oof(E, y, fold):
+    """Логистическая голова на вложении, вне фолда, с выбором C внутренней перекрёстной.
+
+    Стандартизация и фильтр мёртвых колонок подгоняются на ОБУЧАЮЩИХ строках каждого фолда,
+    никогда на объединении --- это дефект 2 пункта 202.
+    """
+    p = np.zeros(len(y))
+    for f in range(5):
+        trn, te = fold != f, fold == f
+        if te.sum() == 0 or y[trn].sum() == 0:
+            continue
+        mu, sd = E[trn].mean(0), E[trn].std(0)
+        keep = sd > 1e-6
+        Z = (E[:, keep] - mu[keep]) / sd[keep]
+        m = LogisticRegressionCV(Cs=TDIEMB_CS, cv=4, scoring="roc_auc", max_iter=2000,
+                                 n_jobs=-1).fit(Z[trn], y[trn])
+        p[te] = m.predict_proba(Z[te])[:, 1]
+    return p
+
+
+def tdiemb_test(E, y, Ete):
+    """Та же голова, обученная на ВСЕХ обучающих строках, применённая к слепому набору."""
+    mu, sd = E.mean(0), E.std(0)
+    keep = sd > 1e-6
+    Z = (E[:, keep] - mu[keep]) / sd[keep]
+    Zt = (Ete[:, keep] - mu[keep]) / sd[keep]
+    m = LogisticRegressionCV(Cs=TDIEMB_CS, cv=4, scoring="roc_auc", max_iter=2000,
+                             n_jobs=-1).fit(Z, y)
+    return m.predict_proba(Zt)[:, 1]
 
 
 def _platt_1d(score_tr, y_tr, score_te, raw=False):
@@ -1132,6 +1171,17 @@ def main():
                          "после зоны ПАДАЕТ на -0.0032: клип к полосе стирает 58 %% сдвига "
                          "начисто и оставляет 32 %% величины, потому что типичный сдвиг 0.19 "
                          "pIC50 меньше медианной полосы 0.27--0.53.")
+    ap.add_argument("--tdiemb", action="store_true",
+                    help="добавить голову на замороженном вложении chemprop ВТОРЫМ "
+                         "калиброванным счётом в связку TDI (пункт 339). ВЫКЛЮЧЕНО по "
+                         "умолчанию. verify/k117_tdibundle.py, четыре сида, против ОТГРУЖЕННОЙ "
+                         "связки: макро MCC +0.0431 при sd 0.0028, знак 4/4 и поле 0.0076; "
+                         "CYP3A4 +0.0576 при поле 0.0281; CYP2D6 +0.0286 при поле 0.0419, то "
+                         "есть НИЖЕ своего пола --- заявление макро, как и у самой связки "
+                         "(пункт 244). Различающий контроль (та же голова на НАШЕМ DESC+MECH) "
+                         "даёт -0.0087 макро при знаке 0/4. Замена связки вложением (-0.0094 к "
+                         "усреднению) хуже усреднения, поэтому связка сохраняется. Требует "
+                         "data/emb_chemprop_medium*.npz.")
     ap.add_argument("--probe", action="store_true",
                     help="добавить ШЕСТЫМ членом гребневую голову на замороженном чужом "
                          "кодировщике chemprop (пункт 324). ВЫКЛЮЧЕНО по умолчанию. "
@@ -1405,6 +1455,10 @@ def main():
         inh_full = (pd.read_csv(D + "cyp-challenge-TRAIN_inhibition.csv")
                       .set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index())
         Xs, ys, folds, LOs, HIs, labs, shifts, gates = [], [], [], [], [], [], [], []
+        mms = []
+        Eemb = Eemb_te = None
+        if a.tdiemb:
+            Eemb, Eemb_te = _probe_load(rows, te)
         for c in TDI_CYPS:
             lab = T[f"{c}_is_TDI"]
             ta = T[f"{c}_pIC50_TDI_condition"].to_numpy(float)
@@ -1414,6 +1468,7 @@ def main():
             mm = (lab.notna() & np.isfinite(ta) & np.isfinite(dr)
                   & np.isfinite(lo) & np.isfinite(hi)).to_numpy()
             Xs.append(X[keep][mm]); ys.append(ta[mm]); folds.append(tdifold[mm])
+            mms.append(mm)
             LOs.append(lo[mm]); HIs.append(hi[mm])
             labs.append(lab[mm].astype(int).to_numpy())
             shifts.append((ta - dr)[mm]); gates.append((ta > TDI_GATE)[mm].astype(int))
@@ -1432,6 +1487,17 @@ def main():
             prod_tr, prod_te = gp_tr * dp_tr, gp_te * dp_te
             pr, _ = _platt_1d(prod_tr, labs[e], prod_te)
             cal_tr, _ = _platt_1d(prod_tr, labs[e], prod_tr)
+            if a.tdiemb:
+                # Пункт 339: голова входит ВТОРЫМ равновесным КАЛИБРОВАННЫМ счётом --- не
+                # признаком и не заменой. verify/k117_tdibundle.py строит её так же.
+                Ee = Eemb[keep][mms[e]]
+                pe_tr = tdiemb_oof(Ee, labs[e], folds[e])
+                pe_te = tdiemb_test(Ee, labs[e], Eemb_te)
+                pe_te_cal, pe_tr_cal = _platt_1d(pe_tr, labs[e], pe_te)
+                print(f"    {c}: вложение E[p] {pe_te.mean():.3f} -> калибр. "
+                      f"{pe_te_cal.mean():.3f}; усредняю со связкой", flush=True)
+                pr = (pr + pe_te_cal) / 2
+                cal_tr = (cal_tr + pe_tr_cal) / 2
             thr = plugin_threshold(cal_tr)
             cls[f"{c}_is_TDI"] = pr >= thr
             print(f"    {c}: ворота E[p] {gp_te.mean():.3f} (обуч. доля {gates[e].mean():.3f}), "
