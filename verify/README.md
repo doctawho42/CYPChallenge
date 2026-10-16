@@ -15702,3 +15702,287 @@ strength here. The remaining gap to the shipped probe --- a PRETRAINED encoder w
 --- is now the measurement that matters: pretraining was worth at least +0.048 against item 341's
 from-scratch net and at least +0.018 against this strengthened one. One seed, 60 epochs, hidden 300,
 no external data. No board value is predicted.
+
+**343. Fine-tuning a published encoder is measured WORSE than leaving it frozen, by 0.0648 of macro
+rank, while the pretraining itself is worth +0.0504 and +0.0671 against its own same-architecture
+controls. The value of those weights is entirely in their not moving.** `src/finetune.py` (new, runs
+in the encoder environment), `verify/k120_finetune.py` (new, scores in the pinned one),
+`results/logs/k120_finetune.json`. One seed, five folds, four arms.
+
+**The split of labour is forced.** chemprop resolves `scikit-learn` to 1.9.1 and CLAUDE.md records
+that 1.9.0 moves every prediction here by ~0.135 pIC50, so the encoder environment trains and writes
+an array and nothing else; every number below is computed under 1.3.2 by the same `score` and
+`errcorr` items 324/335/341/342 used. The contract is a file, as `src/embed.py` established. Pinning
+`torch==2.13.0` and `rdkit==2025.9.6` to the main environment's versions made the whole environment
+cost **26 MiB** out of the uv cache rather than several GB, which mattered: the disk had 9.3 GiB free.
+
+**Four arms, not two.** The request was two checkpoints with their difference pricing CYP
+pretraining, which works only if the architectures match. They do not: `rdkit2d` is d_h 2048 at
+depth 6 (8.71 M encoder parameters) and `chemprop_medium` is 600 at depth 4 (0.82 M). So each
+checkpoint got its own DISCRIMINATING CONTROL --- the identical architecture with the published
+weights discarded.
+
+    арм                        одиночн.     пара     corr    Δ 7-м
+    зонд, ЗАМОРОЖЕННЫЙ           0.6261        —    0.901  +0.0138
+    medium, дообучен             0.5613   0.7131    0.812  -0.0007
+    rand600 (контроль)           0.4942   0.7816    0.811  -0.0147
+    rdkit2d, дообучен            0.5337   0.7397    0.878  -0.0084
+    rand2048 (контроль)          0.4833   0.7920    0.809  -0.0151
+
+    rdkit2d - rand2048   = +0.0504   дескрипторное предобучение
+    medium  - rand600    = +0.0671   предобучение на CYP/ADME
+    разность разностей   = +0.0167   что добавляет CYP/ADME сверх дескрипторов
+
+**No arm reaches the frozen probe's 0.6261**, and the best (`medium` at 0.5613) is 0.0648 below the
+SAME checkpoint left frozen --- eighteen times the rank floor. The checkpoint's own author says it in
+his README, and reading him properly corrected my own summary: his headline "freeze, don't fine-tune"
+is about naive fine-tuning on the challenge's labels, while his best-ranking chemprop model IS a
+fine-tune warm-started from this checkpoint with seventeen heads. The configuration matters and the
+naive one loses. Our hand-written from-scratch net (item 341, 0.5778, and 0.6079 with item 342's
+strengthenings) beats the fine-tuned published encoder, because nothing damaged it.
+
+**A defect of mine, caught on the pair column.** `RegressionFFN` was built without an
+`output_transform`, so chemprop returned predictions in each fold's own StandardScaler space. The
+first scoring showed a pair of 4.70 against our usual 0.65, which is what gave it away. Worse, the
+RANK was affected too: Spearman is invariant to a monotone transform within a fold, but the five
+folds have different statistics (mu spread 0.012 to 0.039 across enzymes), so the concatenated
+vector's ranks mixed. The repair is exact and needed no retraining --- the transform is linear and
+the split deterministic, so the statistics were recovered and the un-scaled means land on the
+labels' (1A2 4.99 against 4.96). Both controls are recorded: the recovered means, and that the
+per-fold scalers really do differ, without which the repair would have been cosmetic.
+
+
+**344. Across nine uploads our board Spearman has taken exactly TWO values. Ordering moved once, and
+the thing that moved it was the frozen-encoder probe. Everything else we shipped in three weeks was
+post-processing.** No new code; `results/leaderboard_*.json`, nine snapshots.
+
+    подано        ST-RAE     rho    место
+    09-15         0.8149  0.6935      103
+    09-16         0.5830  0.6935       73
+    09-19         0.5760  0.6935       75
+    09-24         0.5760  0.6935       68
+    09-25 01:49   0.5535  0.6935       58
+    09-25 17:33   0.5381  0.7062       53     <- зонд (пункты 324, 325)
+    10-01         0.5363  0.7062       58
+    10-02         0.5794  0.7062       67
+    10-03         0.5357  0.7062       53
+
+Five uploads before 25 September share 0.6935 and four after share 0.7062. That is not rounding: the
+first five were affine recalibrations of one set of predictions, so we uploaded the same ordering
+five times. ST-RAE moved 0.8149 to 0.5357 over the same period, 103rd place to 53rd.
+
+**The apparatus is not broken, which is the uncomfortable part.** Item 327 recorded the transfer: the
+probe's out-of-fold rank gain reached the board at **0.92**, against 0.52 and 0.437 for items 314 and
+317, which were post-processing. Rank transfers nearly intact. We measured correctly and moved the
+wrong quantity eight times out of nine.
+
+**The accounting, and it reframes what "nothing helps" means.** Post-processing bought about
+forty-five places and is now within 0.029 of ST-RAE of exhausted --- about nine places, read off the
+nineteen entrants sitting within 0.005 of our rho (item 340). Ordering bought five places, once. The
+0.07 of rho to the leaders needs +0.076 of out-of-fold rank at the measured transfer, and the whole
+distance this project has travelled from its base to the shipped composition is +0.0917. **What
+remains is not a missed trick; it is a second project's worth of modelling, in a quantity we have
+moved once.** For calibration: the best READABLE method on the board (`briford`, 16th) is +0.045 of
+rho above us, not +0.07, and the top five publish nothing.
+
+
+**345. The second frozen checkpoint, rejected in one sentence and never fitted, is worth +0.0033 of
+macro rank as a seventh member at sign 4/4 --- and the descriptor-pretrained one is worth -0.0089 at
+sign 0/4. What earns a member slot is pretraining on ACTIVITY that our features do not already
+carry.** `verify/k121_chemeleon.py` (new), `results/logs/k121_chemeleon.json`,
+`data/emb_chemprop_chemeleon.npz`. Four seeds.
+
+**How it had been rejected.** Item 324, verbatim: "We extracted from `chemprop_medium.pt` only ---
+7.7 MB, sha256 `b8137a0d...` --- because the larger checkpoint's residuals correlate 0.91 with it on
+two enzymes." That is the entire record. `chemprop_chemeleon` appears ZERO times in this file
+against a control of five for `chemprop_medium`: never fitted, never scored, never admitted.
+
+**And item 324's number was RIGHT, which is the actual lesson.** Measured here on four seeds and all
+four enzymes the residual correlation between the two probes is **0.890** --- so the 0.91 was not a
+mistake and no arithmetic rescues the decision. What was wrong is that the figure was used as a
+SCREEN. Item 335 measured that screen non-predictive, and this candidate is the proof in the
+positive direction: it correlates 0.859 with the five members, passes item 289's gate with room to
+spare, and is worth only +0.0033.
+
+    зонд medium (отгружен)      одиночн. 0.6261   corr к пяти 0.908   8 сидов, пункт 324
+    зонд chemeleon (новый)      одиночн. 0.6153   corr к пяти 0.859   4 сида
+    полоса пяти членов                            0.9735
+
+    седьмым членом: +0.0033 ранга (sd 0.0010, знак 4/4), пара -0.0054
+    заменой вместо medium:      -0.0004 --- держать оба лучше, чем менять
+
+**And the negative that buys the criterion.** `src/embed.py` records that the organisers published
+sixteen pretraining checkpoints, one per descriptor family, and chose `rdkit2d` deliberately
+"because it is pretrained on the very descriptors our DESC block contains". Run through the same
+device on four seeds it gives **-0.0089 of rank at sign 0/4** (sd 0.0005), a solo rank of 0.5686
+and a 0.926 error correlation with the five members --- the HIGHEST of any candidate measured, and
+still inside item 289's gate. Redundant by construction, exactly as the choice implies, so the
+sixteen are not a stock of candidates.
+
+**That figure was produced by a heredoc and now has a script.** `verify/k121_chemeleon.py` takes
+`--emb/--tag/--out`, so an arbitrary frozen checkpoint goes through the identical device; its
+defaults reproduce the chemeleon run unchanged. Re-run that way, the four seeds reproduce the
+original numbers at **max|Δ| = 0.00e+00** --- and the earlier log is kept beside the new one as
+exactly that reproduction control, not as the source.
+
+**Its embedding carries no `molecule_name`, and that needed a different control, not a weaker one.**
+`src/embed.py` writes this file by embedding `list(rows.SMILES)` in order and checking only the
+length, so `load_any` cannot verify the order by name and now says so by returning `named=False`
+instead of passing quietly. The caller then runs `align_control`, which fits the probe on the array
+ROLLED BY ONE ROW: on CYP1A2 the aligned array ranks 0.4814 and the rolled one -0.0043, with the
+other three seeds at 0.4724/0.4774/0.4741 against 0.0022/-0.0032/-0.0108. That control must succeed,
+and it exercises the order clause itself rather than proving the probe runs.
+
+Extraction passed the control this file demands be re-checked for every new checkpoint: `bn` is
+Identity, so `model.fingerprint` and `agg(message_passing(...))` are identical at 0.000e+00.
+
+
+**346. The three sub-floor members ADD, and the sum clears both floors: +0.0047 of macro rank and
+-0.0085 of pair, sign 4/4 on each. It is the first adoptable gain since item 324.**
+`verify/k122_stack.py` (new), `results/logs/k122_stack.json`. Four seeds, equal weights throughout.
+
+Three measurements had each produced a member that was consistently positive and consistently under
+the 0.0036 floor --- item 335's gbm head at +0.0023, item 342's graph net at +0.0006, item 345's
+chemeleon at +0.0033 --- and each was correctly reported as not shipping. **Nobody had asked whether
+they were independent of each other.** The project's rule judges a candidate against the
+composition, never candidates against one another, so a threshold that is right for one attempt
+discards a SET of attempts whose sum clears it.
+
+    состав                        Δранг       sd   знак    Δпара
+    шесть + chemeleon           +0.0033   0.0010    4/4  -0.0054
+    шесть + gbm                 +0.0023   0.0010    4/4  -0.0048
+    шесть + chemeleon + gbm     +0.0047   0.0014    4/4  -0.0085
+                                        (полы 0.0036 и 0.007)
+
+The mechanism, printed before the compositions so it is read in the right order: the two candidates'
+error correlation with each other is **0.848**, so they add 85 per cent of the sum of their
+individual contributions (0.0033 + 0.0023 = 0.0056 against 0.0047 together). Item 342's graph net
+HURTS every combination it joins (+0.0057 to +0.0051 at seed 0) and is dropped. At the measured
+0.0031 of ST-RAE per board place this is about three places --- small, and the first thing in weeks
+that clears a floor.
+
+
+**347. Three more frozen representations, already on disk, all fail at sign 0/4 --- and the
+criterion's one written-down prediction held.** `verify/k124_morefrozen.py` (new),
+`results/logs/k124_morefrozen.json`. Four seeds.
+
+**The baseline here is item 346's EIGHT, not the shipped six**, because by the time this ran the
+stack was the best composition measured and a candidate that cannot improve the best is the
+question worth asking. The script's own column says `Δранг к восьми`. It makes these three numbers
+NOT directly comparable with item 345's chemeleon (seventh on six) or item 324's probe (sixth on
+five), which is the distinction item 348 then has to carry explicitly.
+
+`data/` already held `emb_deepchem_chemberta_77m_mtr.npz` (384 dims),
+`emb_ibm_molformer_xl_both_10pct.npz` (768) and `emb_seyonec_pubchem10m_smiles_bpe_450k.npz` (768),
+each with `train` and `test`. Items 61/154 closed them --- but as `src/ablpre.py`'s SUBSTITUTION arm
+("эмбеддинг один", a HistGradientBoosting head replacing our matrix), never as a RidgeCV probe whose
+prediction enters the mean. `seyonec` had no mention in this file at all.
+
+**The prediction was fixed before the run**, which is the point of having a criterion:
+`chemberta_77m_mtr` is pretrained by multi-task regression on computed descriptors, so item 345's
+rule predicted it would fail as `rdkit2d` did; the two masked language models were cases the rule is
+SILENT about.
+
+    кандидат                        одиночн.  Δранг к 8   знак    Δпара   предсказание
+    deepchem_chemberta_77m_mtr        0.5075    -0.0070    0/4  +0.0096   провал ПРЕДСКАЗАН
+    ibm_molformer_xl_both_10pct       0.4805    -0.0069    0/4  +0.0113   критерий молчал
+    seyonec_pubchem10m_smiles_bpe     0.4530    -0.0066    0/4  +0.0120   критерий молчал
+
+The prediction held, and the two silent cases extend the rule rather than test it: **masked language
+models over SMILES fail too.** What works is activity pretraining specifically --- two successes
+(`medium`, `chemeleon`, both activity, solo 0.62) against four failures (two descriptor, two
+language, solo 0.45 to 0.57).
+
+The order control for files without `molecule_name` is a committed NUMBER rather than a name list:
+re-running `ablpre`'s own head on the stored array reproduces `0|эмбеддинг один|CYP2C9` at
+**0.000e+00** against 2.158 for a one-row shift.
+
+
+**348. The screen for a new member is its STANDALONE rank, not its error correlation. Over the
+thirteen candidates this project has ever measured, solo macro rank separates the ones that helped
+from the ones that did not without a single exception --- and item 289's gate turns out to admit
+ALL of them, which is why it never predicted anything.** No new code: the table is read out of
+`results/logs/k106_probe.json`, `k114_gate93.json`, `k119_dmpnnaux.json`, `k120_finetune.json`,
+`k121_chemeleon.json`, `k123_rdkit2d_committed.json` and `k124_morefrozen.json` by script, not
+typed from the items.
+
+    кандидат              одиночн.  сид   Δ членом  сид     база   пункт
+    зонд medium             0.6261    8    +0.0138    8    пять     324   помог
+    chemeleon               0.6153    4    +0.0033    4   шесть     345   помог
+    gbm на 600              0.6125    4    +0.0023    4   шесть     335   помог
+    граф+скрининг x4        0.6079    1    +0.0006    1   шесть     342   помог
+    ------------------------------------------------------- порог лежит здесь
+    граф с нуля             0.5725    1    -0.0048    1   шесть     341
+    зонд rdkit2d            0.5686    4    -0.0089    4   шесть     345
+    nystroem на 600         0.5616    4    -0.0002    4   шесть     335
+    дообуч. medium          0.5613    1    -0.0007    1   шесть     343
+    дообуч. rdkit2d         0.5337    1    -0.0084    1   шесть     343
+    chemberta MTR           0.5075    4    -0.0070    4  восемь     347
+    molformer XL            0.4805    4    -0.0069    4  восемь     347
+    pubchem10m BPE          0.4530    4    -0.0066    4  восемь     347
+    mlp на 600              0.4131    1    -0.0377    1   шесть     335
+
+Everything that helped sits between 0.6079 and 0.6261; everything that did not sits between 0.4131
+and 0.5725. **No candidate falls in the gap**, which is 0.0354 of rank wide. Spearman between solo
+rank and the member gain is **+0.8022 over n=13**.
+
+**Two columns are there because the thirteen are NOT comparable row to row**, and both are defects
+of the table rather than footnotes. The deltas sit on three different baselines: nine are a seventh
+member added to the shipped six, item 324's is a sixth added to five, and item 347's three are a
+ninth added to item 346's eight. And the seed counts differ --- five rows are a single seed, because
+`k119` and `k120` were each run once. So the control is to throw away everything that does not match
+and recompute: over the **nine on the base of six**, Spearman is **+0.8167**, and the separation is
+unchanged at 0.6079 down to 0.5725 with nothing between. The mixing is not what produces the result.
+
+**Item 289's gate does not merely fail to predict --- it rejects nothing.** On one consistent
+reference (mean error correlation against the five core members, which is the quantity the gate was
+defined on) the ten candidates that have the figure run from 0.449 to 0.926, and the threshold is
+0.93:
+
+    кандидат             corr с пятью   Δ членом   ворота <0.93
+    зонд rdkit2d                0.926    -0.0089   проходит
+    nystroem на 600             0.908    -0.0002   проходит
+    зонд medium                 0.908    +0.0138   проходит
+    gbm на 600                  0.898    +0.0023   проходит
+    граф с нуля                 0.897    -0.0048   проходит
+    граф+скрининг x4            0.891    +0.0006   проходит
+    дообуч. rdkit2d             0.878    -0.0084   проходит
+    chemeleon                   0.859    +0.0033   проходит
+    дообуч. medium              0.812    -0.0007   проходит
+    mlp на 600                  0.449    -0.0377   проходит
+
+Ten of ten pass, four of the ten helped. A screen that admits every candidate ever tried cannot
+discriminate, and the four measurements that found it non-predictive (items 289, 324, 335, and this
+one) were each measuring a gate that was never binding. On the SAME ten candidates the two
+quantities correlate with the outcome at **+0.8667 for solo rank against +0.2000 for the error
+correlation** --- and the +0.2000 carries the wrong sign, since more correlated is supposed to be
+worse.
+
+Both figures are computed on the UNROUNDED correlations, and recomputing them from the three-decimal
+column above gives +0.2249 instead: `nystroem` is 0.908044 and the probe 0.907658, which the printed
+column rounds to a tie and Spearman then ranks differently. Item 342 hit the same trap on its own
+difference of two rounded ranks. The printed column is for reading; the figure comes from the log.
+
+**Figures in an earlier draft of this item were seed-0 values standing in a column of four-seed
+means, and the correction is recorded rather than quietly applied.** `chemeleon` was entered at
+0.6206 where the mean is 0.6153, the medium probe at 0.6282 where the committed eight-seed mean is
+0.6261, `gbm` at 0.6136 against 0.6125, `rdkit2d` at 0.5712 against 0.5686, and the graph net at
+0.5778 --- which is not its solo rank at all but the weakest SHIPPED member's, a different quantity
+that happened to sit nearby. Five wrong numbers, none of which moves the conclusion: the Spearman is
++0.8022 before and after, because every correction preserved the rank order. That is luck, not
+method, and the method is the script that now reads the figures out of the logs.
+
+**Why it should have been obvious, which is the lesson.** An added member is averaged with equal
+weight, so it moves the mean toward itself; the shipped composition sits at 0.6568 and a member must
+be close enough to it that the pull is upward. Decorrelation decides how much a strong member adds,
+never whether a weak one can help at all --- and item 289's screen measured only the second
+quantity, at a threshold loose enough never to bind.
+
+**What this does NOT support.** The ordering is strong and the separation clean, but the threshold's
+location is READ OFF these thirteen points and was not pre-registered, so the next candidate is its
+test rather than its confirmation. The rule is also specific to equal weights; a fitted combiner
+could in principle use a weak member, except that items 280 and 316 measured fitted weights and a
+Caruana selector shut on this library. And the thirteen span four kinds of candidate, so the
+relationship may be a proxy for "is it the same kind of thing as the composition" rather than for
+rank as such. What it does license is cheap: fit a candidate's head, score it alone, and spend the
+composition measurement only above about 0.60.
