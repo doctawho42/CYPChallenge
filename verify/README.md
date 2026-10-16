@@ -15994,3 +15994,103 @@ Caruana selector shut on this library. And the thirteen span four kinds of candi
 relationship may be a proxy for "is it the same kind of thing as the composition" rather than for
 rank as such. What it does license is cheap: fit a candidate's head, score it alone, and spend the
 composition measurement only above about 0.60.
+
+
+**349. The criterion was wrong about its own mechanism, and my written-down prediction is what
+caught it. A checkpoint pretrained on ADME endpoints that another model PREDICTED is worth +0.0038
+of rank at sign 4/4 --- the best single candidate this project has measured --- so what earns a
+member slot is the pretraining target being an ENDPOINT rather than a descriptor, and whether the
+labels were ever measured does not matter.** `verify/k125_surrogate.py` (new, drives k121's device
+unchanged), `verify/k122_stack.py` (generalised to any frozen embedding), `src/embed.py`
+(docstring corrected), `results/logs/k125_surrogate_adme.json`, `k125_minimol.json`,
+`k122_stack.json`. Four seeds.
+
+**It began as a correction, not an experiment.** Item 345 and `src/embed.py` both said the
+organisers published "sixteen pretraining checkpoints, one per descriptor family", and item 345
+concluded that "the sixteen are not a stock of candidates". An `ls` on
+`openadmet/chemprop-foundation-pretraining-weights` returns **fifteen** checkpoint files, and two
+are not descriptor families: `surrogate_adme` (25 targets) and `minimol` (512). The conclusion
+followed from `rdkit2d` being redundant with our DESC block, which is true of the thirteen
+descriptor checkpoints and says nothing about the other two. **A claim about a stock was made
+without listing the stock**, and it stood for three weeks because the sentence read as settled.
+
+**What the two actually are**, from the organisers' own write-up rather than from their filenames:
+`surrogate_adme` is 25 pseudo-descriptors built from Novartis surrogate data "predicted by a model
+trained on their highly consistent, internal corpus" --- a D-MPNN distilling another model's ADME
+predictions, not measured assay data. `minimol` is a D-MPNN trained to reproduce the embeddings of
+MiniMol's message-passing backbone, which was itself trained on quantum and biological tasks.
+Architecture is `rdkit2d`'s exactly, d_h 2048 at depth 6 and 8,714,240 encoder parameters, so item
+343's matched control transfers without re-running: random weights of this shape score 0.4833.
+
+**The prediction, committed in `1b7f420` before either number existed:** both fail, standalone rank
+below item 348's 0.60 and a negative seventh-member contribution at sign 0/4. The reasoning was
+that every distilled target measured here had failed and that 25 targets is a narrower bottleneck
+than `rdkit2d`'s 200.
+
+    кандидат          одиночн.      Δ 7-м    знак    Δпара   corr к пяти   предсказание
+    surrogate_adme      0.6263    +0.0038     4/4   -0.0048         0.897   ПРОВАЛИЛОСЬ
+    minimol             0.5990    -0.0013     0/4   -0.0008         0.910   подтвердилось
+
+    для сравнения, те же четыре сида и то же устройство:
+    chemprop_medium     0.6261    +0.0138           измеренная активность CYP/ADME
+    chemprop_chemeleon  0.6153    +0.0033           измеренная активность
+    chemprop_rdkit2d    0.5686    -0.0089           вычисленные дескрипторы
+    chemberta_77m_mtr   0.5075    -0.0070           вычисленные дескрипторы
+    rand2048 (1 сид)    0.4833          -           случайные веса той же формы
+
+**So the criterion loses a clause and gains a sharper one.** Item 345 said a checkpoint earns a slot
+when its task is activity-like **and is not already present in our features**. The second clause
+does none of the work: chemberta-MTR satisfies it and fails at -0.0070, while `rdkit2d` violates it
+and fails by about the same amount. What separates the six cases is whether the pretraining target
+is an ADME/activity ENDPOINT (three successes, two of them measured and one distilled) or a
+DESCRIPTOR (two failures, one overlapping our features and one not). `minimol` adds a third class
+and it fails: distilling another model's REPRESENTATION is not distilling its endpoints.
+
+**Item 348's threshold got an out-of-sample test I could not have designed, and it held.** `minimol`
+landed at **0.5990 against a threshold of 0.60** --- ten ten-thousandths below --- and its
+contribution is negative, on the correct side. Item 348 said in as many words that the threshold was
+read off thirteen points and not pre-registered, so the next candidate would be its test rather
+than its confirmation. Two candidates arrived, one on each side, and both fell where the threshold
+says. That is now fourteen and fifteen cases with no exception.
+
+**But it does NOT earn a member slot, and the reason is the mechanism working against it.** Added to
+item 346's stack it buys **+0.0007**, a fifth of the floor:
+
+    шесть+chemeleon+gbm                    +0.0047  sd 0.0014  4/4   пара -0.0085
+    шесть+chemeleon+gbm+surrogate_adme     +0.0054  sd 0.0017  4/4   пара -0.0088
+    прирост                                +0.0007  --- пол 0.0036
+
+The pairwise error correlations say why, and they are monotone in the recovered fraction of the
+summed contributions:
+
+    chemeleon ~ gbm                0.848   вместе 84% суммы одиночных
+    gbm ~ surrogate_adme           0.881   вместе 79%
+    chemeleon ~ surrogate_adme     0.914   вместе 60%
+    все три                                вместе 57% (+0.0054 против суммы +0.0094)
+
+`chemeleon` and `surrogate_adme` are the most correlated pair measured in this project, which is
+exactly what the refined criterion predicts: **two encoders pretrained on the same CLASS of target
+make the same kind of error.** The mechanism that explains why `surrogate_adme` works is the
+mechanism that stops it adding. Alone as a seventh member it is the best candidate on record
+(+0.0038 against chemeleon's +0.0033 and the gbm head's +0.0023, at a tighter sd of 0.0007), and
+`шесть+gbm+surrogate_adme` at +0.0048 matches the shipped stack with the same member count --- a
+substitution, not a gain. **The stack stays as item 346 measured it.**
+
+**Controls.** The chemeleon arm is read from the caches item 346 wrote and reproduces its
+compositions bit for bit (+0.0033 and +0.0047 at sign 4/4), which is what shows the generalisation
+of `k122` moved nothing. Both downloads matched their declared content-length byte for byte
+(34859955 and 34859821), both `torch.load`, and both load into `BondMessagePassing` with nothing
+missing and nothing unexpected --- a partial load would give embeddings that look reasonable and
+mean nothing. Neither embedding has a dead column. Both are nameless, so each run carried item
+345's alignment control: at seed 0 on CYP1A2 `surrogate_adme` ranks 0.5533 aligned against -0.0192
+rolled by one row, and `minimol` 0.5220 against -0.0392; the control fired on all four seeds of
+each and the rolled arm never exceeded 0.005. And the probe reproduces the committed
+`k106_probe.json` figure on every seed before any candidate is scored.
+
+**What is left of the stock, stated as a prediction rather than a conclusion this time.** Twelve
+descriptor checkpoints remain unmeasured. The refined criterion predicts all twelve fail, now on two
+measured descriptor cases rather than one. The sharpest remaining test is a 3D-descriptor checkpoint
+--- `usrcat`, `whim` or `e3fp` --- because those encode shape information genuinely absent from our
+2D DESC block, so they hold the "not in our features" clause while being descriptors. If one of
+those works, the endpoint/descriptor split is wrong too and it is the overlap clause that matters
+after all. Each costs a download and one `k121` run.

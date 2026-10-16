@@ -56,20 +56,28 @@ from k106_probe import score, members, probe_oof, combine_add, load_emb
 from k121_chemeleon import load_any, NEW
 
 LOG = RES + "logs/k122_stack.json"
-CHEM_CACHE = RES + "preds/k122_chemeleon_probe_seed%d.json"
 FLOOR = 0.0036
 GOLDEN = "2d93c19815e14261"
-CAND = ("chemeleon", "gbm", "граф")
+CAND = ("chemeleon", "gbm", "граф", "surrogate_adme")
+# Frozen-embedding candidates and where their arrays live. `graph` and `gbm` come from caches
+# written by other verifiers instead, so they are not here.
+EMB = {"chemeleon": NEW, "surrogate_adme": D + "emb_chemprop_surrogate_adme.npz"}
 
 
-def chemeleon_probe(rows, Y, M, fold, seed, dg):
-    path = CHEM_CACHE % seed
+def emb_probe(tag, emb, rows, Y, M, fold, seed, dg):
+    """RidgeCV probe on one frozen embedding, cached per seed under the fold digest.
+
+    Written for chemeleon and generalised when item 349 produced a second candidate worth
+    stacking: the device must be the SAME one, or the subsets below compare a candidate measured
+    here against one measured elsewhere.
+    """
+    path = RES + "preds/k122_%s_probe_seed%d.json" % (tag, seed)
     if _pl.Path(path).exists():
         st = json.load(open(path))
         if st.get("digest") == dg:
-            print("      chemeleon из кэша", flush=True)
+            print("      %s из кэша" % tag, flush=True)
             return [np.asarray(v, float) for v in st["P"]]
-    E, _named = load_any(NEW, rows)   # chemeleon carries names; the flag is for nameless files
+    E, _named = load_any(emb, rows)   # nameless files get the alignment control inside k121
     P = [probe_oof(E, Y, M, fold, e)[0] for e in range(len(CYPS))]
     json.dump({"digest": dg, "P": [[float(x) for x in v] for v in P]}, open(path, "w"))
     return P
@@ -144,7 +152,10 @@ def main(argv=None):
             return 2
 
         cand = {
-            "chemeleon": chemeleon_probe(rows, Y, M, fold, s, dg),
+            "chemeleon": emb_probe("chemeleon", EMB["chemeleon"], rows, Y, M, fold, s, dg),
+            "surrogate_adme": (emb_probe("surrogate_adme", EMB["surrogate_adme"], rows, Y, M,
+                                         fold, s, dg)
+                               if _pl.Path(EMB["surrogate_adme"]).exists() else None),
             "gbm": from_cache(RES + "preds/k114_heads_seed%d.json" % s, "gbm", M, dg,
                               "прогоните verify/k114_gate93.py --heads gbm"),
             "граф": from_cache(RES + "preds/k119_aux_seed0_lam1_n4.json" if s == 0 else
