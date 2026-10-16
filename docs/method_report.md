@@ -4,11 +4,25 @@
 results. English by intent; the rest of `docs/` is the team's internal Russian-language artefact.*
 
 *This header claimed to be "linked from the leaderboard's Model Report field" until 21 September. It
-was not — the board has pointed at `METHOD.md` in every committed snapshot. The field is set per
-submission and is corrected at the next upload.*
+was not: the board pointed at `METHOD.md` in every snapshot committed up to that date. It points at
+THIS file in the snapshot of 11 October, so the field was corrected at a later upload and the
+sentence above is kept only to date the error. `METHOD.md` remains public and carries the same
+disclosure, corrected in the same commit as this one.*
 
-Code: this repository, public. Proprietary training data: none. External data: the organisers' own
-files only — the four dose-response tables and the single-concentration screen.
+Code: this repository, public. Proprietary training data: none. External data: the organisers' four
+dose-response tables and the single-concentration screen, **and one third-party pretrained encoder**
+— `chemprop_medium.pt`, committed as a plain file in another open entrant's public repository
+(`jeremycheminf/openadmet_scripts`) and pretrained on CYP and ADME activity. It is used frozen, never
+fine-tuned: a ridge head on its 600 output dimensions enters the regression ensemble as a sixth
+member (§1). A second use of the same encoder in the TDI rule is measured and built but is NOT on
+the board at the time of writing — the flag that enables it is off by default, and this sentence will
+be wrong the moment that changes, so it is dated: 15 October.
+
+*This line read "the organisers' own files only" from 26 September, the day that member shipped,
+until 15 October. The member and this sentence landed in the same commit and only one of them was
+updated. We have not checked whether the 750 blind compounds appear in that checkpoint's pretraining
+data, and we will not, because establishing it would mean looking the blind set up in external
+databases.*
 
 ---
 
@@ -68,11 +82,20 @@ landed inside exactly the margin that choice bought.
 
 Two files, one per track.
 
-**Direct inhibition.** A five-member ensemble over a shared feature matrix (2048 Morgan counts at
-r=2, 217 RDKit descriptors, 30 mechanistic columns), with the member set chosen **per enzyme** by a
-search over all thirty-one subsets, and a dead-zone refit applied inside every member. Members:
-per-enzyme gradient boosting, a contrast-pooled model, a Gaussian process, a neural trunk, and a
-re-projection of that trunk. The per-enzyme compositions that ship are
+**Direct inhibition.** An ensemble over a shared feature matrix (2048 Morgan counts at r=2, 217
+RDKit descriptors, 30 mechanistic columns), with the member set chosen **per enzyme** by a search
+over all thirty-one subsets, and a dead-zone refit applied inside every member. Five members come
+from that matrix — per-enzyme gradient boosting, a contrast-pooled model, a Gaussian process, a
+neural trunk, and a re-projection of that trunk — and a **sixth** does not: a ridge head on 600
+frozen dimensions of the third-party pretrained encoder declared above. The sixth member is worth
+**+0.0138 of macro rank, sd 0.0006, sign 8/8 over eight seeds**, with the pair improving by 0.0197,
+against a discriminating control (the same head and the same alpha grid on our own descriptor block)
+at −0.0151 and sign 0/4. The per-enzyme compositions below are the search's answer over the first
+five; the sixth is added to all four.
+
+*This paragraph described a five-member ensemble until 15 October, three weeks after the sixth
+member shipped. The out-of-fold table that follows is likewise the five-member configuration: it is
+left as measured rather than restated, and the sixth member's increment is the figure above.*
 
     CYP1A2   per-enzyme + GP + trunk
     CYP2C9   GP + trunk
@@ -166,6 +189,16 @@ The sharpest single case was a concatenated Chemprop embedding. Raw macro ST-RAE
 the post-processed number carry opposite signs, and we published the raw one first. A raw
 improvement in this challenge is not evidence of anything until it has been through the
 post-processing that ships.
+
+**And the closure has a boundary, which we found by crossing it.** What died above is a frozen
+embedding used as COLUMNS CONCATENATED INTO THE SAME LEARNER. A separate ridge head on a frozen
+encoder, whose *prediction* enters the mean as its own member, is a different object and it survives
+the same post-processing: +0.0138 of macro rank, sign 8/8, with the affine pair improving rather than
+absorbing it. It ships, and §1 and the disclosure above name it. The checkpoint differs too — the
+encoder that failed was pretrained on the very RDKit descriptors our feature block already contains,
+which is its best case as a substitute for those columns and its worst as a decorrelated member. So
+the paragraph above is a warning about raw numbers and about one vehicle, not a verdict on frozen
+encoders.
 
 The mechanism is worth stating because it generalises: the affine pair is a shrinkage fitted
 directly to the metric, per fold, so anything that merely reduces prediction variance or removes a

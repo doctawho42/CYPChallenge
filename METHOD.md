@@ -147,6 +147,8 @@ In the model this is a shared trunk with two heads — pIC50 from the curves, lo
 
 The binding constraint is the 1285 to 2335 labelled rows per enzyme, and the readings that relieve it were already in the release.
 
+One source from outside does survive, named here because the table would otherwise read as a clean sweep: the same chemprop family, used as a **member** rather than as columns — a ridge head on the frozen encoder whose prediction enters the mean — ships at +0.0138 of macro rank, sign 8/8 (items 324, 325, 327). The row above is accurate about the variant it measured, concatenation into the same learner, and the distinction between the two is the finding.
+
 ## Uncertainty, in the units the metric pays in
 
 Conventional uncertainty quantification puts an interval around the prediction. Under ST-RAE that
@@ -393,6 +395,15 @@ Run logs are results here and are committed under `results/logs/`. Saved out-of-
 under `results/preds/`, and every table in this document can be recomputed from them without
 refitting a model.
 
-No proprietary data is used. The external sources we tried — a public NCGC panel, ChEMBL, and three
-pretrained molecular representations — are all public, and all of them are closed negative in the
-journal.
+No proprietary data is used, and every external source is public. Three of them — a public NCGC
+panel, ChEMBL, and pretrained molecular representations used as concatenated COLUMNS — are closed
+negative in the journal. One is not, and it ships: a ridge head on 600 frozen dimensions of a
+third-party `chemprop_medium` checkpoint (committed as a plain file in another open entrant's public
+repository, `jeremycheminf/openadmet_scripts`, and pretrained on CYP and ADME activity) enters the
+regression ensemble as a sixth member at **+0.0138 of macro rank, sign 8/8** (items 324, 325, 327).
+It is used frozen and never fine-tuned.
+
+*This paragraph said all of them were closed negative until 15 October, three weeks after that member
+shipped. We have not checked whether the 750 blind compounds appear in that checkpoint's pretraining
+data, and will not, because establishing it would mean looking the blind set up in external
+databases.*
