@@ -1,0 +1,57 @@
+{
+ "leader": 0.4252,
+ "boltz2": 0.395,
+ "ceiling": 0.7515,
+ "ligands": [
+  "08Y",
+  "CFF",
+  "FZV",
+  "G0D",
+  "KLN",
+  "MWY",
+  "MYT",
+  "PK9",
+  "TPF"
+ ],
+ "aggregate": {
+  "по_скору": {
+   "rmsd_mean": 6.1133902686421635,
+   "rmsd_median": 6.470821714828065,
+   "pli_mean": 0.26126769880171596,
+   "pli_median": 0.23741319444444445,
+   "over_leader": 1,
+   "n": 9
+  },
+  "по_согласию": {
+   "rmsd_mean": 5.530181601885777,
+   "rmsd_median": 5.572735615808219,
+   "pli_mean": 0.28416454022177523,
+   "pli_median": 0.24963235294117644,
+   "over_leader": 1,
+   "n": 9
+  },
+  "оракул_rmsd": {
+   "rmsd_mean": 4.331197170199082,
+   "rmsd_median": 5.030391890555671,
+   "pli_mean": 0.43447808469647053,
+   "pli_median": 0.3735294117647059,
+   "over_leader": 4,
+   "n": 9
+  },
+  "оракул_pli": {
+   "rmsd_mean": 4.441399118744686,
+   "rmsd_median": 5.030391890555671,
+   "pli_mean": 0.46731617679281673,
+   "pli_median": 0.4354508196721312,
+   "over_leader": 5,
+   "n": 9
+  }
+ },
+ "score_wins_pli": 7,
+ "score_wins_rmsd": 2,
+ "selection_gap": 0.1831516365710415,
+ "best_rule": "по_согласию",
+ "myt_control_max_abs_delta": 0.0004883442348675437,
+ "habit_receptor": "6DAJ",
+ "habit_n": 5
+}

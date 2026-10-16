@@ -16181,3 +16181,90 @@ encoder worth building would have to be pretrained on measured activity we are a
 is a different and much larger piece of work, and `surrogate_adme` shows it would also have to be
 decorrelated from the three ADME encoders we already hold --- the pair chemeleon~surrogate_adme sits
 at 0.914 and recovers 60 per cent of its summed parts.
+
+
+**351. The nine-ligand leave-one-out item 334 named as its own next measurement had been sitting
+unread in a log for weeks. It refutes item 334's "the two rules are indistinguishable", leaves its
+surviving claim standing by 0.0103, and closes the line: the realisable rules sit 0.14 of LDDT-PLI
+BELOW the board leader and the oracle sits level with it.** `verify/k127_looread.py` (new, reads
+only), `verify/k112_ensdock.py` (smina timeout no longer aborts the sweep),
+`results/logs/k112_loo.json`, `k127_looread.json`. Nine ligands, 1456 poses.
+
+**The baseline first, because items 337/338 measured against an arm retired a month earlier.** For
+this track there is nothing to retire: `results/submission/` holds fourteen CSV files, all fourteen
+regression or TDI, and **zero** structure files of any extension, against a control of thirty-three
+directory entries. **We ship nothing here.** So the arms are external, both from items 333/334: the
+board leader at LDDT-PLI 0.4252, stock Boltz-2 at 0.3950, the experimental ceiling at 0.7515.
+
+**Why the log existed and why it was unread.** The first leave-one-out attempt died on its FIRST
+target --- ritonavir into 1W0G exceeded smina's 900 s and `subprocess.run` raised, aborting the
+sweep and taking nine untried ligands with it. The organisers' own scorer guards the same way, it
+returns NaN "so that a single bad submission file does not abort the full evaluation", and ours did
+not. With a timeout recorded as a per-pair refusal the run completed, and then nobody read it.
+
+    лиг     поз | по скору          по согласию       оракул RMSD       оракул PLI
+    08Y      87 | 6DAC 7.372/0.237  6DAJ 7.053/0.209  38FV 6.739/0.213  1W0G 7.094/0.269
+    CFF     171 | 3UA1 2.940/0.466  6DAC 4.188/0.411  6DAJ 2.745/0.621  6DA3 2.755/0.629
+    FZV     171 | 5VCE 5.721/0.336  6DA2 5.573/0.271  5VC0 5.098/0.344  38FV 5.265/0.411
+    G0D     171 | 5VCE 6.471/0.255  6DAJ 6.416/0.250  6DAJ 5.030/0.374  6DAJ 5.030/0.374
+    KLN     164 | 4D75 6.364/0.237  6OOA 6.954/0.156  3NXU 5.347/0.327  3NXU 5.347/0.327
+    MWY     170 | 8SO2 7.295/0.199  6DAJ 6.588/0.190  8SO2 5.107/0.338  6DAJ 5.174/0.435
+    MYT     171 | 6MA7 4.786/0.314  6DAJ 4.732/0.309  8SO2 2.790/0.554  6DA3 2.887/0.612
+    PK9     171 | 3NXU 6.882/0.126  6DAJ 5.393/0.193  6MA7 3.413/0.504  1W0G 3.695/0.512
+    TPF     180 | 5VCE 7.190/0.180  6DA2 2.876/0.570  6DAC 2.711/0.637  6DA3 2.725/0.637
+
+    правило        RMSD ср./мед.      PLI ср./мед.     PLI > лидера
+    по скору       6.113 / 6.471    0.2613 / 0.2374        1 из 9
+    по согласию    5.530 / 5.573    0.2842 / 0.2496        1 из 9
+    оракул RMSD    4.331 / 5.030    0.4345 / 0.3735        4 из 9
+    оракул PLI     4.441 / 5.030    0.4673 / 0.4355        5 из 9
+    лидер доски            -               0.4252
+    потолок            1.454               0.7515
+
+**The device is the same, proven rather than assumed.** Metyrapone is in both runs, and all four of
+its selections reproduce item 334's committed heme-box figures at a worst absolute difference of
+**0.0005**, which is the rounding in item 334's own printed numbers. Without that the two runs would
+not be comparable and nothing above would mean anything. Completeness also holds: zero ligands with
+a failed pair and zero unscored poses, which is item 334's atom-correspondence repair surviving
+nine ligands of 17 to 50 heavy atoms rather than one.
+
+**Item 334's "the two rules are indistinguishable" does not survive, on RMSD.** On one target the
+rules differed by 0.054 A. On nine, consensus beats score by **0.583 A in the mean and on 7 of 9
+ligands** --- not a tie.
+
+**On LDDT-PLI the mean and the sign disagree, so there is no answer at n=9.** The mean favours
+consensus by +0.0229, and **score wins on 7 of 9 ligands.** The mean is one ligand: TPF, where
+consensus beats score by +0.389 of PLI on its own. A mean without a sign count is not a result in
+this project, and here reporting either alone would state the opposite of the other.
+
+**Item 334's surviving claim stands, and by almost nothing.** It said "the pose set contains poses
+that would lead that board", on an oracle of 0.6117 against the leader's 0.4252. On nine ligands the
+oracle's median is **0.4355 --- above the leader by 0.0103** --- its mean 0.4673, and it clears the
+leader on 5 of 9 ligands. The claim is technically intact and practically hollow: metyrapone was
+chosen as the most reproducible ligand in the set (item 333, 0.443 A between its own two crystals),
+so item 334 measured the easy end and its oracle overstates the sample's by 0.18.
+
+**The selection gap shrank for the wrong reason.** 0.2975 on one ligand, **0.1832** on nine --- but
+it narrowed because the ORACLE fell from 0.6117 to 0.4673, while the best rule got *worse*, 0.3142
+to 0.2842. Reading the gap alone would have looked like progress.
+
+**So the line closes, and the arithmetic is simple.** The two implementable rules deliver 0.2613 and
+0.2842 against a leader at 0.4252: about **0.14 of LDDT-PLI below it**, and across eighteen
+rule-ligand selections exactly **two** clear the leader (CFF by score at 0.466, TPF by consensus at
+0.570). A perfect selector --- unavailable --- would land level with the leader, not ahead of it.
+There is no contribution here as constructed, which is the same verdict item 306 reached for the
+regression block by a different road.
+
+**One lead, stated as a lead and not a measurement.** The consensus rule picks receptor 6DAJ for
+**5 of 9** ligands where the oracle picks it for 2, and its two best ligands are the two where it
+picked something else:
+
+    согласие взяло 6DAJ (5):   правило 0.2300   оракул 0.4404   зазор 0.2104
+    согласие взяло другое (4): правило 0.3519   оракул 0.5010   зазор 0.1491
+
+That looks like a rule selecting a receptor habit rather than a pose. **But the two subsets differ in
+difficulty too** --- their oracles are 0.4404 and 0.5010 --- so this is an indication, not a result.
+The decisive control is one FIXED receptor for all nine against the rule, and it needs per-receptor
+pose data the log does not carry: `k112_ensdock.py` works in `tempfile.mkdtemp`, so the 1456 poses
+are gone and that control costs a re-dock of about 13 CPU-hours. Worth it only if someone intends to
+revive the track.
