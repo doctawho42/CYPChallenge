@@ -16094,3 +16094,90 @@ measured descriptor cases rather than one. The sharpest remaining test is a 3D-d
 2D DESC block, so they hold the "not in our features" clause while being descriptors. If one of
 those works, the endpoint/descriptor split is wrong too and it is the overlap clause that matters
 after all. Each costs a download and one `k121` run.
+
+
+**350. Three descriptor-pretrained checkpoints with NO overlap with our features fail at sign 0/4
+each, on target widths 60, 1024 and 2048. Item 349 survives its sharpest test: what separates a
+frozen checkpoint is the CLASS of its pretraining target, and the clause item 345 believed in is now
+refuted four times over.** `verify/k126_descriptors.py` (new, drives k121's device unchanged),
+`results/logs/k126_e3fp.json`, `k126_atompair.json`, `k126_usrcat.json`, `k126_verdict.json`. Four
+seeds.
+
+**Why item 349 needed this.** Its descriptor half rested on two cases and both were the maximally
+overlapping ones: `rdkit2d` is pretrained on exactly our DESC block by construction, and
+chemberta-MTR's targets are computed descriptors of the same 2D family. **Neither tested a
+descriptor target our features do not carry at all.** If overlap were the variable, a
+non-overlapping descriptor checkpoint should work.
+
+    кандидат    целей   одиночн.      Δ 7-м   знак    Δпара   corr к пяти
+    e3fp         1024     0.5115    -0.0116    0/4  +0.0135         0.906
+    atompair     2048     0.5332    -0.0095    0/4  +0.0105         0.915
+    usrcat         60     0.5301    -0.0062    0/4  +0.0092         0.901
+
+The prediction in the docstring, committed in `5c14a84` before any of these numbers existed, was
+that all three fail, and it named `e3fp` as the one to bet on if item 349 were wrong. **`e3fp` is
+the worst of the three.** Every arm is negative on both metrics at sign 0/4 --- these are not
+marginal, they actively damage the composition's ST-RAE as well as its rank.
+
+**Width is not the variable, and this settles it inside one experiment.** Item 349's prediction had
+leaned on 25 targets being a narrow bottleneck. Across the five descriptor-class and
+distilled-endpoint checkpoints the ordering is the opposite of that reasoning:
+
+    surrogate_adme     25 целей   +0.0038   эндпойнты
+    usrcat             60 целей   -0.0062   дескрипторы
+    rdkit2d           200 целей   -0.0089   дескрипторы
+    e3fp             1024 целей   -0.0116   дескрипторы
+    atompair         2048 целей   -0.0095   дескрипторы
+
+The narrowest target in the set is the only one that works, and the widest is among the worst. What
+is predicted on 25 numbers matters; how many numbers there are does not.
+
+**The per-enzyme arm, and 3D does not transfer.** The precondition for a 3D checkpoint testing
+anything was checked before building: `shape3d` appears **zero** times in `src/submit.py`,
+`src/feats.py` and `verify/k106_probe.py` against a control of three for `MECH` in `feats.py`, the
+shipped matrix is 2048+217+30 = 2295 columns, and items 119/165/279 measured those sixteen columns at
++0.0034 macro with **+0.0087 on CYP2D6 at sign 4/4**. So the question was whether a 3D-pretrained
+encoder reproduces that cell.
+
+                      CYP1A2     CYP2C9     CYP2D6     CYP3A4
+    shape3d (16 ст.)  +0.0060    -0.0003    +0.0087    -0.0008   знак 4/4 на 2D6
+    e3fp              -0.0077    -0.0241    -0.0024    -0.0121   0/4 везде
+    atompair          -0.0080    -0.0170    -0.0041    -0.0089   0/4 везде
+    usrcat            -0.0028    -0.0154    +0.0011    -0.0077   3/4 на 2D6
+
+**It does not.** `usrcat` produces the only positive cell in twelve, at +0.0011 on CYP2D6, and its
+sign fails at 3/4 --- against the shape block's +0.0087 at 4/4, eight times larger and holding.
+Sixteen hand-computed shape columns beat a 2048-dimensional encoder pretrained on 3D shape, at the
+one enzyme where 3D is known to matter. Pretraining on a descriptor does not even deliver that
+descriptor's own information.
+
+**The screen's record, which is what this item most changes.** Item 348 read its threshold off
+thirteen candidates and said in as many words that the next one would be its test. Five have
+arrived since --- `surrogate_adme`, `minimol`, and these three:
+
+    помогли      0.6079 .. 0.6263   (5 кандидатов)
+    не помогли   0.4131 .. 0.5990   (13 кандидатов)
+    зазор        0.5990 .. 0.6079   шириной 0.0089, кандидатов в нём 0
+    Spearman(одиночный ранг, Δ членом) = +0.8184  (n=18)
+
+**Eighteen candidates, no exception, and the gap has tightened from 0.0354 to 0.0089.** Item 348's
+threshold is no longer read off a wide empty band: it is pinned between 0.5990 and 0.6079 by
+`minimol` below and item 342's graph net above. The classes now read:
+
+    эндпойнт, измеренный          n=2   помогли 2
+    эндпойнт, дистиллированный    n=1   помогли 1
+    дескриптор                    n=5   помогли 0
+    представление чужой модели    n=1   помогли 0
+    языковая модель над SMILES    n=2   помогли 0
+
+**What is left of the frozen-checkpoint line, and it is nearly nothing.** The stock is now
+enumerated rather than assumed, which is item 349's correction applied: fifteen checkpoints in the
+organisers' repository (five measured, ten unmeasured and all descriptor-class), two in the third
+entrant's repository (both already members), three other public encoders (all measured, all
+negative). The refined criterion predicts the ten remaining fail, now on **five** measured
+descriptor cases spanning 2D, 3D, topological and shape families and target widths from 60 to 2048.
+Measuring them is not a null-result-waiting-to-happen so much as a null already paid for: the next
+encoder worth building would have to be pretrained on measured activity we are allowed to use, which
+is a different and much larger piece of work, and `surrogate_adme` shows it would also have to be
+decorrelated from the three ADME encoders we already hold --- the pair chemeleon~surrogate_adme sits
+at 0.914 and recovers 60 per cent of its summed parts.
