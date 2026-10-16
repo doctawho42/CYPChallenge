@@ -158,14 +158,21 @@ def embed3d(smiles, path):
     return True
 
 
-def dock(rec, box, lig_sdf, out, modes=9, exh=8):
+def dock(rec, box, lig_sdf, out, modes=9, exh=8, timeout=900):
     (cx, cy, cz), sz = box
     cmd = [SMINA, "-r", str(rec), "-l", str(lig_sdf),
            "--center_x", f"{cx:.3f}", "--center_y", f"{cy:.3f}", "--center_z", f"{cz:.3f}",
            "--size_x", f"{sz:.1f}", "--size_y", f"{sz:.1f}", "--size_z", f"{sz:.1f}",
            "--exhaustiveness", str(exh), "--num_modes", str(modes),
            "--cpu", "1", "--seed", "42", "-o", str(out)]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+    # One slow receptor must not cost the other targets. The first leave-one-out run died on its
+    # FIRST target -- ritonavir into 1W0G exceeded 900 s -- and took nine untried ligands with it.
+    # The organisers' own scorer guards the same way ("returns NaN ... so that a single bad
+    # submission file does not abort the full evaluation"); this did not, and now does.
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return False
     return r.returncode == 0 and _pl.Path(out).exists()
 
 
@@ -266,6 +273,9 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--targets", default="MYT,PK9")
     ap.add_argument("--modes", type=int, default=9)
+    ap.add_argument("--exh", type=int, default=8, help="exhaustiveness: цена растёт линейно")
+    ap.add_argument("--timeout", type=int, default=900,
+                    help="предел на один запуск smina; отказ записывается, прогон продолжается")
     ap.add_argument("--out", default=RES + "logs/k112_ensdock.json")
     a = ap.parse_args(argv)
     targets = [t.strip().upper() for t in a.targets.split(",") if t.strip()]
@@ -298,15 +308,16 @@ def main(argv=None):
             print("  эталонный лиганд не собрался, пропуск")
             continue
 
-        cands, unscored = [], 0
+        cands, unscored, failed = [], 0, []
         for lig_id, pdb_id in pool:
             rf = receptor_files(pdb_id, lig_id, work)
             if rf is None:
                 continue
             rec, box, prot, _, _ = rf
             out = work / f"{tgt}_{pdb_id}.sdf"
-            if not dock(rec, box, lig_sdf, out, a.modes):
-                print(f"  {pdb_id}: smina не отработала")
+            if not dock(rec, box, lig_sdf, out, a.modes, a.exh, a.timeout):
+                print(f"  {pdb_id}: smina не отработала (отказ или таймаут {a.timeout} c)")
+                failed.append(pdb_id)
                 continue
             for k, (m, aff) in enumerate(poses_from(out)):
                 r, p = score_pose(rp, ref_mol, prot, m, tmpl)
@@ -319,7 +330,8 @@ def main(argv=None):
                               "contacts": contact_set(prot, pos)})
             print(f"  {pdb_id}: поз {len(poses_from(out))}")
 
-        print(f"  поз оценено {len(cands)}, НЕ оценено {unscored}")
+        print(f"  поз оценено {len(cands)}, НЕ оценено {unscored}, "
+              f"рецепторов не отработало {len(failed)}{' ' + str(failed) if failed else ''}")
         if unscored and not cands:
             print("  ВСЕ позы остались неоценёнными --- это дефект сопоставления, не результат\n")
             continue
@@ -347,7 +359,7 @@ def main(argv=None):
             print("  %-26s %-7s %9.3f %9.4f" % (nm, c["rec"], c["rmsd"], c["pli"]))
         print("  для сравнения: потолок пункта 333 --- RMSD 1.454, PLI 0.7515;"
               " лидер доски PLI 0.4252\n")
-        results[tgt] = {"n_poses": n, "по_скору": {k: by_aff[k] for k in ("rec", "rmsd", "pli")},
+        results[tgt] = {"n_poses": n, "не_отработало": failed, "не_оценено": unscored, "по_скору": {k: by_aff[k] for k in ("rec", "rmsd", "pli")},
                         "по_согласию": {k: by_cons[k] for k in ("rec", "rmsd", "pli")},
                         "оракул_rmsd": {k: oracle_r[k] for k in ("rec", "rmsd", "pli")},
                         "оракул_pli": {k: oracle_p[k] for k in ("rec", "rmsd", "pli")}}
