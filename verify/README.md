@@ -15812,12 +15812,20 @@ spare, and is worth only +0.0033.
     заменой вместо medium:      -0.0004 --- держать оба лучше, чем менять
 
 **And the negative that buys the criterion.** `src/embed.py` records that the organisers published
-sixteen pretraining checkpoints, one per descriptor family, and chose `rdkit2d` deliberately
-"because it is pretrained on the very descriptors our DESC block contains". Run through the same
+pretraining checkpoints and chose `rdkit2d` deliberately "because it is pretrained on the very
+descriptors our DESC block contains". Run through the same
 device on four seeds it gives **-0.0089 of rank at sign 0/4** (sd 0.0005), a solo rank of 0.5686
 and a 0.926 error correlation with the five members --- the HIGHEST of any candidate measured, and
-still inside item 289's gate. Redundant by construction, exactly as the choice implies, so the
-sixteen are not a stock of candidates.
+still inside item 289's gate. Redundant by construction, exactly as the choice implies.
+
+**Two sentences in this item were wrong about the stock, and item 349 is what they hid.** They said
+the organisers published "sixteen pretraining checkpoints, one per descriptor family" and concluded
+that "the sixteen are not a stock of candidates". The repository holds **fifteen** files, and two of
+them are not descriptor families at all: `surrogate_adme` (25 targets, predicted ADME endpoints) and
+`minimol` (512 targets, a bio-trained model's embeddings). The conclusion followed from `rdkit2d`
+being redundant with DESC, which is true of the thirteen descriptor checkpoints and says nothing
+about the other two. A claim about a stock was made without listing the stock --- `ls` on the
+repository is the control that was never run, and it costs one call.
 
 **That figure was produced by a heredoc and now has a script.** `verify/k121_chemeleon.py` takes
 `--emb/--tag/--out`, so an arbitrary frozen checkpoint goes through the identical device; its
