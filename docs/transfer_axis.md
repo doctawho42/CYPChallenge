@@ -75,12 +75,16 @@ ceiling that kills exactly this kind of number: a member-level δ sinks over the
 averaging (~δ/N) and by redundancy, 3 to 22× on the fused enzymes. Items 290 and 319 are the worked
 example of a real channel dying on that ceiling. So this is a candidate, not a result: the decisive
 measurement is the same one item 290 applied and item 324's probe passed — nested over the shipped
-composition, four seeds. And the rank column here is `spearmanr(y, p)` on the raw concatenated
-out-of-fold vector (`src/ablncgc.py:276`), which item 343 showed is not identical to the post-pair
-rank when per-fold statistics differ. The ST-RAE column *is* post-pair, so the stronger of the two
-readings is the one in the board's own currency; the rank reading needs recomputing through
-`fit_apply` per fold, which the saved `preds` allow with no retraining, exactly as item 117 re-read
-item 68 and item 290 closed the external head.
+composition, four seeds.
+
+What does **not** need redoing is the currency. `src/ablncgc.py:269-278` scores exactly as
+`verify/k106_probe.py:score()` does — per enzyme on that enzyme's masked vector, `spearmanr(y, p)`
+for rank and `strae` after `fit_apply(p, lo, hi, fold, u)` for the pair, macro as the mean over the
+four — so these numbers are in the same units as item 324's +0.0138 and item 346's +0.0047 and are
+directly comparable to them. Both halves of the decisive measurement are therefore cheap: two more
+seeds, and the nesting, which needs no retraining at all because the arm's out-of-fold predictions
+are in the cache. That is the same route item 117 used to re-read item 68 and item 290 used to close
+the external head.
 
 ## The grid the question is really about: source × role
 
@@ -290,9 +294,10 @@ of them. *[likely. This is why the head route is not the one to run first.]*
 
 ## The order to run it in, and what each step costs
 
-1. **Read what is already measured.** Recompute the per-enzyme arm's rank through `fit_apply` per
-   fold from the saved `preds` — no retraining — and nest it over the shipped composition. Then
-   `src/ablncgc.py --seeds 2,3` for the per-enzyme arm. Hours, not days, and it decides P0.
+1. **Read what is already measured.** `uv run python verify/k129_ncgcread.py --seeds 0,1` nests the
+   cached arm over the composition and runs the four controls; it needs no retraining, because the
+   arm's predictions are in the cache. Then `src/ablncgc.py --seeds 2,3` for the two missing seeds.
+   Hours, not days, and it decides P0.
 2. **The arm item 316 costed at one line and nobody ran.** The luciferase counter-screen flag is
    already a column in `data/ncgc/panel.csv`; `grep -n luc src/ablncgc.py` returns nothing. If the
    panel's gain is partly a reporter artefact, dropping AID 411's actives says so, and P0's
@@ -332,11 +337,24 @@ feature matrix, item 319's `Ipc` overflow: the guard `xs[xs < 1e-6] = 1.0` canno
 column silently becomes identically zero, which is a third difference hiding inside a two-arm
 comparison.
 
-**Where none of it can run.** Not in a cloud session under this environment's current network policy:
-`huggingface.co`, `pubchem.ncbi.nlm.nih.gov` and `arxiv.org` are all denied at the proxy, so neither
-the challenge files, nor the panel, nor any checkpoint can be fetched. Step 1 needs only
-`data/feats.npz` and the committed caches; everything else needs the network, and the pretraining
-wants a GPU or an overnight run on more than four cores.
+**What runs in a cloud session and what does not, measured rather than assumed.** `uv sync` builds
+the pinned environment (pypi is reachable), `git submodule update --init` clones the tutorial, and
+`uv run pytest` passes — so the apparatus is fine. What is denied at the proxy is
+`huggingface.co`, `pubchem.ncbi.nlm.nih.gov` and `arxiv.org`, which is where the challenge CSVs, the
+panel and every checkpoint live. Two consequences, in order of how much they cost:
+
+- **Step 1 needs the four challenge label columns and nothing else.** The arm's own predictions are
+  committed; what is missing is `y`, `conf_low` and `conf_high` to score against. No committed
+  artefact carries them (`band.json`'s `lo`/`hi` are a bootstrap band, not the compounds' bounds).
+- **The six-member nesting additionally needs `data/emb_chemprop_medium*.npz`**, which is not
+  committed either and is built from a checkpoint on Hugging Face. Without it the panel arm can
+  still be nested over the five committed members in `results/preds/members_seed*.json`, which is a
+  real ensemble-level test and the one item 290 applied, but it is not the shipped six.
+
+`verify/k129_ncgcread.py` is written against this and exits 3 with the missing path named. Allowing
+`huggingface.co` under the environment's Network access setting is all step 1 needs; the pretraining
+in step 4 additionally wants `pubchem.ncbi.nlm.nih.gov` and a GPU or an overnight run on more than
+four cores.
 
 ## One control that was never run, and the criterion rests on it
 
