@@ -16613,3 +16613,46 @@ pre-incubation arm and the Emax table are blind on the test by construction and 
 convention --- the prize really is unreachable, and the sentence in `teammate_asks` that assumed it
 is now a measurement. Worth having: it is the cheapest possible test of the one quantity that
 outranks our model by 0.29 to 0.50 of Spearman (item 139).
+
+
+**359. The metric's own loss, in the learner that has it natively, is worth +0.0001 of rank --- and
+it closes on its own control rather than on an impression. An epsilon-SVR with the published band as
+epsilon is -0.0145 as a sixth member at sign 0/2; the same SVR with epsilon = 0 is -0.0146.**
+`verify/k136_svr.py` (new), `results/logs/k136_svr.json`. Two seeds.
+
+**Why it was worth running.** ST-RAE pays zero inside the compound's band and the distance to the
+nearer edge outside it, which IS the epsilon-insensitive loss with a per-compound epsilon. This
+project derived that and built it into boosting as the dead zone --- its largest single gain on
+record, +0.033 of rank (items 148, 189). Support vector regression minimises that loss by
+construction, and `grep -rn "SVR\|SVC" src/` returned nothing: never measured, never dismissed. What
+HAD been dismissed is a different thing --- `src/gp.py` rejects the standard Tanimoto-kernel GP over
+Morgan fingerprints because item 90 measured Morgan last of four spaces for carrying activity
+between neighbours. That is about the SIMILARITY, not the loss.
+
+And the board said a plain learner suffices to beat our ordering: the entrant at rank 7 is called
+`SVM` (rho 0.7710 against our 0.7062) and `random-forest` at 22 reaches 0.8463 on CYP2C9 and 0.8433
+on CYP3A4 against our 0.8231 and 0.8146. Neither needs a GPU.
+
+    арм на FP+DESC+MECH          Δранг шестым      sd    знак      Δпара   одиночн.
+    eps = полоса                      -0.0145  0.0010     0/2    +0.0169     0.5361
+    eps = 0 (контроль)                -0.0146  0.0018     0/2    +0.0205     0.5202
+    разность --- ПОТЕРЯ МЕТРИКИ       +0.0001                                +0.0159
+
+**The control is the finding.** The two arms share the kernel, the grid, the folds, the
+standardisation and the inner cross-validation; they differ only in whether the loss has the band's
+insensitive zone. **+0.0001 of rank**, against a floor of 0.0036. The epsilon is worth +0.0159 of
+STANDALONE rank, so it does make the model better --- and none of that reaches the composition,
+because an SVR on this matrix is a weak member at 0.5361 against the frozen probe's 0.6263 and our
+own per-enzyme base at 0.5651. So the loss is not the thing we were missing; having it natively buys
+nothing over emulating it, and the dead zone was never the bottleneck.
+
+**A grid caveat, named because it changes what may be claimed.** The RBF gamma picked the LOW end of
+its range on three enzymes of four, and the small-gamma limit of an RBF kernel is a linear one --- so
+the kernel was asking to be linear. A linear epsilon-SVR with the same band epsilon is not our ridge
+member (ridge minimises squared error, this minimises the metric's), and it was run: **-0.0826 of
+rank, standalone 0.3510.** Far worse, which closes that reading rather than leaving it open.
+
+**What this leaves of the "a plain learner beats us" reading from the board.** Not nothing: the
+measurement says an SVR is a weak member HERE, on our 2295-column matrix inside our composition. It
+does not say `SVM`'s entry is weak --- they score rho 0.7710 on their own features with their own
+tuning, and this file tested the family, not their model.
