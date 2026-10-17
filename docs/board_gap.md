@@ -97,6 +97,27 @@ single-block dependence in the feature matrix. `docs/teammate_asks.md` reached t
 from out-of-fold numbers alone ("2D6 — самый слабый и у него адресный хемотип"); the board confirms it
 with 38.5 per cent of the money.
 
+**Two things this does NOT license, because both have already been settled.** First,
+`results/perenzyme.csv` is not a shortcut. Item 167 built it by re-reading every ablation per enzyme
+against item 165's per-enzyme floors, and it carries a column literally called *скрыто макро* —
+hidden by the macro. Four-seed rows with a CYP2D6 gain above that enzyme's 0.0049 floor are there,
+and the biggest ones are already shipped (the mechanistic block +0.0454, pooling +0.0374). The one
+that looks most like a free lunch — the shape block, CYP2D6 +0.0087 at sign 4/4, closed by item 119
+on a macro of +0.0034 against a 0.0036 floor — was reopened on exactly that argument and then closed
+properly over the ensemble: *"the enzyme the shape block helps most standalone is the enzyme that
+dilutes it most in the ensemble"*, with CYP3A4's +0.0000 serving as the harness control. So a
+member-level per-enzyme gain still has to survive the composition, and on CYP2D6 specifically the
+composition is where they die.
+
+Second, item 167's closing conclusion needs revising against the board rather than repeating. It
+reads: *"The attention is inverted with respect to the headroom … the enzyme that receives every
+working intervention is the one with the second smallest gap"*, from item 139's distance to a
+calibrated screening column (CYP1A2 0.502, CYP2C9 0.340, CYP2D6 0.306, CYP3A4 0.289). That ranks
+distance to an **oracle**. The board ranks distance to **competitors**, and it puts CYP2D6 first by a
+wide margin — 38.5 per cent of the gap, against CYP1A2's 26.3. For a competition the second is the
+operative quantity, so the attention CYP2D6 has received is not misallocated; what item 167 actually
+identified is that CYP1A2 has the most room nobody can reach, which is a different claim.
+
 Note also that our board ordering and our out-of-fold ordering disagree about which enzyme we are
 good at. Out of fold: 3A4 0.796 ≫ 2C9 0.665 > 1A2 0.547 > 2D6 0.471. On the board: 2C9 0.8231 > 3A4
 0.8146 > 1A2 0.7513 > 2D6 0.4359. Different populations, 375 compounds against our training rows, so
