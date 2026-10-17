@@ -292,6 +292,69 @@ C − B exceeds item 319's +0.0043 (more rows, one protocol) and C − A still m
 because the insertion cost scales with the appended rows and item 319 already paid −0.0048 for 8004
 of them. *[likely. This is why the head route is not the one to run first.]*
 
+## The checkpoint the record refused, and P5–P8 written before it is scored
+
+**Added 17 October, before any score exists.** Item 350 named the remaining form of this axis as a
+warm-started multi-head fine-tune over challenge+ChEMBL+qHTS and deferred it on GPU cost. The
+organisers have already trained half of it and published it, and this project refused that
+checkpoint once for a reason that does not cover the competition.
+
+`openadmet/cyp1a2-cyp2d6-cyp3a4-cyp2c9-chemeleon-v1`: a multitask chemprop D-MPNN warm-started from
+CheMeleon, 2048-wide message passing into 1024×3, **four outputs — CYP3A4, CYP2D6, CYP2C9, CYP1A2 —
+trained on 8068 ChEMBL 37 structures of pIC50 on exactly our endpoint**, no validation split, to
+convergence. `src/embed.py` records the refusal verbatim: *"The CYP-fine-tuned baseline in the same
+organisation was NOT used, because a model already trained on CYP pIC50 data would make the
+comparison circular."* That is right about the comparison `embed.py` makes — learned representation
+against hand descriptors — and says nothing about whether the checkpoint is a member. It is external
+public prior information of the exact class item 349 scores 2-for-2, and the training has already
+been paid for by someone else.
+
+Two gates passed before the model was run at all. **Overlap with the blinded test set is 0 of 750**
+by canonical SMILES of the largest fragment, with the matcher verified against the test set itself;
+overlap with our training set is **64, which reproduces item 290's recorded count exactly**. And the
+checkpoint's unspecified hyper-parameters are *identified* rather than guessed: a bare state dict
+loads at any depth because W_h is shared, so the no-split model's own training labels were used as
+the key — depth 6 / relu / mean gives ρ 0.9987 and R² 0.9977 against 0.9329 and R² −25.5 for the
+runner-up, a gap of 0.0658 of rank. `src/embed_cypmodel.py` re-checks that fit on every run and
+stops below 0.99.
+
+Why this is not items 60–63 again, and it is the whole argument: **the ChEMBL offset is a statement
+about LEVEL** (+0.22 to +0.60 against our labels, which is what killed the row merge, because
+selection is not correctable by a shift). Spearman is invariant to level exactly, the affine pair
+absorbs what is left for ST-RAE, and item 353 says the gap is ordering. The defect that closed the
+external-rows axis does not touch the quantity we are behind on.
+
+**P5 — the screen.** The 2048-d frozen embedding, read by `probe_oof` unchanged, scores standalone
+macro rank **≥ 0.60** and passes item 348's threshold. *[likely: endpoint-measured class is 2 for 2
+over eighteen cases, and this is the only candidate ever screened whose pretraining target IS the
+scored endpoint.]*
+
+**P6 — it beats the best member we can build.** Its standalone rank exceeds `surrogate_adme`'s
+0.6287 (items 355/360). *[likely but not safe — `surrogate_adme` carries 25 ADME endpoints against
+this one's four, and item 324's shipped probe reaches 0.6261 on a checkpoint trained on none of
+them, so breadth has been worth as much as aim before.]*
+
+**P7 — the sixth slot.** As a sixth member on the five it is positive at sign 2/2 above the 0.0036
+floor. *[likely, and the least informative of the four: item 361 measured that an empty sixth slot is
+worth about 0.006 more than a seventh, so almost anything that passes P5 passes this.]*
+
+**P8 — the seventh slot, and this is the prediction that decides whether the axis is open.** As a
+**seventh** member beside five + `surrogate_adme` it is positive and clears the 0.0036 floor, and its
+error correlation with the composition is **below 0.90** — lower than any candidate on record.
+*[genuinely uncertain, and the honest prior is against it. Three pairs have now been measured at
+0.907, 0.914 and 0.939 (items 349, 356, 361) and every seventh-slot candidate died. The case for an
+exception is that all three were generic encoders — descriptors, 25 ADME endpoints, a bio-trained
+representation — while this one is fitted to the four numbers we are scored on, which is a different
+information channel rather than a different view of the same one. If P8 fails, the seventh slot is
+closed for good and the frozen-encoder axis is finished at one member; if it holds, it is the first
+new channel since item 324.]*
+
+**And the part that has no precedent in the record at all:** this checkpoint also emits **four direct
+estimates of our four targets**, which no previous candidate did — every one of the twenty-seven was
+an encoder with no head on our endpoint. Those four columns are measured in the same device, as a
+member and as features, with no pre-registered threshold because nothing comparable exists to set one
+from. That half is exploratory and will be reported as such.
+
 ## The order to run it in, and what each step costs
 
 1. **Read what is already measured.** `uv run python verify/k129_ncgcread.py --seeds 0,1` nests the
