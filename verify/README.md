@@ -16788,3 +16788,91 @@ a misalignment. The five-member reference reproduces k132's, k134's and k135's 0
 1e-4. And the reproduction control I first wrote was wrong in the other direction: it compared
 `minimol` as a sixth against item 349's seventh and would have failed on correct data, which is how
 the slot effect above was found at all.
+
+**362. The labels permit a macro Spearman of 0.978; the board's best ordering is 0.797 and ours is
+0.706. And our deficit is LARGEST on the half of the data whose labels are cleanest.**
+`verify/k138_noiseceiling.py`, seven controls, four of them against numbers committed elsewhere.
+
+Items 358--361 closed eight candidate levers in a row, every one of them an attempt to buy ordering,
+which makes the prior question worth asking out loud: **is there ordering left to buy, or is the
+board near what a measured pIC50 can resolve?** Item 353 said the gap is ordering (38.5 per cent of
+it on CYP2D6) and item 357 capped placement's whole in-sample headroom at 0.0386, so this is the
+axis the goal depends on.
+
+**What was already known, and this item does not re-claim it.** Item 221 answered the
+error-MAGNITUDE version first: with the assay floor at 0.04 of pIC50 against a model RMSE of 0.735,
+the instrument explains 0.3 per cent of our error variance and 99.7 per cent is epistemic.
+`src/ceiling.py` has computed reliability --- the R^2 ceiling --- since early on, 0.898 to 0.948.
+
+**What had never been computed is the ceiling on SPEARMAN, which is not that number.** Rank
+correlation attenuates according to how the noise is DISTRIBUTED over compounds rather than by its
+mean variance, so it cannot be read off R^2; it has to be simulated. And Spearman is the metric the
+gap lives in --- item 322's within-entrant slope converts rho into ST-RAE at -1.62 and item 353's
+decomposition is in rho. Ceiling A below is E rho(latent truth, one measured panel) over 200
+redraws; B is what a SECOND run of the same assay would score against the first.
+
+    фермент   надёжность   потолок A   повтор B   гомоск. A |   наш ро   лучший   наш %   лучш %
+    CYP1A2       0.9481      0.9892     0.9792     0.9460   |   0.7513   0.8561     76 %    87 %
+    CYP2C9       0.9050      0.9665     0.9357     0.9359   |   0.8231   0.8836     85 %    91 %
+    CYP2D6       0.9335      0.9786     0.9607     0.9231   |   0.4359   0.5745     45 %    59 %
+    CYP3A4       0.8978      0.9783     0.9592     0.9392   |   0.8146   0.8741     83 %    89 %
+    МАКРО                    0.9782     0.9587              |   0.7062   0.7971     72 %    81 %
+
+**The board is at 81 per cent of what the labels permit and we are at 72 per cent**, and even the
+replicate-panel reference of 0.9587 is far above everyone on it. The rank ceiling sits well above the
+variance one because the published error is strongly heteroscedastic --- median sigma 0.07 to 0.14
+against an rms of 0.23 to 0.35 --- so the `гомоск.` arm, same mean variance made constant, drops to
+0.923--0.946 and the Gaussian closed form under-reads by 0.018 to 0.036. That is why this had to be
+simulated and not derived.
+
+**What `_std` is, stated before it is used.** Item 114 measured the band width as a deterministic
+function of the label, isotonic R^2 0.928 to 0.970 --- reproduced here as control 7 to three decimals
+--- so the column is a formula and not per-compound measured uncertainty, exactly as item 220 says.
+Item 220 did pin its SCALE on a chain closing on the organisers' side: well noise 0.161 log2fc
+through a twelve-point fit lands on their own published se, and our band is 3.8 times that, i.e. the
+reproducibility scale rather than the precision scale. A rank ceiling needs the noise scale as a
+function of potency and nothing more, which a label-dependent width formula does supply; no
+per-compound claim is made from it.
+
+**Sensitivity, and item 220 fixes which direction is live:**
+
+    kappa      0.27     1.00     1.25     1.50     2.00     3.00     4.00
+    макро    0.9984   0.9782   0.9647   0.9478   0.9063   0.8128   0.7251
+
+kappa = 1 is the published width, already generous on item 220's finding; 0.27 is the same band on
+the precision scale; and item 221's label-INDEPENDENT floor of 0.04 pIC50, which keeps nothing of
+item 114's formula, gives 0.9979. **The band's scale would have to be understated by 3.2x for the
+board's best ordering to already be at the ceiling and 4.2x for ours** --- on a quantity item 220
+measured as 3.8x too WIDE. Item 354 pushes the same way: its lower bounds on the test's label spread
+(1.346 / 0.976 / 1.359 / 1.116 against training's 1.030 / 0.782 / 0.916 / 1.093) raise the ceiling to
+0.9861, a wider truth at the same noise being a higher ceiling.
+
+**The new half, and it is the actionable one.** Item 114's formula puts the width on the WEAK
+compounds --- corr(sigma, y) is -0.74 to -0.90 and the weak half carries 95 per cent of the whole
+noise variance --- so each half must be scored against its own ceiling:
+
+    фермент  | сильные: наше ро  потолок  доля | слабые: наше ро  потолок  доля
+    CYP1A2   |          0.2969   0.9772   30 % |         0.4705   0.9507   49 %
+    CYP2C9   |          0.4783   0.9564   50 % |         0.5407   0.8042   67 %
+    CYP2D6   |          0.3660   0.9845   37 % |         0.2571   0.8594   30 %
+    CYP3A4   |          0.5883   0.9878   60 % |         0.6734   0.8001   84 %
+    среднее                               44 %                            58 %
+
+**We take 44 per cent of the ceiling where the labels are clean and 58 per cent where they are
+noisy.** The ordering deficit is concentrated in the half with almost no measurement error in it.
+This is not item 115's mistake in a new wrapper: item 115 measured where the ST-RAE NUMERATOR sits
+and found it U-shaped (45.5 per cent potent, 27.6 per cent weak), which stands; the claim here is
+about ordering within a half against that half's own rank ceiling, a different quantity pointing the
+other way. The shares are out of fold --- macro rho 0.6434 against 0.7062 on the board, the test
+being the easier sample (item 357) --- so each is a lower bound on the board-side share, and the
+comparison BETWEEN halves is unaffected because both sides are out of fold.
+
+**What this does not say, which is the point of the item.** It bounds what the LABELS permit, not
+what STRUCTURE determines, and this project has measured the second kind twice and found it low:
+items 134/135 on the screening gap and item 229 on the TDI shift. A ceiling of 0.978 says a model
+that recovered the latent truth would score it; it does not promise the truth is recoverable from a
+SMILES. The usable reading is narrow: **the remaining gap to first place is not a measurement limit,
+and the claim that it is can now be refused with a number.** Item 353's required +0.1019 of macro rho
+is 37 per cent of the +0.2719 the labels leave unclaimed, and three quarters of what is unclaimed is
+on CYP1A2 (+0.238) and CYP2D6 (+0.543) --- the same two enzymes whose POTENT halves are furthest
+below their own ceilings, at 30 and 37 per cent.

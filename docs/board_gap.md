@@ -72,16 +72,25 @@ Set that against the largest lever this project has ever *realised on the board*
 levers.** For scale, here is everything we have that is positive and measured, in out-of-fold macro
 rank:
 
+    зонд, ядровая RBF вместо гребневой       +0.0166   пункт 360, 2 сида — ЗАМЕНА головы, не член
+    зонд surrogate_adme, шестым членом       +0.0148   пункт 355, 4 сида (chemprop_medium недостижим)
     зонд chemprop_medium, шестым членом      +0.0138   пункт 324, знак 8/8, ОТГРУЖЕН
-    панель NCGC, поферментно w0.1            +0.0112   2 сида, не прочитано, docs/transfer_axis.md
+    панель NCGC, поферментно w0.1            +0.0112   пункт 356: ПРОЧИТАНО, умирает над составом
+    minimol шестым                           +0.0048   пункт 361, но седьмым −0.0020 при 0/4
     стек: chemeleon + gbm-голова             +0.0047   пункт 346, знак 4/4
     surrogate_adme седьмым                   +0.0038   пункт 349, лучший одиночный кандидат
     chemeleon седьмым                        +0.0033   пункт 345
 
-The whole list sums to about +0.037 and most of it does not add — items 346 and 349 measure the
-redundancy directly, 57 to 60 per cent recovery between same-class members. **No combination of the
-project's historical lever sizes reaches first place.** It needs a different class of model, not one
-more member.
+**The list does not sum, and since items 355–361 it is clearer than ever why.** Its top four entries
+are the SAME slot — one sixth member built on a frozen encoder — and item 360's kernel head replaces
+the head on the member that ships rather than adding one, so it is worth +0.0012 over item 355's
+линейная and not +0.0166 on top of it. The error correlations between the candidates for that slot
+are 0.907 to 0.939 (items 349, 356, 361), item 356 read the NCGC panel arm and watched it die over
+the ensemble (−0.0092 as a seventh, sign 0/2) exactly as its pre-registered prediction said, and item
+361 measured the same for `minimol` (−0.0020 at 0/4). The best *buildable* combination on this list is
+the probe with a kernel head plus item 346's stack, at most +0.021 of out-of-fold rank if they add,
+which items 346 and 349 say they mostly do not. **No combination of the project's historical lever
+sizes reaches first place.** It needs a different class of model, not one more member.
 
 The one thing on record priced at the right order of magnitude is item 341's: the frozen pretrained
 encoder reaches 0.6261 of macro rank where our own from-scratch net reaches 0.5778, so **pretraining
@@ -203,10 +212,11 @@ A bad upload left standing at the close is not recoverable, so this part wants a
    the single largest actionable quantity in this project. Fit the per-enzyme SCALE against the
    test's label spread (bounded off the board itself) rather than against our training spread. It
    cannot cost ordering: expansion is strictly monotone, so Spearman is invariant exactly.
-2. **Read what is already measured** before building anything: `results/preds/oof_ncgc_per.json`,
-   +0.0112 of macro rank at 2/2 with its shuffle control firing, reported nowhere
-   (`docs/transfer_axis.md`). It is the second-largest out-of-fold lever in the list above and it
-   cost nothing.
+2. ~~**Read what is already measured**: `results/preds/oof_ncgc_per.json`, +0.0112 of macro rank at
+   2/2.~~ **Done — item 356.** It reproduces at the member level (+0.0113 at 2/2, shuffle control
+   firing) and **dies over the ensemble**: −0.0092 as a seventh member and −0.0044 as a substitution,
+   sign 0/2 on both, error correlation 0.935 with the existing composition. The pre-registered
+   prediction P0 in `docs/transfer_axis.md` held on both halves. Nothing to upload from it.
 3. **Put everything else into ordering, and weight it toward CYP2D6**, which is 38.5 per cent of the
    gap and where the field proves there is signal we are missing.
 4. **The only lever sized for first place is representational**: a warm-started multi-head fine-tune
@@ -215,7 +225,33 @@ A bad upload left standing at the close is not recoverable, so this part wants a
    head to a trunk trained from scratch, item 343 fine-tuned one head from a warm start. Nobody here
    has built both halves at once.
 
+## Is the gap a label ceiling? No, and that is now a number
+
+`verify/k138_noiseceiling.py`, item 362. The organisers publish a per-compound assay sd for every
+label, and the band is exactly 2·1.96 times it. Converted into a ceiling on **Spearman** — not on
+R², which `src/ceiling.py` has had all along and which attenuates differently — the labels permit:
+
+    фермент   потолок ро   наш ро   лучший на доске   наш %   лучш %
+    CYP1A2       0.9892    0.7513        0.8561        76 %    87 %
+    CYP2C9       0.9665    0.8231        0.8836        85 %    91 %
+    CYP2D6       0.9786    0.4359        0.5745        45 %    59 %
+    CYP3A4       0.9783    0.8146        0.8741        83 %    89 %
+    МАКРО        0.9782    0.7062        0.7971        72 %    81 %
+
+**The +0.1019 of ρ the table above demands is 37 per cent of the +0.2719 the labels leave
+unclaimed**, and three quarters of what is unclaimed sits on CYP1A2 and CYP2D6 — the same two
+enzymes this file already singles out. The band's scale would have to be understated by a factor of
+3.2 for the board's best ordering to already be at the ceiling, on a quantity item 220 measured as
+3.8 times too *wide*. Item 354's bounds on the test's label spread raise the ceiling further, to
+0.9861. And item 362's sharper half: the published error sits almost entirely on the weak compounds
+(95 per cent of the noise variance), and we take **44 per cent** of the ceiling on the potent half
+against 58 per cent on the weak one — the deficit is worst where the labels are cleanest.
+
+So nothing in this file can be explained away as label resolution. The constraint is modelling.
+
 And the arithmetic should be said plainly rather than implied: on this evidence first place is not
 reachable by the kind of step this project has been taking. It needs the 0.048-class intervention to
 work, and then it needs most of the smaller ones to add on top of it without the redundancy that ate
-items 176, 182, 191 and 194. That is the honest shape of the target.
+items 176, 182, 191 and 194. Item 362 removes the one excuse that would have made that shape
+acceptable — the labels permit four times the ordering first place needs from us — so the target is
+honestly shaped as a modelling gap, not a measurement one.
