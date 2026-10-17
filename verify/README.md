@@ -16567,3 +16567,49 @@ Our board score is **0.5357** and our own out-of-fold floor at fixed ordering is
 is an easier sample than our cross-validation, by more than the entire headroom at issue, so no
 out-of-fold floor transfers to the board arithmetically --- including the prediction band in
 METHOD.md, whose centre sits at 0.6537 against a realised 0.5357.
+
+
+**358. Two cheap things that could have been free and are not. The probe's alpha grid is pinned at
+its ceiling on 64 of 80 fold-enzyme picks and widening it is worth +0.0000 --- 10000 is the interior
+optimum, not the edge. And none of the four released tables contains a single one of the 750 test
+molecules, by name or by canonical SMILES.** `verify/k134_probealpha.py` (new),
+`results/logs/k134_probealpha.json`. Four seeds.
+
+**The alphas first, because the submission log invited it.** Building with the one reachable
+checkpoint printed `alpha на полной выборке: CYP1A2 10000 (верх), CYP2C9 10000 (верх), CYP2D6 10000
+(верх), CYP3A4 1000 (внутри)`, and item 324 had written that the grid is "carried in, never searched"
+and that widening it "is a DIFFERENT experiment and must be labelled one". A regulariser at its
+boundary on 2048 standardised columns against 1285 to 2335 rows is the kind of thing that is usually
+leaving something behind.
+
+    сетка alpha              Δранг шестым      sd    знак      Δпара   одиночн.   на верху сетки
+    отгружаемая 1e2..1e4         +0.0148  0.0009     4/4    -0.0168     0.6263            64/80
+    +1 декада  1e2..1e5          +0.0148  0.0009     4/4    -0.0168     0.6263             0/80
+    +2 декады  1e2..1e6          +0.0148  0.0009     4/4    -0.0168     0.6263             0/80
+    +3 декады  1e2..1e7          +0.0148  0.0009     4/4    -0.0168     0.6263             0/80
+    только верх 1e5..1e7         +0.0084  0.0002     4/4    +0.0151     0.6114             0/80
+
+**Identical to four decimal places in every arm that keeps 10000, and 0 of 80 at the ceiling as soon
+as the ceiling moves.** So the 64/80 was 10000 being the optimum AND the largest value offered, not
+the grid refusing to tune. Restricting to the decades above it costs 0.0064 of rank and reverses the
+pair, which is the control that says the sweep can distinguish anything at all. Item 324's carried-in
+grid was right, and the `(верх)` in the submission log is cosmetic. The device reproduces item 355's
++0.0148 at |Δ| 0.0000.
+
+**And the overlap check, which cost thirty seconds and nobody had run it.** Item 144 checked the
+NCGC panel against the blinded test (0 of 750) and item 318 checked the external ChEMBL set (0 of
+750, with 64 of our 4905 shared). The four files the organisers RELEASED had never been checked,
+and `docs/teammate_asks.md` calls the screen's ordering power "недостижимый приз" precisely because
+the blind test has no screening column:
+
+    файл                                        строк   по ИМЕНИ   по SMILES
+    single-concentration-TRAIN                  17504    0 / 750     0 / 750
+    TRAIN_TDI                                    6145    0 / 750     0 / 750
+    TRAIN_Emax                                   6145    0 / 750     0 / 750
+    TRAIN_inhibition                             4905    0 / 750     0 / 750
+
+Canonical SMILES through RDKit, not string equality. **Zero everywhere**, so the screen, the
+pre-incubation arm and the Emax table are blind on the test by construction and not merely by
+convention --- the prize really is unreachable, and the sentence in `teammate_asks` that assumed it
+is now a measurement. Worth having: it is the cheapest possible test of the one quantity that
+outranks our model by 0.29 to 0.50 of Spearman (item 139).
