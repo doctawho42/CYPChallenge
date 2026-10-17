@@ -1,0 +1,231 @@
+{
+ "snapshot": "leaderboard_2026-10-11T1926Z.json",
+ "tabs": {
+  "partial_10": "CYP1A2",
+  "partial_11": "CYP2C9",
+  "partial_12": "CYP2D6",
+  "partial_13": "CYP3A4"
+ },
+ "macro_tab": "partial_9",
+ "us": {
+  "rank": 64,
+  "name": "Lizard Wizard Gizzard",
+  "strae": 0.5357,
+  "rho": 0.7062
+ },
+ "first": {
+  "rank": 1,
+  "name": "preheat-to-450",
+  "strae": 0.3706,
+  "rho": 0.7844
+ },
+ "n_board": 273,
+ "fit": {
+  "intercept": 2.4720951364071144,
+  "slope_cross": -2.6022136141845795,
+  "resid_sd": 0.0975113739263896,
+  "n": 198,
+  "slope_within_item322": -1.62
+ },
+ "resid_us": -0.09871188206996429,
+ "resid_first": -0.060318777440730165,
+ "gap_strae": 0.16509999999999997,
+ "gap_rho": 0.07819999999999994,
+ "gap_from_ordering": -0.20349310462923395,
+ "gap_from_placement": 0.03839310462923398,
+ "rho_needed_cross": 0.06344598272026758,
+ "rho_needed_within": 0.10191358024691355,
+ "levers_item327": [
+  4.995746670887211,
+  8.02469135802469
+ ],
+ "per_enzyme": {
+  "CYP1A2": {
+   "ours_rank": 65,
+   "ours_strae": 0.5656,
+   "ours_rho": 0.7513,
+   "first_name": "wbot",
+   "first_strae": 0.3846,
+   "first_rho": 0.8561,
+   "best_rho": 0.8561,
+   "gap_strae": 0.181,
+   "gap_rho": 0.1048,
+   "n": 273
+  },
+  "CYP2C9": {
+   "ours_rank": 68,
+   "ours_strae": 0.4258,
+   "ours_rho": 0.8231,
+   "first_name": "preheat-to-450",
+   "first_strae": 0.3056,
+   "first_rho": 0.8808,
+   "best_rho": 0.8836,
+   "gap_strae": 0.1202,
+   "gap_rho": 0.0605,
+   "n": 273
+  },
+  "CYP2D6": {
+   "ours_rank": 72,
+   "ours_strae": 0.6786,
+   "ours_rho": 0.4359,
+   "first_name": "preheat-to-450",
+   "first_strae": 0.4135,
+   "first_rho": 0.5428,
+   "best_rho": 0.5745,
+   "gap_strae": 0.2651,
+   "gap_rho": 0.1386,
+   "n": 273
+  },
+  "CYP3A4": {
+   "ours_rank": 75,
+   "ours_strae": 0.4729,
+   "ours_rho": 0.8146,
+   "first_name": "preheat-to-450",
+   "first_strae": 0.3515,
+   "first_rho": 0.8741,
+   "best_rho": 0.8741,
+   "gap_strae": 0.1214,
+   "gap_rho": 0.0595,
+   "n": 273
+  }
+ },
+ "price_per_place": 0.0031388888888888885,
+ "trajectory": [
+  {
+   "snapshot": "2026-09-15",
+   "n": 164,
+   "first": 0.3944,
+   "second": 0.3952,
+   "tenth": 0.4428,
+   "us": null
+  },
+  {
+   "snapshot": "2026-09-17T1053Z",
+   "n": 187,
+   "first": 0.3873,
+   "second": 0.3909,
+   "tenth": 0.4416,
+   "us": null
+  },
+  {
+   "snapshot": "2026-09-20T1445Z",
+   "n": 216,
+   "first": 0.3818,
+   "second": 0.3872,
+   "tenth": 0.4419,
+   "us": 0.576
+  },
+  {
+   "snapshot": "2026-09-21T1057Z",
+   "n": 219,
+   "first": 0.3818,
+   "second": 0.3878,
+   "tenth": 0.4378,
+   "us": 0.576
+  },
+  {
+   "snapshot": "2026-09-21T1658Z",
+   "n": 221,
+   "first": 0.3818,
+   "second": 0.3878,
+   "tenth": 0.4367,
+   "us": 0.576
+  },
+  {
+   "snapshot": "2026-09-24T1219Z",
+   "n": 230,
+   "first": 0.3769,
+   "second": 0.3814,
+   "tenth": 0.4361,
+   "us": 0.576
+  },
+  {
+   "snapshot": "2026-09-25T0150Z",
+   "n": 239,
+   "first": 0.368,
+   "second": 0.3776,
+   "tenth": 0.4361,
+   "us": 0.576
+  },
+  {
+   "snapshot": "2026-09-25T0558Z",
+   "n": 219,
+   "first": 0.368,
+   "second": 0.3776,
+   "tenth": 0.4361,
+   "us": 0.5535
+  },
+  {
+   "snapshot": "2026-09-25T0644Z",
+   "n": 219,
+   "first": 0.368,
+   "second": 0.3776,
+   "tenth": 0.4361,
+   "us": 0.5535
+  },
+  {
+   "snapshot": "2026-09-26T0727Z",
+   "n": 227,
+   "first": 0.368,
+   "second": 0.3776,
+   "tenth": 0.4315,
+   "us": 0.5381
+  },
+  {
+   "snapshot": "2026-09-30T1628Z",
+   "n": 244,
+   "first": 0.3772,
+   "second": 0.3776,
+   "tenth": 0.4367,
+   "us": 0.5381
+  },
+  {
+   "snapshot": "2026-10-01T0718Z",
+   "n": 245,
+   "first": 0.3772,
+   "second": 0.3776,
+   "tenth": 0.4367,
+   "us": 0.5381
+  },
+  {
+   "snapshot": "2026-10-01T0729Z",
+   "n": 245,
+   "first": 0.3772,
+   "second": 0.3776,
+   "tenth": 0.4367,
+   "us": 0.5381
+  },
+  {
+   "snapshot": "2026-10-01T0839Z",
+   "n": 245,
+   "first": 0.3772,
+   "second": 0.3776,
+   "tenth": 0.4354,
+   "us": 0.5363
+  },
+  {
+   "snapshot": "2026-10-02T1733Z",
+   "n": 248,
+   "first": 0.3772,
+   "second": 0.3776,
+   "tenth": 0.4367,
+   "us": 0.5794
+  },
+  {
+   "snapshot": "2026-10-06T0934Z",
+   "n": 246,
+   "first": 0.3706,
+   "second": 0.3776,
+   "tenth": 0.4301,
+   "us": 0.5357
+  },
+  {
+   "snapshot": "2026-10-11T1926Z",
+   "n": 273,
+   "first": 0.3706,
+   "second": 0.3776,
+   "tenth": 0.4301,
+   "us": 0.5357
+  }
+ ]
+}
