@@ -16876,3 +16876,74 @@ and the claim that it is can now be refused with a number.** Item 353's required
 is 37 per cent of the +0.2719 the labels leave unclaimed, and three quarters of what is unclaimed is
 on CYP1A2 (+0.238) and CYP2D6 (+0.543) --- the same two enzymes whose POTENT halves are furthest
 below their own ceilings, at 30 and 37 per cent.
+
+**363. The organisers' own CYP-trained model, which this project refused once, is a WORSE frozen
+feature extractor for our labels than random weights of the same architecture. All four
+pre-registered predictions fail at sign 0/2.** `verify/k139_oadmetcyp.py`, two seeds, four arms,
+with P5–P8 committed in `docs/transfer_axis.md` before any score existed.
+
+Item 350 named the one remaining form of the transfer axis — a warm-started multi-head fine-tune
+over challenge+ChEMBL+qHTS — and deferred it on GPU cost. **Half of it is already trained and
+published.** `openadmet/cyp1a2-cyp2d6-cyp3a4-cyp2c9-chemeleon-v1`: a multitask chemprop D-MPNN
+warm-started from CheMeleon, 2048-wide message passing into 1024×3, four outputs on exactly our four
+enzymes, fitted to 8068 ChEMBL 37 pIC50 structures with no validation split. `src/embed.py` records
+the refusal verbatim — *"a model already trained on CYP pIC50 data would make the comparison
+circular"* — which is true of the comparison that file makes (learned representation against hand
+descriptors) and says nothing about whether the checkpoint is a member.
+
+**The source is pinned harder than any external arm before it.** `data/chemeleon_X_train.csv` is
+byte-for-byte this model's training set: the same 8068 SMILES in the same row order with the same
+label counts, 4800 / 2583 / 2523 / 1361. So the same data has now been routed as training ROWS
+through the trunk's third head (item 319, channel +0.0043 against a +0.0105 gate) and as the model
+its own authors trained, with the source held fixed and only the role changing — which is the
+question `docs/transfer_axis.md` exists to answer.
+
+Two gates before the model was run at all. **Overlap with the blinded test set is 0 of 750** by
+canonical SMILES of the largest fragment, matcher verified against the test set itself; overlap with
+our training set is **64, reproducing item 290's recorded count exactly**. And the checkpoint's
+unspecified hyper-parameters are *identified*, not guessed: a bare state dict loads at any depth
+because `W_h` is shared, so the no-split model's own training labels are the key — over depth 2–6 ×
+{relu, leakyrelu} × {mean, norm, sum}, `depth 6 / relu / mean` gives ρ 0.9987 and R² 0.9977 where
+the runner-up gives 0.9329 and R² −25.5. `src/embed_cypmodel.py` re-checks that fit on every run and
+stops below 0.99; with `--random` the check inverts and random weights must FAIL it, which they do
+at ρ 0.1353.
+
+    арм                     одиночн.   Δпара | шестым  знак | седьмым  знак | корр. с sa
+    прямые (0 параметров)     0.2881  0.9138 | -0.0133  0/2 | -0.0077  0/2 |     0.775
+    зонд(эмб 2048)            0.4376  0.8395 | -0.0162  0/2 | -0.0136  0/2 |     0.864
+    зонд(голова 1024)         0.3426  0.8844 | -0.0099  0/2 | -0.0068  0/2 |     0.818
+    зонд(4 предсказания)      0.3126  0.8996 | -0.0063  0/2 | -0.0040  0/2 |     0.812
+
+**P5 (standalone ≥ 0.60) fails at 0.4376. P6 (above `surrogate_adme`'s 0.6287) fails by 0.1911. P7
+(positive sixth) and P8 (positive seventh, correlation < 0.90) fail at sign 0/2 on all four arms.**
+The first arm has no precedent in the record: the model emits four direct estimates of our targets,
+so it enters with **zero parameters fitted on our labels**, where all twenty-seven previous
+candidates were encoders with no head on our endpoint. It is the worst of the four.
+
+**And the number that makes this a finding rather than one more closed door: 0.4376 is BELOW item
+343's same-device random-weight control of 0.4833.** A model fine-tuned on our own endpoint, by the
+organisers, for 100 epochs, is a worse frozen feature extractor for our labels than untrained
+weights of the same shape. Item 343's "freeze, don't fine-tune" now has its sharpest instance.
+
+**The pre-registration's own reasoning is refuted by measurement, which is why it was written down
+first.** P5–P8 rested on this: ChEMBL's defect is LEVEL (+0.22 to +0.60, items 60–63), Spearman is
+invariant to level exactly, so the defect that closed the external-rows axis cannot touch the
+ordering item 353 says we are behind on. The source does support that premise — on the 64 shared
+structures ρ is 0.821 / 0.667 / 0.426 / 0.750 with offsets +0.215 to +0.603, reproducing items 60–63's
+table — so **the labels are not the problem. The model is:** ρ 0.9987 on its own 8068 training labels
+against ρ 0.2881 on our 4905 unselected library. A no-split model trained to convergence on a
+publication-selected sample is fitted to that sample's distribution, and our library is not it. The
+defect is generalisation off the source's distribution, not the metric and not the offset.
+
+Per enzyme the pattern is coherent with that reading rather than noise: the embedding probe reaches
+0.42 / 0.41 / 0.31 / 0.61 and its best enzyme is CYP3A4, which is where the external set carries the
+most labels (4773 of 8004). More external labels, better transfer — and still far under the screen.
+The direct-prediction arm is identical on both seeds (0.283 / 0.284 / 0.220 / 0.366), as it must be,
+since it fits nothing fold-dependent.
+
+**What it says about first place, which is why it was worth the run.** Item 341 records that the best
+readable entrant trains on **challenge+ChEMBL+qHTS together**. It is now measured that ChEMBL alone
+transfers at ρ 0.29 as a model and +0.0043 as rows, and item 356 measured the qHTS panel dying over
+the ensemble at 0/2. So what works in that configuration is the UNION with our own distribution, not
+either external source on its own — which is exactly the joint multi-head fine-tune item 350 named
+and deferred, and the one thing left on this axis that genuinely needs a GPU.

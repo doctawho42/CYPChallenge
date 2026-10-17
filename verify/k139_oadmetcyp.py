@@ -21,20 +21,20 @@ THE ARMS, and the first one has no precedent: the model emits four direct estima
 targets, so it enters the composition with ZERO parameters fitted on our labels. All twenty-seven
 previous candidates were encoders with no head on our endpoint.
 
-    арм                        одиночный ранг   шестым    седьмым   корр. с surrogate_adme
-    прямые (0 параметров)             0.2881   -0.0138    -0.0080            0.778
-    зонд(эмб 2048)                    0.4372   -0.0162    -0.0139            0.870
-    зонд(голова 1024)                 0.3415   -0.0106    -0.0073            0.819
-    зонд(4 предсказания)              0.3126   -0.0067    -0.0043            0.814
-                                                            (сид 0; сводка по сидам ниже)
+    арм                     одиночн.   Δпара | шестым  знак | седьмым  знак | корр. с sa
+    прямые (0 параметров)     0.2881  0.9138 | -0.0133  0/2 | -0.0077  0/2 |     0.775
+    зонд(эмб 2048)            0.4376  0.8395 | -0.0162  0/2 | -0.0136  0/2 |     0.864
+    зонд(голова 1024)         0.3426  0.8844 | -0.0099  0/2 | -0.0068  0/2 |     0.818
+    зонд(4 предсказания)      0.3126  0.8996 | -0.0063  0/2 | -0.0040  0/2 |     0.812
 
 **Every pre-registered prediction fails.** P5 wanted item 348's standalone threshold of 0.60 and the
 best arm reaches 0.4372. P6 wanted it above `surrogate_adme`'s 0.6287. P7 wanted a positive sixth
 member and all four arms are negative. P8 wanted a positive seventh and an error correlation below
-0.90, and the seventh slot is negative on every arm.
+0.90, and the seventh slot is negative on every arm. Every arm is negative at sign 0/2 in
+both slots, and the ST-RAE column agrees: 0.84 to 0.91 standalone against the composition\'s 0.64.
 
 **And the number that makes this a finding rather than another closed door:** item 343's
-same-device random-weight control is 0.4833 (`rand2048`), so the best arm here is **below random
+same-device random-weight control is 0.4833 (`rand2048`), so the best arm here, at 0.4376 over two seeds, is **below random
 weights**. A model fine-tuned on our own endpoint, by the organisers, for 100 epochs, is a worse
 frozen feature extractor for our labels than untrained weights of the same shape. Item 343's
 "freeze, don't fine-tune" now has its sharpest instance, and the comparison is run again on THIS
