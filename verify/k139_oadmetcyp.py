@@ -28,18 +28,32 @@ previous candidates were encoders with no head on our endpoint.
     зонд(4 предсказания)      0.3126  0.8996 | -0.0063  0/2 | -0.0040  0/2 |     0.812
 
 **Every pre-registered prediction fails.** P5 wanted item 348's standalone threshold of 0.60 and the
-best arm reaches 0.4372. P6 wanted it above `surrogate_adme`'s 0.6287. P7 wanted a positive sixth
+best arm reaches 0.4376. P6 wanted it above `surrogate_adme`'s 0.6287. P7 wanted a positive sixth
 member and all four arms are negative. P8 wanted a positive seventh and an error correlation below
 0.90, and the seventh slot is negative on every arm. Every arm is negative at sign 0/2 in
-both slots, and the ST-RAE column agrees: 0.84 to 0.91 standalone against the composition\'s 0.64.
+both slots, and the ST-RAE column agrees: 0.84 to 0.91 standalone against the composition's 0.64.
 
-**And the number that makes this a finding rather than another closed door:** item 343's
-same-device random-weight control is 0.4833 (`rand2048`), so the best arm here, at 0.4376 over two seeds, is **below random
-weights**. A model fine-tuned on our own endpoint, by the organisers, for 100 epochs, is a worse
-frozen feature extractor for our labels than untrained weights of the same shape. Item 343's
-"freeze, don't fine-tune" now has its sharpest instance, and the comparison is run again on THIS
-architecture rather than quoted (`--random 0` in `src/embed_cypmodel.py`, which inverts control 1:
-random weights must FAIL to reproduce the model's training labels, and they do, at ρ 0.1353).
+    зонд(случайные веса)      0.5290  0.7615 | -0.0125  0/2 | -0.0141  0/2 |     0.887
+                                        <- КОНТРОЛЬ: та же архитектура, веса не обучены
+
+**And the number that makes this a finding rather than another closed door: the same architecture
+with UNTRAINED weights scores 0.5290 against the organisers' 0.4376.** Their fine-tune cost
+**0.0914 of standalone rank** relative to random weights of the identical shape -- measured here on
+this architecture rather than quoted from item 343's 0.4833 on another, which was the weaker form of
+the same claim. A model fine-tuned on our own endpoint, by its own authors, for 100 epochs, is a
+worse frozen feature extractor for our labels than untrained weights. Item 343's "freeze, don't
+fine-tune" now has its sharpest instance.
+
+The control comes from `--random 0` in `src/embed_cypmodel.py`, which inverts control 1: random
+weights must FAIL to reproduce the model's training labels, and they do, at ρ 0.1353. Its untrained
+head collapses to a constant (prediction sd 0.00), so only its embedding arm is informative, and it
+is negative as a member too (-0.0125 at 0/2) -- which is item 361's dilution again and not a reason
+to ship noise.
+
+One reporting defect the control exposed, fixed in the code rather than left standing in a log: the
+run that produced it let the CONTROL win the "best arm" line and printed 0.5290 beside P5, which
+reads as though the candidate had nearly passed. The verdict is now read off candidate arms only,
+and P5's number is the 0.4376 it always was.
 
 WHY, MEASURED RATHER THAN ARGUED, and it refutes the pre-registration's own reasoning. The
 pre-registration argued that ChEMBL's defect is LEVEL (+0.22 to +0.60, items 60-63), that Spearman
@@ -292,8 +306,19 @@ def main(argv=None):
           % (ITEM355, ITEM343_RAND))
     print("         самая низкая корреляция ошибок на записи %.3f (пункт 361)" % ITEM361_CORR)
 
-    best = max(out["summary"], key=lambda k: out["summary"][k]["solo_rank"])
+    # The random-weight arm is a CONTROL, not a candidate, so it must not win the line the
+    # pre-registered verdict is read off -- the run that added it did exactly that and printed
+    # 0.5290 beside P5.
+    cands = {k: v for k, v in out["summary"].items() if "случайные" not in k}
+    best = max(cands, key=lambda k: cands[k]["solo_rank"])
     b = out["summary"][best]
+    rnd = out["summary"].get("зонд(случайные веса)")
+    if rnd is not None:
+        tr = out["summary"]["зонд(эмб 2048)"]["solo_rank"]
+        print("\nконтроль 4: та же архитектура со СЛУЧАЙНЫМИ весами даёт одиночный %.4f против "
+              "%.4f у обученных," % (rnd["solo_rank"], tr))
+        print("  то есть дообучение стоило %+.4f ранга против необученных весов той же формы."
+              % (tr - rnd["solo_rank"]))
     print("\nпредсказания, вынесенные ДО запуска (docs/transfer_axis.md):")
     print("  P5 одиночный ранг >= %.2f:      %s  (%.4f, арм %s)"
           % (SCREEN, "ДЕРЖИТСЯ" if b["solo_rank"] >= SCREEN else "ПРОВАЛИЛОСЬ",

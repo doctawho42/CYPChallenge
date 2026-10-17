@@ -16920,10 +16920,24 @@ The first arm has no precedent in the record: the model emits four direct estima
 so it enters with **zero parameters fitted on our labels**, where all twenty-seven previous
 candidates were encoders with no head on our endpoint. It is the worst of the four.
 
-**And the number that makes this a finding rather than one more closed door: 0.4376 is BELOW item
-343's same-device random-weight control of 0.4833.** A model fine-tuned on our own endpoint, by the
-organisers, for 100 epochs, is a worse frozen feature extractor for our labels than untrained
-weights of the same shape. Item 343's "freeze, don't fine-tune" now has its sharpest instance.
+    зонд(случайные веса)      0.5290  0.7615 | -0.0125  0/2 | -0.0141  0/2 |     0.887
+                                        — КОНТРОЛЬ: та же архитектура, веса не обучены
+
+**And the number that makes this a finding rather than one more closed door: the same architecture
+with UNTRAINED weights scores 0.5290 against the organisers' 0.4376.** Their fine-tune cost **0.0914
+of standalone rank** relative to random weights of the identical shape — measured on this
+architecture rather than quoted from item 343's 0.4833 on another, which was the weaker form of the
+same claim. A model fine-tuned on our own endpoint, by its own authors, for 100 epochs, is a worse
+frozen feature extractor for our labels than untrained weights. Item 343's "freeze, don't fine-tune"
+now has its sharpest instance.
+
+The control comes from `--random 0` in `src/embed_cypmodel.py`, which inverts the identification
+check: random weights must FAIL to reproduce the model's training labels, and they do, at ρ 0.1353.
+Its untrained head collapses to a constant, so only its embedding arm is informative — and that arm
+is negative as a member too (−0.0125 at 0/2), which is item 361's dilution again rather than a
+reason to ship noise. **One reporting defect it exposed, fixed in the code:** the run that added the
+control let it win the "best arm" line and printed 0.5290 beside P5, reading as though the candidate
+had nearly passed. The verdict is now read off candidate arms only.
 
 **The pre-registration's own reasoning is refuted by measurement, which is why it was written down
 first.** P5–P8 rested on this: ChEMBL's defect is LEVEL (+0.22 to +0.60, items 60–63), Spearman is
