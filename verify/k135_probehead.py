@@ -87,9 +87,12 @@ def head_rbf(Ztr, ytr, Zte):
     # gamma scaled by dimension, the usual parameterisation; the grid is wide and the pick is
     # reported so a pinned optimum is visible rather than silent.
     d = Ztr.shape[1]
-    g = [0.1 / d, 0.3 / d, 1.0 / d, 3.0 / d]
+    # Deliberately two values each: the full 3x4 grid is 36 kernel builds per fold and ran at
+    # about an hour per seed, which buys resolution this arm does not need -- it is here to say
+    # whether a nonlinear head beats a linear one at all, not to tune one.
+    g = [0.3 / d, 1.0 / d]
     gs = GridSearchCV(KernelRidge(kernel="rbf"),
-                      {"alpha": [0.1, 1.0, 10.0], "gamma": g},
+                      {"alpha": [1.0, 10.0], "gamma": g},
                       cv=KFold(INNER, shuffle=True, random_state=0),
                       scoring="neg_mean_absolute_error", n_jobs=1)
     gs.fit(Ztr, ytr)
