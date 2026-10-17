@@ -16759,6 +16759,27 @@ unless they were added at the same member count**, and the screen in item 348, w
 +0.8184 was computed across candidates at three different counts, is contaminated by exactly this.
 It is not wrong about the direction; its coefficient is not a clean estimate.
 
+**And the slot effect is not a reason to ship `minimol`, which is the measurement that closes this.**
+The composition that can actually be built here is five plus `surrogate_adme` (item 355, since
+`chemprop_medium` is unreachable), so the question is whether `minimol` adds to THAT. Four seeds,
+from the member caches and item 349's probe caches:
+
+    пять                    ранг 0.6421   пара 0.6382
+    пять + surrogate_adme        0.6569        0.6215    +0.0148 / -0.0168   4/4
+    пять + minimol               0.6466        0.6291    +0.0045 / -0.0091   4/4
+    пять + оба                   0.6549        0.6198    +0.0128 / -0.0184   4/4
+
+    minimol СЕДЬМЫМ к пять+surrogate_adme:  -0.0020 ранга, знак 0/4
+    корреляция ошибок surrogate_adme ~ minimol:  0.907
+
+**-0.0020 at sign 0/4, and the error correlation is 0.907** against item 349's 0.914 for
+`chemeleon ~ surrogate_adme`, the pair it called the most correlated in the project. So `minimol`
+helps only where there is no frozen encoder in the composition at all, and is redundant with any one
+that is. Item 349's correlation mechanism now holds on a third pair, and the +0.0048 above is a
+statement about an empty slot rather than about this checkpoint. The pair improves by 0.0016 in the
+both-together arm, which is under its own 0.007 floor and does not change the verdict under this
+project's rank-first rule.
+
 **Controls.** Each of the ten embeddings carries no `molecule_name`, so each got item 345's
 alignment control asserted rather than printed, with the threshold set from the rolled values item
 349 itself observed (-0.0192 and -0.0392) rather than from a round number --- the first version of
