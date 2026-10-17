@@ -1121,7 +1121,8 @@ def _provenance(a, argv, lams, fold, clusters, cls, verdicts, paths, elapsed_s):
     and unmeasured since --- where a slip would cost that run's record.
     """
     return dict(paths=paths, argv=list(argv), mode=a.mode, solo=SOLO, cyps=CYPS,
-                deadzone=a.deadzone, bundle=a.bundle, delta=a.delta, lams=lams,
+                deadzone=a.deadzone, bundle=a.bundle, delta=a.delta, spread=a.spread,
+                lams=lams,
                 grid=(float(GRID.min()), float(GRID.max())),
                 positives={c: int(cls[f"{c}_is_TDI"].sum()) for c in TDI_CYPS},
                 total_rows=int(len(cls)), digest=fold_digest(fold), clusters=int(clusters),
@@ -1158,6 +1159,22 @@ def main():
     # Выбор решён пунктом 88: разброс delta ПО МОДЕЛЯМ в 9-88 раз больше сидового, на CYP2D6 три
     # модели дают -0.405, -0.917 и -1.167, а на CYP1A2 не выживает даже знак. Документированный
     # вектор не спорит по знаку ни с одной из трёх; узкая альтернатива из пункта 249 спорила бы.
+    # Пофермент­ное РАСТЯЖЕНИЕ маргинали метки, под которое подбирается пара (сдвиг, lambda).
+    # Пункт 354: доска печатает MAE и R2 по каждому участнику и каждому ферменту, а
+    # MSE >= MAE^2 и R2 = 1 - MSE/Var дают sd(y_test) >= MAE/sqrt(1-R2) без допущений о
+    # распределении ошибки. По 273 строкам границы согласуются внутри фермента и дают
+    # 1.31 / 1.25 / 1.48 / 1.02 от нашего разброса. --delta умеет только сдвиг СРЕДНЕГО, так
+    # что подогнанная lambda держит сжатие, которое более широкий тест наказывает: при
+    # spread = границам доски lambda идёт с 1.08/1.22/1.10/1.04 на 1.56/1.46/1.88/1.06.
+    # Единица означает «тест по ширине как обучающая выборка» --- это предположение, а не его
+    # отсутствие, и доска говорит, что оно ложно. По умолчанию единица: ни одно число, которое
+    # подача уже опубликовала, не двигается, пока флаг не дан.
+    ap.add_argument("--spread", default="1,1,1,1",
+                    help="растяжение маргинали метки по ферментам, под которое подбирается "
+                         "(сдвиг, lambda). Одно число или четыре через запятую. 1 = как "
+                         "сейчас. Пункт 354 оценивает 1.5,1.4,1.4,1.25 минимаксом по двум "
+                         "сценариям; доска отвечает раз в 12 часов, так что первая заливка "
+                         "--- это измерение, а не вывод.")
     ap.add_argument("--delta", default=DELTA_DEFAULT,
                     help="предполагаемый сдвиг средней активности теста относительно нашей "
                          "выборки. Пара (off, lambda) подбирается под ЭТО предположение. "
@@ -1303,6 +1320,16 @@ def main():
             raise SystemExit(f"--delta: нужно одно число или четыре через запятую, дано {len(d)}")
         print(f"предполагаемый сдвиг по ферментам: "
               + ", ".join(f"{c} {v:+.2f}" for c, v in zip(CYPS, d)), flush=True)
+        sp = [float(x) for x in str(a.spread).split(",")]
+        if len(sp) == 1:
+            sp = sp * 4
+        if len(sp) != 4:
+            raise SystemExit(f"--spread: нужно одно число или четыре через запятую, дано {len(sp)}")
+        if any(v <= 0 for v in sp):
+            raise SystemExit("--spread: растяжение должно быть положительным")
+        if any(v != 1.0 for v in sp):
+            print("предполагаемое растяжение маргинали по ферментам: "
+                  + ", ".join(f"{c} x{v:.2f}" for c, v in zip(CYPS, sp)), flush=True)
         if a.probe:
             # One pass over the members, two means. The affine pair is fitted against the
             # vector it will be applied to, so the candidate and its probe-free twin each
@@ -1318,13 +1345,13 @@ def main():
             P_base = [_combine(parts_oof, e) for e in range(len(CYPS))]
             P = [_combine(parts_oof, e, probe_oof) for e in range(len(CYPS))]
             print("  аффинная пара БЕЗ зонда (контроль-близнец):", flush=True)
-            lams_base = fit_shrinkage(P_base, y, mask, d)
+            lams_base = fit_shrinkage(P_base, y, mask, d, sp)
             print("  аффинная пара С зондом (кандидат):", flush=True)
-            lams = fit_shrinkage(P, y, mask, d)
+            lams = fit_shrinkage(P, y, mask, d, sp)
         else:
             P = oof_predictions(X, y, mask, fold, a.mode, scr,
                                 (LO, HI) if a.deadzone else None, raw_out=raw_members)
-            lams = fit_shrinkage(P, y, mask, d)
+            lams = fit_shrinkage(P, y, mask, d, sp)
 
     dz_targets = None
     if a.deadzone:
