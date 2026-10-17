@@ -84,7 +84,7 @@ def canon(s):
         return None
 
 
-def build(model_dir):
+def build(model_dir, random_seed=None):
     from chemprop.models.model import MPNN
     from chemprop.nn import (BondMessagePassing, MeanAggregation, NormAggregation,
                              RegressionFFN, SumAggregation)
@@ -101,6 +101,15 @@ def build(model_dir):
                             sd["predictor.output_transform.mean"].numpy().ravel(),
                             sd["predictor.output_transform.scale"].numpy().ravel()))
     m = MPNN(mp, agg(), ffn, batch_norm=False)
+    if random_seed is not None:
+        # Item 343's control, on THIS architecture: the same shape with untrained weights. Only
+        # the output transform is kept, so the arm differs from the real one in the weights alone.
+        torch.manual_seed(random_seed)
+        for mod in m.modules():
+            if hasattr(mod, "reset_parameters"):
+                mod.reset_parameters()
+        m.eval()
+        return m
     clean = {k: v for k, v in sd.items() if not k.startswith("metrics")}
     missing, unexpected = m.load_state_dict(clean, strict=False)
     missing = [k for k in missing if not k.startswith("metrics")]
@@ -148,6 +157,8 @@ def main():
     ap.add_argument("--test", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--batch", type=int, default=128)
+    ap.add_argument("--random", type=int, default=None,
+                    help="item 343's control: same architecture, untrained weights at this seed")
     a = ap.parse_args()
 
     md = pathlib.Path(a.model)
@@ -155,9 +166,11 @@ def main():
         if not (md / f).exists():
             print("нет %s" % (md / f), file=sys.stderr)
             return 3
-    model = build(md)
-    print("модель: depth=%d act=%s agg=%s, выход %d задач"
-          % (DEPTH, ACT, AGG, model.predictor.ffn[-1][-1].out_features), flush=True)
+    model = build(md, a.random)
+    print("модель: depth=%d act=%s agg=%s, выход %d задач%s"
+          % (DEPTH, ACT, AGG, model.predictor.ffn[-1][-1].out_features,
+             "" if a.random is None else "  [СЛУЧАЙНЫЕ ВЕСА, сид %d --- контроль пункта 343]"
+             % a.random), flush=True)
 
     # ---- control 1: the identification must still hold on this invocation ----------------
     X = pd.read_csv(md / "data/X_train.csv")
@@ -173,9 +186,13 @@ def main():
     fit = float(np.mean(rh))
     print("контроль 1: модель воспроизводит свои обучающие метки, ро %.4f (%s), порог %.2f"
           % (fit, " ".join("%.3f" % x for x in rh), FIT_FLOOR), flush=True)
-    if fit < FIT_FLOOR:
+    if a.random is None and fit < FIT_FLOOR:
         print("КОНТРОЛЬ 1 ПРОВАЛЕН: ро %.4f --- конфигурация не та, что опознана" % fit,
               file=sys.stderr)
+        return 2
+    if a.random is not None and fit >= FIT_FLOOR:
+        print("КОНТРОЛЬ 1 ПРОВАЛЕН: случайные веса воспроизводят метки при ро %.4f --- "
+              "значит они не случайны" % fit, file=sys.stderr)
         return 2
 
     # ---- control 2: the overlap with the blinded test set, measured before anything else ---
