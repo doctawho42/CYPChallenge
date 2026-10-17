@@ -16656,3 +16656,55 @@ rank, standalone 0.3510.** Far worse, which closes that reading rather than leav
 measurement says an SVR is a weak member HERE, on our 2295-column matrix inside our composition. It
 does not say `SVM`'s entry is weak --- they score rho 0.7710 on their own features with their own
 tuning, and this file tested the family, not their model.
+
+
+**360. The head on a frozen encoder has been linear in all eighteen checkpoint measurements, and
+varying it is worth +0.0012 of rank --- below the floor. And the metric's own loss is worth +0.023
+of rank to a WEAK model and +0.0001 to a decent one, measured three times, which is the whole
+account of why the dead zone mattered and why having that loss natively buys nothing.**
+`verify/k135_probehead.py` (new), `results/logs/k135_probehead.json`, and the linear-SVR arm of item
+359. Two seeds.
+
+**The head.** Item 324's discriminating control varied the ENCODER --- the same RidgeCV on our own
+DESC+MECH gives -0.0151 at sign 0/4 --- and answered "is it the encoder or the member shape". It did
+not answer "is it the encoder or the HEAD", and every one of the eighteen frozen checkpoints in
+items 324, 335, 341, 342, 345, 347, 349 and 350 was read by the same linear map with the same three
+alphas, which k134 then showed was not even grid-limited.
+
+    голова на surrogate_adme        Δранг шестым      sd    знак      Δпара   одиночн.
+    гребневая (отгружается)              +0.0154  0.0009     2/2    -0.0174     0.6288
+    ядровая RBF                          +0.0166  0.0008     2/2    -0.0195     0.6166
+    HistGB                               +0.0132  0.0001     2/2    -0.0177     0.6081
+    kNN косинусный                       +0.0108  0.0001     2/2    -0.0046     0.5963
+
+**The best head beats the shipped one by +0.0012 of rank and 0.0021 of pair, both under their
+floors**, with the linear arm reproducing item 355 at |Δ| 0.0006 and every hyper-parameter chosen by
+an inner cross-validation on the fold's training rows. So the linear head was the right default and
+the axis is closed --- with a caveat named rather than buried: the RBF gamma picked the low end of
+its two-point grid on all four enzymes, and the trimmed grid (this commit's predecessor explains
+why) cannot distinguish "the optimum is there" from "the grid is too coarse". One more decade would
+settle it; the quantity at issue is a third of a floor.
+
+**One thing in that table is worth more than the verdict.** The RBF head has a LOWER standalone rank
+than the linear one, 0.6166 against 0.6288, and a HIGHER contribution as a member, +0.0166 against
++0.0154, with a better pair. Item 348's admission screen is standalone rank, with Spearman +0.8184
+between standalone and member contribution over eighteen candidates --- and it was read off
+candidates that differ by REPRESENTATION. Across HEADS on one representation the relation inverts
+here. The screen is not wrong; its domain is narrower than it looks, and a new head may not be
+screened by it.
+
+**And the loss, now measured three times in two families.** Item 359 found the band's epsilon worth
++0.0001 of rank in the RBF-kernel family. The linear family says the same experiment much louder:
+
+    линейный eps-SVR          eps = полоса      eps = 0     разность
+    на FP+DESC+MECH               -0.0811      -0.1047      +0.0236
+    на замороженном вложении      -0.0379      -0.0612      +0.0233
+    ядровой (пункт 359)           -0.0145      -0.0146      +0.0001
+
+**+0.0236, +0.0233, +0.0001.** The metric's loss is worth about a sixth of a floor to a model that is
+already decent and six floors to one that is bad, and the two linear arms are bad: standalone 0.3527
+and 0.4251 against the probe's 0.6263. That is the account of the dead zone that this project never
+had --- item 148's +0.033 of rank was large because it was applied where the loss mismatch was
+large, and the same intervention is worth nothing on a member that already fits. It also closes the
+"the kernel wanted to be linear" reading of item 359's pinned gamma: linear is where the loss helps
+most and the model is worst.
