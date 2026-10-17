@@ -16393,3 +16393,98 @@ takes `extras` beside `extra`, inert by default, with `tests/test_extra_members_
 both that nothing moves on the shipped paths and that new members reach every enzyme instead of
 being dropped by `_keep`. `main()` is deliberately not rewired blind, and `docs/board_gap.md` says
 what is left.
+
+
+**354. The leaderboard publishes the quantity METHOD.md calls unobservable. MAE and R2 bound the
+test's label SPREAD at 1.02 to 1.48 times our training spread, widest on CYP2D6 --- and
+`fit_shrinkage` can only express a shift of the MEAN, so the lambda it ships keeps a compression the
+wider test punishes. At our own ordering the board says 0.0872 of macro ST-RAE is unclaimed, and
+item 353's conclusion that placement was finished is WITHDRAWN.** `verify/k131_scaleshift.py` (new),
+`src/reweight.py:widen` (new), `src/submit.py:fit_shrinkage` (grew `spread`),
+`tests/test_spread_objective_inert.py` (new), `results/logs/k131_scaleshift.json`,
+`docs/board_gap.md`.
+
+**What was read off the board, and it needed no model.** Nineteen snapshots have carried four
+numbers per entrant per enzyme and this project has read two. For any row, MSE >= MAE^2 by Jensen
+and R2 = 1 - MSE/Var(y_test), so **sd(y_test) >= MAE / sqrt(1 - R2)** with no assumption about the
+error distribution at all. Every one of 273 rows bounds the same quantity, so the bounds check each
+other, and they agree inside each enzyme:
+
+    фермент   sd обучения   граница снизу   согласие верхних 25    отношение
+    CYP1A2        1.030         1.346          1.163 -- 1.346        1.31
+    CYP2C9        0.782         0.976          0.800 -- 0.976        1.25
+    CYP2D6        0.916         1.359          1.274 -- 1.359        1.48
+    CYP3A4        1.093         1.116          0.945 -- 1.116        1.02
+
+METHOD.md's band carries this as an assumption --- "the test's label spread and band widths resemble
+the training set's" --- and calls the shift "a bet on a quantity nobody can observe before the
+reveal". The location half is unobservable. The scale half is not, and has been printed in every
+snapshot since 15 September.
+
+**Item 353 is withdrawn on its comparison class, not on its arithmetic.** It regressed ST-RAE on rho
+across 198 entrants and read our residual at -0.0987 against first place's -0.0603, concluding that
+our placement was better than the leader's and the axis was finished. That regression's slope is set
+by a long tail with no post-processing at all --- ST-RAE 0.69 to 7.03 at respectable rho --- so being
+better than the line says little. Matching on ORDERING instead, every entrant within 0.03 of our rho
+on an enzyme, best ST-RAE among them:
+
+    фермент   наш rho   наш ST-RAE   лучший при том же rho   разница   (кто, n)
+    CYP1A2     0.7513      0.5656            0.4955          +0.0701   tguttenb1, 84
+    CYP2C9     0.8231      0.4258            0.3620          +0.0638   C_CYPher, 89
+    CYP2D6     0.4359      0.6786            0.5357          +0.1429   N283T, 77
+    CYP3A4     0.8146      0.4729            0.4008          +0.0721   random-forest, 106
+    МАКРО                                                    +0.0872
+
+**0.0872 is 53 per cent of the 0.1651 gap to first place and about 28 board places**, and it is
+available at the ordering we already have. The same rows say it in two other currencies: our macro
+MAE is 0.7437 against 0.5919 for first place and our R2 0.4946 against 0.6648, while our rho trails
+by only 0.078. On CYP2D6 our MAE is **1.2191** against a board best of 0.6909, and N283T reaches R2
+0.3921 at rho 0.4501 where we get 0.1455 at 0.4359.
+
+**The mechanism, in one function.** Our predictions carry a fraction of their labels' spread ---
+sd(pred)/sd(y) of 0.387, 0.521, 0.320, 0.611 --- which is what an L1-ish optimum looks like for a
+weak model and is not in itself a defect. `fit_shrinkage` then picks (shift, lambda) by minimising
+the soft error against our own labels, reweighted by `reweight.tilt` so their MEAN sits delta
+higher. There is no second moment in that objective. So:
+
+    объектив                              lambda по ферментам      макро на наших метках   на расширенной
+    spread = 1.0 (отгружается)            1.08 1.22 1.10 1.04            0.6506               0.5433
+    spread = граница доски                1.56 1.46 1.88 1.06            0.6933               0.5157
+
+The 0.6506 reproduces `band.json`'s `macro_oof` to the digit, which is the control that says this is
+the shipped transform and not a cousin of it. Read against our own narrow labels the new objective
+looks worse by 0.0427, exactly as it must --- it is not fitted to them. Read against a widened
+marginal it is better by 0.0276, and that widening only reaches 1.27x where the test reaches 1.48x
+on CYP2D6, so it understates.
+
+**And the direct sweep says the same without any objective at all.** ST-RAE against a pure expansion
+s around the prediction mean, out of fold:
+
+    на НАШИХ метках             оптимум s 1.10--1.25,  макро 0.6421 -> 0.6343   (-0.0077)
+    на РАСШИРЕННЫХ (внешние 60%)  оптимум s 1.35--1.85,  макро 0.5689 -> 0.5046   (-0.0643)
+
+Eight times the gain, and it is why nobody chased it: out of fold this axis is worth a fifth of a
+floor. Two independent routes to the per-enzyme number agree --- the minimax-regret choice over the
+two scenarios gives 1.50 / 1.40 / 1.40 / 1.25, and `r_oof * sd_test / sd_pred` with the soft-band
+discount gives 1.50 / 1.56 / 1.63 / 1.17.
+
+**Why this is safe in the one way that matters, asserted rather than argued.** Expanding around a
+constant is strictly increasing, so Spearman and Kendall are invariant to it EXACTLY: the control in
+`k131` requires |Δrho| < 1e-12 at s = 1.7 on all four enzymes and it holds. Whatever this does, it
+cannot cost ordering --- and ordering is what nine uploads took three weeks to move once (item 344).
+The exposure is one number per enzyme against a 375-compound public half, with the board answering
+every twelve hours until 3 November.
+
+**What is built and what is not.** `reweight.widen` is the exact analogue of `tilt` for the second
+moment --- a quadratic tilt with a linear term carried alongside so only the spread moves, since a
+bare quadratic tilt drags the mean whenever the labels are skewed, and all four are.
+`fit_shrinkage` grew `spread`, defaulting to ones, and `tests/test_spread_objective_inert.py` pins
+that the default path is bit-for-bit unchanged and that lambda is monotone in the spread, with the
+grid edge excluded so a saturated parameter cannot pass for a trend. `main()` has no `--spread` flag
+yet and no submission has been built with this. The first upload is a measurement, not a conclusion,
+and the per-enzyme numbers above are a prior to be corrected by what the board returns.
+
+**What this does NOT say.** It does not say our model is as good as the leaders'. Their rho is ahead
+on every enzyme and their R2 at matched rho is ahead too; CYP2D6's ordering is genuinely weak at
+0.4359 against a field best of 0.5745. It says that 0.0872 of the 0.1651 is placement and the rest
+is ordering, where this file had it the other way round.

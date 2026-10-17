@@ -30,6 +30,18 @@ read the residuals.
     остаток       мы  −0.0987   (−1.01 sd)
                  1-е  −0.0603
 
+> **WITHDRAWN 17 October, by item 354.** The conclusion below — that our placement is better than
+> first place's and the axis is finished — is wrong, and the error is the comparison class. This
+> regression is fitted across 198 entrants including a long tail with no post-processing at all
+> (ST-RAE 0.69 to 7.03 at respectable rho), and that tail sets the slope, so beating the line says
+> little. Matching on ORDERING instead — every entrant within 0.03 of our rho on an enzyme, best
+> ST-RAE among them — says **+0.0872 of macro ST-RAE is unclaimed at the ordering we already have**,
+> 53 per cent of the gap to first place: CYP1A2 +0.0701, CYP2C9 +0.0638, CYP2D6 +0.1429, CYP3A4
+> +0.0721. The mechanism is in item 354: the board's MAE and R2 columns bound the test's label
+> spread at 1.02 to 1.48 times our training spread, and `fit_shrinkage` can only express a shift of
+> the mean, so the shipped lambda keeps a compression the wider test punishes. The arithmetic below
+> is left standing as the record of what it said.
+
 **Our placement is better than first place's, by 0.038 of ST-RAE.** We are a full standard deviation
 better than the field at converting ordering into score, and the team in first is not. Of the 0.1651
 gap, the cross-sectional slope attributes **−0.2035 to ordering** and gives **+0.0384 back on
@@ -186,8 +198,11 @@ A bad upload left standing at the close is not recoverable, so this part wants a
 
 0. **Upload item 346's stack.** It is adopted, controlled at sign 4/4, worth about three places, and
    has not reached the board. Nothing else on this list is free.
-1. **Stop spending on placement.** It is our best asset and it is already ahead of first place. Keep
-   it, do not extend it.
+1. ~~**Stop spending on placement.**~~ **Withdrawn — the opposite is true.** Item 354: at our own
+   ordering the board says 0.0872 of macro ST-RAE is unclaimed, which is 53 per cent of the gap and
+   the single largest actionable quantity in this project. Fit the per-enzyme SCALE against the
+   test's label spread (bounded off the board itself) rather than against our training spread. It
+   cannot cost ordering: expansion is strictly monotone, so Spearman is invariant exactly.
 2. **Read what is already measured** before building anything: `results/preds/oof_ncgc_per.json`,
    +0.0112 of macro rank at 2/2 with its shuffle control firing, reported nowhere
    (`docs/transfer_axis.md`). It is the second-largest out-of-fold lever in the list above and it
