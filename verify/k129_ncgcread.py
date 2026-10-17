@@ -141,6 +141,13 @@ def vectors(preds, seed, arm, M):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", default="0,1")
+    ap.add_argument("--probe-emb", default=None,
+                    help="какое замороженное вложение читает зонд шестым членом. По умолчанию "
+                         "k106_probe.EMB, то есть chemprop_medium. На свежем клоне его нет "
+                         "(пункт 355): чекпойнт лежит в репозитории третьего участника. "
+                         "surrogate_adme публикуют организаторы и k132 мерит замену шестым "
+                         "членом в +0.0148 ранга против +0.0138 у medium, знак 4/4, так что "
+                         "состав ниже --- «пять плюс зонд», а какой именно зонд, печатается.")
     ap.add_argument("--no-nest", action="store_true",
                     help="only re-read the caches; skip the composition, which refits members")
     a = ap.parse_args(argv)
@@ -150,6 +157,17 @@ def main(argv=None):
         if not _pl.Path(D + f).exists():
             print("нет data/%s --- соберите данные и признаки (make setup)" % f)
             return 3
+
+    if a.probe_emb:
+        if not _pl.Path(a.probe_emb).exists():
+            print("нет %s" % a.probe_emb, file=_sys.stderr)
+            return 3
+        K.EMB = a.probe_emb
+    if not a.no_nest and not _pl.Path(K.EMB).exists():
+        print("нет %s --- вложение зонда. Передайте --probe-emb или --no-nest." % K.EMB,
+              file=_sys.stderr)
+        return 3
+    print("зонд читает: %s" % _pl.Path(K.EMB).name)
 
     rows = pd.read_csv(D + "rows.csv")
     z = np.load(D + "feats.npz")

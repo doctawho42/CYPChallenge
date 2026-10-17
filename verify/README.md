@@ -16488,3 +16488,82 @@ and the per-enzyme numbers above are a prior to be corrected by what the board r
 on every enzyme and their R2 at matched rho is ahead too; CYP2D6's ordering is genuinely weak at
 0.4359 against a field best of 0.5745. It says that 0.0872 of the 0.1651 is placement and the rest
 is ordering, where this file had it the other way round.
+
+
+**356. The unread panel arm reproduces at the member level and DIES over the ensemble: -0.0092 as a
+seventh member at sign 0/2, -0.0044 as a substitute at 0/2, error correlation 0.935 against item
+289's 0.93 gate. Item 352's pre-registered P0 held on both halves, which is the only reason to
+believe the half that said it would die.** `verify/k129_ncgcread.py` (run), `src/submit.py`
+(`--probe-emb`), `results/logs/k129_ncgcread.json`. Two seeds, no training.
+
+    поферментно + NCGC w0.1      ранг       пара      знак
+    против своей базы         +0.0113    -0.0087       2/2
+    вложено седьмым           -0.0092    +0.0106       0/2
+    вложено заменой           -0.0044    +0.0026       0/2
+    одиночный ранг плеча       0.5728 против порога 0.60 пункта 348 --- НЕ проходит
+    корреляция ошибок с составом                         0.935
+
+**Item 352 wrote both halves down before this ran** --- "reproduces on seeds 2 and 3 at sign 4/4 on
+macro rank, and does NOT survive nesting over the shipped composition above the 0.0036 floor" --- and
+the second half is what happened, at 0/2 on both nestings. That is the fifth time a member-level
+gain of this size has arrived at the ensemble worth nothing: items 176, 182, 191 and 194 are the
+other four, and `docs/teammate_asks.md`'s second ceiling is the statement of it. **The external-data
+axis closes on the panel too, and it closes on the ceiling rather than on the source.**
+
+**Two controls, and the second is why the number can be trusted.** Every stored prediction vector
+reproduced its own cached table row to 4.9e-05, and the shuffled-panel arm stayed on the correct
+side. And the six-member reference reproduced item 324's probe gain at **+0.0161** against its
++0.0138 --- which it had to, through a substituted sixth member (item 355), on a fresh embedding
+built here whose probe reproduces item 349's cached predictions to 4.5e-06 and whose alignment
+control gives 0.5533 aligned against -0.0192 rolled, both of them item 349's recorded figures to the
+digit.
+
+**What is left of the NCGC panel**, stated so nobody reopens it on the member-level number: it is
+worth +0.0113 of rank to a per-enzyme model and nothing to the ensemble that ships. The two cheap
+arms item 352 listed beside it --- the luciferase counter-screen filter and the censored rows as
+bounds rather than a point target --- are untouched, and neither changes the ceiling this died on.
+
+
+**357. The exact ST-RAE floor at fixed ordering is 0.6035 of macro against our 0.6421, so
+placement's ENTIRE in-sample headroom at the ordering we have is 0.0386 --- and item 354's 0.0872
+read off the board is therefore an upper bound that conflates placement skill with a rank
+PERMUTATION we do not have.** `verify/k133_rankfloor.py` (new, prints only).
+
+ST-RAE under the best monotone placement depends only on the rank permutation, and matching Spearman
+does not match the permutation: two predictors at rho 0.75 can order the compounds differently, and
+one ordering admits a lower floor by putting its errors where the bands are wide. So item 354's
+matched-rho comparison cannot separate "they place better" from "they have a better ordering at the
+same rho", and this file computes the part that is ours to reach.
+
+    фермент    как есть   пол, w=1   пол при широкой маргинали
+    CYP1A2       0.7594     0.7131              0.7554
+    CYP2C9       0.5549     0.5016              0.5175
+    CYP2D6       0.8403     0.8157              0.9100
+    CYP3A4       0.4135     0.3836              0.3837
+    МАКРО        0.6421     0.6035              0.6416
+
+The floor is isotonic regression under the interval hinge, solved by PAVA with the block optimum in
+closed form: the hinge's derivative sum w_i(1[c>hi_i] - 1[c<lo_i]) is non-decreasing in c, so the
+block optimum is the first zero crossing over the pooled band edges. In sample, so optimistic by
+construction --- which is the point, since it is being used as a bound.
+
+**And item 316 already measured the out-of-fold version**: a monotone piecewise-linear placement is
+0.0011 to 0.0014 WORSE than the affine pair at every bin count from 8 to 128, sign 1/4, with its
+in-sample 0.0223 called pure selection contamination. So placement's realistic expected contribution
+is at or below 0.0386 and has previously been negative.
+
+**What this does NOT kill, and the distinction is the whole of item 354.** This floor is computed on
+OUR label distribution, where there is no mismatch by construction, so it cannot see what item 354
+found: the test's labels are 1.02 to 1.48 times wider than ours and the shipped transform is fitted
+to the narrow one. Correcting a distribution mismatch is not in-sample placement, and the floor says
+nothing about it. The two together give the honest band: **the scale correction is worth between
+nothing and 0.0872, its in-sample placement component is at most 0.0386, and only the board can say
+where in that band it falls.** Item 354's table stands; its sentence calling 0.0872 "unclaimed at the
+ordering we already have" is narrowed to "an upper bound on what a better placement AND a better
+permutation at the same rho are jointly worth".
+
+**One more thing falls out of the table and it matters for every band this project has published.**
+Our board score is **0.5357** and our own out-of-fold floor at fixed ordering is **0.6035**. The test
+is an easier sample than our cross-validation, by more than the entire headroom at issue, so no
+out-of-fold floor transfers to the board arithmetically --- including the prediction band in
+METHOD.md, whose centre sits at 0.6537 against a realised 0.5357.
