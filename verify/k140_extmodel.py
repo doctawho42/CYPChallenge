@@ -23,11 +23,41 @@ THE THREE ROUTES, SAME 8068 ROWS. Item 319 put them through the trunk's third he
 of +0.0043 against a +0.0105 gate. Item 363 put them through the model their own authors trained and
 got 0.4372 standalone, below random weights. This file is the third and last cheap route.
 
+THE ANSWER, and it moves the blame from their model to their data.
+
+    арм                           одиночн.    Δпара |   шестым  знак |  седьмым
+    гребневая на их строках         0.3381   0.8925 |  -0.0132   0/2 |  -0.0073
+    HistGB на их строках            0.3567   0.8901 |  -0.0118   0/2 |  -0.0065
+    гребневая, метки перемешаны    -0.0529   0.9761 |  -0.0005   0/2 |  -0.0001
+
+    для сравнения, те же 8068 строк другими путями:
+    их собственная модель, зонд на эмб 2048          0.4376   (пункт 363)
+    их собственная модель, прямые предсказания       0.2881   (пункт 363)
+    как СТРОКИ через третью голову ствола            канал +0.0043 против ворот +0.0105 (п. 319)
+
+**Swapping the learner changes nothing: 0.3381 and 0.3567 against their model's 0.2881 to 0.4376,
+all far under item 348's screen of 0.60.** Their model is in fact the BEST extractor of this source
+on record, not the weak link. So the ~0.35 ceiling is a property of the SOURCE, and item 363's
+reading --- "the labels are not the problem, the model is" --- is wrong in the half this file was
+built to test. It is corrected in the journal rather than quietly dropped.
+
+Why the 64-molecule agreement did not predict this, and the explanation is item 60-63's finding
+reaching one step further than anyone wrote down. Those 64 structures agree with our labels at ρ
+0.821 / 0.667 / 0.426 / 0.750 --- but they are precisely the molecules that appear in BOTH a
+publication-selected set and our library, which is the most selected subset available. The other
+8004 are not like them, and the ordering that holds on the overlap does not survive off it. So
+ChEMBL's selection bias does not stop at the LEVEL, as items 60-63 and this project's
+pre-registration both assumed; it reaches the ORDERING, which is the half the metric actually
+grades us on.
+
 THE CONTROL THAT DECIDES WHETHER A POSITIVE RESULT MEANS ANYTHING. The same learner is fitted again
 on the same rows with the external labels PERMUTED within enzyme --- same rows, same feature matrix,
 same regulariser, no molecule-to-measurement link. If the shuffled arm scores like the real one, the
 arm is measuring our own feature block rather than their labels, which is item 349's defect and the
-reason `src/ablncgc.py` carries the same control.
+reason `src/ablncgc.py` carries the same control. **It fires: -0.0529 of standalone rank against
++0.3381, and -0.0005 as a sixth member against -0.0132.** So the 0.34 IS their labels --- a real
+signal, just a third of what the composition needs --- and the arms above are not an artefact of our
+own features arriving under an external name.
 
     uv run python verify/k140_extmodel.py --seeds 0,1
 

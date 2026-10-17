@@ -16947,3 +16947,55 @@ transfers at ρ 0.29 as a model and +0.0043 as rows, and item 356 measured the q
 the ensemble at 0/2. So what works in that configuration is the UNION with our own distribution, not
 either external source on its own — which is exactly the joint multi-head fine-tune item 350 named
 and deferred, and the one thing left on this axis that genuinely needs a GPU.
+
+**364. Swap the learner and the number does not move: our own ridge and HistGB on the same 8068
+ChEMBL rows reach 0.3381 and 0.3567 of standalone rank against their model's 0.2881 to 0.4376. The
+source is the limit, not their architecture — and item 363's diagnosis is corrected here.**
+`verify/k140_extmodel.py`, two seeds, with a permuted-label control on the same rows.
+
+Item 363 left two explanations alive for the published CYP model's failure, and they imply opposite
+next moves: either that model generalises badly off its training distribution, or the 8068 ChEMBL
+rows carry no ordering that transfers to our unselected library. The arm that separates them holds
+the data fixed and swaps the learner. `verify/k103_extfeats.py` already builds those rows in OUR
+feature space — aligned to `trunk.BLOCKS` by column name, our 64 overlapping molecules dropped, the
+blinded-test overlap asserted at zero, 8004 rows surviving, which is item 319's count.
+
+    арм                           одиночн.    Δпара |   шестым  знак |  седьмым
+    гребневая на их строках         0.3381   0.8925 |  -0.0132   0/2 |  -0.0073
+    HistGB на их строках            0.3567   0.8901 |  -0.0118   0/2 |  -0.0065
+    гребневая, метки перемешаны    -0.0529   0.9761 |  -0.0005   0/2 |  -0.0001
+
+    те же 8068 строк другими путями:
+    их модель, зонд на эмб 2048                      0.4376   (пункт 363)
+    их модель, прямые предсказания                   0.2881   (пункт 363)
+    как СТРОКИ через третью голову ствола   канал +0.0043 против ворот +0.0105   (пункт 319)
+
+**Four learners, one source, a band of 0.2881 to 0.4376 against item 348's screen of 0.60.** Their
+D-MPNN is the best extractor of this source on record, not the weak link — so **the ceiling belongs
+to the data.** Item 363's reading, *"the labels are not the problem, the model is"*, is wrong in the
+half this file was built to test, and is corrected rather than quietly dropped.
+
+**Why the 64-molecule agreement did not predict it**, and this is items 60–63's finding reaching one
+step further than anyone wrote down. Those 64 structures agree with our labels at ρ 0.821 / 0.667 /
+0.426 / 0.750 — but they are exactly the molecules present in BOTH a publication-selected set and our
+library, which is the most selected subset obtainable. The other 8004 are not like them, and the
+ordering that holds on the overlap does not survive off it. **So ChEMBL's selection bias does not
+stop at the LEVEL, which is what items 60–63 concluded and what item 363's pre-registration
+explicitly assumed; it reaches the ORDERING** — the half the metric grades us on and the half item
+353 says we are behind on. That assumption had stood unchallenged in this repository for three
+hundred items, and the only reason it was caught is that P5–P8 were written down before the run.
+
+**The control fires, so the 0.34 is real signal rather than our own features under a foreign name:**
+the same ridge on the same rows with the external labels permuted within enzyme gives **−0.0529**
+standalone and −0.0005 as a sixth member. Their labels do carry ordering — about a third of what the
+composition needs, which is why every route lands in the same band.
+
+**What is now closed.** The ChEMBL CYP source has been measured in four roles — extra training rows
+(item 319), a shared trunk head (items 290/318/319), the model its own authors trained (item 363),
+and our learners on their rows (here) — and none reaches the screen. That is the teammate's
+pretrain-then-transfer proposal exhausted for this source. The qHTS panel is exhausted too in the
+cheap roles: +0.0113 at member level, −0.0092 as a seventh at 0/2 (item 356). What remains sized for
+first place is the configuration item 341 read off the leaderboard — a warm-started multi-head
+fine-tune over challenge **and** ChEMBL **and** qHTS jointly — where the union with our own
+distribution is doing the work that neither external source does alone. It needs a GPU, and nothing
+in this container substitutes for it.
