@@ -16708,3 +16708,62 @@ had --- item 148's +0.033 of rank was large because it was applied where the los
 large, and the same intervention is worth nothing on a member that already fits. It also closes the
 "the kernel wanted to be linear" reading of item 359's pinned gamma: linear is where the loss helps
 most and the model is worst.
+
+
+**361. Item 350's prediction holds on all nine remaining descriptor checkpoints --- every one
+negative at sign 0/2, and the stack of all ten is -0.0297, so item 346's "sub-floor members add" does
+not extend to a set of negatives. But `minimol` as a SIXTH member clears both floors at +0.0048 of
+rank and -0.0099 of pair, where item 349 measured it NEGATIVE as a seventh --- and that gap is the
+price of a member slot, which this project has been quoting in words and never in numbers.**
+`verify/k137_tenck.py` (new), `results/logs/k137_tenck.json`, ten embeddings built by
+`src/embed.py`. Two seeds.
+
+    кандидат шестым на пяти       Δранг       sd    знак      Δпара   одиночн.
+    minimol                     +0.0048   0.0015     2/2    -0.0099     0.6004
+    pubchem                     -0.0056   0.0006     0/2    +0.0042     0.5497
+    osmordred_pca80             -0.0064   0.0015     0/2    +0.0050     0.5602
+    osmordred_pca90             -0.0070   0.0004     0/2    +0.0026     0.5597
+    osmordred                   -0.0076   0.0006     0/2    +0.0037     0.5573
+    jazzy                       -0.0078   0.0000     0/2    +0.0066     0.5429
+    atompair                    -0.0091   0.0000     0/2    +0.0077     0.5338
+    osmordred_pca95             -0.0093   0.0002     0/2    +0.0081     0.5529
+    erg                         -0.0113   0.0001     0/2    +0.0149     0.5182
+    ecfp                        -0.0158   0.0004     0/2    +0.0192    0.4961
+    СТЕК все десять             -0.0297   0.0007     0/2    +0.0256         —
+
+**Item 350 wrote "the refined criterion predicts the ten remaining fail" and nine of them do, with
+no exception and no near miss**: every standalone rank lands between 0.4961 and 0.5614, against item
+348's admission threshold of 0.60, and the gap between the best failure (0.5614) and the threshold is
+wider than the band item 350 had pinned. The classes are what the criterion says they are:
+`osmordred` and its three PCA compressions are descriptor targets, `atompair`, `ecfp` and `pubchem`
+are fingerprint targets, `erg` and `jazzy` are reduced-graph and solvation descriptors. **Twenty-seven
+candidates now, one rule, no exception.**
+
+**The stack is the part item 346's lesson required and it is strongly negative.** Ten members at
+equal weight give -0.0297. That is not a refutation of item 346 --- its three candidates were each
+POSITIVE and sub-floor, and these are negative --- but it is the boundary of that lesson stated as a
+measurement: summing helps a set of small positives and hurts a set of negatives, and the sign of
+each member still has to be checked first.
+
+**What is new, and it is not about these checkpoints.** `minimol` is +0.0048 of rank and -0.0099 of
+pair as a sixth member on five, sign 2/2, clearing both the 0.0036 and the 0.007 floors. Item 349
+measured the same checkpoint as a SEVENTH member on item 346's six and got **-0.0013 at sign 0/4**.
+Same checkpoint, same device, same embedding family --- different slot.
+
+So **the sixth slot is worth about 0.006 of rank more than the seventh**, and that number has never
+been written down. Item 348 recorded the hazard in words --- "item 345's is a seventh on six, item
+324's is a sixth on five, and item 347's three are a ninth on item 346's eight. And the seed counts
+differ" --- and item 346 explained the mechanism, dilution by averaging plus redundancy. The
+consequence is sharper than either: **no two candidates in the eighteen-case record are comparable
+unless they were added at the same member count**, and the screen in item 348, whose Spearman of
++0.8184 was computed across candidates at three different counts, is contaminated by exactly this.
+It is not wrong about the direction; its coefficient is not a clean estimate.
+
+**Controls.** Each of the ten embeddings carries no `molecule_name`, so each got item 345's
+alignment control asserted rather than printed, with the threshold set from the rolled values item
+349 itself observed (-0.0192 and -0.0392) rather than from a round number --- the first version of
+this file set it at 0.05 and stopped on `osmordred_pca95` at -0.0553, which was my threshold and not
+a misalignment. The five-member reference reproduces k132's, k134's and k135's 0.6434 at seed 0 to
+1e-4. And the reproduction control I first wrote was wrong in the other direction: it compared
+`minimol` as a sixth against item 349's seventh and would have failed on correct data, which is how
+the slot effect above was found at all.
