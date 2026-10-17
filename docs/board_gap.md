@@ -161,6 +161,27 @@ So before any new modelling, there is a measured, controlled, already-adopted ga
 places sitting unuploaded with seventeen days left. That is the cheapest board movement available and
 it needs no new ideas at all.
 
+**And it could not have been uploaded, which is why it wasn't.** `src/submit.py` held exactly one
+extra member — `_combine(parts, e, extra=None)`, with `PROBE_EMB` hard-wired to
+`emb_chemprop_medium.npz` — so item 346's composition had no route to a submission file. Two thirds
+of it is a parameterisation and is now done: `_combine` takes an `extras` list beside `extra`,
+`_probe_load` takes `emb/emb_te/tag` instead of loading one fixed pair, and `oof_predictions` threads
+it. Added as a second parameter rather than by widening the first, because telling a list of four
+arrays from a list of lists of four arrays means guessing about shapes. Inert by default, and
+`tests/test_extra_members_inert.py` pins both halves — nothing moves on the shipped paths, and the
+new members reach **every** enzyme rather than being eaten by `_keep`/SOLO, which is the hazard item
+324's own test was written for. The pre-existing `tests/test_probe_member_inert.py`, which compares
+against the pre-probe module recovered from git, still passes.
+
+What is deliberately **not** done, because it cannot be executed without the data and this is the
+file that builds the actual submission: `main()` is still wired for one extra member, and item 335's
+gbm head has no device in `submit.py` at all. So the remaining work for action 0 is (a) thread a list
+through `main()`'s five probe sites — load, test prediction, out-of-fold, the twin control, the
+`probe_parts.json` dump — and (b) either add the gbm head's device or ship `chemeleon` alone, which
+is +0.0033 of rank and −0.0054 of pair of item 346's +0.0047/−0.0085, about 1.7 places of the 2.7.
+A bad upload left standing at the close is not recoverable, so this part wants a machine that can run
+`make submit` and read its validators before anything goes up.
+
 ## What this says to do
 
 0. **Upload item 346's stack.** It is adopted, controlled at sign 4/4, worth about three places, and

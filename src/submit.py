@@ -709,7 +709,7 @@ def oof_parts(X, y, mask, fold, mode, scr=None, bands=None, raw_out=None):
     return parts
 
 
-def _combine(parts, e, extra=None):
+def _combine(parts, e, extra=None, extras=None):
     """The shipped unweighted mean over the members `_keep` admits for this enzyme.
 
     `extra` is appended AFTER the _keep filter, so it enters every enzyme. That is not an
@@ -720,15 +720,27 @@ def _combine(parts, e, extra=None):
 
     With extra=None the expression is the one oof_predictions carried before --probe existed,
     down to the order of the list, so the default path is arithmetically untouched.
+
+    `extras` is a SECOND parameter rather than a widening of the first, and that is deliberate.
+    Item 346 adopted a composition this function could not express -- six members plus
+    `chemeleon` plus the gbm head, +0.0047 of macro rank and -0.0085 of pair at sign 4/4, "the
+    first adoptable gain since item 324" -- because `extra` holds exactly one member and the
+    board has never seen the other two. Overloading `extra` to mean "one member, or several"
+    would have to tell a list of four arrays from a list of lists of four arrays by inspecting
+    its elements, which is a guess about shapes; a separate plural parameter cannot guess
+    wrong. Both are honoured and `extra` goes first, so a call that passes only `extra`
+    returns bit-for-bit what it returned before this parameter existed.
     """
     ms = [P[e] for k, P in parts if _keep(e, k)]
     if extra is not None:
         ms = ms + [extra[e]]
+    if extras:
+        ms = ms + [x[e] for x in extras]
     return np.mean(ms, axis=0)
 
 
 def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None, extra=None,
-                    raw_out=None):
+                    raw_out=None, extras=None):
     """Предсказания вне фолда в одном из трёх режимов.
 
     Ансамбль --- среднее двух базовых. Он выигрывает больше каждой из них: -0.0234 макро
@@ -747,7 +759,7 @@ def oof_predictions(X, y, mask, fold, mode, scr=None, bands=None, extra=None,
         # full out-of-fold passes instead of one, four times the runtime, and the trunk member
         # read four times over. tests/test_trunk_member.py caught it by counting the calls.
         parts = oof_parts(X, y, mask, fold, mode, scr, bands, raw_out)
-        return [_combine(parts, e, extra) for e in range(len(CYPS))]
+        return [_combine(parts, e, extra, extras) for e in range(len(CYPS))]
 
 
 TRUNK_LAM = "3.0"      # значение, на котором пункт 79 мерил канал
@@ -930,7 +942,7 @@ PROBE_ALPHAS = np.array([100.0, 1000.0, 10000.0])
 PROBE_KIND = "зонд"
 
 
-def _probe_load(rows, te):
+def _probe_load(rows, te, emb=None, emb_te=None, tag=PROBE_KIND):
     """Both embeddings, realigned against the tables rather than trusted.
 
     Two traps, both silent. The TEST file stores its array under the key `train` as well, so
@@ -938,10 +950,18 @@ def _probe_load(rows, te):
     name that lies cannot be caught by reading the name. And the order check is shown to be
     CAPABLE of failing by running it again on the same names rolled by one position: a
     comparison that cannot fail is not a control (CLAUDE.md).
+
+    `emb`/`emb_te` default to the shipped pair, so the no-argument call is the one this
+    function carried before they existed. They are parameters because the device is not
+    specific to `chemprop_medium`: items 345, 349 and 350 ran eighteen frozen checkpoints
+    through this same probe, `verify/k121_chemeleon.py` took `--emb/--tag` for exactly that,
+    and `verify/k122_stack.py` was generalised to any frozen embedding. This file was the only
+    place left that could load one embedding and no other. `tag` only labels the printed
+    control line, so two members cannot be confused in a log.
     """
     out = []
-    for path, names, what in ((PROBE_EMB, rows.Molecule_Name, "обучение"),
-                              (PROBE_EMB_TEST, te.Molecule_Name, "тест")):
+    for path, names, what in ((emb or PROBE_EMB, rows.Molecule_Name, "обучение"),
+                              (emb_te or PROBE_EMB_TEST, te.Molecule_Name, "тест")):
         z = np.load(path, allow_pickle=True)
         E = z["train"].astype(np.float64)
         nm = np.asarray(z["molecule_name"], object)
@@ -954,7 +974,7 @@ def _probe_load(rows, te):
             raise SystemExit(f"{path}: порядок не совпал (совпал={ok}, сдвинутый={rolled})")
         if not np.isfinite(E).all():
             raise SystemExit(f"{path}: во вложении есть не-конечные значения")
-        print(f"    зонд: {what} {E.shape}, порядок совпал: {ok}; "
+        print(f"    {tag}: {what} {E.shape}, порядок совпал: {ok}; "
               f"сдвинутый контроль (ожидается False): {rolled}", flush=True)
         out.append(E)
     if out[0].shape[1] != out[1].shape[1]:
