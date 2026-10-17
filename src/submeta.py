@@ -89,20 +89,29 @@ def _composition(mode, solo, cyps, deadzone):
     return out
 
 
-def _transform(delta, lams, grid, cyps):
+def _transform(delta, spread, lams, grid, cyps):
     lo, hi = grid
     if lams is None:
-        return {"delta": delta, "lambda_по_ферментам": None, "сдвиг_предсказаний": None,
+        return {"delta": delta, "растяжение_маргинали": spread,
+                "lambda_по_ферментам": None, "сдвиг_предсказаний": None,
                 "GRID": f"{lo}..{hi}", "пункт": "усадка не применялась (--no-shrink)"}
     # fit_shrinkage returns (lambda, centre, shift); the centre is a fitting internal.
     edge = [c for c, (lam, _, _) in zip(cyps, lams) if min(abs(lam - lo), abs(lam - hi)) < 1e-9]
     where = ("все четыре оптимума внутри, край не задет" if not edge
              else "оптимум на краю сетки: " + ", ".join(edge))
+    # Растяжение записывается рядом с delta, потому что это ВТОРОЕ предположение о тестовом
+    # распределении и пара (сдвиг, lambda) подогнана под оба. delta --- ставка на среднее,
+    # которую до вскрытия проверить нечем; растяжение --- оценка ширины, и её доска печатает
+    # (пункт 354: sd(y_test) >= MAE/sqrt(1-R2) по каждой строке). Единица означает «тест по
+    # ширине как обучающая выборка», то есть предположение, а не его отсутствие.
+    flat = str(spread).replace(" ", "")
     return {"delta": delta,
+            "растяжение_маргинали": spread,
             "lambda_по_ферментам": {c: lam for c, (lam, _, _) in zip(cyps, lams)},
             "сдвиг_предсказаний": {c: shift for c, (_, _, shift) in zip(cyps, lams)},
             "GRID": f"{lo}..{hi}",
-            "пункт": f"277 (сетка расширена выше 1.0; {where})"}
+            "пункт": (f"277 (сетка расширена выше 1.0; {where})" if flat in ("1,1,1,1", "1")
+                      else f"277 + 354 (ширина теста из доски; {where})")}
 
 
 def _classification(bundle, positives, total_rows):
@@ -116,6 +125,7 @@ def _classification(bundle, positives, total_rows):
 
 
 def build(*, paths, argv, mode, solo, cyps, deadzone, bundle, delta, lams, grid, positives,
+          spread="1,1,1,1",
           total_rows, digest, clusters, golden, gate, git, versions, elapsed_s):
     return {
         "что": WHAT,
@@ -130,7 +140,7 @@ def build(*, paths, argv, mode, solo, cyps, deadzone, bundle, delta, lams, grid,
         "файлы": {rel(p): {"sha256": sha256(p), "строк": int(len(pd.read_csv(p)))}
                   for p in paths},
         "состав": _composition(mode, solo, cyps, deadzone),
-        "преобразование": _transform(delta, lams, grid, cyps),
+        "преобразование": _transform(delta, spread, lams, grid, cyps),
         "классификация": _classification(bundle, positives, total_rows),
         "разбиение": {"digest": digest, "кластеров": clusters, "золотое": golden,
                       "совпало": digest == golden},

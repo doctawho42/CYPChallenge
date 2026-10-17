@@ -53,6 +53,10 @@ def context(tmp_path):
         deadzone=True,
         bundle=True,
         delta="0.1,0.3,0,0.7",
+        # The spread the (shift, lambda) pair was fitted under (item 354). "1,1,1,1" is the
+        # assumption every submission so far was built on -- that the test's label marginal is
+        # as wide as ours -- which the board's MAE and R2 columns say is false.
+        spread="1,1,1,1",
         # (lambda, centre, shift) per enzyme, exactly as fit_shrinkage returns them. The
         # centre is a fitting internal and must not reach the record.
         lams=[(1.08, 4.21, 0.13), (1.22, 4.80, 0.17), (1.1, 3.07, 0.01), (1.04, 4.81, 0.24)],
@@ -256,7 +260,7 @@ def test_submit_hands_the_writer_what_the_run_actually_did(context):
     import pandas as pd
     S = _import_submit()
     args = argparse.Namespace(mode="ансамбль5", deadzone=True, bundle=True,
-                              delta="0.1,0.3,0,0.7")
+                              delta="0.1,0.3,0,0.7", spread="1,1,1,1")
     cls = pd.DataFrame({"CYP3A4_is_TDI": [True, False, True],
                         "CYP2D6_is_TDI": [False, False, True]})
     ctx = S._provenance(args, [], context["lams"], np.array([0, 1, 2, 0, 1]), 3, cls,
