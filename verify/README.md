@@ -16268,3 +16268,128 @@ The decisive control is one FIXED receptor for all nine against the rule, and it
 pose data the log does not carry: `k112_ensdock.py` works in `tempfile.mkdtemp`, so the 1456 poses
 are gone and that control costs a re-dock of about 13 CPU-hours. Worth it only if someone intends to
 revive the track.
+
+
+**352. `src/ablncgc.py` wrote four caches and the journal reports two. The per-enzyme panel arm,
+which item 187 recorded as having died three times on a parser defect, is worth +0.0112 of macro
+rank and -0.0087 of post-pair ST-RAE at sign 2/2 with its own shuffled control at 0/2 --- and it is
+carried by CYP2C9 and CYP3A4, which inverts item 157's "worth it on CYP1A2 alone".**
+`verify/k130_ncgctable.py` (new, reads only, stdlib), `verify/k129_ncgcread.py` (new, the measurement
+that needs the labels), `results/logs/k130_ncgctable.json`, `docs/transfer_axis.md`. Two seeds for
+the per-enzyme family, four for the pooled one.
+
+**How it stayed unread, which is the part worth carrying.** Item 157 said `--seeds 1,2,3` on the base
+and the w = 0.1 arm "is queued and is what settles it"; item 165 said the queued replication now
+tests reproducibility rather than significance. It returned. Item 187 then recorded that the
+per-enzyme arm "died instantly three separate times" on `arm.split("w")[1].split()[0]`, "twice inside
+a queue whose wrapper reported success", and that the parser was replaced with a regular expression
+--- and never reported what the repaired run produced. `results/preds/oof_ncgc_w123.json` and
+`oof_ncgc_per.json` are those two outputs. Neither filename, nor any number in either, appears in
+this file, in `METHOD.md` or in `docs/`. This is item 351's shape exactly, one source over: a log
+that existed, was committed, and was never opened.
+
+    поферментно + NCGC w0.1        1A2       2C9       2D6       3A4   MACRO ранг   MACRO пара
+    сид 0                       +0.0126   +0.0194   +0.0108   +0.0123     +0.0137      -0.0115
+    сид 1                       -0.0006   +0.0291   -0.0054   +0.0124     +0.0088      -0.0059
+    среднее                     +0.0060   +0.0242   +0.0027   +0.0123     +0.0112      -0.0087
+    знак                            1/2       2/2       1/2       2/2         2/2          2/2
+    пол                          0.0061    0.0071    0.0049    0.0033      0.0036        0.007
+    перемешанная панель                                                    -0.0023      +0.0036
+
+    пул + NCGC w0.1, четыре сида                                           +0.0008      -0.0020
+    из них 1A2                  +0.0141 при знаке 4/4, в 2.3 раза выше своего пола 0.0061
+
+**So item 157's two conclusions are both about the POOLED model and neither survives the other
+arm.** "Whatever the panel is worth, it is worth it on CYP1A2 alone" becomes CYP2C9 +0.0242 and
+CYP3A4 +0.0123 at sign 2/2 against CYP1A2's +0.0060 at 1/2. "+0.0048 macro is below the 0.007 floor
+... a repair, not a result" becomes +0.0112 of rank at sd 0.0035 and -0.0087 of pair. Its surviving
+claim does survive: CYP1A2 holds at +0.0141 over four seeds at sign 4/4, at 60 per cent of the
+headline +0.023, with the macro still at zero.
+
+**The mechanism was measured twice before and never joined up.** Item 157's own diagnosis was "a
+foreign protocol at 74 per cent of the table dominates the objective while the source indicator has
+to undo it from a minority position", and item 188 measured that pooling costs 0.020 of rank because
+a pooled model spends depth isolating the enzyme before it can condition on it. A per-enzyme fit has
+no indicator to starve and no enzyme to isolate, so the panel's rows land where a foreign protocol
+cannot be confused with an enzyme contrast. The pooled ladder was measuring two things at once.
+
+**The currency needs no conversion**, and `k130` establishes that rather than assuming it:
+`src/ablncgc.py` scores per enzyme with `spearmanr` for rank and `strae` after `fit_apply` for the
+pair, macro as the mean of four, which is `verify/k106_probe.py:score()` exactly. These numbers are
+in the same units as item 324's +0.0138 and item 346's +0.0047.
+
+**Controls, both of which run without the labels.** The two REPORTED caches must reproduce the
+ladders items 153 and 157 published, which is what says this checkout's caches are the ones the
+journal was written from --- six arms, all to 1e-4. And all 56 stored prediction vectors must carry
+their own enzyme's row count, 1412 / 1285 / 1493 / 2335; a wrong length is a misalignment against
+`rows.csv` and is checkable even though the scoring is not.
+
+**WHAT THIS DOES NOT CLAIM, and the project has four precedents for the way it could die.** These
+are member-level numbers over the per-enzyme member, not over the shipped composition. Items 176,
+182 and 191 are three consecutive standalone gains of +0.031, +0.029 and a deliberately opposite
+stratum profile that arrived at the ensemble worth -0.0008, +0.0014 and -0.0025; item 194 drove the
+members to anti-correlation and the ensemble did not move; and items 290 and 319 are a real external
+channel dying on the same ceiling. Two seeds where the convention is four. `k129` is the test ---
+nested seventh, substituted for the per-enzyme member, and the standalone rank against item 348's
+0.60 screen --- and it needs no retraining, because the arm's out-of-fold predictions are in the
+cache. It cannot run where the challenge labels are unavailable, and it exits 3 naming the file.
+
+
+**353. The board's other 272 rows are a sample this project has never used, and they say our
+PLACEMENT is better than first place's: residual -0.0987 against -0.0603, a full sd better than the
+field. The whole 0.1651 of macro ST-RAE between us and first is ordering, and CYP2D6 is 38.5 per
+cent of it.** `verify/k128_boardgap.py` (new, stdlib, reads the nineteen committed snapshots),
+`results/logs/k128_boardgap.json`, `docs/board_gap.md`. Latest pull 11 October.
+
+**The method, in one line.** The board publishes a ST-RAE and a Spearman on the same predictions.
+Rho sees the ordering only; ST-RAE sees ordering and placement, because a prediction inside a
+compound's band scores zero whatever its rank. Regress one on the other across the competitive band
+and the residual is placement skill.
+
+    ST-RAE = 2.4721 - 2.6022 * ро     n = 198, sd остатка 0.0975
+    остаток   мы -0.0987 (-1.01 sd)   первое место -0.0603
+    макро     мы 0.5357 / ро 0.7062, 64-е из 273   первое 0.3706 / 0.7844
+
+**That cross-sectional -2.60 is NOT item 322's -1.62 and must not be read as it.** Item 322's is a
+within-team transform measured on one before-and-after; this one is across teams and is contaminated
+by teams good at both axes. Converted through each, first place needs +0.0634 or +0.1019 of rho ---
+5 to 8 levers the size of the largest this project ever realised on the board, item 327's +0.0127.
+
+**The consequence is about where effort goes, and it is uncomfortable.** The dead zone, the affine
+pair, the delta tilt, the monotone budget and the threshold rules --- items 128, 148, 256, 277,
+282-285, 294, 313, 322 --- are all placement, and they are most of this project's effort. They
+worked: the -0.0987 is what they bought. And they are finished as a source of places, because the
+teams ahead are ahead on ordering while being worse at placement than we are.
+
+    фермент   нас     ST-RAE     ро  |  1-е ST-RAE     ро   лучшее ро   отрыв   доля
+    CYP2D6    # 72    0.6786  0.4359     0.4135  0.5428      0.5745   +0.2651  38.5 %
+    CYP1A2    # 65    0.5656  0.7513     0.3846  0.8561      0.8561   +0.1810  26.3 %
+    CYP3A4    # 75    0.4729  0.8146     0.3515  0.8741      0.8741   +0.1214  17.7 %
+    CYP2C9    # 68    0.4258  0.8231     0.3056  0.8808      0.8836   +0.1202  17.5 %
+
+**CYP2D6 is 38.5 per cent of the gap and the field's best rho there is 0.5745, so it is not a
+ceiling everyone has hit.** This also revises item 167's closing line. That item ranked the enzymes
+by item 139's distance to a calibrated screening column and concluded "the attention is inverted
+with respect to the headroom". Item 139 ranks distance to an ORACLE; the board ranks distance to
+COMPETITORS, and for a competition the second is operative. The attention CYP2D6 has had is not
+misallocated; what item 167 identified is that CYP1A2 has the most room nobody can reach.
+
+**Controls.** The four per-enzyme tabs carry no enzyme names, so they are identified against item
+313's committed table for the 21 September pull --- CYP1A2 0.5889, CYP2C9 0.4624, CYP3A4 0.4822,
+CYP2D6 0.7707, macro 0.5760 --- all five to 1e-6, which is an identification and not a guess. Our
+row must carry item 344's last recorded upload, 0.5357 and 0.7062. A username that is certainly
+absent must match nothing, which is item 313's own control after its reader broke on substring
+matching. And the local price of a board place comes out at 0.0031 of ST-RAE, reproducing item 346's
+figure independently.
+
+**Two things that follow and are cheaper than any modelling.** First place has moved -0.0238 in
+twenty-six days and second place has not moved since 24 September, so the target is nearly static;
+submission closes 3 November. And item 346's adopted +0.0047 --- "the first adoptable gain since
+item 324", about three places --- has never been uploaded: item 344's ninth and last upload was
+submitted 3 October, before items 345 to 351 existed. Part of the reason was in the shipping code
+rather than in anyone's queue: `src/submit.py:_combine` held exactly one `extra` and `_probe_load`
+had one embedding path hard-wired, so item 346's composition could not be expressed at all. It now
+takes `extras` beside `extra`, inert by default, with `tests/test_extra_members_inert.py` pinning
+both that nothing moves on the shipped paths and that new members reach every enzyme instead of
+being dropped by `_keep`. `main()` is deliberately not rewired blind, and `docs/board_gap.md` says
+what is left.

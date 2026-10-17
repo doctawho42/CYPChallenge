@@ -142,7 +142,7 @@ In the model this is a shared trunk with two heads — pIC50 from the curves, lo
 |---|---|---|
 | Pretrained representations, three checkpoints | chemprop `rdkit2d` concatenated: −0.0075 rank; MoLFormer-XL via in-fold PCA-64: 0.5637 against 0.5651 | 61, 117, 154 |
 | ChEMBL, 8068 compounds | a raw gain of 0.0128 becomes +0.0068, harmful, after the affine pair; seed 0 | 61, 77 |
-| NCGC panel, 54177 rows | +0.0048 macro rank at the best of three weights tried, below the 0.007 floor | 144, 157 |
+| NCGC panel, 54177 rows | pooled: +0.0048 macro rank at the best of three weights tried, below the 0.007 floor — **but per-enzyme, +0.0112 of rank and −0.0087 of pair at sign 2/2, never reported until item 352** | 144, 157, 352 |
 | Quantum descriptors, 10 columns | null against potency and against the TDI shift, where the shuffled block (+0.0041) beats the real one (−0.0018) | 186, 242 |
 
 The binding constraint is the 1285 to 2335 labelled rows per enzyme, and the readings that relieve it were already in the release.
@@ -267,7 +267,7 @@ The project's journal (`verify/README.md`) runs past item 300, and most of them 
 |---|---|---|---|
 | **External data sources** | | | |
 | ChEMBL set, 8068 compounds | −0.013 macro raw, sign held on two seeds | +0.0068 after the affine pair: the pair already removes the offset and variance the extra rows corrected | 61, 77 |
-| NCGC panel, 18711 fitted-AC50 rows | −0.0176 macro rank; +0.0048 at weight 0.1, floor 0.007 | at full weight the panel is 74 % of the training table, so a foreign protocol offset by +0.44 to +0.87 dominates the objective | 153, 157 |
+| NCGC panel, 18711 fitted-AC50 rows | pooled: −0.0176 macro rank; +0.0048 at weight 0.1, floor 0.007. Per-enzyme at the same weight: **+0.0112 of rank, −0.0087 of pair, sign 2/2, shuffled panel 0/2** | at full weight the panel is 74 % of the training table, so a foreign protocol offset by +0.44 to +0.87 dominates the objective — and item 188 measured that pooling itself costs 0.020 of rank by spending depth on the enzyme indicator, so the pooled ladder was measuring two things at once. The per-enzyme arm is member-level and awaits nesting over the composition (item 352) | 153, 157, 188, 352 |
 | The organisers' own second CYP release | 14 of 1340 molecules overlap our training set, 4 carry a CYP3A4 label | a protocol offset is estimable only on shared molecules; overlap is a property of the library, not of its size | 201 |
 | 1238 unread CYP3A4 measurements | manufactured label keeps 98.6 % of rank; −0.0108 against a floor of 0.0033, 4/4 seeds | good but not good enough; and 1048 of them are flagged `False` while their own pre-incubation arm clears the rule's cutoff — placeholders, not measurements | 216, 231 |
 | **Representation learning** | | | |
