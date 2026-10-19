@@ -17072,3 +17072,88 @@ first place is the configuration item 341 read off the leaderboard — a warm-st
 fine-tune over challenge **and** ChEMBL **and** qHTS jointly — where the union with our own
 distribution is doing the work that neither external source does alone. It needs a GPU, and nothing
 in this container substitutes for it.
+
+
+**365. Item 346's stack has been adoptable since 16 October and could not be submitted, because
+`main()` threaded one extra member and ran one head. It builds now, both validators accept it, and
+the default path is byte-identical to a submission file committed three weeks ago.**
+`src/submit.py` (five probe sites threaded, gbm head added, `--probe2/--gbm/--stack346`),
+`src/embed_medium.py` (unchanged, used for the missing half), `tests/test_stack346_inert.py` (new),
+`results/submission/activity_submission_stack346.csv`, `stack346.meta.json`,
+`stack346_probe_parts.json`, `data/emb_chemprop_chemeleon_test.npz`. Nothing uploaded.
+
+**What was actually missing was a file, not a method.** `emb_chemprop_chemeleon.npz` covered the
+4905 TRAINING rows only --- the member had been measured out of fold and never predicted onto the
+750 --- so the stack was unshippable for a reason no item had written down. The checkpoint is a
+plain 51847844-byte file in the third entrant's repository; it downloaded to its declared
+content-length byte for byte, loads with `bn` Identity (so item 324's required re-check holds and
+`model.fingerprint` equals `agg(message_passing(...))` at 0.000e+00 over 512 molecules), and
+`src/embed_medium.py` carried every control it already had: identical SMILES twice at 0.000e+00
+against different molecules at 6.137e-01, order preserved under a 1024-molecule permutation at
+0.000e+00, and an unparseable SMILES raising.
+
+**The control that makes the two halves comparable, and it is the one that could have failed
+silently.** Re-extracting the TRAINING half with the downloaded checkpoint reproduces the committed
+array **bit for bit** --- array sha256 `2008f585dca6a536` on both sides, `max|Δ| = 0.000e+00`,
+names equal element for element. Without it a different checkpoint of the same name would have given
+a train half and a test half from two different encoders, which no downstream check would catch.
+The test half is (750, 2048) with 106 dead columns against the train half's 102, and its names equal
+the blinded file's in order with the rolled control returning False.
+
+**The threading, and why the default had to be proven rather than argued.** `_combine` already took
+a plural `extras`; the five sites in `main()` did not. They do now --- load, full-sample test
+prediction, out of fold, the twin control, and the `probe_parts.json` dump --- with the lists empty
+unless asked for, and `if extras:` treating an empty list exactly as a missing one. **Run with
+`--probe` and no new flags, this file writes
+`fe107f5633cd2d64522aff49...`, which is the sha256 of `activity_submission_probe_base.csv` as
+committed on 30 September**, identifiers equal and `max|Δ| = 0.000e+00` on all four columns. The
+classification half is a second, independent control: the TDI file is identical between the two runs
+at `3ce35ce5610ea5a5...`, so the edit did not leak into an arm it had no business touching --- and
+the regression files DO differ, which is the control on that control.
+
+**One keyword decided whether the shipped member would be the measured one.** `src/submit.py`
+already had `gbm_reg()`, carrying `l2_regularization=1.0` to match `src/ablate.py`, while
+`verify/k114_gate93.py:head_oof` measured this member on sklearn's default **0.0**. Reusing the
+existing factory would have shipped a member items 335 and 346 never scored, and the diff would have
+read as removing duplication. `GBM_KW` is written out separately with the difference named in a
+comment, and `tests/test_stack346_inert.py` pins both sides plus the literal numbers in k114's own
+source, so a drift on either side fails loudly.
+
+    состав стека, по ферментам (наши + зонд + зонд2 + gbm600)
+    CYP1A2   3 наших    CYP2C9   2 наших    CYP2D6   5 наших    CYP3A4   2 наших
+
+    вне фолда: зонд2 10 с, gbm600 213 с
+    оба валидатора организаторов: принято, в обоих прогонах
+
+               sd база   sd стек   ро(база, стек)   sd метки   стек/метка
+    CYP1A2      0.5610    0.5863           0.9926     1.0301       0.569
+    CYP2C9      0.6686    0.6459           0.9918     0.7820       0.826
+    CYP2D6      0.2966    0.3162           0.9850     0.9158       0.345
+    CYP3A4      0.8005    0.8150           0.9914     1.0930       0.746
+
+All three extra members enter **every** enzyme, which is `_combine`'s documented requirement: SOLO
+names which of our own five each enzyme keeps (items 282--285) and says nothing about a sixth, so
+filtering a new member through it would drop it on three enzymes of four. Our own members are
+[3, 2, 5, 2], which is what `verify/k132_sixthsub.py` independently reports.
+
+**A finding this run produced for free, recorded rather than acted on.** The second probe's alpha
+sits on the **UPPER EDGE** of the carried-in grid on three enzymes of four --- 10000, 10000, 10000,
+1000 against `PROBE_ALPHAS = [100, 1000, 10000]` --- where the first probe sits inside on three. The
+grid was carried in for 600 standardised columns and this embedding has 1946 live ones of 2048, so
+it wants more shrinkage than the grid can express. By this file's own `_probe_edge` doctrine, "a
+fitted parameter standing on the boundary of its grid is not a fitted parameter". Item 345's +0.0033
+was measured on this same grid, so the shipped member IS the measured one and nothing here is
+inconsistent --- but it means the figure is a floor for this checkpoint rather than its best, and
+item 358's finding that the ceiling is the optimum was measured on the 600-column probe, not on
+2048. `src/embed.py`'s comment already says widening is a different experiment and must be labelled
+one. It is not done here.
+
+**What this does and does not buy.** The composition is item 346's, whose measured gain over the
+shipped six is +0.0047 of macro rank and -0.0085 of pair at sign 4/4, both above their floors --- so
+about three board places at the 0.0031 of ST-RAE per place this project measures. It does nothing
+about compression: the stack's test predictions still carry 0.345 to 0.826 of the labels' spread,
+worst on CYP2D6, which is the quantity items 354 and 357 bound and the one the candidate built on
+top of this should move. The file is written as a NAMED candidate and the shipped files are
+untouched --- `activity_submission.csv` still hashes `e29f170560f3a964...` and
+`activity_submission_best4.csv` still `52296bc48b841cbf...`, both as their own metas recorded them.
+84 tests pass.

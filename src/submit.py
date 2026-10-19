@@ -941,6 +941,21 @@ PROBE_EMB_TEST = D + "emb_chemprop_medium_test.npz"
 PROBE_ALPHAS = np.array([100.0, 1000.0, 10000.0])
 PROBE_KIND = "зонд"
 
+# Members SEVEN and EIGHT of item 346's adopted stack: a second frozen checkpoint through the
+# same ridge device, and a gbm head on the FIRST probe's columns. Together +0.0047 of macro rank
+# and -0.0085 of pair at sign 4/4, both above their floors -- and item 346 is the only measured
+# gain over what ships. Item 351 records that the stack had never reached the board because this
+# file could load one embedding and run one head.
+PROBE2_EMB = D + "emb_chemprop_chemeleon.npz"
+PROBE2_EMB_TEST = D + "emb_chemprop_chemeleon_test.npz"
+PROBE2_KIND = "зонд2"
+GBM_KIND = "gbm600"
+# NOT `gbm_reg()`. That factory carries l2_regularization=1.0 to match src/ablate.py, while
+# verify/k114_gate93.py:head_oof measured this member on sklearn's DEFAULT 0.0 -- so reusing
+# gbm_reg() would ship a member the +0.0023 and the +0.0047 were not measured on. The
+# difference is one keyword and it is the whole point of writing this out.
+GBM_KW = dict(max_iter=300, learning_rate=0.06, random_state=0)
+
 
 def _probe_load(rows, te, emb=None, emb_te=None, tag=PROBE_KIND):
     """Both embeddings, realigned against the tables rather than trusted.
@@ -1045,6 +1060,48 @@ def _probe_edge(chosen):
     lo, hi = float(PROBE_ALPHAS.min()), float(PROBE_ALPHAS.max())
     return {CYPS[e]: ("низ" if a == lo else "верх" if a == hi else "внутри")
             for e, a in enumerate(chosen)}
+
+
+def _oof_gbm(E, y, mask, fold):
+    """Out-of-fold gbm head on the frozen embedding, per enzyme.
+
+    Lifted from `verify/k114_gate93.py:head_oof(kind="gbm")`, which lifted its per-fold
+    standardisation and dead-column filter from `k106_probe.probe_oof` -- so the only difference
+    between this member and the shipped probe is the estimator, which is what items 335 and 346
+    measured. Standardising on the union of the fold's two halves would be item 202's defect 2.
+    """
+    out = []
+    for e in range(len(CYPS)):
+        m = mask[:, e]
+        Xm, ym, fm = E[m], y[m, e], fold[m]
+        p = np.full(int(m.sum()), np.nan)
+        for f in range(5):
+            trn, te_ = fm != f, fm == f
+            if te_.sum() == 0:
+                continue
+            mu, sd = Xm[trn].mean(0), Xm[trn].std(0)
+            keep = sd > 1e-6
+            Z = (Xm[:, keep] - mu[keep]) / sd[keep]
+            p[te_] = HistGradientBoostingRegressor(**GBM_KW).fit(
+                Z[trn], ym[trn]).predict(Z[te_])
+        if not np.isfinite(p).all():
+            raise SystemExit(f"{CYPS[e]}: голова {GBM_KIND} оставила незаполненные строки")
+        out.append(p)
+    return out
+
+
+def _gbm_test_pred(E, Ete, y, mask):
+    """The gbm head fitted on ALL training rows of each enzyme and predicted onto the 750.
+
+    The test counterpart of `_oof_gbm`, standing to it exactly as `_probe_test_pred` stands to
+    `_oof_probe`: same design matrix helper, same per-enzyme mask, full-sample fit.
+    """
+    out = []
+    for e in range(len(CYPS)):
+        m = mask[:, e]
+        Ztr, Zte, _nk = _probe_design(E[m], Ete)
+        out.append(HistGradientBoostingRegressor(**GBM_KW).fit(Ztr, y[m, e]).predict(Zte))
+    return np.stack(out, 1)
 
 
 def fit_shrinkage(P, y, mask, delta=(0.0, 0.0, 0.0, 0.0), spread=(1.0, 1.0, 1.0, 1.0)):
@@ -1184,6 +1241,23 @@ def main():
     ap.add_argument("--probe-emb-test", default=None,
                     help="то же для 750 тестовых строк. По умолчанию "
                          "data/emb_chemprop_medium_test.npz")
+    ap.add_argument("--probe2", action="store_true",
+                    help="добавить СЕДЬМЫМ членом гребневую голову на втором замороженном "
+                         "чекпойнте (chemprop_chemeleon, пункт 345: +0.0033 ранга при 4/4). "
+                         "Требует --probe: это член семь на шести, а пункт 361 измерил, что "
+                         "слот стоит около 0.006 ранга, так что седьмой и шестой несравнимы.")
+    ap.add_argument("--probe2-emb", default=None,
+                    help="вложение второго зонда (по умолчанию %s)" % PROBE2_EMB)
+    ap.add_argument("--probe2-emb-test", default=None,
+                    help="тестовая половина второго зонда (по умолчанию %s)" % PROBE2_EMB_TEST)
+    ap.add_argument("--gbm", action="store_true",
+                    help="добавить ВОСЬМЫМ членом gbm-голову на столбцах ПЕРВОГО зонда "
+                         "(пункт 335: +0.0023 ранга при 4/4, под макро-полом в одиночку). "
+                         "Вместе с --probe2 это стек пункта 346: +0.0047 ранга и -0.0085 пары "
+                         "при знаке 4/4 на каждом, оба выше своих полов. Требует --probe.")
+    ap.add_argument("--stack346", action="store_true",
+                    help="сокращение для --probe --probe2 --gbm: ровно отгружаемый состав "
+                         "пункта 346 и ничего больше, чтобы его нельзя было собрать наполовину.")
     ap.add_argument("--spread", default="1,1,1,1",
                     help="растяжение маргинали метки по ферментам, под которое подбирается "
                          "(сдвиг, lambda). Одно число или четыре через запятую. 1 = как "
@@ -1262,6 +1336,12 @@ def main():
                          "подаваемый файл, иначе путь по умолчанию сдвинут.")
     a = ap.parse_args()
 
+    if a.stack346:
+        a.probe = a.probe2 = a.gbm = True
+    # A half-built stack is worse than none: its gain was measured as a whole and the members
+    # enter at different slot numbers, which item 361 priced at about 0.006 of rank.
+    if (a.probe2 or a.gbm) and not a.probe:
+        raise SystemExit("--probe2/--gbm требуют --probe: это члены семь и восемь на шести")
     _pl.Path(a.outdir).mkdir(parents=True, exist_ok=True)
     desc_names = pd.read_csv(D + "desc_names.csv", header=None)[0].tolist()
     mech_names = pd.read_csv(D + "mech_names.csv", header=None)[0].tolist()
@@ -1315,6 +1395,29 @@ def main():
             print(f"    {c}: зонд на тесте среднее {v.mean():.3f}, sd {v.std(ddof=1):.3f}, "
                   f"диапазон {v.min():.2f}..{v.max():.2f}", flush=True)
 
+    # Members beyond the sixth. Empty unless asked for, and `_combine` treats an empty
+    # `extras` exactly as a missing one, so the default path stays arithmetically untouched.
+    more_te, more_tag, more_emb, more_oof = [], [], [], []
+    if a.probe2:
+        print("седьмой член: гребневая на втором чекпойнте (пункт 345)", flush=True)
+        E2, E2te = _probe_load(rows, te, a.probe2_emb or PROBE2_EMB,
+                               a.probe2_emb_test or PROBE2_EMB_TEST, tag=PROBE2_KIND)
+        if E2.shape[1] == Eprobe.shape[1]:
+            d2 = float(np.abs(E2[:, :1] - Eprobe[:, :1]).max())
+            if d2 == 0.0:
+                raise SystemExit("второй зонд совпал с первым — вероятно один и тот же файл")
+        q2, pa2, pn2 = _probe_test_pred(E2, E2te, y, mask)
+        print(f"    alpha на полной выборке: {[int(x) for x in pa2]}, "
+              f"живых колонок {pn2} из {E2.shape[1]}", flush=True)
+        more_te.append(q2)
+        more_tag.append(PROBE2_KIND)
+        more_emb.append(E2)
+    if a.gbm:
+        print(f"восьмой член: {GBM_KIND} на столбцах первого зонда (пункт 335)", flush=True)
+        more_te.append(_gbm_test_pred(Eprobe, Eprobe_te, y, mask))
+        more_tag.append(GBM_KIND)
+        more_emb.append(Eprobe)
+
     lams = lams_base = None
     fold = clusters = None
     # The members as they stood BEFORE the dead-zone pass, if the shrinkage pass ran and
@@ -1357,8 +1460,16 @@ def main():
             probe_meta["живых_колонок_вне_фолда"] = on
             print(f"    alpha по фолдам: " + "; ".join(
                 f"{CYPS[e]} {[int(x) for x in oa[e]]}" for e in range(len(CYPS))), flush=True)
+            # The extra members out of fold, in the order they will enter the mean on the test
+            # side. One list, so the affine pair is fitted against the vector it is applied to.
+            for tag_, E_ in zip(more_tag, more_emb):
+                t0_ = time.time()
+                more_oof.append(_oof_gbm(E_, y, mask, fold) if tag_ == GBM_KIND
+                                else _oof_probe(E_, y, mask, fold)[0])
+                print(f"    {tag_}: вне фолда за {time.time() - t0_:.0f} с", flush=True)
             P_base = [_combine(parts_oof, e) for e in range(len(CYPS))]
-            P = [_combine(parts_oof, e, probe_oof) for e in range(len(CYPS))]
+            P = [_combine(parts_oof, e, probe_oof, extras=more_oof)
+                 for e in range(len(CYPS))]
             print("  аффинная пара БЕЗ зонда (контроль-близнец):", flush=True)
             lams_base = fit_shrinkage(P_base, y, mask, d, sp)
             print("  аффинная пара С зондом (кандидат):", flush=True)
@@ -1503,9 +1614,13 @@ def main():
                 raise SystemExit(f"{c}: имён членов {len(kinds)}, а членов {len(parts)}")
             dump[c] = {"члены": {k: [float(v) for v in q] for k, q in zip(kinds, parts)},
                        PROBE_KIND: [float(v) for v in probe_te[:, e]]}
-            p = np.mean(parts + [probe_te[:, e]], axis=0)
-            print(f"    {c}: зонд шестым членом ({len(parts)} наших + 1), "
-                  f"среднее до пары {p.mean():.3f}", flush=True)
+            cols = [qq[:, e] for qq in more_te]
+            for tag_, qq in zip(more_tag, more_te):
+                dump[c][tag_] = [float(v) for v in qq[:, e]]
+            p = np.mean(parts + [probe_te[:, e]] + cols, axis=0)
+            print(f"    {c}: {len(parts)} наших + зонд"
+                  + (f" + {', '.join(more_tag)}" if more_tag else "")
+                  + f", среднее до пары {p.mean():.3f}", flush=True)
         if lams is not None:
             L, mu_tr, sh = lams[e]
             p = L * p + (1.0 - L) * mu_tr + sh
