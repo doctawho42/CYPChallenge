@@ -16490,6 +16490,65 @@ on every enzyme and their R2 at matched rho is ahead too; CYP2D6's ordering is g
 is ordering, where this file had it the other way round.
 
 
+**355. The shipped sixth member cannot be rebuilt from a fresh checkout, and the replacement that
+can measures no worse: surrogate_adme as the sixth is +0.0148 of macro rank at 4/4 against medium's
++0.0138 at 8/8. Both extras together are +0.0172 --- but that is measured against FIVE, and against
+the SIX that actually ship it is +0.0034, under the floor.** `verify/k132_sixthsub.py` (reads only
+--- no training, no embedding, no network), `results/logs/k132_sixthsub.json`. Four seeds.
+
+**This item was committed on 17 October and never written into this file.** `240ea00` added the
+script and the log and left the finding in its commit message, so the heading `**355.` did not
+exist while `verify/k134_probealpha.py` and `verify/k135_probehead.py` both carried a control that
+must "reproduce item 355's +0.0148", three passages of this journal cited item 355, and
+`docs/board_gap.md` and `docs/handoff_local.md` built a plan on it. Nothing failed, because **a
+cited ITEM NUMBER cannot fail loudly** --- the same defect class as item 308's line citations, one
+level up. `tests/test_items_cited_exist.py` now closes it: every item number cited anywhere in
+`verify/`, `src/`, `tests/` or `docs/` must exist as a heading here.
+
+**The provenance defect it ran into rather than discovered.** The shipped sixth member is a RidgeCV
+head on frozen `chemprop_medium` (items 324/325/327, +0.0138 at 8/8, and per item 344 the only
+intervention in nine uploads that moved the board's ORDERING). That checkpoint is a plain file in a
+third entrant's GitHub repository, `data/emb_chemprop_medium*.npz` is gitignored, and item 341
+records the checkpoint was never on disk either --- so on a fresh checkout the shipped composition
+cannot be reproduced at all. That is item 318's family of defect.
+
+    состав                              ранг     пара      Δранг     Δпара   знак
+    пять                              0.6421   0.6382    +0.0000   +0.0000    0/4
+    пять + chemeleon                  0.6555   0.6202    +0.0134   -0.0181    4/4
+    пять + surrogate_adme             0.6569   0.6215    +0.0148   -0.0168    4/4
+    пять + surrogate_adme + chemeleon 0.6593   0.6162    +0.0172   -0.0220    4/4
+    medium шестым (пункт 324)                            +0.0138   -0.0197    8/8
+
+    по ферментам, лучший арм против пяти:  1A2 +0.0137  2C9 +0.0304  2D6 +0.0077  3A4 +0.0170
+
+Printed per enzyme because `_keep` admits all five members on CYP2D6 and only two or three
+elsewhere --- members per enzyme are [3, 2, 5, 2] --- so a sixth does not enter the four equally.
+
+**The number that matters is not in that table, and the table invites the wrong reading.** Every
+delta above is against FIVE members, while what ships is five plus medium. Swapping medium for
+surrogate_adme is +0.0010, and adding both extras to five is +0.0172 --- so against the SHIPPED
+composition the best arm here is **+0.0034, below the 0.0036 floor.** Item 346's stack remains the
+only measured gain over what ships (+0.0047 at 4/4, chemeleon and a gbm head as members seven and
+eight). Quoting +0.0148 or +0.0172 as the gain available is the defect `CLAUDE.md` names: establish
+what SHIPS before measuring an improvement.
+
+**And the script's closing sentence is environment-specific, which is worth recording because it
+reads as a fact about the world.** It prints that only `surrogate_adme` is buildable into a
+submission, `chemeleon` and `medium` being in the third entrant's repository. On the machine this
+item was measured on that was true. On the machine it was written up, `data/emb_chemprop_medium.npz`
+and its test half are both present and `emb_chemprop_chemeleon.npz` is present for the TRAINING rows
+only --- so medium ships today by default, and chemeleon needs its 750 test rows embedded before it
+can ship at all. A conclusion about reachability belongs to a checkout, not to a result.
+
+**Controls.** Every probe cache carries the fold digest it was built on and must match the seed's
+own, seed 0's being the golden `2d93c19815e14261`; the member cache must hold exactly the five
+expected keys; the comparison is paired within seed, which is what makes 4/4 on four points mean
+anything. Two provenance controls passed outside the file: the downloaded `surrogate_adme__s42.pt`
+is 34859955 bytes, item 349's recorded content-length to the byte, and it loads as d_h 2048 at depth
+6 with 8,714,240 encoder parameters, item 349's recorded shape exactly. Re-run on 19 October from a
+different checkout the whole table reproduces to the last digit printed.
+
+
 **356. The unread panel arm reproduces at the member level and DIES over the ensemble: -0.0092 as a
 seventh member at sign 0/2, -0.0044 as a substitute at 0/2, error correlation 0.935 against item
 289's 0.93 gate. Item 352's pre-registered P0 held on both halves, which is the only reason to
