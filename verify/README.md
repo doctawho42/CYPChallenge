@@ -17157,3 +17157,74 @@ top of this should move. The file is written as a NAMED candidate and the shippe
 untouched --- `activity_submission.csv` still hashes `e29f170560f3a964...` and
 `activity_submission_best4.csv` still `52296bc48b841cbf...`, both as their own metas recorded them.
 84 tests pass.
+
+
+**366. The pre-registered spread applied on top of item 346's stack, and the claim the whole lever
+rests on holds EXACTLY: per-enzyme Spearman between the two candidates is 1.000000 and the rank
+vectors are identical element for element. Against the board's own bound on the test spread we are
+still under-dispersed on all four enzymes after the expansion --- 0.771, 0.878, 0.365, 0.870 --- so
+the lever is not over-corrected, it is under-corrected, worst on CYP2D6 by a factor of nearly
+three.** `src/submit.py --stack346 --spread 1.5,1.4,1.4,1.25`,
+`results/submission/activity_submission_stack346_spread.csv`, `stack346_spread.meta.json`. Nothing
+uploaded.
+
+**Why the ordering control is the point and not a formality.** Item 354's case for spending on
+placement is that expansion is strictly monotone, so Spearman is invariant exactly and the lever
+cannot cost the quantity the board actually measures (items 340, 344). That is an argument, and this
+is the measurement: between the stack candidate and the same candidate with the spread, Spearman is
+**1.000000** on each enzyme and `rank(method="first")` agrees element for element on all 750 rows.
+A lever that is free in the metric the gap lives in is worth having even when small.
+
+    фермент   sd стек  sd+раст  sd обуч  граница доски | +раст/обуч  +раст/граница
+    CYP1A2     0.5863   1.0373   1.0301         1.3461 |      1.007          0.771
+    CYP2C9     0.6459   0.8573   0.7823         0.9759 |      1.096          0.878
+    CYP2D6     0.3162   0.4959   0.9161         1.3585 |      0.542          0.365
+    CYP3A4     0.8150   0.9711   1.0932         1.1159 |      0.888          0.870
+
+**The reference matters more than the number, and reading it wrong inverts the conclusion.**
+Measured against our TRAINING labels, CYP2C9 comes out at 1.096 and looks over-expanded --- which
+would be a reason to pull the spread back. Measured against the quantity item 354 actually derived,
+the board's lower bound `sd(y_test) >= MAE/sqrt(1-R2)` over 272--273 entrant rows, it is **0.878**
+and still short. Our training labels are narrower than the test's bound on every enzyme, so the
+training sd is the wrong denominator for asking whether we have expanded enough, and it is the one
+that is easy to reach for.
+
+**CYP2D6 is the enzyme this does not fix, and I had the mechanism wrong first.** It ends at 0.365 of
+the board's bound where the others reach 0.77 to 0.88. My first explanation was that expansion pays
+less where the ordering is worse --- CYP2D6 carries rho 0.4359 against 0.75 to 0.82 elsewhere (item
+362) --- but the expansion RATIOS are 1.769, 1.327, 1.569 and 1.191, which are **not monotone in
+rho** and do not support it. The actual reason is simpler: the spread acts in proportion to what the
+predictions already carry, and CYP2D6 starts at 0.345 of the training sd against 0.569 to 0.826
+elsewhere. **The enzyme that needs the correction most receives the least of it in absolute terms**,
+and since item 354's own table puts 38.5 per cent of the macro gap on CYP2D6, that caps what this
+lever can return there.
+
+**The grid edge fired on the control and not on the candidate, which is a coherence worth keeping.**
+`fit_shrinkage` printed its own warning --- "ВНИМАНИЕ CYP1A2: оптимум на краю сетки (сдвиг +0.18,
+lambda 2.00)" --- for the probe-free TWIN, whose lambda hits `GRID`'s ceiling of 2.00. The candidate
+sits at 1.84, 1.46, 1.60 and 1.12, all interior, no warning. The five-member arm needs more
+expansion than the eight-member one because adding members already widened the predictions (base six
+0.5610 to stack 0.5863 on CYP1A2), so the stack does a little of the spread's work by itself. The
+`GRID` comment says the objective "saturates by 1.6; 2.0 gives margin" --- under `--spread` that
+margin is exhausted on the twin, so the comment is true of the shipped objective and not of this
+flag's.
+
+**What it buys, stated as the two numbers it actually is.** Item 354 measured +0.0077 of macro
+ST-RAE if the test marginal is ours and +0.0643 if the board's bound is real, and item 357 bounds the
+whole in-sample placement headroom at our ordering to 0.0386 --- which the wide figure exceeds,
+because it rests on a train/test difference no in-sample computation can see. So the first upload is
+the measurement, exactly as the `--spread` help says, and no in-sample run can settle it.
+
+**Two caveats that belong on the candidate rather than in a footnote.** The ratios 1.5, 1.4, 1.4,
+1.25 are `verify/k131_scaleshift.py`'s minimax over the two scenarios, derived for the SIX-member
+arm; the stack changed the base and they were not re-derived, which would need the stack's own
+out-of-fold predictions and `src/submit.py` does not save them. And `src/reweight.py` cannot score a
+submission file --- it tilts the MEAN of our own labels and predates `widen` --- so there is no
+in-sample number for this exact candidate, only item 354's curve for its predecessor.
+
+**Controls.** Both organisers' validators accepted. The TDI file is identical across all three runs
+of this session at `3ce35ce5610ea5a5...`, so neither the extra members nor the spread touch the
+classification arm. Identifiers equal. The shipped files are untouched:
+`activity_submission.csv` still hashes `e29f170560f3a964...` and `activity_submission_best4.csv`
+still `52296bc48b841cbf...`, both as their own metas recorded them. The two candidates hash
+`ddae4485aa791e87...` (stack) and `ed2fa5a53e5f60ba...` (stack plus spread).

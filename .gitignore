@@ -85,6 +85,7 @@ results/submission/*
 # (пункт 365; рецепт в src/embed_medium.py). Сам CSV пересобирается за ~40 минут на
 # восстановленных вложениях, мета несёт его sha256, так что расхождение видно без сборки.
 !results/submission/stack346.meta.json
+!results/submission/stack346_spread.meta.json
 data/ncgc/
 
 # Побочный вывод jar-а SMARTCyp в корень: инструментальный мусор, не результат.
