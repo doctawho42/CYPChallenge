@@ -71,8 +71,8 @@ challenge+ChEMBL+qHTS за ними») и даёт размер приза на 
 ## Что надо восстановить локально (всё gitignored)
 
     uv sync && uv run pytest                 # 75 passed
-    uv run python data/fetch.sh  # или bash data/fetch.sh — организаторские файлы и chemeleon_*.csv
-    uv run python src/feats.py               # data/feats.npz
+    make setup                               # bash data/fetch.sh + src/feats.py: организаторские
+                                             # файлы, chemeleon_*.csv, data/feats.npz
     uv run python src/fetch1851.py           # data/ncgc/aid_*.csv, ~15 МБ; строки должны дать
                                              # 9174/10296/10296/10296/14115/72335
     uv run python src/ncgcmerge.py           # data/ncgc/panel.csv
