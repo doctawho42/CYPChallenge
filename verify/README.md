@@ -17228,3 +17228,145 @@ classification arm. Identifiers equal. The shipped files are untouched:
 `activity_submission.csv` still hashes `e29f170560f3a964...` and `activity_submission_best4.csv`
 still `52296bc48b841cbf...`, both as their own metas recorded them. The two candidates hash
 `ddae4485aa791e87...` (stack) and `ed2fa5a53e5f60ba...` (stack plus spread).
+
+
+**367. The spread candidate went up and took us from place 64 to 110 --- about +0.19 of macro ST-RAE
+against the +0.0133 the curve predicted, a miss of fourteen times. Three errors compound, and the
+third is the one worth keeping: ST-RAE scores BAND CONTAINMENT, the bands are three to seven times
+narrower than the label spread, and item 354's bound was on the label spread.** No new code; read
+from `results/logs/k131_scaleshift.json`, `results/leaderboard_2026-10-11T1926Z.json` and the two
+candidates on disk.
+
+**The ordering was untouched, so this was placement and nothing else.** Item 366 measured per-enzyme
+Spearman between the two candidates at **1.000000** with the rank vectors identical element for
+element. The board's own column agrees: a monotone map cannot move rho. So the whole loss is
+placement, and it is recoverable by the next upload --- which is the only good news in this item.
+
+**What the curve said, and it said it before the upload.** `k131`'s macro ST-RAE under OUR OWN
+marginal, which was in the log the entire time:
+
+    множитель    1.00     1.15     1.25     1.40     1.50     1.55
+    узкий      0.6421   0.6343   0.6362   0.6481   0.6617   0.6701
+    широкий    0.5689   0.5375   0.5227   0.5089   0.5051   0.5046
+
+The two scenarios disagree in SIGN above about 1.25. We shipped 1.5/1.4/1.4/1.25, where the narrow
+branch is already +0.0060 to +0.0196 worse than doing nothing. I quoted the wide branch's +0.0643 as
+the upside without weighting that the narrow branch was negative at the point we were shipping.
+
+**Error one: the curve's x-axis is not the flag's argument.** `k131` multiplies the committed
+out-of-fold predictions by `s` directly. `--spread s` does something else --- it reweights our own
+labels to have spread `s` times ours and refits (shift, lambda) against that, so the achieved
+expansion falls out of the objective. Measured on the two candidates it is **1.769, 1.327, 1.569,
+1.191** against a nominal 1.5, 1.4, 1.4, 1.25. Reading the curve at the achieved expansions instead
+of the nominal ones raises its prediction from +0.0023 to +0.0133 of macro ST-RAE --- six times, and
+still fourteen times short of what happened.
+
+**Error two, and it is a category error rather than a slip.** Item 354 derived its target from
+`sd(y_test) >= MAE/sqrt(1-R2)`, a bound on the test's LABEL SPREAD. ST-RAE does not reward matching
+the label distribution; it pays zero inside each compound's band and the distance outside it. The
+bands are narrow:
+
+    фермент   полуширина полосы (медиана)   sd метки   отношение
+    CYP1A2                        0.1642     1.0305        6.3x
+    CYP2C9                        0.2629     0.7823        3.0x
+    CYP2D6                        0.1358     0.9161        6.7x
+    CYP3A4                        0.1896     1.0932        5.8x
+
+So the metric asks for the label within about +-0.14 to +-0.26, and nothing in item 354's inference
+touches band width. A test set can have a wider label spread and narrower bands at once, since item
+362 measured band width as a decreasing function of the label (corr -0.74 to -0.90).
+
+**Error three, which is the mechanism and which I withdrew for a bad reason.** Simulating on our own
+labels, with the prediction set to the label compressed toward the mean by a factor k:
+
+    k        1A2: вне полос   ST-RAE   |   2D6: вне полос   ST-RAE
+    0.35             66.6%    0.4936   |          71.3%    0.4937
+    0.50             55.5%    0.2918   |          57.7%    0.3082
+    0.80             25.8%    0.0595   |          23.6%    0.0648
+    1.00              0.0%    0.0000   |           0.0%    0.0000
+    1.20             27.2%    0.0602   |          25.3%    0.0640
+
+With PERFECT ordering, matching the label spread is exactly optimal. Our rho is 0.7062, so the
+predictions are partly wrong, and expansion multiplies the wrong part by the same factor --- pushing
+mass outside the bands in the wrong direction. **Compression was not our post-processing flattering
+us; it was the objective's correct answer to imperfect ordering**, and `--spread` systematically
+undid it. Item 366 proposed this mechanism and then withdrew it because the four expansion ratios
+are not monotone in rho, which does not test it at all: the ratios describe how much the objective
+moved, not what the movement cost.
+
+**Two measurements had already bounded this, and they agree with each other.** Item 357 computed the
+exact in-sample ST-RAE floor at our ordering: 0.6035 against 0.6421, so **0.0386** of headroom. And
+the board answers the same question externally: among the 49 entrants within 0.015 of our rho the
+best ST-RAE is 0.5069 at place 51, so **0.0288** is available at our ordering. Item 354's 0.0872 is
+refuted twice over, from inside and outside, and placement is closed on an external measurement
+rather than an argument.
+
+**What the board says instead, which is where the work goes.** Nobody at our ordering is above place
+51. Entry to the top needs rho, and the amounts are not small:
+
+    цель       нужен ST-RAE   ро у тех, кто там   нам нужно
+    топ-40           0.4767              0.7543    +0.048
+    топ-20           0.4428              0.7659    +0.060
+    топ-10           0.4301              0.7733    +0.067
+
+**The rule this cost 46 places to learn.** Any change to placement or calibration is simulated
+against the BAND structure before it is uploaded, not against the label distribution. The simulation
+above took seconds once someone thought to run it, and it inverts the recommendation.
+
+
+**368. The union corpus for a multi-head fine-tune is built and its controls hold: 17849 molecules,
+6525 primary labels against 62290 auxiliary ones, zero overlap with the blind test, and all 182
+shared molecules carrying their challenge fold.** `src/union.py` (new), `data/union_seed0.npz`
+(gitignored), `results/logs/union_seed0.json`.
+
+**Why this is not the sixth attempt at a closed thing.** Every previous use of external data produced
+a MEMBER, and every one died over the ensemble: items 176, 182, 191, 194 and 356 --- the last being
+this very panel at -0.0092 as a seventh member with a solo rank of 0.5728 against item 348's 0.60
+screen. Item 356 put the closure "on the ceiling rather than on the source". A multi-head fine-tune
+does not make a member; it makes a better ENCODER, and a frozen head on a pretrained encoder is the
+only intervention in nine uploads that moved the board's ordering (items 324, 344). Item 343 closed
+the NAIVE form --- one head from a warm start scores 0.5613 against the frozen probe's 0.6261 ---
+and the auxiliary heads are what that form lacked: the label ratio here is **1 to 9.5**.
+
+**ChEMBL is not in it, and pretending otherwise would be the easy lie.** `data/ext_thirdhead.npz`
+holds 8004 rows of 247 FEATURES and no SMILES; nothing local inverts them into molecular graphs. So
+this is challenge plus panel, two of the three sources item 341 names off `briford`'s shape.
+
+    молекул всего            17849   (4905 челлендж + 12944 только панель)
+    основных меток            6525   pIC50, четыре фермента
+    вспомогательных          62290   41530 бинарных + 20760 pAC50, ПЯТЬ ферментов
+    пересечение с тестом         0   из 750
+    общих молекул              182   все унаследовали фолд челленджа
+
+**The leakage trap, which is why this is a script with controls.** 182 panel molecules are our
+training molecules. A panel row for a fold-3 molecule entering the training set while fold 3 is held
+out would make the out-of-fold estimate worthless, so a shared molecule inherits its challenge fold
+and the control asserts it for all 182 rather than trusting the join. The test-overlap check is
+computed from the test SMILES already on disk --- no database was queried, and none may be --- and
+it is paired with the check that must SUCCEED: the same matcher finds 182 training molecules, so a
+zero against the test means zero rather than a broken comparison.
+
+**A finding the build produced for free, and it explains item 356 independently.** The panel's own
+replicates disagree. Of 48685 (molecule, enzyme) pairs, 3845 (7.9 per cent) carry more than one row,
+spanning 8865 rows, because 225 molecules map several CIDs onto one canonical structure. Among
+replicated pairs with a determinate outcome, **320 of 3663 (8.7 per cent) are both Active and
+Inactive**, and the pAC50 spread within replicates has a **median of 0.400** of a log unit and a
+maximum of 4.100. That median is wider than our own labels' entire credible band (half-width 0.136
+to 0.263 per item 367), which is a reason a panel-trained member could not compete on our scale
+quite apart from the ensemble ceiling item 356 named.
+
+**So the replicates are aggregated deliberately, and the first control I wrote was wrong.** pAC50
+takes the MEAN of its replicates; a conflicting outcome is MASKED rather than guessed, because "any
+active" would bias the label toward activity. The first version assigned cell by cell, silently
+overwrote the duplicates, and came out 3894 binary labels short --- the transfer control caught it,
+and the fix was to count PAIRS by an independent groupby rather than rows. `censored=1` means pAC50
+is absent entirely (0 of 31671 have one) and those rows carry score ~0: they are the inactives, so
+the binary head is where their information lives. The 472 `luc` rows, flagged as luciferase
+counter-screen artefacts, are dropped rather than kept.
+
+**What this does NOT yet say.** Nothing is trained. The corpus is assembled and checked; the prize
+is item 341's >= +0.048 of rho and it remains a claim about `briford`'s published shape, not a
+measurement of ours. The panel's pAC50 is left-truncated at 4.10 against our 1.91 and its means run
+5.18--5.36 against our 4.10--4.96, which is why it must stay on its own heads: the encoder takes the
+chemistry and the primary heads keep our scale. If that separation leaks, the arm will look like
+items 363 and 364, which is exactly what they measured.

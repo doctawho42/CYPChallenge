@@ -1,0 +1,13 @@
+{
+ "seed": 0,
+ "digest": "2d93c19815e14261",
+ "n": 17849,
+ "n_challenge": 4905,
+ "n_panel_only": 12944,
+ "shared": 182,
+ "leak_vs_test": 0,
+ "primary_labels": 6525,
+ "aux_binary": 41530,
+ "aux_pac50": 20760,
+ "luc_dropped": 472
+}
