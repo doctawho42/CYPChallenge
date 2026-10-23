@@ -69,9 +69,11 @@ in-context tabular learner on the same frozen 600, plus a second on `surrogate_a
 six**, sign 8/8, chosen on seeds 0-3 and confirmed on seeds 4-7 where it came out larger. The probe
 is dropped rather than kept because its errors correlate 0.948 with the stronger learner on the same
 columns, and item 371's NNLS had independently put weight 0.00 on that slot. Item 373 is the
-arithmetic: a member's contribution divides by the member count, so a redundant slot costs. **This
-is out-of-fold only --- no test-set predictions exist for either learner, so nothing of it is in
-`results/submission/` and the shipped composition is still the six.**
+arithmetic: a member's contribution divides by the member count, so a redundant slot costs. **It
+is now BUILT (item 375): `--stack374` writes `activity_submission_stack374.csv`, both organiser
+validators accept it, and the control is that `--stack346` still reproduces its own file byte for
+byte. Still out-of-fold figures and still not uploaded --- the board decides nothing until the team
+does.**
 
 **The board has now CONFIRMED it without ESTABLISHING it, and the distinction is the point (item
 327).** Macro Spearman on the blind half moved $0.6935 \to 0.7062$, a realisation of **0.92** against
@@ -17724,3 +17726,82 @@ named) and on `surrogate_adme`'s own `test` key (750x2048, UNNAMED --- so it nee
 of the kind item 349 committed, not a name comparison), and then threading into `src/submit.py` the
 way item 365 threaded `--stack346`. Until that exists this is an out-of-fold measurement and not a
 submission.
+
+
+**375. Item 374's arm builds and both organiser validators accept it, and the control that makes
+the build readable is the OTHER arm: `--stack346` reproduces its committed file byte for byte, md5
+3190dc12455eaff68245cafb7637148a, so the patch is inert on a path that exercises every line it
+touched.** `src/tabicl_test_in.py` (new), `src/tabicl_test.py` (new, runs on the box),
+`src/submit.py` (`--tabicl`, `--drop-probe`, `--stack374`, `_tabicl_load`),
+`results/preds/k151_tabicl_test.json`, `results/submission/activity_submission_stack374.csv`
+(md5 fcc7f88747b8dc49cabfb60f891a77a9, 99173 bytes) and `stack374.meta.json`.
+
+**Why `--stack346` is the right control and the default path is not.** The default path never touches
+`more_te/more_tag/more_emb`, the out-of-fold loop over extra members, or `_combine`'s `extras`,
+which is where all six edits live. `--stack346` touches all three. Reproducing its file bit for bit
+therefore proves more than reproducing the default would, and it is the same fifty minutes.
+
+**The row-order problem, and the control that replaced the one that could not run.**
+`emb_chemprop_surrogate_adme.npz` carries no `molecule_name` at all. Its TRAIN half has item 349's
+control --- `k121.align_control`, a probe that falls from 0.5533 to -0.0192 when the matrix is
+rolled by one row --- but **the test half has no labels, so that control cannot be run on it**, and
+750 predictions written against an unchecked row order is item 302 waiting to happen. What replaced
+it: both test arrays describe the same 750 molecules through two chemprop encoders, one of which
+(`medium`) is name-verified, so a molecule's nearest neighbour inside the test set should agree
+between them. The statistic is the median rank, in `medium`'s ordering, of the neighbour
+`surrogate` picks.
+
+    половины                            медианный ранг   совпал первым
+    обучение (оба порядка проверены)               1.0           52.8 %
+    тест                                           1.0           70.9 %
+    тест, surrogate сдвинут на строку            281.5            2.4 %
+    случайно при n=750                           ~375
+
+Close to the calibration and collapses when shifted, which is both halves of what a control has to
+do. The calibration is why the test figure is read against a measurement rather than a guess.
+
+**The test path's own control is a question rather than an action.** A model fitted on 1285--2335
+rows and asked for 750 predictions can collapse toward a constant or leave the label range without
+any exception being raised, so `src/tabicl_test.py` refuses to write unless each arm's spread is at
+least a fifth of that enzyme's label spread and its mean is within one label standard deviation.
+Measured 0.52 to 0.97 of the label spread; the largest level move is CYP3A4 at +0.60 against a label
+sd of 1.09. Item 366 is why this check exists and why it is a refusal rather than a warning.
+
+**What was built, per enzyme.** `_keep` admits 3/2/5/2 of our five, the probe is dropped, and the two
+in-context members enter every enzyme as `_combine`'s documented requirement demands --- so [5, 4, 7,
+4] members, mean 5, against the shipped six's [4, 3, 6, 3].
+
+    фермент   состав                              lambda   сдвиг    ро к стеку 346
+    CYP1A2    3 наших + tabicl600 + tabiclSA        1.02   +0.130           0.9871
+    CYP2C9    2 наших + tabicl600 + tabiclSA        1.10   +0.160           0.9920
+    CYP2D6    5 наших + tabicl600 + tabiclSA        1.02   +0.020           0.9814
+    CYP3A4    2 наших + tabicl600 + tabiclSA        0.96   +0.260           0.9901
+
+    0 не-конечных, 0 вне окна 0..12, молекулы совпадают с тестовой таблицей поэлементно,
+    средняя |Δ| к стеку 346 по 3000 клеткам 0.0737, разброс почти не изменился
+    (CYP1A2 0.585 против 0.586) --- это смена модели, а не растяжение пункта 366
+
+**A defect the run printed about itself, found in the log and fixed.** The affine-pair block
+labelled its two arms "БЕЗ зонда (контроль-близнец)" and "С зондом (кандидат)" from hardcoded
+strings. Under `--drop-probe` the candidate contains no probe, so the second label said the opposite
+of what the run did. No number was affected --- the pair is fitted against `P`, which is built with
+`None if a.drop_probe else probe_oof` --- but a log that contradicts itself is the defect of items
+308 and 355 in miniature, and logs are results here. Both labels now name the composition they are
+fitted on. The twin file `activity_submission_noprobe.csv` keeps its name and its meaning, our five
+members with nothing added, which is no longer the same thing as "the main file minus the probe".
+
+**Two things left open, both named rather than fixed.** First, `src/submeta.py:_composition` records
+the mode, SOLO and the dead zone but **does not list the extra members**, so `stack346.meta.json`
+and `stack374.meta.json` describe their compositions identically and only the `команда` field
+distinguishes them. That was true before this item and is worse now that two stacks exist; it is not
+fixed here because the control run was already in flight on the current `submeta` and building the
+control and the candidate with different provenance code would undo the point of the control.
+Second, `_probe_test_pred` still runs and still reports that CYP2D6's alpha sits at the TOP of the
+carried-in grid --- for a member that no longer enters the mean. Wasted work, and a grid-edge report
+about a vector that is not used.
+
+**What this does NOT say.** Nothing here is a board measurement. The arm's +0.0099 of rank and
+-0.0167 of ST-RAE are out-of-fold figures from item 374 at sign 8/8; the test predictions come from
+models fitted on all training rows, which is a different fit, and item 324's realisation on the
+board was 0.92 of its out-of-fold gain rather than 1.00. The file is built, validated and
+committed; whether it goes to the board is the team's decision and the upload is theirs.

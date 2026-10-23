@@ -1605,9 +1605,16 @@ def main():
             if a.drop_probe:
                 print("  зонд ИСКЛЮЧЁН из среднего (пункт 374); его вложение остаётся "
                       "загруженным для прочих членов", flush=True)
-            print("  аффинная пара БЕЗ зонда (контроль-близнец):", flush=True)
+            # The labels name the composition the pair is fitted on rather than assuming the
+            # candidate contains the probe. Under --drop-probe it does not, and the hardcoded
+            # "С зондом" said the opposite of what the run did -- the numbers were right,
+            # because the pair is fitted against `P` either way, but a log that contradicts
+            # itself is a defect of its own here.
+            cand = ("наши + " + ", ".join(more_tag)) if a.drop_probe else (
+                "наши + зонд" + (" + " + ", ".join(more_tag) if more_tag else ""))
+            print("  аффинная пара на БАЗЕ (только наши, контроль-близнец):", flush=True)
             lams_base = fit_shrinkage(P_base, y, mask, d, sp)
-            print("  аффинная пара С зондом (кандидат):", flush=True)
+            print(f"  аффинная пара на КАНДИДАТЕ ({cand}):", flush=True)
             lams = fit_shrinkage(P, y, mask, d, sp)
         else:
             P = oof_predictions(X, y, mask, fold, a.mode, scr,
@@ -1770,7 +1777,7 @@ def main():
         json.dump({"члены_по_ферментам": dump, "зонд": probe_meta,
                    "молекулы": list(te.Molecule_Name)},
                   open(pd_, "w"), ensure_ascii=False)
-        print(f"  контроль-близнец (состав БЕЗ зонда): {tw_}", flush=True)
+        print(f"  контроль-близнец (только наши члены, без добавленных): {tw_}", flush=True)
         print(f"  предсказания членов на тесте: {pd_}", flush=True)
 
     tdi = pd.read_csv(D + "cyp-challenge-TRAIN_TDI.csv").set_index("Molecule_Name")
