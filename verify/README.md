@@ -63,6 +63,16 @@ selection $-0.0048$ at sign 0/8. Both are under the 0.0036 floor, the second on 
 zero, so the EQUAL weight is not a parameter to return to --- what the probe adds is a member, not a
 better mixing of the ones we had.
 
+**And that sixth member is now the one to REMOVE, measured but NOT shipped (item 374).** An
+in-context tabular learner on the same frozen 600, plus a second on `surrogate_adme`, replace it:
+`пять+TabICL-E+TabICL-S` scores **+0.0099 of rank and -0.0167 of ST-RAE over the shipped default
+six**, sign 8/8, chosen on seeds 0-3 and confirmed on seeds 4-7 where it came out larger. The probe
+is dropped rather than kept because its errors correlate 0.948 with the stronger learner on the same
+columns, and item 371's NNLS had independently put weight 0.00 on that slot. Item 373 is the
+arithmetic: a member's contribution divides by the member count, so a redundant slot costs. **This
+is out-of-fold only --- no test-set predictions exist for either learner, so nothing of it is in
+`results/submission/` and the shipped composition is still the six.**
+
 **The board has now CONFIRMED it without ESTABLISHING it, and the distinction is the point (item
 327).** Macro Spearman on the blind half moved $0.6935 \to 0.7062$, a realisation of **0.92** against
 the $+0.0138$ measured out of fold --- and the placement cannot have contributed any of it, because
@@ -17370,3 +17380,347 @@ measurement of ours. The panel's pAC50 is left-truncated at 4.10 against our 1.9
 5.18--5.36 against our 4.10--4.96, which is why it must stay on its own heads: the encoder takes the
 chemistry and the primary heads keep our scale. If that separation leaks, the arm will look like
 items 363 and 364, which is exactly what they measured.
+
+
+**369. Ten times the labels change the fine-tuned encoder by -0.0002, so item 343's explanation of
+its own failure is refuted: fine-tuning this checkpoint does not fail for want of data, it damages
+the representation. Every one of five arms scores BELOW the frozen probe by about 0.017 of rank, and
+the control that shuffles the auxiliary labels collapses by 0.044, so the auxiliary channel is
+reaching the encoder and the null result is not a no-op.** `src/union.py` (item 368),
+`src/ftunion.py` (new, trains on the GPU box), `verify/k141_ftunion.py` (new, scores in the pinned
+environment), `data/ft/ft_union_*.npz`, `results/logs/k141_ftunion.json`. Seed 0, five arms.
+
+The split of labour is `src/embed.py`'s: chemprop resolves scikit-learn to 1.9.1 and `CLAUDE.md`
+records that 1.9.0 moves every prediction by ~0.135 pIC50, so the box writes a file and every number
+below is computed under 1.3.2 by the `score` of items 324, 343, 345 and 350.
+
+**Two arms per model, because the question is about the ENCODER and not about this model's head.**
+`голова` is the fine-tuned model's own out-of-fold prediction, directly comparable to item 343's
+0.5613. `зонд` is the shipped RidgeCV probe on the fine-tuned embedding, nested so that fold f's
+embedding comes from the encoder that never saw fold f --- the same device that measured 0.6261 on
+the frozen encoder, and therefore the one that answers whether the representation improved.
+
+    арм       aux   голова     зонд   Δ7-м гол.  Δ7-м зонд  corr   эпох
+    unionA     да   0.5619   0.6113     -0.0011    -0.0004  0.877  12/11/11/12/13
+    noaux     нет   0.5495   0.6115     -0.0018    -0.0004  0.876  14/10/14/11/11
+    randaux    да   0.5019   0.5670     -0.0098    -0.0079  0.898  16/15/16/15/18
+    mainA      да   0.5652   0.6100     +0.0018    -0.0005  0.876  13/16/17/17/12
+    mainNo    нет   0.5587   0.6111     -0.0017    -0.0005  0.864  13/13/11/17/12
+
+    замороженный зонд, этот прогон    0.6282      (пункт 324, восемь сидов: 0.6261)
+    наивное одноголовое дообучение    0.5613      (пункт 343)
+    случайные веса той же формы       0.4942      (пункт 343, rand600)
+
+**The comparison that matters is unionA against noaux, and it is -0.0002.** The union corpus adds
+62290 auxiliary labels to our 6525 primary ones, a factor of ten, and the probe on the resulting
+encoder is 0.6113 against 0.6115 without them. Item 343 attributed its failure to 1285--2335 labels
+per enzyme being too few for 8.7M encoder parameters; that is now measured and it is not the reason.
+
+**The control is `randaux`, and it is the reason the -0.0002 can be read at all.** Shuffling the
+auxiliary labels while keeping their count, their mask and the loss weights drops the probe to
+0.5670, a loss of 0.044. A pipeline that ignored the auxiliary heads would be INDIFFERENT to the
+shuffle. So the auxiliary gradients do reach the shared encoder, they do change it, and what they
+change it into is no better than what the primary labels alone produce.
+
+**I compared the wrong pair first and the error is recorded rather than quietly fixed.** unionA's
+probe at 0.6113 against item 343's HEAD at 0.5613 looked like "+0.050 recovered", and it is a
+different device on each side: a nested ridge against a trained head. Under one device unionA versus
+noaux is -0.0002, and against the FROZEN probe every arm here is 0.017 worse.
+
+**What this does NOT close.** The corpus itself is sound and item 368's controls all held; what is
+measured is that a shared D-MPNN encoder trained on it, with masked multi-head losses and the
+primary heads kept on our scale, produces a worse representation than the frozen checkpoint. Item
+341's >= +0.048 of rho was read off `briford`'s published shape and is still unmeasured by us. A
+different architecture, or the panel used as features rather than as a training signal, is untouched.
+
+
+**370. The error has a chemical signature on two enzymes out of four, above a 200-draw null, and
+one of the seven properties it names is not in our 2295 columns. Within the half of each enzyme the
+model handles best, the worst third is systematically LESS lipophilic --- logP SMD -0.52 on CYP1A2
+and -0.41 on CYP3A4 --- and on CYP1A2 it is also more polar, more basic, more sp3 and bigger, while
+on CYP3A4 it is SMALLER.** `verify/k142_errchem.py` (new, reads only),
+`results/logs/k142_errchem.json`. Four seeds, alpha 0.01, 18 properties, 200 random-split draws.
+
+The quantity stratified is the ST-RAE NUMERATOR per compound --- the interval hinge itself, which is
+zero inside the credible band --- and not the squared error, because the hinge is what the board
+scores. Stratifying inside each enzyme's STRONG half rather than over all compounds is what makes
+the result about chemistry instead of about difficulty: the weak half is where the model is bad for
+every reason at once.
+
+    фермент  n силь.  треть  петля сил.  петля слаб.  попад.  нуль сред.  q95  выше нуля
+    CYP1A2       706    235      0.4484       0.2982       7       0.205  1.0  да
+    CYP2C9       642    214      0.2533       0.0950       0       0.135  1.0  нет
+    CYP2D6       746    248      0.4402       0.2639       0       0.185  1.0  нет
+    CYP3A4      1167    389      0.3094       0.1239       3       0.140  1.0  да
+
+    CYP1A2, худшая треть против лучшей (SMD, + = больше в худшей трети)
+        logP                -0.52   p=1.9e-07
+        TPSA                +0.45   p=3.3e-05
+        основных центров    +0.40   p=4.8e-05   ВНЕ наших признаков
+        fsp3                +0.34   p=1.5e-03
+        тяжёлых атомов      +0.31   p=1.9e-03
+        MW                  +0.29   p=5.3e-03
+        HBA                 +0.27   p=2.3e-03
+
+    CYP3A4
+        logP                -0.41   p=6.2e-09
+        MW                  -0.22   p=3.3e-04
+        тяжёлых атомов      -0.20   p=3.8e-03
+
+**The null is what makes seven hits a finding.** Two hundred random splits of the same strong half
+into thirds of the same sizes give 0.135--0.205 hits on average with a 95th percentile of 1.0, so
+seven and three are both outside it while zero and zero are not. Without the null, seven hits over
+18 properties at alpha 0.01 would be unremarkable.
+
+**The signature is NOT the same on both enzymes, and saying "low-logP and polar" of both would be
+wrong.** Only logP agrees in sign. On CYP1A2 the hard compounds are larger and more polar; on CYP3A4
+they are smaller. What the two share is the lipophilicity direction, and `основных центров` --- the
+count of basic nitrogen centres --- is the one hit that no column of `feats.npz` carries.
+
+**It is chemistry rather than one bad fold.** The worst third's share by fold runs 0.166--0.251 on
+CYP1A2 and 0.159--0.247 on CYP3A4 against an expected 0.200, so it is spread across the split rather
+than concentrated in a cluster the Butina threshold happened to isolate.
+
+**What this does NOT license.** Nothing is fitted. A signature in the residual is not a model of it,
+and item 374's arithmetic says a correction entering as one more equally-weighted member would be
+divided by the member count --- so the use for this is a targeted adjustment applied AFTER the mean,
+which is a different shape from everything in the composition and is not yet measured. The two
+enzymes with no hits are not evidence of no signature, only of none among these 18 properties.
+
+
+**371. Fitted per-enzyme weights over the eight slots do not transfer, and the fit is finding real
+signal while failing to generalise: non-negative least squares wins in-sample 68 per cent of the
+time and loses -0.0036 of rank out of fold at sign 0/4, while the shuffled-label null loses
+-0.0370. Item 316's closure now holds without its caveat.** `verify/k143_nnweights.py` (new),
+`results/logs/k143_nnweights.json`. Four seeds, three arms.
+
+**The composition has eight SLOTS and six members, which is the figure item 374 needs.** `_keep`
+admits [3,2,5,2] of the five core members per enzyme, and the probe, the chemeleon probe and
+`gbm600` are added to all four, giving **[6, 5, 8, 5] members per enzyme, mean 6.0**. Calling it
+"the eight" is a count of slots offered, not of members averaged, and the distinction changes item
+374's threshold by 0.007 of rank.
+
+    арм             Δранг       sd   знак   ΔST-RAE   выигрыш в выборке
+    нмнк           -0.0036   0.0013   0/4   +0.0014        68%
+    хинж           -0.0001   0.0011   2/4   -0.0011        92%
+    нмнк_перемеш   -0.0370   0.0016   0/4   +0.0596         2%
+
+    равные веса (база): ранг 0.6606, ST-RAE после пары 0.6091
+
+`нмнк` is NNLS on the labels, `хинж` minimises the band hinge directly by SLSQP, and
+`нмнк_перемеш` is the same NNLS on shuffled labels. Weights are fitted per enzyme on each fold's
+four training folds and applied to the held-out fold, so nothing is fitted on what it scores.
+
+**The in-sample column is the control that distinguishes "the fit finds nothing" from "the fit does
+not transfer", and the answer is the second.** NNLS beats equal weights on the fitting rows in 68
+per cent of enzyme-folds and the hinge arm in 92 per cent, while the shuffled null wins 2 per cent.
+So there is real structure in which members to trust; it just does not survive the fold boundary.
+Item 316 closed fitted weights with the caveat that it had measured only a simplex over a different
+member set; this is the same conclusion on the current eight slots with that caveat removed.
+
+**One observation that item 375 then reaches by a different route.** On CYP2D6, the enzyme with all
+eight slots, the mean NNLS weight on the `зонд` slot --- the RidgeCV probe on the frozen 600 --- is
+**0.00, 0.03, 0.00, 0.00** across the four seeds, and `пул` and `гребневая` are 0.00 throughout.
+The fit is saying the probe is redundant. Item 375 removes that slot by hand and the composition
+improves, which is two methods agreeing rather than one measurement repeated.
+
+
+**372. An in-context tabular learner is the strongest single candidate this project has measured ---
+solo macro rank 0.6409 against a previous best of 0.6263 --- and the control proves it is the
+LEARNER and not the preprocessing: a RidgeCV on the identical post-PCA input scores 0.6255, so the
++0.0154 belongs to the estimator. On `surrogate_adme` it is worth four times what item 349's ridge
+was worth on the same embedding, +0.0028 against +0.0007, by being both better alone and less
+correlated.** `src/tabicl_run.py` (new, on the GPU box), `results/logs/k144_subst.json`,
+`k147_tabicl2.json`, `data/ft/tabicl_oof.json`, `tabicl_S100.json`, `tabicl_E050.json`,
+`tabicl_E200.json`. Four seeds.
+
+**Item 335 closed this axis BY PROXY and said so in its own first sentence**: three non-linear heads
+on the cached 600 columns "ask the same question" as a foundation head, for twelve CPU-minutes
+"instead of a dependency and a build". The proxy is the weak step. A gradient-boosting machine is
+not a stand-in for a transformer pretrained on millions of synthetic tabular tasks doing approximate
+Bayesian inference in context, whose advantage is specifically the small-n regime --- 1285 to 2335
+rows per enzyme, which is ours. The reason item 335 gave was COST, and a GPU removed it.
+
+**TabICL rather than TabPFN, and the reason is not technical.** TabPFN 9.2 gates its weights behind
+a registered account and an accepted licence, which is the user's act and not a thing this
+repository may do on their behalf; installing an older version to route around the gate is the same
+act by another name. TabICL is the same family by different authors and downloads without one.
+
+    арм / вход                 одиночн.      sd   Δ девятым  знак   corr к 5  corr к зонду
+    E  = замороженные 600        0.6409  0.0021     +0.0014   4/4      0.898         0.948
+    E, ридж на том же входе      0.6255  0.0013     -0.0012   0/4      0.912         0.984
+    S  = surrogate_adme 2048     0.6387  0.0032     +0.0028   4/4      0.886         0.916
+    X  = наши 2295 столбца       0.5423  0.0048     -0.0075   0/4      0.949         0.874
+    X, ридж на том же входе      0.5194  0.0011     -0.0067   0/4      0.953         0.867
+
+    предел PCA на входе E:  50 -> 0.6420 (sd 0.0019),  100 -> 0.6409,  200 -> 0.6372 (sd 0.0015)
+
+**The preprocessing control is the point of the table.** Place 41's published recipe caps embedding
+dimensions by PCA before an in-context learner, in its own words because "with only one to two
+thousand labelled rows per endpoint, an uncapped concatenation of several thousand embedding
+dimensions lets those models memorise the fold rather than learn from it". Fitting a ridge in the
+same loop, on the same post-PCA matrix, separates the cap from the learner: on E the ridge gets
+0.6255 and TabICL 0.6409, on X the ridge 0.5194 and TabICL 0.5423. The learner is worth +0.0154 and
++0.0229 respectively. **The cap itself is not a lever** --- 50, 100 and 200 span 0.6372 to 0.6420,
+about 1.4 standard deviations, so the value does not need choosing.
+
+**Our own feature matrix is the wrong input for it, which item 349's criterion already implied.**
+X at 0.5423 is far below item 348's 0.60 screen, and its errors correlate 0.949 with the five
+members that are themselves fitted on those columns. The gain lives on activity-pretrained
+embeddings, not on fingerprints and descriptors.
+
+**The comparison with item 349 is the sharpest reading, and the baselines match.** Item 349 measured
+a RidgeCV probe on `surrogate_adme`: solo 0.6263, error correlation 0.897, and +0.0007 as a further
+member on item 346's stack. TabICL on that same embedding gives solo 0.6387, correlation 0.886, and
++0.0028 on the same stack with the same `--stack346` composition underneath. Four times the
+contribution from one change of estimator, with +0.0124 of solo rank and -0.011 of correlation.
+
+**What this does NOT support alone.** +0.0014 and +0.0028 are both under the 0.0036 floor, so
+neither arm ships by itself, and substituting TabICL for the probe in the eight slots gives +0.0022
+of rank --- also under floor, against a prediction of +0.004 to +0.010 that I registered before the
+run and that FAILED. Item 373 is why, and item 374 is what the two arms do together.
+
+
+**373. A member's contribution to an equally-weighted mean is its solo advantage DIVIDED BY THE
+MEMBER COUNT, measured: substituting one slot across compositions of n = 1 to 8 holds the product
+Delta*n flat at 0.0159 +/- 0.0019 while Delta itself falls 7.6-fold. So the bar for a new member
+rises with the composition's size, and at the shipped mean of six members it is a solo rank of
+0.6480 --- which is why item 348's threshold of 0.60, read off a base of six SLOTS, is now too
+loose. Pruning does not help either: nested top-k peaks at k = 6 and 7 dead level with what
+ships.** `results/logs/k145_dilution.json`, `k146_topk.json`. Four seeds, two controls each.
+
+    n   с зондом   с TabICL     Δранг   знак      Δ·n
+    1     0.6264     0.6409   +0.0145    4/4   0.0145
+    2     0.6436     0.6506   +0.0070    4/4   0.0140
+    3     0.6378     0.6427   +0.0049    4/4   0.0146
+    4     0.6466     0.6503   +0.0038    4/4   0.0151
+    5     0.6419     0.6456   +0.0037    4/4   0.0186
+    6     0.6450     0.6476   +0.0027    4/4   0.0160
+    7     0.6517     0.6544   +0.0027    4/4   0.0191
+    8     0.6552     0.6571   +0.0019    4/4   0.0151
+
+The companion pool is fixed at all five core members plus the chemeleon probe and `gbm600`,
+ignoring `_keep`, so that n is identical for every enzyme --- that is the instrument, not the
+shipped arm. The `с зондом` column is not monotone in n because the pool order is `members()`' own
+and slots three and five make the mean worse; the law is about the DIFFERENCE, which is why that
+does not matter here. It is also what motivated the pruning sweep below.
+
+**The threshold this implies, and the correction to my own first reading of it.** Delta = g/n with
+the floor at 0.0036 requires g >= 0.0036n over the member displaced. I first computed this at n = 8
+and got a required solo rank of 0.6552, higher than the whole composition's 0.6606, and concluded
+that no member could ever clear the floor again. **The member count is not 8.** Item 371 reads it
+off the log: `_keep` admits [3,2,5,2] and three slots are added to all four enzymes, giving [6,5,8,5]
+members, mean **6.0**. At n = 6 the bar is 0.6264 + 0.0216 = **0.6480**, and TabICL's two arms at
+0.6409 and 0.6387 fall 0.007 and 0.009 short rather than 0.015. "Closed arithmetically" was wrong by
+one input.
+
+**And the law's flatness is a property of CORRELATED candidates, not of the mean.** Across the four
+TabICL variants the rise in Delta*n from n = 2 to n = 8 is ordered by error correlation with the
+slot being replaced:
+
+    кандидат           corr с зондом   Δ·n n=2   Δ·n n=8   рост
+    TabICL E pca100            0.948    0.0140    0.0151    + 8%
+    TabICL E pca200            0.948    0.0115    0.0134    +17%
+    TabICL E pca50             0.941    0.0136    0.0167    +23%
+    TabICL S pca100            0.916    0.0178    0.0257    +44%
+
+So a decorrelated member earns an interaction term the law does not have, which is item 348's own
+closing sentence --- "decorrelation decides how much a strong member adds, never whether a weak one
+can help at all" --- made quantitative. Four points over a correlation range of 0.032 is a trend,
+not a calibration.
+
+**Pruning: nested top-k over the nine-member library, with two controls that must succeed.** For
+each fold the candidates are ranked by solo Spearman on the OTHER four folds --- their predictions
+are already out of fold, so this leaks nothing --- the top k are averaged, and that average predicts
+the held-out fold. One integer hyperparameter and no per-fold weights, unlike item 280's Caruana
+selector at -0.0048.
+
+    k      ранг       sd   Δ к восьми   знак   случайный порядок при том же k
+    1    0.6362   0.0076      -0.0244    0/4
+    2    0.6488   0.0043      -0.0118    0/4
+    3    0.6551   0.0010      -0.0055    0/4
+    4    0.6571   0.0024      -0.0035    0/4   0.6487
+    5    0.6588   0.0024      -0.0018    1/4   0.6507
+    6    0.6606   0.0011      +0.0001    2/4   0.6526
+    7    0.6609   0.0010      +0.0004    2/4
+    8    0.6601   0.0007      -0.0005    1/4
+    9    0.6579   0.0012      -0.0027    0/4
+
+The first control is that **k = 9 must equal the plain nine-member mean**, since at k = 9 nothing is
+selected; it does, at max|Delta| = 2.7e-15. That threshold is 1e-12 rather than 0 because averaging
+the nine in RANK order reassociates the sum against the same nine in pool order --- the first
+version asserted equality to zero and failed at 1.8e-15, which is the control proving it is
+sensitive to the last bit. The second is that a **random ranking at the same k must be worse**, or
+the gain would be k alone rather than the ordering; it is worse by 0.0084, 0.0081 and 0.0080 at
+k = 4, 5 and 6.
+
+**So `_keep` already sits on the plateau.** The curve's top is 0.6601--0.6609 across k = 6, 7 and 8
+and the shipped eight slots score 0.6606. There is no dead weight left to remove by this rule, and
+the non-monotone `с зондом` column above is explained by pool ORDER rather than by removable
+members.
+
+**What this does NOT support.** The law is measured on one substitution, TabICL for the probe, over
+one pool order; Delta*n's scatter (0.0140 to 0.0191) is 13 per cent of its mean, so it bounds the
+interaction term rather than excluding it. The top-k curve is flat-topped within its own standard
+deviations, so "k = 7 is best" is not a claim --- what is claimed is that no k beats the shipped
+composition by more than a fifth of the floor.
+
+
+**374. Two members that are each under the floor alone clear it together once the slot they make
+redundant is REMOVED: +0.0099 of macro rank and -0.0167 of ST-RAE over the shipped default six, at
+sign 8/8 across two independent sets of four seeds. The winner was chosen on seeds 0-3 and confirmed
+on seeds 4-7, where every arm came out slightly LARGER than in sample --- the opposite of how items
+280 and 316 failed. The slot removed is the RidgeCV probe on the frozen 600, which item 371's NNLS
+had already set to weight 0.00 on all four seeds.** `results/logs/k148_tabiclsum.json`,
+`k149_sweep.json`, `k150_held48.json`, `data/ft/tabicl_held48.json`. Eight seeds.
+
+**The construction.** `пять` is `_keep`'s [3,2,5,2] core members. `зонд` is the RidgeCV probe on
+`chemprop_medium`'s frozen 600 --- the member item 324 added, worth +0.0138 at the time. `chem` is
+the chemeleon probe, `E` and `S` are item 372's two TabICL arms. The shipped default is `пять+зонд`;
+item 346's `--stack346` is `пять+зонд+chem+gbm600`.
+
+    арм                        сиды 4-7      sd   Δк шести   знак    ΔST-RAE   сиды 0-3
+    пять+chem+E+S                0.6651  0.0012    +0.0099    4/4    -0.0167    +0.0092
+    пять+E+S                     0.6647  0.0011    +0.0095    4/4    -0.0169    +0.0083
+    шесть+E+S                    0.6639  0.0009    +0.0087    4/4    -0.0161    +0.0076
+    шесть+chem+E+S               0.6639  0.0010    +0.0087    4/4    -0.0157    +0.0081
+    пять+chem+S                  0.6623  0.0011    +0.0071    4/4    -0.0110    +0.0069
+    пять+chem+E                  0.6618  0.0013    +0.0066    4/4    -0.0104    +0.0065
+    пять+TabICL-S                0.6603  0.0007    +0.0051    4/4    -0.0087    +0.0044
+    пять+TabICL-E                0.6587  0.0015    +0.0035    4/4    -0.0071    +0.0029
+    шесть: пять+зонд             0.6552  0.0007    +0.0000      --    +0.0000    +0.0000
+
+    одиночные, те же сиды:  TabICL-E 0.6428   TabICL-S 0.6404   зонд 0.6259
+
+**Removing the probe is worth +0.0012, and that is the finding rather than the addition.** Each
+TabICL arm alone is +0.0035 and +0.0051 on these seeds; added to the six they give +0.0087; added to
+the FIVE, with the probe gone, +0.0095. Item 373's law says why: the probe's errors correlate 0.948
+with TabICL-E because they are two estimators on the same 600 columns, so once the stronger one is
+in, the weaker one only divides the mean. Item 371's NNLS reached the same place from the other
+direction, putting 0.00, 0.03, 0.00, 0.00 on that slot across four seeds.
+
+**The confirmation is the part that makes this shippable.** The 32-arm sweep (`k149`) ranked every
+subset of five optional slots on seeds 0-3, which is selection on the same data the floor is
+measured on. Seeds 4-7 were then computed from scratch --- `members` was already cached, the
+chemeleon probe and the two TabICL arms were not --- and every arm transferred, each 0.0002 to
+0.0012 larger out of sample. The digest control asserts that each held-out seed's fold vector
+matches the digest the box stamped into the prediction file.
+
+**The chemeleon probe is inside the noise here.** `пять+chem+E+S` beats `пять+E+S` by 0.0004 on
+seeds 4-7 and 0.0009 on seeds 0-3, both a fraction of the 0.0036 floor, so the seven-slot arm is the
+one to ship: same gain, one fewer dependency. The eight-slot figure is reported because it is the
+sweep's own winner and withholding it would be choosing after the fact.
+
+**Against the two baselines, because they are different numbers and item 339 is why that matters.**
+The shipped DEFAULT is the six (`--no-bundle` is an opt-out; see items 244/250 and 339), and against
+it the gain is +0.0099 of rank and -0.0167 of ST-RAE. Against item 346's eight, which `--stack346`
+builds and which items 347 and 349 used as their base, it is +0.0045 and -0.0084. Both clear both
+floors.
+
+**What this does NOT yet do: it does not ship.** No test-set predictions exist for either TabICL
+arm, so nothing here can be written to `results/submission/`. That needs the learner fitted on all
+training rows of each enzyme and predicted onto the 750, on `emb_chemprop_medium_test.npz` (750x600,
+named) and on `surrogate_adme`'s own `test` key (750x2048, UNNAMED --- so it needs an order control
+of the kind item 349 committed, not a name comparison), and then threading into `src/submit.py` the
+way item 365 threaded `--stack346`. Until that exists this is an out-of-fold measurement and not a
+submission.
