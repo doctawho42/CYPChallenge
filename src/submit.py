@@ -956,6 +956,22 @@ GBM_KIND = "gbm600"
 # difference is one keyword and it is the whole point of writing this out.
 GBM_KW = dict(max_iter=300, learning_rate=0.06, random_state=0)
 
+# Item 374's arm: two in-context tabular learners REPLACING the sixth member. Each is under the
+# floor alone (+0.0035 and +0.0051 over the shipped six); together, with the probe removed, they
+# are +0.0099 of macro rank and -0.0167 of ST-RAE at sign 8/8 -- chosen by a 32-arm sweep on
+# seeds 0-3 and confirmed on seeds 4-7, where every arm came out larger than in sample.
+#
+# They are READ FROM FILES rather than fitted here, and that is forced rather than chosen:
+# TabICL needs a GPU and a torch build that resolves scikit-learn to 1.9.1, which CLAUDE.md
+# records as moving every prediction in this repository by ~0.135 pIC50. So `src/tabicl_run.py`
+# and `src/tabicl_test.py` produce the vectors on the box and this file consumes them under the
+# pinned environment. The fold digest travels with the out-of-fold file and is checked, because a
+# prediction vector is valid only for the split it was produced on.
+TABICL_TEST = RES + "preds/k151_tabicl_test.json"
+TABICL_OOF = {"E": RES + "preds/k147_tabicl_E100.json",
+              "S": RES + "preds/k147_tabicl_S100.json"}
+TABICL_KIND = {"E": "tabicl600", "S": "tabiclSA"}
+
 
 def _probe_load(rows, te, emb=None, emb_te=None, tag=PROBE_KIND):
     """Both embeddings, realigned against the tables rather than trusted.
@@ -1102,6 +1118,62 @@ def _gbm_test_pred(E, Ete, y, mask):
         Ztr, Zte, _nk = _probe_design(E[m], Ete)
         out.append(HistGradientBoostingRegressor(**GBM_KW).fit(Ztr, y[m, e]).predict(Zte))
     return np.stack(out, 1)
+
+
+def _tabicl_load(te, mask, digest, test_path=None, oof_paths=None):
+    """The two in-context members, test and out-of-fold, from files written on the GPU box.
+
+    Returns [(tag, test (n_test, 4), oof [4 vectors])] in the order they enter the mean.
+
+    FOUR CONTROLS, all of which must succeed, because nothing here is recomputed and a wrong
+    file cannot be caught by an exception:
+
+      * the out-of-fold file's fold digest must equal the digest this run is using. A vector
+        produced on another split describes other compounds, and item 302 is what happens when
+        a positional array is trusted.
+      * each out-of-fold vector's length must equal that enzyme's mask count, and each test
+        vector's must equal the number of test rows.
+      * the two representations must DIFFER. They come from one runner, one checkpoint and one
+        PCA cap, so a mix-up of the input key would give identical vectors and a spurious gain.
+      * every value must be finite and inside a sane pIC50 window. The per-enzyme spread check
+        lives in `src/tabicl_test.py`, which refuses to write a collapsed arm at all.
+    """
+    tj = json.load(open(test_path or TABICL_TEST))
+    if int(tj.get("n_test", -1)) != len(te):
+        raise SystemExit("tabicl: %s строк теста в файле против %d в таблице"
+                         % (tj.get("n_test"), len(te)))
+    want = [int(mask[:, e].sum()) for e in range(len(CYPS))]
+    out, seen = [], []
+    for repk in ("E", "S"):
+        path = (oof_paths or TABICL_OOF)[repk]
+        oj = json.load(open(path))
+        dg = [str(x) for x in oj["digests"]]
+        if dg[0] != digest:
+            raise SystemExit("tabicl %s: вне фолда собрано на разбиении %s, а не %s"
+                             % (repk, dg[0], digest))
+        O = [np.asarray(v, float) for v in oj["preds"]["%s_seed0" % repk]]
+        if [len(v) for v in O] != want:
+            raise SystemExit("tabicl %s: длины вне фолда %s против %s по маскам"
+                             % (repk, [len(v) for v in O], want))
+        T = np.stack([np.asarray(v, float) for v in tj["preds"][repk]], 1)
+        if T.shape != (len(te), len(CYPS)):
+            raise SystemExit("tabicl %s: тест %s, ожидалось (%d, %d)"
+                             % (repk, T.shape, len(te), len(CYPS)))
+        for A, what in ((T, "тест"), (np.concatenate(O), "вне фолда")):
+            if not np.isfinite(A).all():
+                raise SystemExit("tabicl %s: не-конечные значения (%s)" % (repk, what))
+            if A.min() < 0.0 or A.max() > 12.0:
+                raise SystemExit("tabicl %s: %s вне окна pIC50 (%.2f..%.2f)"
+                                 % (repk, what, A.min(), A.max()))
+        seen.append(T)
+        out.append((TABICL_KIND[repk], T, O))
+        print("    %s: вне фолда %s, тест %s, дайджест %s"
+              % (TABICL_KIND[repk], [len(v) for v in O], T.shape, dg[0]), flush=True)
+    d = float(np.abs(seen[0] - seen[1]).max())
+    if d < 1e-6:
+        raise SystemExit("tabicl: два представления совпали (max|Δ| %.2e) — перепутан вход" % d)
+    print("    контроль: представления различны, max|Δ| на тесте %.3f" % d, flush=True)
+    return out
 
 
 def fit_shrinkage(P, y, mask, delta=(0.0, 0.0, 0.0, 0.0), spread=(1.0, 1.0, 1.0, 1.0)):
@@ -1258,6 +1330,28 @@ def main():
     ap.add_argument("--stack346", action="store_true",
                     help="сокращение для --probe --probe2 --gbm: ровно отгружаемый состав "
                          "пункта 346 и ничего больше, чтобы его нельзя было собрать наполовину.")
+    ap.add_argument("--tabicl", action="store_true",
+                    help="добавить ДВА члена -- in-context табличных учителя на замороженных "
+                         "600 и на surrogate_adme, прочитанных из файлов (пункт 372: одиночный "
+                         "0.6409, сильнейший когда-либо измеренный здесь). Требует --probe, "
+                         "потому что путь зонда считает и аффинную пару вне фолда.")
+    ap.add_argument("--tabicl-test", default=None,
+                    help="предсказания на 750 (по умолчанию %s, пишет src/tabicl_test.py)"
+                         % TABICL_TEST)
+    ap.add_argument("--tabicl-oof-e", default=None,
+                    help="вне фолда для арма E (по умолчанию %s)" % TABICL_OOF["E"])
+    ap.add_argument("--tabicl-oof-s", default=None,
+                    help="вне фолда для арма S (по умолчанию %s)" % TABICL_OOF["S"])
+    ap.add_argument("--drop-probe", action="store_true",
+                    help="убрать ЗОНД из среднего, оставив его вложение для прочих членов. "
+                         "В одиночку это ухудшение; смысл он имеет только вместе с --tabicl, "
+                         "где учитель на тех же 600 столбцах коррелирует с зондом на 0.948 и "
+                         "лишний слот только разбавляет (пункты 373, 374).")
+    ap.add_argument("--stack374", action="store_true",
+                    help="сокращение для --probe --tabicl --drop-probe: ровно арм пункта 374, "
+                         "семь слотов, +0.0099 ранга и -0.0167 ST-RAE к отгружаемым шести при "
+                         "знаке 8/8. Собрать его наполовину нельзя по той же причине, по "
+                         "которой нельзя стек пункта 346.")
     ap.add_argument("--spread", default="1,1,1,1",
                     help="растяжение маргинали метки по ферментам, под которое подбирается "
                          "(сдвиг, lambda). Одно число или четыре через запятую. 1 = как "
@@ -1338,10 +1432,23 @@ def main():
 
     if a.stack346:
         a.probe = a.probe2 = a.gbm = True
+    if a.stack374:
+        a.probe = a.tabicl = a.drop_probe = True
+    if a.stack346 and a.stack374:
+        raise SystemExit("--stack346 и --stack374 -- разные составы; выберите один")
     # A half-built stack is worse than none: its gain was measured as a whole and the members
     # enter at different slot numbers, which item 361 priced at about 0.006 of rank.
     if (a.probe2 or a.gbm) and not a.probe:
         raise SystemExit("--probe2/--gbm требуют --probe: это члены семь и восемь на шести")
+    if a.tabicl and not a.probe:
+        raise SystemExit("--tabicl требует --probe: пара вне фолда считается на его пути")
+    if a.drop_probe and not a.probe:
+        raise SystemExit("--drop-probe требует --probe: убирать из среднего нечего")
+    # Item 374 measured the removal only WITH the two learners in. On its own it is a slot
+    # fewer and nothing in its place, which no run has measured and which the law of item 373
+    # says costs rather than pays.
+    if a.drop_probe and not a.tabicl:
+        raise SystemExit("--drop-probe без --tabicl -- состав, который никто не измерял")
     _pl.Path(a.outdir).mkdir(parents=True, exist_ok=True)
     desc_names = pd.read_csv(D + "desc_names.csv", header=None)[0].tolist()
     mech_names = pd.read_csv(D + "mech_names.csv", header=None)[0].tolist()
@@ -1397,7 +1504,12 @@ def main():
 
     # Members beyond the sixth. Empty unless asked for, and `_combine` treats an empty
     # `extras` exactly as a missing one, so the default path stays arithmetically untouched.
-    more_te, more_tag, more_emb, more_oof = [], [], [], []
+    # `more_given` runs in lockstep with the three lists above and holds the out-of-fold
+    # vectors for members that cannot be recomputed here. None means "recompute from
+    # more_emb"; anything else is used as given. Without it the loop below would have to
+    # decide by tag which members it knows how to refit, which is a guess that grows a branch
+    # per member.
+    more_te, more_tag, more_emb, more_oof, more_given = [], [], [], [], []
     if a.probe2:
         print("седьмой член: гребневая на втором чекпойнте (пункт 345)", flush=True)
         E2, E2te = _probe_load(rows, te, a.probe2_emb or PROBE2_EMB,
@@ -1412,11 +1524,27 @@ def main():
         more_te.append(q2)
         more_tag.append(PROBE2_KIND)
         more_emb.append(E2)
+        more_given.append(None)
     if a.gbm:
         print(f"восьмой член: {GBM_KIND} на столбцах первого зонда (пункт 335)", flush=True)
         more_te.append(_gbm_test_pred(Eprobe, Eprobe_te, y, mask))
         more_tag.append(GBM_KIND)
         more_emb.append(Eprobe)
+        more_given.append(None)
+    if a.tabicl:
+        print("два in-context члена из файлов (пункты 372, 374)", flush=True)
+        # The digest is needed to validate the out-of-fold file and `fold` is computed later,
+        # under --shrink. butina_folds caches on a hash of its input and every parameter, so
+        # calling it here costs nothing and the later call reuses the cache.
+        _f374, _ = butina_folds(list(rows.SMILES))
+        for tag_, T_, O_ in _tabicl_load(te, mask, fold_digest(_f374),
+                                         a.tabicl_test,
+                                         {"E": a.tabicl_oof_e or TABICL_OOF["E"],
+                                          "S": a.tabicl_oof_s or TABICL_OOF["S"]}):
+            more_te.append(T_)
+            more_tag.append(tag_)
+            more_emb.append(None)
+            more_given.append(O_)
 
     lams = lams_base = None
     fold = clusters = None
@@ -1462,14 +1590,21 @@ def main():
                 f"{CYPS[e]} {[int(x) for x in oa[e]]}" for e in range(len(CYPS))), flush=True)
             # The extra members out of fold, in the order they will enter the mean on the test
             # side. One list, so the affine pair is fitted against the vector it is applied to.
-            for tag_, E_ in zip(more_tag, more_emb):
+            for tag_, E_, given_ in zip(more_tag, more_emb, more_given):
+                if given_ is not None:
+                    more_oof.append(given_)
+                    print(f"    {tag_}: вне фолда из файла, не пересчитывается", flush=True)
+                    continue
                 t0_ = time.time()
                 more_oof.append(_oof_gbm(E_, y, mask, fold) if tag_ == GBM_KIND
                                 else _oof_probe(E_, y, mask, fold)[0])
                 print(f"    {tag_}: вне фолда за {time.time() - t0_:.0f} с", flush=True)
             P_base = [_combine(parts_oof, e) for e in range(len(CYPS))]
-            P = [_combine(parts_oof, e, probe_oof, extras=more_oof)
+            P = [_combine(parts_oof, e, None if a.drop_probe else probe_oof, extras=more_oof)
                  for e in range(len(CYPS))]
+            if a.drop_probe:
+                print("  зонд ИСКЛЮЧЁН из среднего (пункт 374); его вложение остаётся "
+                      "загруженным для прочих членов", flush=True)
             print("  аффинная пара БЕЗ зонда (контроль-близнец):", flush=True)
             lams_base = fit_shrinkage(P_base, y, mask, d, sp)
             print("  аффинная пара С зондом (кандидат):", flush=True)
@@ -1617,8 +1752,9 @@ def main():
             cols = [qq[:, e] for qq in more_te]
             for tag_, qq in zip(more_tag, more_te):
                 dump[c][tag_] = [float(v) for v in qq[:, e]]
-            p = np.mean(parts + [probe_te[:, e]] + cols, axis=0)
-            print(f"    {c}: {len(parts)} наших + зонд"
+            p = np.mean(parts + ([] if a.drop_probe else [probe_te[:, e]]) + cols, axis=0)
+            print(f"    {c}: {len(parts)} наших"
+                  + ("" if a.drop_probe else " + зонд")
                   + (f" + {', '.join(more_tag)}" if more_tag else "")
                   + f", среднее до пары {p.mean():.3f}", flush=True)
         if lams is not None:
