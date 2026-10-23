@@ -21,6 +21,25 @@ label standard deviation. Item 366's spread went to the board unchecked and cost
     python src/tabicl_test.py --inp data/tabicl_test_in.npz --out out_test
 
 Writes <out>/tabicl_test.json: {"preds": {rep: [[750 floats] x 4]}, "ridge": same, "pca": int}.
+
+THE RECIPE, written out because a log whose script cannot be re-run is item 345's k123 defect and a
+dependency that lives only in one shell's history is the same defect one step out. Measured on the
+GPU box, 2026-10-23:
+
+    uv pip install --python <env>/bin/python tabicl          # 2.2.0, no account, no licence
+
+    tabicl 2.2.0   torch 2.13.0+cu130   scikit-learn 1.9.1   numpy 2.5.4   scipy 1.18.1   py3.12
+
+The checkpoint downloads itself on first use from Hugging Face `jingang/TabICL`, snapshot
+4dcd344ece2c00be9e831fdd35bed57b5ad83e19, file `tabicl-regressor-v2-20260212.ckpt`, **114324594
+bytes**. No token and no accepted licence are involved, which is the whole reason this family is
+TabICL and not TabPFN: TabPFN 9.2 gates its weights behind a registered account and an accepted
+licence, and accepting one is the user's act, not this repository's.
+
+**Note the scikit-learn: 1.9.1, not the pinned 1.3.2.** That is why this file writes a file and
+scores nothing. `CLAUDE.md` records that 1.9.0 moves every prediction in this repository by ~0.135
+pIC50 and doubles the measured effect of the mechanistic block, so every number that reaches the
+journal is computed under the pin, by `verify/k147_tabicl2.py` and the scripts around it.
 """
 
 import argparse
