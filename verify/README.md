@@ -17805,3 +17805,104 @@ about a vector that is not used.
 models fitted on all training rows, which is a different fit, and item 324's realisation on the
 board was 0.92 of its out-of-fold gain rather than 1.00. The file is built, validated and
 committed; whether it goes to the board is the team's decision and the upload is theirs.
+
+
+**376. The blind test sits at a nearest-neighbour similarity our own data cannot reach, so a
+test-matched validation split is not constructible: leave-one-out on 4905 compounds tops out at a
+median of 0.4500 against the test's 0.5873. And it would not change any decision if it were --- the
+ORDERING of our methods in the densest quartile agrees with the ordering overall at Spearman
++0.9152, inside the +0.9394 to +0.9758 that three random quartiles of the same size give. What the
+regime explains is the LEVEL: the shipped composition scores 0.6902 in the dense quartile against
+0.6568 overall and 0.7062 on the board, so the gap between our validation and the leaderboard is
+geometry and not a reserve we were failing to collect.** `verify/k152_geometry.py` (new),
+`verify/k153_dense.py` (new), `results/logs/k152_geometry.json`, `k153_dense.json`,
+`results/preds/k152_nn_test.npy`, `k152_nn_butina.npy`. Seed 0, Morgan r=2 2048 as `cypsplit` uses.
+
+**It began as a proposal to re-measure the whole journal.** The reasoning was sound and the premise
+is true: our validation holds out whole Butina clusters, which measures extrapolation to new
+scaffolds, while the organisers' own announcement says the test is split **by chemical series** ---
+"all compounds from a parent end up in either the live leaderboard or the fully blinded set" --- so
+test compounds are analogues of training compounds from the same series. If the regimes rank
+methods differently, every negative in this file was measured on the wrong problem.
+
+    режим                              медиана   >0.5    >0.6    >0.7    >0.8
+    тест -> всё обучение (4905)         0.5873  93.5%   42.1%   10.1%    1.5%
+    Butina 0.35, вне фолда              0.4348  23.5%    5.5%    0.5%    0.1%
+    случайные пять фолдов               0.4366  24.9%    9.1%    3.3%    0.8%
+    исключая по одному (потолок)        0.4500  28.5%   10.2%    3.8%    1.0%
+
+**Two things fall out of the last row, and the first kills the proposal.** Leave-one-out is the
+densest regime our data can express --- hide one compound, give it the other 4904 --- and its median
+is 0.4500 against the test's 0.5873. **No split of our training set reaches the test's geometry**,
+so there is no instrument on which to re-measure. The second: Butina is only 0.015 harder than that
+ceiling, so our split is not pathologically conservative. The data is sparse everywhere, and the
+test's density comes from how the organisers chose it, not from how we split ours.
+
+The control is that every compound's maximum similarity to the full training set **including
+itself** is exactly 1.000 on all 4905 rows, which proves the matrix and the argmax; the three
+out-of-fold figures differ from it only by the exclusion.
+
+**The re-read that was possible, and the control that made it readable.** `k152` wrote each
+compound's out-of-fold nearest-neighbour similarity, so every committed out-of-fold prediction can
+be re-scored on the subpopulation closest to the test's geometry --- no refitting, no new split. The
+dense quartile is 1294 compounds at similarity >= 0.5000, median 0.5496.
+
+    арм / кандидат              всё   плотная четв.   разрежённая   случ. 1   случ. 2   случ. 3
+    шесть (отгружено)        0.6568          0.6902        0.6100    0.6443    0.6541    0.6573
+    восемь (пункт 346)       0.6625          0.6988        0.6189    0.6513    0.6583    0.6640
+    семь (пункт 374)         0.6660          0.7035        0.6213    0.6567    0.6583    0.6616
+    TabICL-E                 0.6427          0.6902        0.5960    0.6324    0.6382    0.6303
+    TabICL-S                 0.6422          0.6875        0.6133    0.6339    0.6290    0.6267
+    зонд                     0.6282          0.6500        0.5929    0.6158    0.6316    0.6157
+    GP                       0.6272          0.6682        0.5824    0.6200    0.6058    0.6244
+    chemeleon                0.6206          0.6552        0.5742    0.6130    0.6121    0.6116
+    gbm600                   0.6136          0.6682        0.5751    0.5986    0.6019    0.6212
+    поферментно              0.6049          0.6395        0.5698    0.6008    0.6018    0.6115
+    ствол                    0.5945          0.6332        0.5462    0.5802    0.5962    0.6001
+    пул                      0.5916          0.6275        0.5555    0.5826    0.5874    0.5941
+    гребневая                0.5776          0.5969        0.5593    0.5622    0.5631    0.5797
+
+    согласие ПОРЯДКА кандидатов с порядком на всём (Spearman):
+        плотная четверть      +0.9152
+        разрежённая четверть  +0.9273
+        случайные четверти    +0.9515  +0.9758  +0.9394
+
+**The random quartiles are what make +0.9152 a null rather than a finding.** Three random subsets of
+the same 1294 rows reorder the thirteen candidates by about as much as the dense quartile does. So
+the ordering is density-invariant over the range our data covers, and re-measuring the journal in a
+denser regime would reproduce the same conclusions. **The regime mismatch costs absolute score, not
+decisions.**
+
+**And that re-frames the gap to the leader rather than explaining it away.** Our board macro
+Spearman is 0.7062, the dense quartile puts the shipped arm at 0.6902 and item 374's at 0.7035, and
+extrapolating the density trend to the test's 0.5873 lands near 0.71 --- which is the board. The
+leader is at **0.7844**. So roughly **0.075 of Spearman separates us by METHOD**, and density
+explains none of it. "They interpolate and we extrapolate" is refuted as the explanation by this
+measurement.
+
+**What this does NOT settle, and it is the one place the geometry still hides something.** The test
+has 10.1 per cent of compounds with a neighbour above 0.7, about 76 of 750. Our data has 0.5 per
+cent out of fold, about 25 of 4905. The dense quartile reaches a median of 0.5496 but is built
+almost entirely from 0.5--0.6 cases, so about the regime where retrieval and read-across would
+actually pay we have almost no evidence either way. Raising that ceiling needs compounds we do not
+have, which is the only argument for external data that survives this item.
+
+**The rules, checked rather than assumed, because the user's instruction was conditional on them.**
+Both official posts were read. Neither mentions external or public data at all; what they require is
+disclosure of PROPRIETARY data --- "we require participants to disclose any use of proprietary data
+so that we can compare contestants fairly" --- and ChEMBL and PubChem are not proprietary. They also
+say "one submission per team/lab" and "we rely on your honesty". So there is no prohibition, and the
+line this file draws instead is its own: augmenting training with analogues and their own measured
+labels is read-across; retrieving the 750 blind compounds' own CYP values is reading the answer, and
+no number obtained that way may enter this repository.
+
+**External CYP data is in any case already measured and shut through the mechanism everyone uses.**
+Items 368 and 369: 62290 auxiliary labels through a shared encoder moved the probe by -0.0002, with
+the shuffled-auxiliary control collapsing by 0.044 so the channel demonstrably worked. Two entrants
+above us examined the same sources --- PubChem AID 1851, ChEMBL/PubChem near-neighbours, the Octant
+CYP release --- and kept none in a scored column; a third keeps external measurements only as
+auxiliary heads. What is NOT measured is external analogues entering as PRIMARY rows of the
+ensemble's members, and item 368 names the obstacle: the panel's pAC50 is left-truncated at 4.10
+against our 1.91, its means run 5.18--5.36 against our 4.10--4.96, and its replicate spread has a
+median of 0.400, wider than our entire credible band. The opening, untested, is that we do not need
+their scale --- only rank survives, and the affine pair rewrites the level.
