@@ -106,7 +106,10 @@ def main():
                     p[te] = mdl.predict(B)
                     q[te] = RidgeCV(alphas=[100., 1000., 10000.]).fit(A, ym[trn]).predict(B)
                     del mdl
-                    torch.cuda.empty_cache()
+                    # Guarded: on a CPU-only build this is a no-op in recent torch, but a
+                    # three-hour run must not die on it three hours in.
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
                 if not np.isfinite(p).all() or not np.isfinite(q).all():
                     raise SystemExit("%s/%s: незаполненные строки" % (arm, CY[e]))
                 P.append(p); Q.append(q)
