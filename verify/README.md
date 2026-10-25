@@ -18163,3 +18163,53 @@ an untested analogue do?" is answerable only through the screen, and on CYP2C9 a
 does not discriminate. Those two isoforms are therefore underived from THESE FILES by any method,
 not merely by item 381's. Item 380's and item 379's defects were two faces of this same structure;
 this item names the structure itself.
+
+
+**383. The NCGC panel is the unselected source item 382 said we lacked, and on 99327 in-band pairs
+it measures the analogue-of-an-active effect cleanly --- but it does NOT reproduce our own screen's
+number on the two isoforms where we can check, so it cannot supply the two it was fetched for. The
+transfer control is the whole item.** `verify/k159_panelrate.py` (new), `data/ncgc/panel.csv`
+(built), `results/logs/k159_panelrate.json`.
+
+Item 382 closed the CYP2C9/CYP3A4 gap against OUR files, carefully scoped: every readout we hold
+except the single-concentration screen exists only for compounds promoted to dose-response. The
+NCGC CYP panel is the one source without that hole, and `src/fetch1851.py` already states the
+property in its own words --- "one laboratory, one protocol, one campaign, the whole library
+screened, so there is no publication filter to correct for". Inactives are reported rather than
+missing. ChEMBL is the opposite and was ruled out before any run: items 363 and 364 measured its
+selection reaching the ORDERING, not merely the level.
+
+**This is a fifth role for the panel and not a reopening of item 356**, which measured it as
+training rows (+0.0113 at member level, -0.0092 as a seventh at sign 0/2) and closed it there.
+Nothing is trained here. Preconditions, printed before anything was decided: overlap with the
+blinded test is **0 of 750** on every isoform, median pAC50 5.10 to 5.30 against our own 5.13, and
+13126 structures of which 8280 to 12828 carry a call per isoform.
+
+    фермент      n пар  базов.пар  аналог акт.  аналог неакт.  отнош.  перемеш.
+    CYP1A2       79919      0.648        0.782          0.401    1.95      1.00
+    CYP2C9       86863      0.414        0.587          0.292    2.01      1.00
+    CYP2D6       86863      0.331        0.506          0.244    2.07      1.01
+    CYP3A4       96249      0.696        0.776          0.513    1.51      0.99
+
+**The transfer control decides it, and it says no.** On CYP1A2 and CYP2D6 item 381 has an
+independent answer from our own screen --- ratios of 2.34 and 3.89 --- and the panel gives 1.95
+[1.93, 1.97] and 2.07 [2.05, 2.10]. Both lie outside, and with 99327 pairs the intervals are too
+tight for the gap to be noise. The disagreement is not a constant either: the factor is 1.20 on
+CYP1A2 and 1.88 on CYP2D6, so no single recalibration repairs it. **The panel's 2.01 for CYP2C9 and
+1.51 for CYP3A4 therefore may not be used as ours**, and the two isoforms stay underived by a second
+independent route.
+
+**What it establishes anyway, and it is not nothing.** The effect itself is real and about twofold
+on an independent unselected library of a different laboratory: an analogue of an active is 1.5 to
+2.1 times as likely to be active, with a permutation null landing at 1.00/1.00/1.01/0.99. That
+corroborates item 381's qualitative finding while refusing its number. And it shows the quantity is
+ASSAY-DEPENDENT, which forecloses importing it from the literature as well --- a rate measured in
+one campaign does not describe another.
+
+**A defect of my own, and the reason it was caught.** The first version divided a within-pairs
+numerator by a library-wide base rate, so its shuffle null could not reach 1 by construction: it
+printed 1.31 and 1.38 and read as the data failing, when the populations simply did not match. That
+is CLAUDE.md's "a query that could not have succeeded is not a negative answer" inverted --- a
+CONTROL that could not have succeeded is not a failure of the thing it controls. The ratio of the
+two within-pairs rates has no mismatch, and the null now permutes activity across structures while
+keeping the pair geometry, which is a null that can genuinely fail. It passes on all four.
