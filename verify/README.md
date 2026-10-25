@@ -17906,3 +17906,86 @@ ensemble's members, and item 368 names the obstacle: the panel's pAC50 is left-t
 against our 1.91, its means run 5.18--5.36 against our 4.10--4.96, and its replicate spread has a
 median of 0.400, wider than our entire credible band. The opening, untested, is that we do not need
 their scale --- only rank survives, and the affine pair rewrites the level.
+
+
+**377. The board scored item 374's arm and the diagnosis is the opposite of a failure: macro
+Spearman went to 0.7212, the best this project has ever had and better than the +0.0099 measured out
+of fold, while MA-ST-RAE went from 0.5357 to 0.7715 and R2 from 0.4946 to 0.1454. The ordering
+improved and the SCALE collapsed, which is item 308's sentence repeated on item 366's mechanism ---
+and the challenge's own About page says why our level is wrong.** Live leaderboard, `Lizard Wizard
+Gizzard`, submitted 2026-10-25 08:15 UTC, rank 135. `src/rankmap.py` (new),
+`results/submission/activity_submission_rankmap.csv` (md5 d100a70f8a257f3f2a071a8b2316e0bc, built,
+validated, NOT uploaded).
+
+    файл                        место   MA-ST-RAE   MA-MAE   MA-R2   MA-Spearman
+    best4 (стояло до 25.10)        64      0.5357   0.7437  0.4946        0.7062
+    stack374 (пункт 375)          135      0.7715   0.9467  0.1454        0.7212
+
+**The levels name the culprit and the organisers' own page explains it.** `best4` puts CYP2D6 at a
+mean of 3.725, a full log unit BELOW the training mean of 4.784, and scores 0.5357; `stack374` puts
+it at 4.659 and scores 0.7715. CYP1A2 is the same, 4.427 against 5.102. The About tab states that
+the test set is an analogue expansion of the **top 25 hits of CYP1A2, CYP2C9 and CYP3A4 only**, ten
+ECFP4 chemisimilars per hit bought from the Enamine catalogue, assayed against all four isoforms.
+So for any one isoform two thirds of the 750 were chosen for a DIFFERENT isoform and are largely
+inactive on it, and **CYP2D6 has no series of its own at all**. The test distribution therefore sits
+below the training set's, which was built from compounds promoted to dose-response BECAUSE they were
+hits --- and our model predicts at the training level. That also re-reads item 376: the test's high
+nearest-neighbour similarity is not generic density, it is ten-analogue series around 75 known
+parents, with the activity cliffs the page advertises.
+
+    фермент   метка обуч.   best4   stack374   полуширина полосы
+    CYP1A2         4.955    4.427      5.102              0.1642
+    CYP2C9         4.581    4.901      5.059              0.2629
+    CYP2D6         4.784    3.725      4.659              0.1358
+    CYP3A4         4.096    4.815      4.965              0.1896
+
+**`src/rankmap.py` keeps the ordering and restores the scale**: the source's per-enzyme ranks mapped
+onto the reference's sorted values, a monotone transform of our own predictions onto our own earlier
+predictions' empirical distribution, no test label involved. Four controls, all passing --- Spearman
+with the source 1.000000 on every enzyme, sorted values equal to the reference bit for bit, molecule
+names matched with the rolled comparison failing, and the output different from BOTH inputs --- plus
+the organisers' validator accepting it and its id clause shown live by feeding it a wrong id set and
+watching it refuse. The prediction registered before upload: ST-RAE at or below 0.5357 with Spearman
+near 0.7212; if it lands above 0.5357 with an identical marginal and a better ordering, then ST-RAE
+is not determined by the marginal plus the ordering and that is worth more than the places.
+
+**And the union arm, which item 376 registered and which held on its own terms and failed on
+usefulness.** `U` is `chemprop_medium` (600) concatenated with `chemeleon` (2048) and
+`surrogate_adme` (2048), 4696 columns capped at PCA 100, under the in-context learner.
+
+    арм                           ранг       sd   Δ к шести   знак    ΔST-RAE
+    шесть (отгружено)           0.6559   0.0016     +0.0000     --     +0.0000
+    семь: пять+E+S (п.374)      0.6642   0.0014     +0.0083    4/4     -0.0157
+    шесть: пять+U               0.6616   0.0013     +0.0057    4/4     -0.0095
+    семь: пять+E+U              0.6647   0.0012     +0.0088    4/4     -0.0162
+    восемь: пять+E+S+U          0.6658   0.0017     +0.0099    4/4     -0.0189
+    семь+chem: пять+chem+U      0.6634   0.0020     +0.0075    4/4     -0.0122
+    одиночный U                 0.6500   0.0033
+    одиночный E                 0.6409   0.0021
+    одиночный S                 0.6387   0.0032
+
+    corr ошибок: U с пятью 0.891; U с E 0.956; U с S 0.969
+
+**The prediction held exactly: 0.6500, inside the registered 0.645--0.660, above both E and S, and
+above item 373's bar of 0.6480 --- the first candidate ever to clear it and the highest solo rank
+this project has measured.** And it buys +0.0016 over the shipped seven, under the 0.0036 floor, and
+replacing E and S with it loses 0.0026. The last line is why: U correlates 0.956 with E and 0.969
+with S because it is ASSEMBLED FROM THEM. **So item 373's bar is necessary and not sufficient.** It
+was derived for a member displacing a slot at a correlation near 0.9; a candidate built out of
+members already standing in the composition inherits their errors and the 1/n law's missing
+interaction term stays missing.
+
+**The device control, because these arms were not produced on the GPU box.** `vsb.fbb.msu.ru`
+stopped resolving mid-task (SERVFAIL here, nothing from 8.8.8.8, 1.1.1.1 or 77.88.8.8, while the
+control query resolved), so E, S and U were run locally on CPU under torch 2.14.1 against the box's
+2.13.0+cu130. `verify/k154_union.py` refuses to print its table until the local E and S reproduce
+the committed box files: worst max|Δ| over eight arm-seeds **0.0091** against a 0.02 tolerance, and
+Spearman of local with box **0.999996**. Measured before choosing the route: CPU 82 s per fold, MPS
+1244 s, fifteen times slower.
+
+**What this closes and what it leaves.** The in-context family has now been measured on four
+representations and one concatenation, and the practical ceiling is item 374's seven-slot arm;
+nothing since has cleared the floor. Deferred with the reason rather than forgotten: `chemeleon`
+alone (it is inside U) and `minimol` (the distilled-representation class item 349 measured as
+failing). And the board has made the priority plain --- +0.0016 of out-of-fold rank is worth nothing
+against a calibration error that cost 71 places.
