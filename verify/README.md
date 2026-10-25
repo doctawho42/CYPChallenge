@@ -18213,3 +18213,47 @@ is CLAUDE.md's "a query that could not have succeeded is not a negative answer" 
 CONTROL that could not have succeeded is not a failure of the thing it controls. The ratio of the
 two within-pairs rates has no mismatch, and the null now permutes activity across structures while
 keeping the pair geometry, which is a null that can genuinely fail. It passes on all four.
+
+
+**384. The second candidate was refuted BEFORE it was built, by one count: the credible band is
+seven to ten times WIDER for low-activity compounds than for active ones, so ST-RAE is decided
+almost entirely by the actives --- and the derived MEAN, which items 381 and 383 spent the day on,
+is the wrong quantity to move.** No new script; two counts against `cyp-challenge-TRAIN_inhibition`
+and `results/preds/k155_parent_of_test.csv`.
+
+The plan was `rankmap` with CYP1A2 shifted down 0.520 to item 381's derived mean of 3.907. The
+precondition for that shift is that lowering a prediction helps where the derivation says mass sits
+--- among the inactives. It does not:
+
+    фермент   полуширина у активных (>=4)   у малоактивных (<4)   отношение
+    CYP1A2            0.1447  (n=1180)          1.0427 (n= 232)        7.21
+    CYP2C9            0.2159  (n=1026)          0.6043 (n= 259)        2.80
+    CYP2D6            0.1306  (n=1364)          1.2958 (n= 129)        9.92
+    CYP3A4            0.1114  (n=1391)          1.0728 (n= 944)        9.63
+
+**A low-activity compound's band is about a full log wide, and ST-RAE charges nothing inside the
+band.** So the inactives, which are exactly why the derived mean is low, cost almost nothing wherever
+we put them, while the actives sit in a band of +-0.14 where a uniform 0.52 shift moves a correctly
+placed prediction 3.6 half-widths outside. The shift was expected to LOSE. Item 381's mean is not
+wrong; it is simply not the quantity the metric grades.
+
+**And the active-focused reading points the opposite way on CYP2D6**, which is why this matters
+beyond cancelling one candidate. Splitting the 750 by whether the recovered parent is a hit:
+
+    фермент   родитель ХИТ        родитель не хит     выв. уровень активных   P(акт|хит)
+    CYP1A2    4.957 (n=333)       4.005 (n=417)                        5.31        0.521
+    CYP2D6    3.971 (n=308)       3.553 (n=442)                        4.98        0.671
+
+On CYP1A2 `rankmap` already separates the two groups by 0.95 and puts the hit-parent group at 4.957
+against a derived active level of 5.31, with 48 per cent of that group legitimately inactive --- the
+model is doing the right thing and needs no shift. **On CYP2D6 we sit at 3.971 where the derivation
+says 67 per cent are active at a level of 4.98**, so on the compounds the metric actually grades,
+CYP2D6 is predicted too LOW --- the opposite of what its derived mean (3.548 against `best4`'s
+3.725) suggested. Mean and actives disagree in direction, and the band ratio of 9.92 says the
+actives decide.
+
+**What this leaves.** `rankmap` is unaffected and ships tonight as registered. The CYP1A2 shift is
+cancelled, not deferred. The candidate that replaces it is a different intervention on a different
+isoform --- lifting CYP2D6's high end toward the derived active level while leaving the low end
+where the wide band makes it free --- and it needs measuring before it is built, not at five to
+midnight.
