@@ -17989,3 +17989,130 @@ nothing since has cleared the floor. Deferred with the reason rather than forgot
 alone (it is inside U) and `minimol` (the distilled-representation class item 349 measured as
 failing). And the board has made the priority plain --- +0.0016 of out-of-fold rank is worth nothing
 against a calibration error that cost 71 places.
+
+
+**378. The test set's construction is recovered from the data and matches what the organisers
+published: 750 compounds point at 132 training compounds, the top 75 cover 87.1 per cent against a
+null of 16.7, and the median parent carries exactly ten children.** `verify/k155_parents.py` (new),
+`results/logs/k155_parents.json`, `results/preds/k155_parent_of_test.csv`.
+
+The About tab states the design in one sentence: hit expansion on "the top 25 hits from CYP1A2,
+CYP2C9, and CYP3A4 by purchasing the top 10 chemisimilars (ECFP4 Tanimoto similarity) per hit
+compound from the Enamine US catalog", 25 x 3 x 10 = 750, assayed against all four isoforms. Each
+clause is falsifiable against the SMILES we hold.
+
+    1. КОНЦЕНТРАЦИЯ   750 тестовых -> 132 различных обучающих
+                      верхние 25 родителей покрывают 34.0% теста
+                      верхние 50                     65.9%
+                      верхние 75                     87.1%
+                      НУЛЬ (750 случайных обучающих)  16.7% на верхних 75, 700 различных
+
+    2. РОДИТЕЛИ в топ-25 по pIC50:  CYP2C9 21/25, CYP3A4 16/25, CYP1A2 5/25, CYP2D6 1/25
+
+    3. ДЕТЕЙ НА РОДИТЕЛЯ  медиана 10, среднее 8.7, диапазон 4..14
+       сходство ребёнка с ближайшим обучающим: медиана 0.5873, 10% 0.5156, 90% 0.7018
+
+**CYP2D6 is excluded exactly as the page says**, at 1 of 25 against 21 and 16 for the two isoforms
+that match well. CYP1A2 at 5 of 25 says "top 25 hits" was not ranked by dose-response pIC50 --- the
+primary screen or some series-level deduplication is the likelier ranking --- and it does not matter
+here, because the parent of each test compound is recovered empirically rather than inferred from
+the ranking.
+
+**This re-reads item 376 rather than contradicting it.** The test's median nearest-neighbour
+similarity of 0.5873 is not generic density: it is 75 tight series of catalogue analogues around
+known parents. Which is why the activity distribution of the 750 is derivable from the design, and
+item 377 showed that getting it wrong costs 71 places.
+
+
+**379. Measuring the parent-to-child law on DOSE-RESPONSE labels gives an answer that contradicts
+the board in the direction already refuted, and the defect is selection: a compound carries a pIC50
+only because it was promoted for screening active.** `verify/k156_childlaw.py` (new, kept as the
+wrong version because the defect recurs), `results/logs/k156_childlaw.json`.
+
+Conditioning on an active parent and reading the child's pIC50 over in-band pairs put CYP1A2 at
+5.399 and CYP2D6 at 5.355 --- above `stack374`'s 5.102 and 4.659, which had just lost 71 places, and
+far above `best4`'s 4.427 and 3.725, which scored. **When a derivation contradicts a measurement,
+the derivation is usually what is wrong**, and here it is: pIC50 exists for 1412, 1285, 1493 and 2335
+of 4905 rows, and the missingness is not random --- promotion to dose-response happened BECAUSE the
+compound screened active. So in-band pairs with both labels are hit-to-hit pairs, while the test's
+children are catalogue compounds bought for similarity and never screened at all.
+
+Two readings survive as findings in their own right. At the test's similarity the slope of child on
+parent does not survive a shuffled-pairing control on CYP1A2 or CYP2C9, and reaches only 0.277 and
+0.357 on CYP2D6 and CYP3A4 with R2 of 0.077 and 0.128. **An analogue tells you remarkably little
+about its parent's potency**, which is the activity cliffs the organisers advertise.
+
+A first version also restricted to NEAREST-NEIGHBOUR pairs and left 131 labelled pairs on CYP1A2,
+too few to say anything; the question is not about nearest neighbours but about any two compounds at
+the test's Tanimoto, so every in-band pair counts.
+
+
+**380. The primary screen has no promotion hole --- `log2fc_estimate` exists for all 4375 screened
+compounds whether or not they reached dose-response --- and on it an analogue of a hit is about
+twice as likely to be a hit. But the threshold calibrated against PROMOTION returns a negative
+Youden on CYP3A4, so two isoforms come out underived.** `verify/k157_hitrate.py` (new),
+`results/logs/k157_hitrate.json`.
+
+    КОНТРОЛЬ направления, из данных а не по предположению:
+        Spearman(log2fc, pIC50) = -0.862 / -0.896 / -0.828 / -0.936
+
+    фермент   базовая   аналог хита   аналог НЕхита   подъём
+    CYP1A2      0.230         0.478           0.178     2.08
+    CYP2D6      0.350         0.688           0.190     1.97
+    CYP2C9      0.840         0.892           0.750     1.06
+    CYP3A4          --            --              --   порог сломан
+
+**CYP3A4's calibration returned Youden J = -0.005, negative across the whole grid**: promotion there
+was not screen-driven, so the cut that best predicts promotion is no cut at all, and the 0.000 rate
+its row printed is an artefact. CYP2C9's cut called 84 per cent of compounds hits. Both are named
+and nothing was built on them --- which is the only reason this item is not a second item 379.
+
+
+**381. Calibrating the screen's threshold against ACTIVITY instead of promotion fixes the method and
+the controls then decide: the derivation holds on CYP1A2 and CYP2D6 and is REFUSED on CYP2C9 and
+CYP3A4, where a single-concentration screen does not separate actives at all --- although CYP3A4 has
+the strongest screen-to-pIC50 correlation of the four. A strong correlation among the SELECTED is
+not discrimination among the unselected, which is item 379's defect wearing a different hat.**
+`verify/k158_derive.py` (new), `results/logs/k158_derive.json`.
+
+A compound is ACTIVE when it has a pIC50 of at least 4.0, the organisers' own floor; that label is
+observed for every screened compound because "never promoted" is an observation, not a gap. The
+threshold is set where the flagged rate equals the true active rate --- the screen should call about
+as many hits as there are actives --- which leaves Youden free to be a diagnostic rather than the
+objective it was in item 380.
+
+    фермент   ро скрининг/pIC50   Youden J   вывод
+    CYP1A2              -0.862      0.814    выведен
+    CYP2D6              -0.828      0.892    выведен
+    CYP2C9              -0.896      0.139    НЕВЫВЕДЕН
+    CYP3A4              -0.936      0.151    НЕВЫВЕДЕН
+
+    фермент   базовая   аналог хита [95%]      аналог НЕхита [95%]
+    CYP1A2      0.270   0.521 [0.464, 0.578]   0.223 [0.192, 0.254]
+    CYP2D6      0.312   0.671 [0.621, 0.725]   0.172 [0.143, 0.202]
+    CYP2C9      0.235   0.240 [0.190, 0.287]   0.349 [0.315, 0.385]   порядок ОБРАЩЁН
+    CYP3A4      0.234   0.153 [0.108, 0.202]   0.265 [0.235, 0.299]   порядок ОБРАЩЁН
+
+**The ordering control fails on exactly the two isoforms whose Youden is low**, which is one story
+and not two: where the screen cannot tell an active from an inactive, "the parent is a hit" is noise
+and the conditional rate is meaningless. On the two where it works, the bootstrap interval of the
+conditional rate excludes the base rate on both sides.
+
+    фермент   P(активен)   выведено   sd   best4   rankmap   stack374
+    CYP1A2         0.355      3.907 1.197   4.427     4.427      5.102
+    CYP2D6         0.377      3.548 1.172   3.725     3.725      4.659
+    (CYP2C9 и CYP3A4 печатаются, но НЕ ВЫВЕДЕНЫ и использованию не подлежат)
+
+**CYP2D6 converges with the board by an independent route**: 3.548 derived against `best4`'s 3.725,
+a file whose levels were tuned against the leaderboard over items 308, 313 and 314 and which scored
+MA-ST-RAE 0.5357. Two methods that share no input agreeing to within 0.18 is the strongest support
+either has. **CYP1A2 disagrees by 0.52 and says to go lower**, which is a claim worth one upload and
+a registered prediction, not a change to make alongside others.
+
+**Two defects of my own controls, recorded because both failed quietly.** The direction control
+computed its Spearman over an array still holding NaN where the screen was absent and printed `nan`
+for CYP3A4 instead of failing; it now requires both sides finite and raises. And Youden as an
+OBJECTIVE lands on a permissive cut under class imbalance --- it flagged 63 per cent on CYP2C9 and
+CYP3A4 against a true active rate of 23.5 --- which inverted the ordering control rather than
+tripping it. Matching the flagged rate to the true rate leaves that control able to fail, and it
+promptly did.
