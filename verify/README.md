@@ -18116,3 +18116,50 @@ OBJECTIVE lands on a permissive cut under class imbalance --- it flagged 63 per 
 CYP3A4 against a true active rate of 23.5 --- which inverted the ordering control rather than
 tripping it. Matching the flagged rate to the true rate leaves that control able to fail, and it
 promptly did.
+
+
+**382. Emax cannot rescue the two underived isoforms, and the preconditions said so in minutes: it
+is co-extensive with pIC50 to the compound, so it carries the identical selection hole, and item 72
+already measured away its dynamic range. The larger fact behind that is worth more than the check
+--- this dataset holds exactly ONE measurement made before selection, and everything else is
+downstream of promotion.** No new script; the journal and two counts closed it.
+
+Item 381 left CYP2C9 and CYP3A4 underived because the single-concentration screen does not separate
+actives there (Youden 0.139 and 0.151). The obvious next candidate was the per-compound
+`{CYP}_EmaxVsPosCtrl_direct_inhibition` column in `data/cyp-challenge-TRAIN_Emax.csv`. Searching the
+journal FIRST returned 22 hits, with a `ST-RAE` control at 253 proving the grep and the search term
+in English as item 305 requires. Two of those hits answer it outright: item 72, "Emax has no dynamic
+range, which kills a proposal and one of my own claims", and the line recording that every compound
+with a direct pIC50 also has an Emax.
+
+Verified against the data rather than trusted, because a sentence that reads as settled context is
+exactly the kind that rots:
+
+    фермент   Emax есть   pIC50 есть   Emax БЕЗ pIC50   медиана Emax      IQR
+    CYP1A2         1412         1412                0        -0.9936   0.0719
+    CYP2C9         1285         1285                0        -1.0207   0.1056
+    CYP2D6         1493         1493                0        -1.0268   0.0482
+    CYP3A4         2335         2335                0        -0.9754   0.0204
+
+**Both preconditions fail, independently.** The counts match the pIC50 counts exactly and
+Emax-without-pIC50 is zero everywhere, so Emax says nothing about an unpromoted compound --- which
+was the only thing it was wanted for. And the dynamic range confirms item 72: an IQR of 0.02 to 0.11
+around a median of -1, with **CYP3A4, one of the two isoforms needing rescue, the narrowest of the
+four at 0.0204**.
+
+**A hole in my own first query, caught and closed.** That first count restricted itself to the
+intersection of the two tables, so its zero could not have come out any other way for the 1241
+compounds the Emax file holds BEYOND the inhibition table --- a query that could not have succeeded,
+which is not a negative answer. Re-run on those 1241: Emax is present **2 times out of 4964**
+compound-isoform slots, with a must-succeed control showing SMILES non-empty on all 1241, so the
+zeros are a real absence and not a broken index. Those compounds appear in neither the screen, nor
+`rows.csv`, nor the test set.
+
+**What this closes, and it is a closure rather than a failure.** The project holds exactly one
+readout taken before selection --- the single-concentration screen, `log2fc_estimate` for all 4375
+screened compounds. pIC50, Emax and the TDI curves are all conditioned on promotion, which was
+driven by the very activity they would be used to predict. So any question of the form "what would
+an untested analogue do?" is answerable only through the screen, and on CYP2C9 and CYP3A4 the screen
+does not discriminate. Those two isoforms are therefore underived from THESE FILES by any method,
+not merely by item 381's. Item 380's and item 379's defects were two faces of this same structure;
+this item names the structure itself.
