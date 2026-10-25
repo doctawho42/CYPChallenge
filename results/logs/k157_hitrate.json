@@ -1,0 +1,76 @@
+{
+ "band": [
+  0.5156,
+  0.7018
+ ],
+ "direction": {
+  "CYP1A2": -0.8615538130304111,
+  "CYP2C9": -0.8964950457409536,
+  "CYP2D6": -0.8280673065856728,
+  "CYP3A4": -0.9359622272414149
+ },
+ "thresholds": {
+  "CYP1A2": {
+   "threshold": -1.33819741184,
+   "youden": 0.6828471832487363,
+   "base_rate": 0.23017142857142858,
+   "promoted_share": 0.32274285714285716
+  },
+  "CYP2C9": {
+   "threshold": -0.16009159354399996,
+   "youden": 0.20670419200886514,
+   "base_rate": 0.84,
+   "promoted_share": 0.2937142857142857
+  },
+  "CYP2D6": {
+   "threshold": -0.5644872796499993,
+   "youden": 0.9868147120055517,
+   "base_rate": 0.34994285714285717,
+   "promoted_share": 0.34125714285714287
+  },
+  "CYP3A4": {
+   "threshold": -4.9551771873799995,
+   "youden": -0.0048600407428565275,
+   "base_rate": 0.010057142857142857,
+   "promoted_share": 0.4125714285714286
+  }
+ },
+ "rates": {
+  "CYP1A2": {
+   "n_pairs": 445,
+   "base_rate": 0.23017142857142858,
+   "analog_of_hit": 0.4778761061946903,
+   "analog_of_nonhit": 0.17771084337349397,
+   "lift": 2.0761747414118865,
+   "n_hit_parents": 226,
+   "active_pIC50_median": 5.13333409
+  },
+  "CYP2C9": {
+   "n_pairs": 445,
+   "base_rate": 0.84,
+   "analog_of_hit": 0.8920308483290489,
+   "analog_of_nonhit": 0.75,
+   "lift": 1.0619414861060106,
+   "n_hit_parents": 778,
+   "active_pIC50_median": 4.621326012
+  },
+  "CYP2D6": {
+   "n_pairs": 445,
+   "base_rate": 0.34994285714285717,
+   "analog_of_hit": 0.6884272997032641,
+   "analog_of_nonhit": 0.189873417721519,
+   "lift": 1.9672563267157284,
+   "n_hit_parents": 337,
+   "active_pIC50_median": 4.726028418
+  },
+  "CYP3A4": {
+   "n_pairs": 445,
+   "base_rate": 0.010057142857142857,
+   "analog_of_hit": 0.0,
+   "analog_of_nonhit": 0.004514672686230248,
+   "lift": 0.0,
+   "n_hit_parents": 4,
+   "active_pIC50_median": 4.266410545
+  }
+ }
+}

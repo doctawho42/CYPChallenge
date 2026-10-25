@@ -1,0 +1,14 @@
+{
+ "n_distinct_parents": 132,
+ "coverage_top75": 0.8706666666666667,
+ "null_distinct": 700,
+ "null_coverage_top75": 0.16666666666666666,
+ "parents_in_top25": {
+  "CYP1A2": 5,
+  "CYP2C9": 21,
+  "CYP2D6": 1,
+  "CYP3A4": 16
+ },
+ "children_median": 10.0,
+ "nn_sim_median": 0.5873016119003296
+}
