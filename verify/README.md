@@ -18376,7 +18376,42 @@ entrant, reaches rho 0.7516 with that configuration; we are at 0.7212 and the le
 not publish. A faithful replication is worth about +0.03 of rank and a move into the first dozen,
 not the top of the board. The remaining 0.05 is not visible anywhere in the readable field.
 
-**Blocked, and the blocker moved rather than cleared.** `vsb.fbb.msu.ru` resolves again today
-(93.180.63.165, with huggingface.co resolving as the control that had to succeed), against
-yesterday's SERVFAIL --- but port 22 refuses, with a control connection to huggingface.co:443
-succeeding, so the negative is real. The GPU is reachable by DNS and not by SSH.
+**Not blocked, and the paragraph that stood here was WRONG in the way this file warns about most.**
+It reported "port 22 refuses, with a control connection to huggingface.co:443 succeeding, so the
+negative is real" --- but the jump node listens on **22022**, which `~/.ssh/config` has recorded all
+along, so the probe could not have succeeded and was never a negative answer. The control I paired
+it with proved only that the network works, not that the suspect clause did; CLAUDE.md names exactly
+this shape and I walked into it. The jump node answers on the first try, and all three servers are
+reachable: `gpu` (3x RTX 2080 Ti, 48 cores, 92 GB), `ripper2` (4x RTX 3080, 128 cores, 247 GB) and
+`ripper3` (2x RTX 3080, 128 cores, 503 GB), with one idle card on each of the last two.
+
+
+**387. The registered prediction held to the digit and the board moved 131 to 57: `rankmap` scored
+MA-ST-RAE 0.5137 against the registered "at or below 0.5357", with MA-Spearman 0.7212 exactly as
+item 377 said it must. And it carries a fact the project did not have --- at a FIXED marginal, a
+better ordering is worth 0.0220 of ST-RAE.** Live leaderboard, `Lizard Wizard Gizzard`, submitted
+2026-10-26 08:29 UTC.
+
+    файл                     место   MA-ST-RAE   MA-MAE   MA-R2   MA-Spearman   MA-Kendall
+    best4 (до 25.10)            64      0.5357   0.7437  0.4946        0.7062            -
+    stack374 (пункт 375)       131      0.7715   0.9467  0.1454        0.7212       0.5457
+    rankmap (пункт 377)         57      0.5137   0.7297  0.5166        0.7212       0.5457
+
+Item 377 registered both halves before the upload. Spearman had to be unchanged, because a rank map
+is monotone and Spearman is invariant under it --- 0.7212 against 0.7212, to four places, which is
+the control confirming the transform did what it claimed on the live data rather than only on ours.
+ST-RAE was predicted at or below `best4`'s 0.5357 and came in at **0.5137**.
+
+**That 0.0220 is the new information.** `rankmap`'s marginal distribution is `best4`'s EXACTLY, bit
+for bit by construction, and its ordering is `stack374`'s. So the improvement cannot come from
+placement, scale, or spread: at a fixed marginal, the only thing that changed was which compound
+received which value, and it bought 0.0220 of the primary metric. Item 357 computed the floor over
+orderings and bounded placement's own headroom at 0.0386; this is the complementary quantity
+measured on the board rather than bounded in sample, and it says a better ordering pays twice ---
+once in Spearman, where it is the metric, and again in ST-RAE, where it is not supposed to matter.
+
+**Three candidates were built for this window and two were killed by measurement before costing an
+upload.** `mix2d6` (item 385) lost 0.0918 of macro penalty out of fold against the affine pair; the
+CYP1A2 shift (item 384) was refuted by a band ratio of 7 to 10 before it was written. The discipline
+of one change per upload with a registered prediction has now returned a confirmed hit and two
+cheap refusals in two days.
