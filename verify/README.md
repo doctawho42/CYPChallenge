@@ -18307,3 +18307,76 @@ deliberately wrong id set. CYP2D6 moves from mean 3.725 sd 0.462 to mean 3.548 s
 not be uploaded.** `rankmap` is still the queued candidate and is still unuploaded --- the board at
 08:39 MSK on 26 October still shows 2026-10-25 08:15 UTC and ST-RAE 0.7715, rank 131, so the
 registered prediction from item 377 remains untested and the window is open.
+
+
+**386. The ordering gap is diagnosed: our pairwise discrimination DECAYS MONOTONICALLY with
+structural similarity on CYP1A2 and CYP2D6, and at the similarity the test actually occupies CYP2D6
+reaches 0.533 against a coin flip of 0.5 --- on a test set that is nothing BUT analogue pairs. The
+deficit is activity-cliff resolution, which is a representation problem, and it lands on the one
+isoform item 316 measured as 62 per cent of our metric deficit.** Prints only, four seeds over
+`members_seed{0..3}.json`.
+
+Placement closed yesterday: item 357 bounds the whole in-sample headroom at 0.0386, item 316
+measured out-of-fold placement negative, and item 385 priced committing at our ordering at 0.0918.
+So the gap to the leaders is ORDERING --- 0.7212 against 0.8042 --- and this file asks where our
+ordering actually fails. Since Spearman is invariant to any monotone transform, the quantity is not
+how far apart our predictions sit but how often the SIGN of a pair's difference is right.
+
+    точность знака       CYP1A2   CYP2C9   CYP2D6   CYP3A4     n пар
+    сходство 0.00-0.20    0.699    0.751    0.669    0.808   2511151
+             0.20-0.30    0.688    0.743    0.635    0.804    203966
+             0.30-0.40    0.659    0.742    0.595    0.794      6601
+             0.40-0.52    0.632    0.787    0.555    0.819      1841
+             0.52-0.70    0.608    0.741    0.533    0.783      1261
+             0.70-1.01        -        -        -    0.756       125
+
+**CYP1A2 and CYP2D6 decay monotonically; CYP2C9 and CYP3A4 are flat.** The band 0.52-0.70 is the
+test's own 10th-to-90th percentile of parent similarity (item 378), and the whole test lives there,
+because it is 75 series of about ten catalogue analogues each. At n=1261 the standard error is
+0.014, so CYP2D6's 0.533 sits about 2.3 of them above chance: **on the test's own geometry we are
+very nearly blind to which of two analogues is the more active on CYP2D6.**
+
+Three corroborating cuts, same four seeds:
+
+    на парах-АНАЛОГАХ против СЛУЧАЙНЫХ пар   аналоги   случайные   падение
+    CYP1A2                                     0.612       0.700     -0.089
+    CYP2C9                                     0.750       0.752     -0.002
+    CYP2D6                                     0.568       0.665     -0.098
+    CYP3A4                                     0.775       0.806     -0.031
+
+    |Δ| на парах-аналогах        метки   предсказания   сглажено
+    CYP1A2                       1.023          0.265      3.86x
+    CYP2C9                       0.912          0.340      2.68x
+    CYP2D6                       0.666          0.168      3.95x
+    CYP3A4                       0.868          0.554      1.57x
+
+**The labels say similarity carries almost no information about activity here**: on CYP1A2 two
+compounds at Tanimoto 0.52-0.70 differ by 1.023 of pIC50 against 1.090 for two RANDOM compounds, and
+on CYP2C9 analogues differ MORE than random pairs (0.912 against 0.850). Our predictions behave as
+though the opposite were true, differing by 0.265 where the labels differ by 1.023. The smoothing
+itself cannot hurt Spearman --- it is monotone --- but it is the signature of the model treating
+similarity as a smoothness prior that this data does not support.
+
+And on the blinded test, 62 to 76 per cent of our predicted variance is BETWEEN series rather than
+within them, while our predictions' Spearman with the parent's own measured label runs 0.145 /
+0.417 / 0.616 / 0.455. A simulation at equal between/within variance, ordering the 132 recovered
+series perfectly and randomising inside them, reaches only rho 0.385 --- we are at 0.7212, so
+within-series ordering is being done, just badly where it matters.
+
+**What this makes the wide jump.** Morgan fingerprints of two analogues at Tanimoto 0.6 differ in
+few bits, and a ridge or GP over them returns nearly equal predictions by construction; no
+re-weighting of such members fixes a cliff. The fix has to change the REPRESENTATION, which is
+exactly what item 364 independently named as the one thing left sized for first place --- "a
+warm-started multi-head fine-tune over challenge AND ChEMBL AND qHTS jointly" --- and exactly what
+the three open-code entrants above us run (per-source heads, scales never merged, left-censored
+bounds for inactives, item 316). **Two independent lines now point at the same build.**
+
+**The honest ceiling, stated so nobody expects first place from it.** briford, the best readable
+entrant, reaches rho 0.7516 with that configuration; we are at 0.7212 and the leader at 0.8042 does
+not publish. A faithful replication is worth about +0.03 of rank and a move into the first dozen,
+not the top of the board. The remaining 0.05 is not visible anywhere in the readable field.
+
+**Blocked, and the blocker moved rather than cleared.** `vsb.fbb.msu.ru` resolves again today
+(93.180.63.165, with huggingface.co resolving as the control that had to succeed), against
+yesterday's SERVFAIL --- but port 22 refuses, with a control connection to huggingface.co:443
+succeeding, so the negative is real. The GPU is reachable by DNS and not by SSH.
