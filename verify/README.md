@@ -18257,3 +18257,53 @@ cancelled, not deferred. The candidate that replaces it is a different intervent
 isoform --- lifting CYP2D6's high end toward the derived active level while leaving the low end
 where the wide band makes it free --- and it needs measuring before it is built, not at five to
 midnight.
+
+
+**385. The mixture placement is built as asked and measured DEAD: +0.0918 of macro penalty against
+the affine pair, sign 0/4 on every isoform, and that is with ORACLE pools and the ORACLE active
+fraction taken fold-wise. Item 316 was right by a far larger margin than it recorded --- and the
+reason generalises: a wide band for inactives is free only if you correctly identify the
+inactives.** `verify/k160_mixplace.py` (new), `results/logs/k160_mixplace.json`,
+`results/submission/activity_submission_mix2d6.csv` (built, validated, NOT recommended).
+
+Item 384 found the lever that motivated this: the credible band is seven to ten times wider for
+low-activity compounds, so ST-RAE is decided by the actives, and the affine family cannot exploit
+that because it moves everything together. A mixture placement can put the actives precisely and
+dump the rest where the band is wide. CYP2D6 was the target on item 316's own numbers --- of the
+0.0721 separating us from the best team at our ordering, "CYP2D6 alone is 0.0449, sixty-two per
+cent", and CYP2D6 is the one isoform transferring WORSE to the board than our CV (-0.0424 against
++0.1642 and +0.1016).
+
+Five cached members per seed composed by the shipped unweighted mean, four seeds, the baseline being
+`submit.fit_shrinkage` itself with its globals set rather than a re-implementation. Pools and
+fraction built fold-wise from the other folds, never from the labels being scored, because item
+316's in-sample 0.0223 was "pure selection contamination".
+
+    фермент    аффинная   смесь ВНЕ   смесь в выб.   оракул   Δ вне-афф.   знак
+    CYP1A2       0.3691      0.4888         0.4821   0.0000      +0.1198    0/4
+    CYP2C9       0.1712      0.2292         0.2206   0.0000      +0.0580    0/4
+    CYP2D6       0.3504      0.4879         0.4874   0.0000      +0.1374    0/4
+    CYP3A4       0.2221      0.2740         0.2698   0.0000      +0.0519    0/4
+    МАКРО        0.2782      0.3700         0.3650   0.0000      +0.0918
+
+Both controls hold: the oracle arm, placing every compound at the centre of its own band, scores
+0.0000 everywhere, so the scorer responds; and the in-sample version is no worse than the
+out-of-fold one on every isoform, so the fold machinery is doing something.
+
+**WHY it loses, which is worth more than the verdict.** The affine pair HEDGES --- it keeps
+predictions near the middle of the label range, where most bands are. The mixture COMMITS: it sends
+62 per cent of compounds down to the inactive pool's quantiles, which reach 2.5, and 38 per cent up
+to the actives'. For a compound whose true band is narrow and mid-range, being dumped at 2.5 is an
+enormous error, and at a Spearman of about 0.72 we cannot tell which compounds those are. **The wide
+inactive band is only free to someone who knows which compounds are inactive.** That closes not just
+this arm but the whole family item 384's band ratio appeared to open: any placement that pushes
+compounds to the extremes needs ordering accuracy we do not have, and the measured price of
+committing at our ordering is 0.0918.
+
+**The candidate exists and is sound as an artefact**, so the decision stays the user's: `rankmap`
+with CYP2D6 alone re-placed, the other three isoforms bit-for-bit identical, Spearman with the
+source 1.000000 on the changed column, the organisers' validator accepting it and refusing a
+deliberately wrong id set. CYP2D6 moves from mean 3.725 sd 0.462 to mean 3.548 sd 1.304. **It should
+not be uploaded.** `rankmap` is still the queued candidate and is still unuploaded --- the board at
+08:39 MSK on 26 October still shows 2026-10-25 08:15 UTC and ST-RAE 0.7715, rank 131, so the
+registered prediction from item 377 remains untested and the window is open.
