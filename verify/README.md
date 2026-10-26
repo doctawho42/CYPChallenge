@@ -18415,3 +18415,60 @@ upload.** `mix2d6` (item 385) lost 0.0918 of macro penalty out of fold against t
 CYP1A2 shift (item 384) was refuted by a band ratio of 7 to 10 before it was written. The discipline
 of one change per upload with a registered prediction has now returned a confirmed hit and two
 cheap refusals in two days.
+
+
+**388. The joint multi-head fine-tune is built and running, and the two tuning questions are
+answered against my own hypotheses: head CAPACITY was the blocker, and the warm start is a WEAK
+prior that must be allowed to move rather than protected. Best so far 0.5996 of macro rank on fold
+0 against the shipped composition's 0.6417 --- not yet competitive, and the question that decides
+it is not this one.** `src/jointft.py`, `verify/k161_ftmember.py` (both new), runs on `ripper3`.
+
+The build is the configuration items 350 and 364 left standing as "sized for first place" and item
+386 independently diagnosed as the fix: a shared BondMessagePassing encoder (d_h 2048, depth 6,
+relu, mean) warm-started from `openadmet/cyp1a2-cyp2d6-cyp3a4-cyp2c9-chemeleon-v1`, with **one head
+per source and scales never merged** and the panel's **28595 censored cells as one-sided bounds**.
+The bound is read off the data rather than assumed: fitted pAC50 bottoms out at 4.4 on all five
+isoforms, with the 1st percentile exactly 4.4 and nothing below 4.0, so "censored" means true pAC50
+< 4.4 and the loss charges only above it. Our own labels hold 232 / 259 / 129 / 944 points below
+pIC50 4; this adds 28595.
+
+**Two bugs its own controls caught, and both would have been invisible in the score alone.**
+Pivoting the panel on pAC50 silently dropped **4001 of 13126 structures** --- precisely those tested
+and found inactive on every isoform, i.e. the most informative bounds in the source --- and the
+overlap control caught it by reporting 133 against item 383's recorded 183. And `nan_to_num` on the
+targets turned every ABSENT label into 0.0, which after standardisation is the enzyme's own mean, so
+the model was supervised to predict the mean on every unmeasured cell: validation Spearman fell from
+0.52 to 0.40 while the training loss fell, which is the signature of exactly that.
+
+    голова (фолд 0)                        лучшее макро ро
+    2048 -> 1024 -> 1024 -> 4                       0.5289
+    2048 ->  256 -> 4                               0.5725
+    ЛИНЕЙНАЯ 2048 -> 4                              0.5889
+    линейная, lr кодировщика 3e-4                   0.5996
+    линейная, вес чужих источников 0.3              0.5822
+    кодировщик ЗАМОРОЖЕН 5 эпох                     0.4900
+    отгружаемый состав (пункт 316)                  0.6417
+
+**Both hypotheses I started with were wrong, and the measurement says so cleanly.** I expected a
+large head to help and freezing to protect the warm start. A 2048x1024x1024 head is ~3.1M parameters
+against 3900 compounds and overfits inside ONE epoch --- with the encoder frozen, validation still
+fell from 0.490 to 0.437 over five epochs, which can only be the head. And freezing was worse than
+any unfrozen arm, while tripling the encoder's learning rate was the single biggest gain. That is
+consistent with what items 363 and 364 already measured about this checkpoint: its direct transfer
+to our library is rho 0.2881 and its frozen probe 0.4376, so it is a weak prior, not a good one.
+Fine-tuning has moved 0.4376 to 0.5996; the composition is at 0.6417.
+
+**The question that decides this branch is not the solo rank**, and `verify/k161_ftmember.py` is
+written to ask the right one before any more tuning. A solo rank below ours settles nothing --- the
+composition is five members over engineered features and briford, the best readable entrant,
+averages four nets. It tests the CONVERSE of item 377: there a candidate CLEARED item 373's bar of
+0.6480 and still failed, because it correlated 0.956 and 0.969 with the members it was assembled
+from. Here a candidate below the bar carries a representation nothing else in the composition has.
+The honest expectation is still failure --- items 176, 182, 191, 194 and 356 are five member-level
+gains that died over the ensemble --- so the floor is 0.0036 and the sign must hold across seeds.
+
+**Infrastructure, recorded because it recurs.** The jump node's DNS failed again mid-session, the
+same intermittent fault item 377 recorded: `vsb.fbb.msu.ru` stopped resolving while `huggingface.co`
+resolved and a control connection to port 443 succeeded. Connecting by its IP found port 22022 open
+to `nc` and refusing ssh moments later, and twenty alternating attempts over four minutes all
+failed. The runs are under `nohup` and keep going; nothing is lost but the latency.
