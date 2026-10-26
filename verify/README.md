@@ -18472,3 +18472,52 @@ same intermittent fault item 377 recorded: `vsb.fbb.msu.ru` stopped resolving wh
 resolved and a control connection to port 443 succeeded. Connecting by its IP found port 22022 open
 to `nc` and refusing ssh moments later, and twenty alternating attempts over four minutes all
 failed. The runs are under `nohup` and keep going; nothing is lost but the latency.
+
+
+**389. The joint fine-tune does NOT pay as a member: -0.0039 at sign 0/2 against the composition
+that actually ships. The first answer was +0.0037 at 2/2 and said it DID --- the difference is
+entirely the baseline, and checking it flipped the verdict. It also settles the converse of item
+377: errors genuinely decorrelated at 0.825 do not rescue a member whose solo rank is below the
+bar.** `verify/k161_ftmember.py`, two seeds, full five-fold OOF from `src/jointft.py` on `ripper3`.
+
+    база                                    вложение   знак   вердикт
+    плоское среднее пяти членов   0.6333     +0.0037    2/2   «платит»
+    SOLO, пункты 282-285          0.6416     -0.0039    0/2   НЕ ПЛАТИТ
+
+**The baseline was wrong and `results/submission/stack374.meta.json` said so.** The shipped
+composition is not a flat mean of five: it carries a per-enzyme SOLO structure --- CYP1A2 from
+`поферментно/GP/ствол`, CYP2C9 and CYP3A4 from `GP/ствол` alone, CYP2D6 from all five. Measuring
+against the flat mean is item 339's defect exactly, the one that overstated a TDI result by about a
+third, and here it was worth 0.0076 of swing, which is twice the floor and enough to invert the
+answer. The corrected baseline reproduces item 316's recorded 0.6417 at **0.6416**, which is the
+control saying the composition is now the right one.
+
+**What the arm is, measured honestly.** Five folds, two seeds:
+
+    сид 0   0.5984 0.5620 0.5683 0.5328 0.5535   среднее 0.5630
+    сид 1   0.5908 0.5752 0.5683 0.5444 0.5546   среднее 0.5667
+
+**My tuning number was inflated by a selection effect of my own making.** All eight configurations
+were swept on fold 0, which turns out to be the easiest of the five: the best fold-0 figure was
+0.5996 and the honest five-fold mean is 0.5634. The gap to the composition is 0.078, not the 0.042
+I reported from fold 0 alone.
+
+**And this answers a question item 377 left open.** There, a candidate CLEARED item 373's bar of
+0.6480 and still failed, because it correlated 0.956 and 0.969 with the members it was built from,
+and the item concluded the bar is necessary and not sufficient. The converse had never been tested:
+a candidate BELOW the bar whose errors are genuinely decorrelated. This arm is exactly that ---
+error correlation with the composition is **0.825**, well under item 289's 0.93 gate and far under
+item 377's 0.956 --- and it still loses 0.0039 at 0/2. **So decorrelation does not substitute for
+rank.** Both conditions are necessary and neither alone suffices.
+
+**Sixth of its kind.** Items 176, 182, 191, 194 and 356 are five member-level results that died over
+the ensemble; this is the sixth, and the first where the candidate came from a genuinely different
+representation rather than a re-combination of the existing one.
+
+**What this closes and what it leaves.** The representation branch --- items 350 and 364's "sized
+for first place", the one item 386 diagnosed as the fix for our activity-cliff deficit --- does not
+reach the shipped composition as a single net and does not add to it. Fine-tuning did real work,
+moving the checkpoint from a frozen probe's 0.4376 (item 363) to 0.5634, and that is still 0.078
+short. What remains untested on this branch is briford's actual configuration rather than half of
+it: **four nets averaged**, where our single net is compared against a five-member ensemble. That is
+the only form of it the readable field supports, and it is the only thing left on the axis.

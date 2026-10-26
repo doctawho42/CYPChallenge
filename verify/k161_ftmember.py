@@ -35,7 +35,15 @@ from scipy.stats import spearmanr
 
 from submit import CYPS
 
-MEMB = ["поферментно", "пул", "GP", "гребневая", "ствол"]
+ALL5 = ["поферментно", "пул", "GP", "гребневая", "ствол"]
+# The shipped composition is NOT a flat mean of five. `results/submission/stack374.meta.json`
+# records a per-enzyme SOLO structure from items 282-285, and measuring against the flat mean is
+# exactly item 339's defect -- a real gain stated against an arm that does not ship, which
+# overstated a TDI result by about a third.
+SOLO = {"CYP1A2": ["поферментно", "GP", "ствол"],
+        "CYP2C9": ["GP", "ствол"],
+        "CYP2D6": ALL5,
+        "CYP3A4": ["GP", "ствол"]}
 FLOOR = 0.0036
 
 
@@ -55,11 +63,14 @@ def main():
     Y = np.stack([tr["%s_pIC50_direct_inhibition" % c].to_numpy(float) for c in CYPS], 1)
     M = np.isfinite(Y)
 
-    print("  %-26s %9s %9s %11s %9s" % ("арм", "одиночн.", "корр.", "шестым", "знак"))
+    print("  состав по пунктам 282-285: %s"
+          % ", ".join("%s %d чл." % (c, len(SOLO[c])) for c in CYPS))
+    print("  %-26s %9s %9s %11s %9s" % ("арм", "одиночн.", "корр.", "+1 членом", "знак"))
     base_all, ft_all, nest_all = [], [], []
     for si, path in enumerate(a.ft[: a.seeds]):
         mem = json.load(open(RES + "preds/members_seed%d.json" % si))
-        P5 = [np.mean([np.asarray(mem[m][e], float) for m in MEMB], 0) for e in range(4)]
+        nmemb = [len(SOLO[c]) for c in CYPS]
+        P5 = [np.mean([np.asarray(mem[m][e], float) for m in SOLO[CYPS[e]]], 0) for e in range(4)]
         ft = json.load(open(path))
         # the fine-tune's folds are keyed by fold index with their own row indices
         F = [np.full(int(M[:, e].sum()), np.nan) for e in range(4)]
@@ -79,7 +90,8 @@ def main():
             continue
         b = macro(P5, Y, M)
         f = macro(F, Y, M)
-        n6 = macro([(5 * P5[e] + F[e]) / 6 for e in range(4)], Y, M)
+        # each enzyme keeps its OWN member count, so the new member enters with the right weight
+        n6 = macro([(nmemb[e] * P5[e] + F[e]) / (nmemb[e] + 1) for e in range(4)], Y, M)
         corr = float(np.mean([
             spearmanr(P5[e] - Y[M[:, e], e], F[e] - Y[M[:, e], e]).statistic for e in range(4)]))
         base_all.append(b); ft_all.append(f); nest_all.append(n6)
@@ -90,7 +102,7 @@ def main():
     print("\n  состав как есть            %.4f (sd %.4f)" % (np.mean(base_all), np.std(base_all)))
     print("  дообучка одиночным рангом  %.4f (sd %.4f), планка пункта 373 = 0.6480"
           % (np.mean(ft_all), np.std(ft_all)))
-    print("  ВЛОЖЕНА ШЕСТЫМ             %+.4f, знак %d/%d, пол %.4f"
+    print("  ВЛОЖЕНА ДОП. ЧЛЕНОМ        %+.4f, знак %d/%d, пол %.4f"
           % (d.mean(), int((d > 0).sum()), len(d), FLOOR))
     print("  вердикт: %s" % ("ПЛАТИТ" if d.mean() > FLOOR and (d > 0).all() else "НЕ ПЛАТИТ"))
     return 0
