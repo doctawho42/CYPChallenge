@@ -18615,3 +18615,56 @@ seed 0, which the rerun showed by reproducing 0.4957 exactly. The actual differe
 dead-zone pass, and `verify/k87_maxfeat2.py` had the whole construction written down already. **The
 w=0 control in k163 is what settles it: a faithful rebuild reproduces the cache to +0.0000, so the
 losses below it are the bounds and nothing else.**
+
+
+**391. The per-enzyme placement simulation is VOID, and the control that killed it is the one that
+had to succeed: rank-mapping onto the shipped marginal makes CYP2D6's ST-RAE on OUR labels go from
+0.8403 to 2.3761, while the board scores that same column at 0.6808. Optimising against our own
+distribution optimises undoing the rank map.** `verify/k164_d6place.py` (new, kept as the void
+version), `results/logs/k164_d6place.json`.
+
+An outside agent re-derived item 354's per-enzyme table on today's board and found a gap item 367
+could not have seen: item 367 closed item 354 with two instruments that both match on MACRO rho,
+while item 354's 0.0872 was computed PER ENZYME, and `furtivepeony` carries our macro rho to four
+decimals with ST-RAE 0.4645 against our 0.5137. On CYP2D6 specifically, 10 of the 53 entrants within
+0.02 of our rho beat our ST-RAE, our MAE of 1.2207 is the worst of the eleven and our R2 of 0.1453
+the lowest --- with the specificity control that on CYP1A2 we sit at the field median (MAE 0.7584
+against 0.7472, R2 0.5485 against 0.5539). **That board evidence stands and does not depend on
+anything below.**
+
+What does not stand is my attempt to turn it into a transform. `k164` put the composition's OOF
+predictions onto the shipped column's marginal and gridded (shift, multiplier) against the band
+hinge, reweighted to item 381's derived test composition. It found CYP2D6 wanting expansion at
+x=1.40, shift +0.50, stable across folds (1.35 to 1.50) and alone among the four in wanting
+expansion at all --- out of fold, with the rho-invariance control holding at 1e-12.
+
+**Then the diagnostic that voids it:**
+
+    фермент   состав вне фолда   после ранг-карты   ДОСКА
+    CYP1A2              0.7594             1.2392   0.5392
+    CYP2C9              0.5549             0.8413   0.3898
+    CYP2D6              0.8403             2.3761   0.6808
+    CYP3A4              0.4135             0.8429   0.4450
+
+The left column reproduces item 357's recorded "как есть" row to the digit --- 0.7594 / 0.5549 /
+0.8403 / 0.4135 --- which is the must-succeed control saying the machinery is right. The middle
+column is what the simulation was optimising. **It is 1.70 of ST-RAE away from the board on CYP2D6
+and worse than doing nothing on every isoform**, because `best4`'s marginal was tuned against the
+BOARD over items 308, 313 and 314, not against our labels. So "expand CYP2D6 by 1.40" is mostly
+"undo the rank map", and the rank map is the thing that just moved us 74 places. This is item 367's
+error two --- optimising a distribution the metric does not score --- wearing different clothes, and
+I walked into it with its own item open in front of me.
+
+**Two things I now believe and one I do not.** The board signature on CYP2D6 is real and
+triangulated across three columns with a specificity control. The mechanism named in item 366 is
+real: the shipped CYP2D6 column carries sd 0.462 against 0.76 to 0.94 on the other three, k = 0.34
+against 0.70 to 0.83. What I do NOT have is an instrument calibrated to the test distribution that
+can say which transform fixes it --- our labels cannot serve, and item 367 is the record of what
+happens when they are used anyway. **The only instrument with the right calibration is the board,
+one upload at a time, which is how item 377 settled the last placement question.**
+
+**A correction to the ST-RAE implementation this file first used**, recorded because it is a trap
+anyone re-deriving the metric will hit: the denominator is NOT `sum|y - mean(y)|`. The organisers'
+docstring is explicit that the naive baseline is "put through THE SAME soft-thresholding", so both
+halves are band hinges and a constant predictor scores ZERO on every compound whose band already
+contains the mean. The identity control caught it at 0.8108 against 1.2392.
