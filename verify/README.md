@@ -18332,9 +18332,35 @@ how far apart our predictions sit but how often the SIGN of a pair's difference 
 
 **CYP1A2 and CYP2D6 decay monotonically; CYP2C9 and CYP3A4 are flat.** The band 0.52-0.70 is the
 test's own 10th-to-90th percentile of parent similarity (item 378), and the whole test lives there,
-because it is 75 series of about ten catalogue analogues each. At n=1261 the standard error is
-0.014, so CYP2D6's 0.533 sits about 2.3 of them above chance: **on the test's own geometry we are
-very nearly blind to which of two analogues is the more active on CYP2D6.**
+because it is 75 series of about ten catalogue analogues each.
+
+**CORRECTION, 27 October --- the `n пар` column above is WRONG and so is the significance claim it
+carried.** The printing line computed `nn = max(nn, ok.sum())` over the four isoforms, so every row
+shows CYP3A4's count, not the row's own. The real per-enzyme counts, re-measured:
+
+    полоса        CYP1A2   CYP2C9   CYP2D6   CYP3A4
+    0.40-0.52        448      512      464     1841
+    0.52-0.70         95       88      106     1261   <- напечатано было 1261 во всех клетках
+    se знака      0.0513   0.0533   0.0486   0.0141
+
+The sentence this item originally carried --- "at n=1261 the standard error is 0.014, so CYP2D6's
+0.533 sits about 2.3 of them above chance" --- is void: at n=106 the standard error is 0.0486 and
+0.533 is **0.68** of one above chance, a 95 per cent interval of [0.438, 0.628]. **The headline
+"on the test's own geometry we are nearly blind on CYP2D6" is NOT established by that cell, and
+neither is its negation.** What survives is the decline itself, which does not depend on the last
+band: CYP2D6 falls from 0.669 to **0.555 at 0.40-0.52 with n=464 and se 0.0232**, which is 4.9 of
+them. The direction of this item stands; its sharpest number does not. Items 388 and 389 cite this
+item as their diagnosis and inherit the correction.
+
+**A second claim of this item is also wrong, and it was an assertion rather than a measurement.**
+"Morgan fingerprints of two analogues at Tanimoto 0.6 differ in few bits, and a ridge or GP over
+them returns nearly equal predictions BY CONSTRUCTION" --- counted rather than assumed, over
+jointly-labelled in-band pairs: **no pair has identical fingerprints on any isoform**, and the
+median number of differing FP columns is 37 to 44 against a median of 48 set bits per molecule, so
+40 to 47 per cent of a molecule's active bits differ. The arithmetic closes (|A∩B| about 28,
+|A∪B| about 68, T about 0.41). The features are not degenerate. The smoothing this item measured
+(|Δ predicted| 0.265 against |Δ label| 1.023) is a property of the FITTED FUNCTION, not of the
+representation, and "by construction" is unsupported.
 
 Three corroborating cuts, same four seeds:
 
