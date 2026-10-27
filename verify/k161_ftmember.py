@@ -55,6 +55,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ft", required=True, nargs="+", help="jointft json, по одному на сид")
     ap.add_argument("--seeds", type=int, default=4)
+    ap.add_argument("--ensemble", action="store_true",
+                    help="усреднить все --ft в ОДИН член (конфигурация briford: четыре сети), "
+                         "и считать знак по сидам СОСТАВА, а не по сетям")
     a = ap.parse_args()
 
     rows = pd.read_csv(D + "rows.csv")
@@ -62,6 +65,56 @@ def main():
             .set_index("Molecule_Name").loc[rows.Molecule_Name].reset_index())
     Y = np.stack([tr["%s_pIC50_direct_inhibition" % c].to_numpy(float) for c in CYPS], 1)
     M = np.isfinite(Y)
+
+    def load_ft(path):
+        """OOF одной сети, выложенный по маске каждого фермента; NaN там, где фолд не покрыл."""
+        ft = json.load(open(path))
+        F = [np.full(int(M[:, e].sum()), np.nan) for e in range(4)]
+        pos = [np.where(M[:, e])[0] for e in range(4)]
+        for k, rec in ft.items():
+            idx = np.asarray(rec["idx"])
+            pr = np.asarray(rec["pred"], float)
+            for e in range(4):
+                sel = M[idx, e]
+                if not sel.any():
+                    continue
+                F[e][np.searchsorted(pos[e], idx[sel])] = pr[sel, e]
+        return F
+
+    if a.ensemble:
+        nets = [load_ft(x) for x in a.ft]
+        bad = [i for i, F in enumerate(nets) if any(np.isnan(F[e]).any() for e in range(4))]
+        if bad:
+            raise SystemExit("сети с неполным OOF: %r" % bad)
+        ENS = [np.mean([F[e] for F in nets], 0) for e in range(4)]
+        print("  УСРЕДНЕНО СЕТЕЙ: %d" % len(nets))
+        print("  одиночные ранги сетей: %s"
+              % "  ".join("%.4f" % macro(F, Y, M) for F in nets))
+        print("  ранг УСРЕДНЁННОЙ: %.4f" % macro(ENS, Y, M))
+        # the control that makes the average meaningful: averaging must beat its own members
+        if macro(ENS, Y, M) <= max(macro(F, Y, M) for F in nets):
+            print("  ВНИМАНИЕ: усреднение не превзошло лучшую из сетей")
+        print("\n  %-10s %11s %11s" % ("сид состава", "состав", "+ усреднённая"))
+        ds = []
+        for si in range(a.seeds):
+            mem = json.load(open(RES + "preds/members_seed%d.json" % si))
+            nm = [len(SOLO[c]) for c in CYPS]
+            P5 = [np.mean([np.asarray(mem[m][e], float) for m in SOLO[CYPS[e]]], 0)
+                  for e in range(4)]
+            b = macro(P5, Y, M)
+            nn = macro([(nm[e] * P5[e] + ENS[e]) / (nm[e] + 1) for e in range(4)], Y, M)
+            ds.append(nn - b)
+            print("  %-10d %11.4f %11.4f   (%+.4f)" % (si, b, nn, nn - b))
+        d = np.array(ds)
+        corr = float(np.mean([spearmanr(
+            np.mean([np.asarray(json.load(open(RES + "preds/members_seed0.json"))[m][e], float)
+                     for m in SOLO[CYPS[e]]], 0) - Y[M[:, e], e],
+            ENS[e] - Y[M[:, e], e]).statistic for e in range(4)]))
+        print("\n  корреляция ошибок усреднённой с составом: %.3f" % corr)
+        print("  ВЛОЖЕНА ДОП. ЧЛЕНОМ   %+.4f, знак %d/%d, пол %.4f"
+              % (d.mean(), int((d > 0).sum()), len(d), FLOOR))
+        print("  вердикт: %s" % ("ПЛАТИТ" if d.mean() > FLOOR and (d > 0).all() else "НЕ ПЛАТИТ"))
+        return 0
 
     print("  состав по пунктам 282-285: %s"
           % ", ".join("%s %d чл." % (c, len(SOLO[c])) for c in CYPS))

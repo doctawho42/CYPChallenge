@@ -18521,3 +18521,71 @@ moving the checkpoint from a frozen probe's 0.4376 (item 363) to 0.5634, and tha
 short. What remains untested on this branch is briford's actual configuration rather than half of
 it: **four nets averaged**, where our single net is compared against a five-member ensemble. That is
 the only form of it the readable field supports, and it is the only thing left on the axis.
+
+
+**390. Left-censored screening bounds pay +0.0125 of macro on a single-stage per-enzyme model with
+the null control at 0/6 --- and vanish completely inside the member that actually ships, where the
+real bounds and RANDOM LABELS on the same rows are indistinguishable: -0.0015 against -0.0014 on
+CYP2D6. The dead-zone pass already does what the bounds do.** `verify/k162_bounds.py`,
+`verify/k163_boundmem.py` (both new), `results/logs/k162_bounds.json`, `k163_boundmem.json`.
+
+The candidate came from an outside agent asked what the leaders might do that we do not, briefed
+with the board's numbers and the journal but deliberately not with my own diagnosis. It was the best
+of five and it was well aimed: item 316 records that all three open-code entrants above us enter
+inactives as left-censored bounds, item 388 applied that device to the EXTERNAL NCGC panel and item
+389 measured the branch dead, and nobody had ever applied it to OUR OWN screen --- which has none of
+the transfer problem that killed the panel.
+
+    фермент   pIC50 есть   ниже 4.0   скрин. БЕЗ pIC50   прирост   Youden (п. 381)
+    CYP1A2          1412        232               2963     12.8x             0.814
+    CYP2C9          1285        259               3090     11.9x             0.139
+    CYP2D6          1493        129               2882     22.3x             0.892
+    CYP3A4          2335        944               2570      2.7x             0.151
+
+Everything lined up: the two isoforms carrying 0.0609 of our 0.0909 macro deficit (item 353) are
+exactly the two with the fewest inactivity labels AND exactly the two where the screen discriminates.
+The bound is the protocol's rather than an estimate --- item 83 records the screen's single
+concentration as 4.95e-5 M, pC0 = 4.305 --- and item 83 also explains why a BOUND and not a
+pseudo-label: its inversion collapsed on CYP2D6 at 12.6 per cent invertible, because 87.4 per cent
+of those readings show no inhibition at all. **The rows on which item 83's inversion failed are
+exactly the rows a bound is made of.**
+
+**k162, on a single-stage per-enzyme HistGB:**
+
+    арм                  CYP1A2    CYP2D6   вклад в макро   знак
+    граница w=0.10      +0.0166   +0.0243         +0.0102    6/6
+    граница w=0.30      +0.0059   +0.0351         +0.0103    6/6
+    граница w=1.00      +0.0052   +0.0446         +0.0125    6/6
+    НУЛЬ w=1.00         -0.1334   -0.0789         -0.0531    0/6
+
+**k163, inside the member that ships, substituted into the SOLO composition:**
+
+    арм                  CYP1A2   знак    CYP2D6   знак
+    граница w=0.00      +0.0000    --     +0.0000    --      <- контроль сборки, в ноль
+    граница w=1.00      -0.0046   0/2     -0.0015   0/2
+    НУЛЬ w=1.00         -0.0081   0/2     -0.0014   1/2
+    полы (п. 286)        0.0061           0.0049
+
+**The null is the finding.** On the single-stage model, random labels on the same rows cost -0.0531
+against the bounds' +0.0125 --- a separation of 0.066, which is why k162 read as a clear win. In the
+shipped member that separation is GONE: -0.0014 against -0.0015 on CYP2D6, identical to three
+decimals. At the composition level the bounds carry no more information than noise on the same rows.
+
+**Why, and it was predictable in hindsight.** The shipped member is two-stage (item 164): a base fit,
+then a dead-zone pass that clips the prediction into the credible band and refits under
+absolute_error. Item 384 measured that band as seven to ten times WIDER for low-activity compounds.
+So the dead-zone pass already tells the model that anywhere low is free for the inactive tail ---
+which is precisely the content of a left-censored bound. **Both techniques treat the same thing, and
+the one we ship got there first.** That also explains item 273's +0.0149 on CYP2D6 at member level
+dying the same way, and items 269 and 281 beside it.
+
+**Seventh of its kind** (items 176, 182, 191, 194, 356, 389), and the second in two days.
+
+**Two defects of mine on the way, both caught by controls rather than by thought.** I first compared
+k162's baseline against the cached `поферментно` member and read a 0.05 shortfall as "my baseline is
+weak"; it was a DIFFERENT member, single-stage against two-stage, correlating 0.876 at identical
+folds and pins. I then blamed the fold seed, and that was wrong too --- `butina_folds` default IS
+seed 0, which the rerun showed by reproducing 0.4957 exactly. The actual difference was the
+dead-zone pass, and `verify/k87_maxfeat2.py` had the whole construction written down already. **The
+w=0 control in k163 is what settles it: a faithful rebuild reproduces the cache to +0.0000, so the
+losses below it are the bounds and nothing else.**
