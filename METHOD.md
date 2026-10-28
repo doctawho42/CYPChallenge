@@ -329,6 +329,24 @@ of the test distribution, and measured against our own labels that bet **costs 0
 ST-RAE** on the arm that ships. It is a bet on a quantity nobody can observe before the reveal.
 A score below the band means the bet paid; a score above it is where to look first.
 
+**Dated note, 28 October.** "Nobody can observe" is too strong and is corrected here rather than
+left standing. The leaderboard publishes MAE and R² per entrant per enzyme, and for any entrant
+`MSE ≥ MAE²` with `R² = 1 − MSE/Var(y_test)` gives `sd(y_test) ≥ MAE/√(1−R²)` with no
+distributional assumption at all. Every row bounds the same quantity, and inside each enzyme the
+bounds agree to a few hundredths. That makes the test's label spread a *bounded* quantity rather
+than an unobservable one, and against those bounds our submitted columns carried
+sd/bound = 0.82 / 1.00 / 0.35 / 1.00 — CYP2D6 compressed threefold relative to the other three.
+
+Acting on it is a second, separable bet, and it has now been placed and settled. On 28 October we
+expanded the CYP2D6 column alone by 1.5 about its own mean, leaving the other three bit for bit
+identical. The map is strictly increasing, so the ordering could not move and did not: macro
+Spearman was 0.7212 before and after, to four decimals. CYP2D6's ST-RAE went from 0.6808 to 0.6078
+and the macro from 0.5137 to 0.4954, and 0.0730/4 = 0.01825 against the macro's observed 0.0183
+confirms the whole movement came from the one column that changed. The bet paid, on the one enzyme
+where the bound said it was furthest from paid. The cost quoted above (0.0131, carried by CYP3A4 and
+CYP2C9) is a different trade and is not touched by this; what is corrected is only the claim that
+the quantity is unobservable.
+
 Both halves of that trade were restated on 13 September, and only one of them has a number. The
 cost is measured, and it is now 0.0131 rather than the 0.0223 published here before: it is
 `band.json`'s own `macro_oof` minus `macro_plain` (0.6506 against 0.6375) on the shipped

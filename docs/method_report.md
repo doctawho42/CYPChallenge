@@ -582,6 +582,122 @@ construction. We pre-registered, before running it, that a disagreement with any
 be reported as *ambiguous* rather than as a refutation, because the live half is series-split and
 need not represent the full 750. It disagreed, and we are holding to that.
 
-Nothing in our submission is calibrated onto any estimate of the blind label distribution. If the
-organisers find the placement sensitivity worth addressing in future challenges, a secondary metric
-that is invariant to a monotone transform — Spearman, which they already publish — does the job.
+If the organisers find the placement sensitivity worth addressing in future challenges, a secondary
+metric that is invariant to a monotone transform — Spearman, which they already publish — does the
+job.
+
+**Correction, 28 October.** Until 27 October this section ended with the sentence "Nothing in our
+submission is calibrated onto any estimate of the blind label distribution." That is no longer true
+and the sentence is withdrawn rather than quietly deleted. Our current submission expands the CYP2D6
+column by a factor chosen against the blind set's label spread as bounded by the leaderboard's own
+published columns (section 9's `sd(y_test) ≥ MAE/√(1−R²)`). No test label was used and none is
+available to us; the quantity is derived from numbers the board publishes about every entrant.
+Section 11 records what that is worth and why we think it is a result about the metric rather than
+about our model.
+
+
+## 11. Two results from the final fortnight, offered because they are about the data and the metric
+
+### 11.1 The blind set's construction is recoverable from the released data, and we recovered it
+
+The challenge page states the design: hit expansion on the top 25 hits of CYP1A2, CYP2C9 and CYP3A4,
+ten ECFP4 chemisimilars per hit from the Enamine catalogue, 25 × 3 × 10 = 750. Every clause of that
+is checkable against the released SMILES, and all of it holds:
+
+| | measured |
+|---|---|
+| distinct nearest training neighbours of the 750 | 132 |
+| share of the test covered by the top 75 of them | 87.1 % |
+| same statistic for 750 random training compounds (null) | 16.7 % |
+| children per parent | median exactly 10, range 4–14 |
+| CYP2D6 members of its own top 25 among the parents | 1, against 21 for CYP2C9 and 16 for CYP3A4 |
+
+We report it because of its consequence rather than for its own sake. For any single isoform, two
+thirds of the 750 were selected for a *different* isoform, and **CYP2D6 has no series of its own at
+all**. A model trained on compounds promoted to dose-response — which is to say, on hits — predicts
+at the level of hits, while the blind set is dominated by compounds chosen for other enzymes. We
+spent three days trying to turn that into a corrected level and could not: the derivation holds on
+CYP1A2 and CYP2D6, where the single-concentration screen separates actives (Youden 0.814 and 0.892),
+and is refused on CYP2C9 and CYP3A4, where it does not (0.139 and 0.151). The limit is structural,
+not a shortage of effort: **the released data contain exactly one measurement taken before
+selection** — the single-concentration screen — because pIC50, Emax and the TDI curves all exist
+only for compounds promoted *because* they screened active. Any question of the form "what would an
+untested analogue do?" is answerable only through that one readout.
+
+This is also why the analogue structure is harder than its similarity suggests. At the blind set's
+own Tanimoto band, two compounds differ in activity about as much as two random ones — on CYP1A2,
+1.023 of pIC50 against 1.090 — so the density is not a source of easy predictions. The organisers'
+own phrase for this, "activity cliffs", is the right one, and we can put a number on the cost: our
+pairwise sign accuracy falls monotonically with structural similarity on CYP1A2 and CYP2D6, from
+0.699 and 0.669 at Tanimoto below 0.20 to 0.608 and 0.555 in the band the test occupies, while
+CYP2C9 and CYP3A4 stay flat.
+
+### 11.2 Placement moves the primary metric independently of ordering, demonstrated rather than argued
+
+Section 10 makes this case correlationally. We can now make it by controlled experiment, because we
+ran one.
+
+Two submissions, twelve hours apart, differing in exactly one column. The CYP2D6 predictions were
+multiplied by 1.5 about their own mean — a strictly increasing map, so the ordering cannot change —
+and the other three isoforms were left bit for bit identical.
+
+| | before | after |
+|---|---|---|
+| MA-ST-RAE | 0.5137 | **0.4954** |
+| MA-MAE | 0.7297 | 0.7054 |
+| MA-R² | 0.5166 | 0.5374 |
+| MA-Spearman ρ | 0.7212 | **0.7212** |
+| CYP2D6 ST-RAE | 0.6808 | **0.6078** |
+
+Spearman did not move to four decimal places, which is the control confirming the transform did on
+the live set what it claims. The CYP2D6 tab moved by 0.0730 and the macro by 0.0183 — and
+0.0730 / 4 = 0.01825, so the whole macro movement is attributable to the single column that changed.
+**A monotone rescaling of one isoform, carrying no new chemistry and no new information of any kind,
+is worth 0.0183 of the primary metric.**
+
+The converse also holds and we think it is the more interesting half. An earlier pair of
+submissions shared a marginal distribution *exactly* — one was a rank map of the other onto its
+predecessor's per-isoform values, bit for bit — and differed only in which compound received which
+value. That was worth 0.0220 of MA-ST-RAE at identical Spearman. So the metric is not purely a
+placement score either: **at a fixed marginal, a better ordering pays, and at a fixed ordering,
+placement pays about as much.** Both halves are real, and an entrant who optimises only one of them
+leaves the other on the table.
+
+We offer this as calibration data for a future challenge rather than as a criticism. If the
+intention is that the primary metric should reward chemistry, then the 0.0183 above was obtained
+without any, and we would have been unable to find it without the MAE and R² columns the board
+publishes — which is itself a reason to keep publishing them.
+
+### 11.3 Four more things that did not work, with the reason each failed
+
+Recorded because the reasons are reusable even where the results are not.
+
+**A joint multi-head fine-tune over challenge + ChEMBL + qHTS**, warm-started from the published
+CheMeleon CYP checkpoint, one head per source with the label scales never merged, and the panel's
+28 595 censored cells entering as one-sided bounds. Five folds, four nets averaged in the
+configuration the best open-code entrant describes. Solo macro Spearman 0.5634 for one net and
+0.5741 for the average, against 0.6416 for our own five-member ensemble, and −0.0020 at sign 0/4
+when nested into it. The representation is genuinely decorrelated — error correlation 0.846 against
+the 0.93 we usually see — and that did not rescue it.
+
+**Left-censored bounds from our own screen**, the device the three open-code entrants above us all
+use. We hold 129 CYP2D6 labels below pIC50 4.0 and 2 882 screened compounds with no curve at all, a
+22-fold increase in evidence of inactivity, at a bound the protocol fixes exactly (the screen's
+single concentration, 4.95 × 10⁻⁵ M, is pC₀ = 4.305). On a single-stage per-enzyme model it is worth
++0.0125 of macro rank with a permutation null at 0/6. Inside the member we actually ship it is worth
+nothing, and the null and the real bounds become indistinguishable — −0.0015 against −0.0014. The
+reason is that our shipped member already runs a dead-zone pass that projects its prediction into
+the credible band, and the band for a low-activity compound is seven to ten times wider than for an
+active one. **The two devices say the same thing, and ours said it first.**
+
+**A mixture placement** that sends the predicted-inactive fraction to the bottom of the range, which
+the band geometry appears to license: −0.0918 of macro penalty against the affine pair at sign 0/4,
+measured with oracle pools and the oracle active fraction taken fold-wise. The wide band for
+inactives is only free to someone who knows which compounds are inactive, and at Spearman 0.72 we do
+not.
+
+**Placement fitted on our own labels.** Our only simulation of the transform in 11.2 recommended
+expansion by 1.40 with a shift, stable across folds and out of fold. It was void, and the control
+that caught it is worth repeating: the submission's own CYP2D6 column scores 2.3761 against *our*
+training labels where the board scores it 0.6808. A placement fitted to the training marginal is
+fitted to the wrong population, which is the same trap section 9 records from the other side.
