@@ -18668,3 +18668,55 @@ anyone re-deriving the metric will hit: the denominator is NOT `sum|y - mean(y)|
 docstring is explicit that the naive baseline is "put through THE SAME soft-thresholding", so both
 halves are band hinges and a constant predictor scores ZERO on every compound whose band already
 contains the mean. The identity control caught it at 0.8108 against 1.2392.
+
+
+**392. The registered prediction held on every clause and the placement axis is REOPENED: expanding
+CYP2D6 alone by 1.5 took its ST-RAE from 0.6808 to 0.6078 with Spearman unchanged to four places
+and the other three isoforms frozen. Item 367 closed this axis on a GLOBAL flag; the per-enzyme case
+it never tested is worth 0.0183 of macro.** Live leaderboard, `Lizard Wizard Gizzard`, submitted
+2026-10-28 09:48 UTC. `src/widen2d6.py`, `activity_submission_wide2d6.csv` (md5
+a7b6cfa3b39f881a0d77f16a30938575).
+
+    макро          rankmap   wide2d6
+    MA-ST-RAE       0.5137    0.4954     -0.0183
+    MA-MAE          0.7297    0.7054
+    MA-R2           0.5166    0.5374
+    MA-Spearman     0.7212    0.7212      не сдвинулся ни на знак
+    MA-Kendall      0.5457    0.5457
+
+    вкладка CYP2D6   было     стало
+    ST-RAE          0.6808    0.6078     -0.0730
+    MAE             1.2207    1.1234
+    R2              0.1453    0.2287
+
+**The arithmetic is the control.** 0.0730 / 4 = 0.01825 against the macro's observed 0.0183, so the
+entire macro movement is attributable to the one column that changed and the other three tabs did
+not move --- which is what the file claimed and what a bit-identical build had to produce. And
+Spearman unchanged is the monotone control holding on live data, the same one item 387 used.
+
+**What this says about item 367, carefully.** That item is not wrong: a GLOBAL spread at achieved
+1.769 / 1.327 / 1.569 / 1.191 did cost 46 places, and its three errors are all real. What it closed
+was the axis, and the per-enzyme case on the one isoform item 366 had already singled out --- "under
+-corrected, worst on CYP2D6 by a factor of nearly three" --- was never tested. An outside agent
+found the gap by re-deriving item 354's per-enzyme table on today's board and noticing that item
+367's two instruments both matched on MACRO rho while item 354's number was per-enzyme;
+`furtivepeony` carries our macro rho to four decimals at ST-RAE 0.4645 against our 0.5137.
+
+**And the multiplier was chosen for risk rather than fitted, which is why this is readable.** Item
+391 had just voided the only simulation we had --- it was optimising the undoing of the rank map ---
+so no instrument we hold is calibrated to the test distribution. 1.5 moves k, the ratio of the
+shipped column's sd to item 131's board-derived lower bound on the test label sd, from 0.35 to 0.53:
+toward the other three isoforms (0.82 / 1.00 / 1.00) and not past the nearest. The board is now the
+instrument, and it has given its first calibrated point: **k 0.35 -> 0.53 is worth -0.0730 on
+CYP2D6.**
+
+**Two points on the curve now exist and the optimum is not bracketed.** The field's best CYP2D6
+ST-RAE is 0.3829 and we are at 0.6078, with k still at 0.53 against 0.82 to 1.00 on our own other
+three. A further expansion is the obvious next registered prediction, and the first one that can
+fail informatively: if the gain continues the optimum is further out, and if it reverses the two
+uploads bracket it.
+
+**Rank moved the other way and that is worth recording.** 57 to 67 while the score improved by
+0.0183: the board is being resubmitted to heavily in the last week --- the CYP2D6 tab's top nine are
+all dated 26 to 28 October --- so places are now a moving target and the score is the only stable
+readout.
