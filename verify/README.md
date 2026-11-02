@@ -18720,3 +18720,56 @@ uploads bracket it.
 0.0183: the board is being resubmitted to heavily in the last week --- the CYP2D6 tab's top nine are
 all dated 26 to 28 October --- so places are now a moving target and the score is the only stable
 readout.
+
+
+**393. The expansion SATURATES and the registered prediction's third branch fired: a second 1.5x on
+CYP2D6, k 0.53 to 0.79, moved its ST-RAE by +0.0001 while its MAE fell 0.087 and its R2 rose
+0.033. The optimum is bracketed between k 0.53 and 0.79, the curve there is flat, and the lever is
+spent on all four isoforms.** Live leaderboard, submitted 2026-10-31 15:01 UTC, rank 61.
+
+    макро            wide2d6 (28.10)   текущее (31.10)
+    MA-ST-RAE                 0.4954            0.4955
+    MA-MAE                    0.7054            0.6836
+    MA-R2                     0.5374            0.5456
+    MA-Spearman               0.7212            0.7212
+
+    вкладка CYP2D6
+    ST-RAE                    0.6078            0.6079
+    MAE                       1.1234            1.0362
+    R2                        0.2287            0.2615
+
+Item 392's prediction named three outcomes and the third is what happened: ST-RAE did not fall, so
+the optimum lies between the two points rather than beyond them. The shape is a sharp saturation
+rather than a gentle one --- **-0.0730 for a Δk of 0.18, then +0.0001 for a Δk of 0.26** --- so the
+plateau is wide and flat and there is nothing to recover by interpolating into it either.
+
+**The interesting half is that the other two columns kept moving.** MAE fell by 0.087 on CYP2D6 and
+R2 rose by 0.033, which is to say the predictions got closer to the truth in absolute terms while
+the primary metric did not notice. That is the cleanest demonstration this project has produced of
+what items 366, 367 and 384 argued separately: **ST-RAE pays for band containment, not for
+closeness.** Once a column sits well relative to the bands, further widening buys accuracy the
+metric does not score.
+
+**The lever is now spent everywhere.** Against item 131's board-derived lower bounds on the test
+label spread, the shipped columns carry k = 0.82 / 1.00 / 0.79 / 1.00. The threefold
+under-correction item 366 found on CYP2D6 is gone and no isoform has another. The signature that
+located CYP2D6 in the first place --- worst MAE of the eleven entrants at matched ordering --- does
+not repeat: on CYP2C9 we sit at rank 50 with MAE 0.4326 against a field best of 0.349, which is
+mid-field rather than an outlier.
+
+**What the two uploads bought, end to end.** From `rankmap` at 0.5137 to 0.4955 of macro ST-RAE,
+with MA-R2 from 0.5166 to 0.5456 and Spearman unmoved at 0.7212 throughout --- an improvement
+carrying no new chemistry, obtained from a strictly increasing map of one column, found because a
+per-enzyme reading of the board contradicted a macro-matched closure.
+
+**A housekeeping result worth keeping, because it nearly went the other way.** PRs #65, #66 and #67
+were fully contained in #68 and looked redundant after it merged. The first check I ran used
+`git diff origin/main...origin/branch`, whose three-dot form measures from the merge base --- and a
+SQUASH merge leaves the merge base at the old `main`, so the output described everything on those
+branches and said nothing about whether their content had landed. The two-dot form answered it:
+against `main` those branches are almost pure deletion, and their few remaining additions are OLDER
+versions of lines `main` carries in newer form --- `docs/method_report.md`'s withdrawn sentence
+"Nothing in our submission is calibrated onto any estimate of the blind label distribution", and
+`src/submit.py`'s `fit_shrinkage` before `--spread` existed. **Merging them would have reverted
+work**; they were closed with that written out, and the branches were left in place. The control
+that makes the reading trustworthy is that our own branch against `main` is empty.
