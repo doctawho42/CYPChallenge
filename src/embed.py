@@ -12,9 +12,13 @@ it: take the pretrained encoder, embed the molecules, and hand the embedding to 
 learner and the folds the ablation already uses. One row of the same table, directly
 comparable, with nothing else changed.
 
-Which weights, and why this one. The organisers published sixteen chemprop pretraining
-checkpoints, each a D-MPNN trained to predict a different descriptor family. `rdkit2d` is
-chosen deliberately: it is pretrained to predict the very RDKit descriptors that make up our
+Which weights, and why this one. The organisers published FIFTEEN chemprop pretraining
+checkpoints. Thirteen are a D-MPNN trained to predict a descriptor family; the other two are
+`surrogate_adme` (25 predicted ADME endpoints) and `minimol` (512 embeddings from a
+bio-trained model), which item 349 measures. This docstring said "sixteen ... one per
+descriptor family" until 16 October, which is how those two stayed invisible -- see item 345.
+
+`rdkit2d` is chosen deliberately: it is pretrained to predict the very RDKit descriptors that make up our
 DESC block, so the comparison is not "learned features against hand features" in general but
 the sharper question - does a *learned* representation of that information beat handing the
 information over directly? The CYP-fine-tuned baseline in the same organisation was NOT used,

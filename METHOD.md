@@ -142,10 +142,12 @@ In the model this is a shared trunk with two heads — pIC50 from the curves, lo
 |---|---|---|
 | Pretrained representations, three checkpoints | chemprop `rdkit2d` concatenated: −0.0075 rank; MoLFormer-XL via in-fold PCA-64: 0.5637 against 0.5651 | 61, 117, 154 |
 | ChEMBL, 8068 compounds | a raw gain of 0.0128 becomes +0.0068, harmful, after the affine pair; seed 0 | 61, 77 |
-| NCGC panel, 54177 rows | +0.0048 macro rank at the best of three weights tried, below the 0.007 floor | 144, 157 |
+| NCGC panel, 54177 rows | pooled: +0.0048 macro rank at the best of three weights tried, below the 0.007 floor — **but per-enzyme, +0.0112 of rank and −0.0087 of pair at sign 2/2, never reported until item 352** | 144, 157, 352 |
 | Quantum descriptors, 10 columns | null against potency and against the TDI shift, where the shuffled block (+0.0041) beats the real one (−0.0018) | 186, 242 |
 
 The binding constraint is the 1285 to 2335 labelled rows per enzyme, and the readings that relieve it were already in the release.
+
+One source from outside does survive, named here because the table would otherwise read as a clean sweep: the same chemprop family, used as a **member** rather than as columns — a ridge head on the frozen encoder whose prediction enters the mean — ships at +0.0138 of macro rank, sign 8/8 (items 324, 325, 327). The row above is accurate about the variant it measured, concatenation into the same learner, and the distinction between the two is the finding.
 
 ## Uncertainty, in the units the metric pays in
 
@@ -265,7 +267,7 @@ The project's journal (`verify/README.md`) runs past item 300, and most of them 
 |---|---|---|---|
 | **External data sources** | | | |
 | ChEMBL set, 8068 compounds | −0.013 macro raw, sign held on two seeds | +0.0068 after the affine pair: the pair already removes the offset and variance the extra rows corrected | 61, 77 |
-| NCGC panel, 18711 fitted-AC50 rows | −0.0176 macro rank; +0.0048 at weight 0.1, floor 0.007 | at full weight the panel is 74 % of the training table, so a foreign protocol offset by +0.44 to +0.87 dominates the objective | 153, 157 |
+| NCGC panel, 18711 fitted-AC50 rows | pooled: −0.0176 macro rank; +0.0048 at weight 0.1, floor 0.007. Per-enzyme at the same weight: **+0.0112 of rank, −0.0087 of pair, sign 2/2, shuffled panel 0/2** | at full weight the panel is 74 % of the training table, so a foreign protocol offset by +0.44 to +0.87 dominates the objective — and item 188 measured that pooling itself costs 0.020 of rank by spending depth on the enzyme indicator, so the pooled ladder was measuring two things at once. The per-enzyme arm is member-level and awaits nesting over the composition (item 352) | 153, 157, 188, 352 |
 | The organisers' own second CYP release | 14 of 1340 molecules overlap our training set, 4 carry a CYP3A4 label | a protocol offset is estimable only on shared molecules; overlap is a property of the library, not of its size | 201 |
 | 1238 unread CYP3A4 measurements | manufactured label keeps 98.6 % of rank; −0.0108 against a floor of 0.0033, 4/4 seeds | good but not good enough; and 1048 of them are flagged `False` while their own pre-incubation arm clears the rule's cutoff — placeholders, not measurements | 216, 231 |
 | **Representation learning** | | | |
@@ -326,6 +328,24 @@ sharper: the submitted predictions are transformed by an affine pair fitted unde
 of the test distribution, and measured against our own labels that bet **costs 0.0131 of macro
 ST-RAE** on the arm that ships. It is a bet on a quantity nobody can observe before the reveal.
 A score below the band means the bet paid; a score above it is where to look first.
+
+**Dated note, 28 October.** "Nobody can observe" is too strong and is corrected here rather than
+left standing. The leaderboard publishes MAE and R² per entrant per enzyme, and for any entrant
+`MSE ≥ MAE²` with `R² = 1 − MSE/Var(y_test)` gives `sd(y_test) ≥ MAE/√(1−R²)` with no
+distributional assumption at all. Every row bounds the same quantity, and inside each enzyme the
+bounds agree to a few hundredths. That makes the test's label spread a *bounded* quantity rather
+than an unobservable one, and against those bounds our submitted columns carried
+sd/bound = 0.82 / 1.00 / 0.35 / 1.00 — CYP2D6 compressed threefold relative to the other three.
+
+Acting on it is a second, separable bet, and it has now been placed and settled. On 28 October we
+expanded the CYP2D6 column alone by 1.5 about its own mean, leaving the other three bit for bit
+identical. The map is strictly increasing, so the ordering could not move and did not: macro
+Spearman was 0.7212 before and after, to four decimals. CYP2D6's ST-RAE went from 0.6808 to 0.6078
+and the macro from 0.5137 to 0.4954, and 0.0730/4 = 0.01825 against the macro's observed 0.0183
+confirms the whole movement came from the one column that changed. The bet paid, on the one enzyme
+where the bound said it was furthest from paid. The cost quoted above (0.0131, carried by CYP3A4 and
+CYP2C9) is a different trade and is not touched by this; what is corrected is only the claim that
+the quantity is unobservable.
 
 Both halves of that trade were restated on 13 September, and only one of them has a number. The
 cost is measured, and it is now 0.0131 rather than the 0.0223 published here before: it is
@@ -393,6 +413,15 @@ Run logs are results here and are committed under `results/logs/`. Saved out-of-
 under `results/preds/`, and every table in this document can be recomputed from them without
 refitting a model.
 
-No proprietary data is used. The external sources we tried — a public NCGC panel, ChEMBL, and three
-pretrained molecular representations — are all public, and all of them are closed negative in the
-journal.
+No proprietary data is used, and every external source is public. Three of them — a public NCGC
+panel, ChEMBL, and pretrained molecular representations used as concatenated COLUMNS — are closed
+negative in the journal. One is not, and it ships: a ridge head on 600 frozen dimensions of a
+third-party `chemprop_medium` checkpoint (committed as a plain file in another open entrant's public
+repository, `jeremycheminf/openadmet_scripts`, and pretrained on CYP and ADME activity) enters the
+regression ensemble as a sixth member at **+0.0138 of macro rank, sign 8/8** (items 324, 325, 327).
+It is used frozen and never fine-tuned.
+
+*This paragraph said all of them were closed negative until 15 October, three weeks after that member
+shipped. We have not checked whether the 750 blind compounds appear in that checkpoint's pretraining
+data, and will not, because establishing it would mean looking the blind set up in external
+databases.*

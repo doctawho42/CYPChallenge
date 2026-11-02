@@ -80,6 +80,13 @@ results/submission/*
 # наложены поверх сборки и откуда они взяты (пункт 308). Сам CSV пересобирается
 # из исходного за секунду, мета несёт sha256 обоих.
 !results/submission/recal.meta.json
+# И для стека пункта 346: его мета отвечает на вопрос, на который не отвечает ни одна
+# другая --- какие ВОСЕМЬ членов вошли и откуда взяты два вложения, которых нет в git
+# (пункт 365; рецепт в src/embed_medium.py). Сам CSV пересобирается за ~40 минут на
+# восстановленных вложениях, мета несёт его sha256, так что расхождение видно без сборки.
+!results/submission/stack346.meta.json
+!results/submission/stack374.meta.json
+!results/submission/stack346_spread.meta.json
 data/ncgc/
 
 # Побочный вывод jar-а SMARTCyp в корень: инструментальный мусор, не результат.
@@ -88,3 +95,7 @@ SMARTCyp_Results_*.html
 # Кэш загрузок из PDB для verify/k111_structscore.py. Воспроизводим из RCSB одной
 # командой, как data/receptors --- в git ему места нет.
 data/pdb3a4/
+
+# Local secrets. Untracked before this line existed; named explicitly rather than by a
+# pattern so that a future `.env.example` can still be committed.
+.env

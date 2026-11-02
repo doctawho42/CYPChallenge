@@ -8,6 +8,35 @@ disk. Nothing downstream imports chemprop.
     uv pip install --python <scratch>/encenv/bin/python 'chemprop>=2.1'
     <scratch>/encenv/bin/python embed_medium.py --ckpt <...>/chemprop_medium.pt
 
+WHERE THE CHECKPOINTS COME FROM, written out because item 355 recorded the opposite as a
+defect: `data/emb_chemprop_*.npz` is gitignored, the checkpoints were never on disk either,
+and on a fresh checkout the shipped composition could not be rebuilt at all. Both are plain
+files in a third entrant's public repository, and both halves of each member come from ONE
+download -- the train/test split is only which `--rows` is passed:
+
+    B=https://raw.githubusercontent.com/jeremycheminf/openadmet_scripts/HEAD/CYP_Challenge/checkpoints
+    curl -sL -o <scratch>/chemprop_medium.pt    $B/chemprop_medium.pt       #  7.7 MB
+    curl -sL -o <scratch>/chemprop_chemeleon.pt $B/chemprop_chemeleon.pt    # 51847844 bytes
+
+    # member six, 600 columns (items 324/325/327)
+    <enc> embed_medium.py --ckpt <scratch>/chemprop_medium.pt \
+        --rows data/rows.csv                      --out data/emb_chemprop_medium.npz
+    <enc> embed_medium.py --ckpt <scratch>/chemprop_medium.pt \
+        --rows data/cyp-challenge-TEST-BLINDED.csv --out data/emb_chemprop_medium_test.npz
+
+    # member seven, 2048 columns (items 345, 346, 365)
+    <enc> embed_medium.py --ckpt <scratch>/chemprop_chemeleon.pt \
+        --rows data/rows.csv                      --out data/emb_chemprop_chemeleon.npz
+    <enc> embed_medium.py --ckpt <scratch>/chemprop_chemeleon.pt \
+        --rows data/cyp-challenge-TEST-BLINDED.csv --out data/emb_chemprop_chemeleon_test.npz
+
+The blinded file already carries exactly `Molecule_Name` and `SMILES`, which is all this
+script reads, so no intermediate table is needed. **The control that matters is re-extracting
+a half you already have**: run the train line against a committed `.npz` and the arrays must
+match bit for bit, or the download is a different checkpoint of the same name and the two
+halves come from two different encoders. For `chemprop_chemeleon.pt` that check passes at
+array sha256 `2008f585dca6a536`, and nothing downstream would have caught its failure.
+
 Which route. The task described the extraction as
 ``model.agg(model.message_passing(bmg, V_d), bmg.batch)``. The committed competitor
 code does NOT do that: cyp_submission/chemprop_transfer.py calls
